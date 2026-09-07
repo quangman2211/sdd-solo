@@ -1,0 +1,10 @@
+# <type>(<ID>): <mô tả ngắn, thì hiện tại>
+#
+# type : feat | fix | test | refactor | docs | chore
+# ID   : UC-### | BR-### | RULE-### | ADR-### | CHG-###
+#
+# Quy tắc: commit docs(UC-###) luôn đứng TRƯỚC commit feat(UC-###) cùng UC.
+# Ví dụ:
+#   docs(UC-002): spec v3 — reviewed
+#   feat(UC-002): activate license on device — AC-1..5
+#   fix(UC-002): AC-3 device list missing lastSeenAt

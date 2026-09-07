@@ -1,0 +1,1120 @@
+<title>SDD-Solo khoskill</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#EDF0F3;
+  --ink:#1A222C; --ink-2:#4A5563; --ink-3:#7A8594; --line:#D9DEE4;
+  --spec:#0E6B66; --spec-soft:#E3F1EF;
+  --gate:#B4472B; --gate-soft:#F8E7E1;
+  --code:#34558A; --code-soft:#E4EAF4;
+  --design:#8A6A1F; --design-soft:#F4EDDC;
+  --display:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F151C; --surface:#161E27; --surface-2:#1C2530;
+    --ink:#E4E9EF; --ink-2:#AEB8C4; --ink-3:#7F8B98; --line:#2A3441;
+    --spec:#3FB3AA; --spec-soft:#12302E;
+    --gate:#E07A5C; --gate-soft:#3A211A;
+    --code:#7FA3E0; --code-soft:#1B2840;
+    --design:#D2A94A; --design-soft:#33290F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F151C; --surface:#161E27; --surface-2:#1C2530;
+  --ink:#E4E9EF; --ink-2:#AEB8C4; --ink-3:#7F8B98; --line:#2A3441;
+  --spec:#3FB3AA; --spec-soft:#12302E;
+  --gate:#E07A5C; --gate-soft:#3A211A;
+  --code:#7FA3E0; --code-soft:#1B2840;
+  --design:#D2A94A; --design-soft:#33290F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+a{color:var(--spec);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--spec) 40%,transparent)}
+a:hover{border-bottom-color:var(--spec)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--spec);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(34px,5vw,50px);font-weight:700;letter-spacing:-0.02em}
+h2{font-size:28px;font-weight:700;letter-spacing:-0.015em;margin-top:8px}
+h3{font-size:20px;font-weight:600;margin-top:36px;margin-bottom:10px}
+h4{font-size:16px;font-weight:600;margin-top:24px;margin-bottom:6px;color:var(--ink-2)}
+p{margin:0 0 14px;max-width:68ch}
+li{max-width:68ch}
+ul,ol{padding-left:22px;margin:0 0 14px}
+li+li{margin-top:4px}
+strong{font-weight:600}
+code,kbd{font-family:var(--mono);font-size:0.88em;background:var(--surface-2);padding:1px 5px;border-radius:3px;color:var(--ink)}
+pre{font-family:var(--mono);font-size:13px;line-height:1.55;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;overflow-x:auto;margin:12px 0 18px;color:var(--ink)}
+pre code{background:none;padding:0;font-size:inherit}
+pre.mermaid{background:var(--surface);border:1px solid var(--line);padding:16px;text-align:center}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3)}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+header.top{padding:56px 0 36px;border-bottom:1px solid var(--line)}
+header.top .lede{font-size:19px;color:var(--ink-2);max-width:62ch;margin-top:18px}
+header.top .meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--ink-3)}
+header.top .meta span b{color:var(--ink-2);font-weight:500}
+.layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:48px;padding:40px 0 80px}
+nav.toc{position:sticky;top:24px;align-self:start;font-size:13.5px}
+nav.toc .eyebrow{margin-bottom:10px}
+nav.toc ol{list-style:none;padding:0;margin:0;border-left:1px solid var(--line)}
+nav.toc li{margin:0;max-width:none}
+nav.toc a{display:block;padding:5px 0 5px 14px;color:var(--ink-2);border:0;border-left:2px solid transparent;margin-left:-1px}
+nav.toc a:hover{color:var(--ink);border-left-color:var(--spec)}
+nav.toc .grp{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:12px 0 4px 14px}
+main{min-width:0;max-width:820px}
+section.part{padding:8px 0 40px;border-bottom:1px solid var(--line);margin-bottom:40px}
+section.part:last-of-type{border-bottom:0}
+.phase-head{display:flex;align-items:baseline;gap:16px;margin-bottom:16px}
+.phase-num{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.08em;color:var(--surface);background:var(--ink);padding:4px 9px;border-radius:3px;white-space:nowrap}
+.phase-head .sub{color:var(--ink-3);font-size:14px}
+figure{margin:20px 0 26px}
+figcaption{font-size:13.5px;color:var(--ink-2);margin-top:8px;max-width:72ch}
+figcaption b{color:var(--ink);font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:12px 0 20px}
+.tbl{overflow-x:auto}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.02em;color:var(--ink-2);background:var(--surface-2)}
+td code{white-space:nowrap}
+td.num{font-variant-numeric:tabular-nums}
+.callout{border-left:4px solid var(--spec);background:var(--spec-soft);padding:14px 18px;border-radius:0 6px 6px 0;margin:18px 0 22px}
+.callout .lab{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--spec);margin-bottom:6px}
+.callout p:last-child,.callout ul:last-child{margin-bottom:0}
+.callout.gate{border-left-color:var(--gate);background:var(--gate-soft)}
+.callout.gate .lab{color:var(--gate)}
+.callout.design{border-left-color:var(--design);background:var(--design-soft)}
+.callout.design .lab{color:var(--design)}
+.callout.code{border-left-color:var(--code);background:var(--code-soft)}
+.callout.code .lab{color:var(--code)}
+.id{font-family:var(--mono);font-size:12.5px;padding:1px 6px;border-radius:3px;border:1px solid var(--line);background:var(--surface);white-space:nowrap}
+.id.spec{color:var(--spec);border-color:color-mix(in srgb,var(--spec) 45%,transparent)}
+.id.gate{color:var(--gate);border-color:color-mix(in srgb,var(--gate) 45%,transparent)}
+.id.code{color:var(--code);border-color:color-mix(in srgb,var(--code) 45%,transparent)}
+.id.design{color:var(--design);border-color:color-mix(in srgb,var(--design) 45%,transparent)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0 20px}
+.steps li{counter-increment:s;position:relative;padding:12px 0 12px 46px;border-top:1px solid var(--line);max-width:none}
+.steps li:last-child{border-bottom:1px solid var(--line)}
+.steps li::before{content:counter(s);position:absolute;left:0;top:11px;width:30px;height:30px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);font-family:var(--display);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--ink-2)}
+.steps li b.t{display:block;font-family:var(--display);font-weight:600;font-size:15.5px;margin-bottom:2px}
+.steps li p{margin-bottom:6px}
+.steps li .who{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);letter-spacing:.04em}
+.check{list-style:none;padding:0;margin:10px 0 18px}
+.check li{padding-left:28px;position:relative;max-width:72ch}
+.check li::before{content:"";position:absolute;left:2px;top:6px;width:14px;height:14px;border:1.5px solid var(--ink-3);border-radius:3px}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;font-size:14.5px;margin:10px 0 18px}
+.kv dt{font-family:var(--mono);font-size:12.5px;color:var(--ink-3);padding-top:2px}
+.kv dd{margin:0}
+.storymap{display:grid;gap:6px;margin:14px 0 22px;font-size:13.5px;overflow-x:auto}
+.storymap .row{display:grid;grid-template-columns:110px repeat(5,minmax(120px,1fr));gap:6px}
+.storymap .cell{padding:8px 10px;border-radius:4px;background:var(--surface);border:1px solid var(--line);min-height:44px}
+.storymap .cell.bb{background:var(--ink);color:var(--surface);font-family:var(--display);font-weight:600;font-size:13px}
+.storymap .cell.lab{background:none;border:0;font-family:var(--mono);font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;padding-top:12px}
+.storymap .cell.v1{border-color:color-mix(in srgb,var(--spec) 50%,transparent);background:var(--spec-soft)}
+.storymap .cell.later{color:var(--ink-3);border-style:dashed}
+.storymap .cell.empty{background:none;border:0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.tree{font-family:var(--mono);font-size:13px;line-height:1.6}
+.tree .c{color:var(--ink-3)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin:6px 0 14px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.legend .s::before{background:var(--spec)} .legend .g::before{background:var(--gate)} .legend .c::before{background:var(--code)} .legend .d::before{background:var(--design)}
+footer{border-top:1px solid var(--line);padding:28px 0 60px;font-size:13.5px;color:var(--ink-3)}
+footer p{max-width:none}
+@media (max-width:900px){.layout{grid-template-columns:1fr}nav.toc{display:none}.two{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Playbook · Spec-Driven Development cho một người</div>
+  <h1 style="margin-top:10px">SDD-Solo cho khoskill</h1>
+  <p class="lede">Quy trình viết spec đầy đủ cho một dự án lớn khi chỉ có một dev và AI viết phần lớn code. Giữ nguyên bốn tầng yêu cầu của Spec-Driven Development, thêm biểu đồ ở mỗi tầng, chèn Claude Design thành một bước chính thức, và thay mọi cơ chế cần người thứ hai bằng cơ chế một người làm được.</p>
+  <div class="meta">
+    <span><b>Nền</b> ebook SDD — Nguyễn Thế Huy · AIUP · GitHub Spec Kit · OpenSpec</span>
+    <span><b>Ký hiệu</b> BPMN 2.0 · DMN · UML · Impact Map · Story Map</span>
+    <span><b>Ví dụ xuyên suốt</b> luồng license &amp; kích hoạt của khoskill</span>
+    <span><b>Phiên bản</b> v1 · 09/2026</span>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Mục lục">
+  <div class="eyebrow">Mục lục</div>
+  <ol>
+    <li class="grp">Nền</li>
+    <li><a href="#thesis">Ba người đọc, một spec</a></li>
+    <li><a href="#overview">Toàn cảnh quy trình</a></li>
+    <li><a href="#ids">Hệ ID và truy vết</a></li>
+    <li><a href="#repo">Cấu trúc repo</a></li>
+    <li><a href="#diagrams">Bộ biểu đồ</a></li>
+    <li class="grp">Quy trình</li>
+    <li><a href="#p0">Phase 0 · Foundation</a></li>
+    <li><a href="#p1">Phase 1 · Inception</a></li>
+    <li><a href="#p2">Phase 2 · Elaboration</a></li>
+    <li><a href="#p3">Phase 3 · Vòng lặp mỗi UC</a></li>
+    <li><a href="#p4">Phase 4 · Release &amp; feedback</a></li>
+    <li><a href="#p5">Phase 5 · Thay đổi trên baseline</a></li>
+    <li class="grp">Vận hành</li>
+    <li><a href="#day">Một buổi làm điển hình</a></li>
+    <li><a href="#notuse">Khi nào không dùng</a></li>
+    <li><a href="#refs">Đối chiếu &amp; tài liệu</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section class="part" id="thesis">
+  <div class="eyebrow">Nền</div>
+  <h2>Ba người đọc, một spec</h2>
+  <p>Ebook viết cho team: spec là giao diện giữa PO, dev và AI. Solo thì ba người đọc vẫn tồn tại, chỉ đổi danh tính. <strong>Anh của hôm nay</strong> biết ý định. <strong>Anh của ba tháng sau</strong> không nhớ gì — đúng vai "dev mới onboard" trong sách. Và <strong>mỗi session Claude Code mới</strong> là một dev vào team với ký ức bằng không, nhưng lại viết phần lớn code.</p>
+  <p>Vì vậy vấn đề gốc của sách — <em>code không có ngữ cảnh</em>, quyết định nghiệp vụ được đưa ra mà không ai biết nó đã được đưa ra — không nhẹ đi khi solo. Nó nặng hơn, vì không còn ai ngồi cạnh để hỏi.</p>
+  <p>Quy trình này đứng trên một kết luận đã được phản biện qua nhiều vòng:</p>
+  <div class="callout">
+    <div class="lab">Luận điểm</div>
+    <p><strong>Solo không cắt artifact. Solo chỉ đổi cơ chế kiểm soát.</strong> Bốn tầng yêu cầu, cấu trúc repo, truy vết, test theo AC — giữ nguyên như sách, và vì khoskill là dự án lớn nên thiết kế cho trạng thái cuối ngay từ đầu, lấp dần. Thứ duy nhất phải thay là những cơ chế cần người thứ hai: reviewer nghiệp vụ, chặn merge, standup.</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:34%">Cơ chế trong sách (team)</th><th style="width:26%">Vì sao solo không có</th><th>Thay bằng</th></tr></thead>
+    <tbody>
+      <tr><td>PO/BA đọc spec, hỏi "nếu A thì sao?" — Nguyên tắc 5 Stakeholder-Centric</td><td>Không có người thứ hai</td><td><strong>Adversarial pass</strong>: AI đóng ba vai đọc spec và liệt kê câu hỏi chưa được trả lời. Cộng <strong>tách theo thời gian</strong>: viết hôm nay, duyệt buổi sau. Cộng <strong>Claude Design</strong>: vẽ màn hình để lộ exception thiếu.</td></tr>
+      <tr><td>Spec PR tách khỏi Code PR, reviewer chặn merge</td><td>Không ai chặn được mình</td><td><strong>Đẩy gate ra trước</strong>: không có AC thì không mở Claude Code. Commit spec trước, commit code sau — git log là bằng chứng thứ tự.</td></tr>
+      <tr><td>Standup, sprint review, retro ép spec cập nhật</td><td>Không có nhịp họp</td><td><strong><code>STATE.md</code></strong> cuối mỗi buổi, năm dòng. Retro theo mốc release.</td></tr>
+      <tr><td>Dashboard chỉ số cho EM</td><td>Không có team để nghẽn</td><td>Đếm bằng <code>git log</code>: tỷ lệ commit có UC ID, số AC có file test.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Hai điều chỉnh khác không đến từ solo mà đến từ cách anh đọc: <strong>mỗi tầng yêu cầu có ít nhất một biểu đồ</strong> chuẩn (BPMN 2.0, DMN, UML) vì đó cũng là ngôn ngữ nghề BPM của anh; và <strong>Claude Design là một bước chính thức</strong> giữa Acceptance Criteria và <code>/plan</code>, vì sách mô tả UI bằng văn xuôi và để AI tự bịa phần còn lại.</p>
+</section>
+
+<section class="part" id="overview">
+  <div class="eyebrow">Nền</div>
+  <h2>Toàn cảnh quy trình</h2>
+  <p>Năm phase. Phase 0–2 làm một lần (và lặp lại khi mở bounded context mới). Phase 3 là vòng lặp lõi, chạy cho từng use case. Phase 4 chạy theo release. Phase 5 chỉ xuất hiện sau khi một phần hệ thống đã là baseline đang chạy.</p>
+  <figure>
+<pre class="mermaid">
+flowchart LR
+  P0["Phase 0<br/>Foundation<br/><i>repo · ID · convention<br/>Design System · DoR/DoD</i>"]
+  P1["Phase 1<br/>Inception<br/><i>BR · Impact Map<br/>Context Map · Story Map</i>"]
+  P2["Phase 2<br/>Elaboration<br/><i>Domain Model · State<br/>Use Case Diagram · UC stub</i>"]
+  P3["Phase 3<br/>Vòng lặp mỗi UC<br/><i>UC → AC → BPMN → Design<br/>→ Adversarial → Gate → Code</i>"]
+  P4["Phase 4<br/>Release &amp; feedback<br/><i>sửa spec trước · regen<br/>đo bằng git log</i>"]
+  P5["Phase 5<br/>Thay đổi trên baseline<br/><i>proposal → delta → design<br/>→ tasks → archive</i>"]
+  P0 --> P1 --> P2 --> P3 --> P4
+  P3 -->|"UC tiếp theo"| P3
+  P4 -->|"feedback → spec"| P3
+  P4 -->|"UC đã implemented<br/>cần đổi hành vi"| P5 --> P4
+  P1 -.->|"context mới"| P2
+</pre>
+    <figcaption><b>Nhịp của quy trình.</b> Mũi tên vòng ở Phase 3 là nơi anh sống phần lớn thời gian. Phase 5 chỉ mở khi hành vi đã được ship và có khách phụ thuộc — trước đó sửa thẳng vào spec.</figcaption>
+  </figure>
+  <h3>Sáu nguyên tắc, đọc lại cho một người</h3>
+  <div class="tbl"><table>
+    <thead><tr><th style="width:24%">Nguyên tắc (Chương 3)</th><th>Câu hỏi tự kiểm, bản solo</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Requirements-Driven</td><td>Commit code này có UC ID chưa, và commit spec tương ứng có nằm <em>trước</em> nó trong <code>git log</code> không?</td></tr>
+      <tr><td>2 · AI-Assisted</td><td>Trong task này, đoạn nào AI được tự làm (CRUD, adapter, test theo AC có sẵn), đoạn nào mình phải gõ tay vào spec trước (rule tiền, quyền, hợp đồng)?</td></tr>
+      <tr><td>3 · Iterative Improvement</td><td>Sau vòng feedback gần nhất, <code>## History</code> của UC này có thêm dòng nào không?</td></tr>
+      <tr><td>4 · Test-Protected</td><td>Mỗi AC có file test mang đúng ID chưa? Test đầu tiên cho một pattern mình có tự đọc kỹ chưa?</td></tr>
+      <tr><td>5 · Stakeholder-Centric</td><td>Spec này đã qua adversarial pass ba vai và đã ngủ qua một đêm chưa? Mỗi exception đã có màn hình chưa?</td></tr>
+      <tr><td>6 · Traceable</td><td>Nếu production lỗi ở đây, từ log tìm được UC/AC trong một phút không?</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="part" id="ids">
+  <div class="eyebrow">Nền</div>
+  <h2>Hệ ID và truy vết</h2>
+  <p>ID là thứ làm cho truy vết chạy được mà không cần tool. Mỗi họ ID trả lời một câu hỏi; hai họ cùng trả lời một câu là dấu hiệu thừa.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Họ ID</th><th>Trả lời câu hỏi</th><th>Sống ở đâu</th><th>Ví dụ</th></tr></thead>
+    <tbody>
+      <tr><td><span class="id spec">BR-###</span></td><td>Vì sao làm việc này</td><td><code>specs/br.md</code></td><td>BR-002 Khách tự kích hoạt không cần hỗ trợ</td></tr>
+      <tr><td><span class="id spec">UC-###</span></td><td>Ai làm gì với hệ thống</td><td><code>specs/contexts/&lt;ctx&gt;/use-cases/</code></td><td>UC-002 Kích hoạt license trên một thiết bị</td></tr>
+      <tr><td><span class="id spec">UC-###/AC-#</span></td><td>Biết đúng bằng cách nào</td><td>Trong file UC</td><td>UC-002/AC-3 Vượt số thiết bị</td></tr>
+      <tr><td><span class="id spec">RULE-###</span></td><td>Ràng buộc nghiệp vụ xuyên nhiều UC</td><td><code>specs/rules.md</code> — nơi duy nhất; UC/AC chỉ trích ID</td><td>RULE-004 Số thiết bị tối đa theo gói</td></tr>
+      <tr><td><span class="id spec">ENT</span></td><td>Khái niệm nào, quan hệ nào, trạng thái nào</td><td><code>specs/contexts/&lt;ctx&gt;/entities.md</code></td><td>License, Activation, Plan</td></tr>
+      <tr><td><span class="id design">SCR-###-#</span></td><td>Khách nhìn thấy gì ở bước này</td><td><code>.../use-cases/UC-###/screens/</code> + canvas Claude Design</td><td>SCR-002-4 Vượt số thiết bị</td></tr>
+      <tr><td><span class="id code">ADR-###</span></td><td>Vì sao xây bằng cách này, đã loại phương án nào</td><td><code>docs/adr/</code></td><td>ADR-002 Xác minh license offline bằng token ký</td></tr>
+      <tr><td><span class="id code">DEC</span></td><td>Bảng tra một dòng cho mọi quyết định kỹ thuật</td><td><code>docs/decisions.md</code></td><td>Một dòng → trỏ tới ADR hoặc <code>design.md</code> của lát</td></tr>
+      <tr><td><span class="id gate">CHG-###</span></td><td>Thay đổi đang đề xuất trên baseline (Phase 5)</td><td><code>changes/CHG-###-slug/</code></td><td>CHG-007 Cho phép chuyển license sang thiết bị khác</td></tr>
+    </tbody>
+  </table></div>
+  <figure>
+<pre class="mermaid">
+flowchart LR
+  BR["BR-002"] -->|"sinh ra"| UC["UC-002"]
+  UC -->|"có"| AC["AC-1 … AC-5"]
+  RULE["RULE-004"] -.->|"được trích trong"| AC
+  ENT["ENT License · Activation"] -.->|"đặt tên cho"| UC
+  AC -->|"mỗi AC ≥ 1"| TEST["tests/…/UC-002/AC-3.test.ts"]
+  UC -->|"mỗi exception ≥ 1"| SCR["SCR-002-1 … SCR-002-4"]
+  ADR["ADR-002"] -.->|"link tới"| UC
+  UC -->|"mọi commit"| GIT["feat(UC-002): …"]
+  classDef spec fill:#E3F1EF,stroke:#0E6B66,color:#1A222C
+  classDef code fill:#E4EAF4,stroke:#34558A,color:#1A222C
+  classDef design fill:#F4EDDC,stroke:#8A6A1F,color:#1A222C
+  class BR,UC,AC,RULE,ENT spec
+  class TEST,ADR,GIT code
+  class SCR design
+</pre>
+    <figcaption><b>Chuỗi truy vết ba chiều của sách, thêm hai đầu mút cho solo.</b> Mũi tên liền là "sinh ra / phải có"; mũi tên đứt là "tham chiếu". Đứt đoạn ở bất kỳ mắt nào là đúng chỗ anh sẽ phải grep code và đoán sau ba tháng.</figcaption>
+  </figure>
+  <h3>Quy ước commit và test</h3>
+<pre><code>&lt;type&gt;(UC-###): &lt;mô tả&gt;          # feat · fix · test · refactor
+docs(UC-###): &lt;mô tả&gt;             # commit spec — luôn đứng TRƯỚC commit code cùng UC
+docs(BR-###) · docs(RULE-###) · docs(ADR-###)
+chore(CHG-###): archive            # đóng một thay đổi ở Phase 5
+
+tests/use-cases/&lt;ctx&gt;/UC-002/AC-3.test.ts
+describe("UC-002 / AC-3: vượt số thiết bị theo RULE-004", …)</code></pre>
+  <p>Một quy tắc đủ để git log tự kể chuyện: <strong>hai commit cho một UC, spec trước, code sau, cùng ID.</strong> Không có reviewer nào chặn được anh, nhưng lịch sử thì không xoá được.</p>
+</section>
+
+<section class="part" id="repo">
+  <div class="eyebrow">Nền</div>
+  <h2>Cấu trúc repo</h2>
+  <p>Đây là trạng thái cuối. Ngày đầu phần lớn folder sẽ trống hoặc chỉ có một file — chấp nhận, vì khoskill sẽ đi qua các mốc tách (context thứ hai, ADR thứ năm, runbook đầu tiên). Ranh giới duy nhất cần nhớ: <strong>spec nói hệ thống phải hành xử thế nào; doc nói mình đã chọn xây bằng cách nào và vì sao.</strong> Khách hàng cảm nhận được thì là spec.</p>
+<pre class="tree">khoskill/
+├── specs/                                <span class="c">← source of truth nghiệp vụ (baseline)</span>
+│   ├── README.md                         <span class="c">ranh giới spec/doc · cách đọc repo · hệ ID</span>
+│   ├── br.md                             <span class="c">BR-001, BR-002… + Impact Map từng BR</span>
+│   ├── rules.md                          <span class="c">RULE-### · DMN table cho rule nhiều điều kiện</span>
+│   ├── glossary.md                       <span class="c">ngôn ngữ chung — một từ, một nghĩa trong một context</span>
+│   ├── story-map.md                      <span class="c">User Story Map · cắt release</span>
+│   ├── context-map.md                    <span class="c">Context Map khi ≥ 2 bounded context</span>
+│   ├── traceability.md                   <span class="c">ma trận BR ↔ UC ↔ AC ↔ SCR ↔ test</span>
+│   └── contexts/
+│       ├── licensing/
+│       │   ├── entities.md               <span class="c">Domain Model (classDiagram) + State (stateDiagram)</span>
+│       │   ├── use-cases.md              <span class="c">Use Case Diagram của context + danh sách UC stub</span>
+│       │   ├── diagrams/
+│       │   │   ├── UC-002.bpmn           <span class="c">BPMN 2.0 chuẩn (Camunda / bpmn.io)</span>
+│       │   │   └── UC-002.bpmn.svg       <span class="c">export để đọc không cần tool</span>
+│       │   └── use-cases/
+│       │       └── UC-002-activate-device/
+│       │           ├── UC-002.md         <span class="c">spec đầy đủ, AC, Screens, History</span>
+│       │           ├── UC-002.sequence.md <span class="c">sequence diagram nếu có hệ thống ngoài</span>
+│       │           └── screens/          <span class="c">SCR-002-1.png … export từ Claude Design</span>
+│       ├── catalog/                      <span class="c">bán hàng, gói, đơn</span>
+│       └── orchestration/                <span class="c">công thức chạy job, adapter</span>
+│
+├── docs/                                 <span class="c">← quyết định kỹ thuật &amp; vận hành</span>
+│   ├── adr/ADR-002-offline-license-verification.md
+│   ├── decisions.md                      <span class="c">bảng tra một dòng, append-only</span>
+│   ├── architecture.md                   <span class="c">C4 Context/Container + Hexagonal (khi cần)</span>
+│   ├── runbooks/
+│   └── onboarding.md                     <span class="c">chạy dự án thế nào — onboard chính mình</span>
+│
+├── changes/                              <span class="c">← Phase 5, thay đổi đang đề xuất trên baseline</span>
+│   ├── CHG-007-transfer-license/
+│   │   ├── proposal.md · specs/ (delta) · design.md · tasks.md
+│   └── archive/
+│
+├── .specify/                             <span class="c">Spec Kit — lát đang làm (plan, tasks)</span>
+├── STATE.md                              <span class="c">← 5 dòng cuối mỗi buổi; không nằm trong specs/</span>
+├── checklists/                           <span class="c">DoR · DoD · self-review</span>
+├── prompts/                              <span class="c">adversarial-pass · design-brief</span>
+├── src/use-cases/licensing/activate-device/
+├── src/domain · src/ports · src/adapters
+└── tests/use-cases/licensing/UC-002/AC-1.test.ts …</pre>
+  <p>Khác sách ở một chỗ có lý do: sách để <code>specs/use-cases/&lt;ctx&gt;/</code> và <code>specs/entities/&lt;ctx&gt;.md</code> tách hai nhánh; ở đây <strong>gom theo context</strong> — một folder chứa entity, use case, diagram của cùng một context. Lý do là AI lấy ngữ cảnh theo folder: khi làm UC-002, Claude Code chỉ cần đọc <code>specs/contexts/licensing/</code> là có đủ ngôn ngữ, trạng thái và flow, không bị kéo sang nghĩa của <code>License</code> ở context khác.</p>
+</section>
+
+<section class="part" id="diagrams">
+  <div class="eyebrow">Nền</div>
+  <h2>Bộ biểu đồ</h2>
+  <p>Mỗi biểu đồ gắn vào đúng một tầng yêu cầu và trả lời đúng một câu hỏi. Hai cột cuối quyết định chi phí: cột "vẽ khi nào" là điều kiện bắt buộc, không phải gợi ý.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Tầng</th><th>Câu hỏi</th><th>Biểu đồ</th><th>Công cụ · file</th><th>Vẽ khi nào</th></tr></thead>
+    <tbody>
+      <tr><td>BR</td><td>Mục tiêu → ai → tác động → làm gì</td><td><strong>Impact Map</strong></td><td>Mermaid trong <code>br.md</code></td><td>Mỗi BR — chính nó sinh ra danh sách UC và Out of Scope</td></tr>
+      <tr><td>BR</td><td>Cái gì vào v1, cái gì sau</td><td><strong>User Story Map</strong></td><td>Bảng trong <code>story-map.md</code></td><td>Một lần/dự án; cập nhật mỗi release</td></tr>
+      <tr><td>UC</td><td>Actor ↔ UC, tổng quan</td><td><strong>Use Case Diagram</strong></td><td>Mermaid trong <code>use-cases.md</code></td><td>Một lần/context</td></tr>
+      <tr><td>UC</td><td>Main / Alternative / Exception</td><td><strong>BPMN 2.0</strong></td><td>Camunda Modeler → <code>.bpmn</code> + <code>.svg</code></td><td><strong>Mỗi UC</strong></td></tr>
+      <tr><td>UC</td><td>Thứ tự gọi, webhook, timeout</td><td><strong>Sequence Diagram</strong></td><td>Mermaid, file riêng cạnh UC</td><td>Chỉ UC có hệ thống ngoài</td></tr>
+      <tr><td>Entity</td><td>Danh từ và quan hệ</td><td><strong>Domain Model</strong> (class, không ERD)</td><td>Mermaid trong <code>entities.md</code></td><td>Một lần/context</td></tr>
+      <tr><td>Entity</td><td>Vòng đời</td><td><strong>State Machine</strong></td><td>Mermaid trong <code>entities.md</code></td><td><strong>Mỗi entity có <code>status</code></strong></td></tr>
+      <tr><td>Nhiều context</td><td>Từ nào nghĩa gì ở đâu</td><td><strong>Context Map</strong></td><td>Mermaid trong <code>context-map.md</code></td><td>Khi ≥ 2 context</td></tr>
+      <tr><td>RULE / AC</td><td>Rule nhiều điều kiện</td><td><strong>DMN Decision Table</strong></td><td>Bảng trong <code>rules.md</code> (Camunda nếu muốn chạy)</td><td>Rule có ≥ 3 điều kiện đầu vào</td></tr>
+      <tr><td>Truy vết</td><td>Cái gì nối cái gì</td><td><strong>Traceability Matrix</strong></td><td>Bảng trong <code>traceability.md</code></td><td>Cập nhật mỗi khi đóng UC</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Vì sao BPMN khớp với template UC gần như một-một</h3>
+  <p>Template UC của sách có ba mục flow. BPMN có ba khái niệm tương ứng — đây là lý do vẽ BPMN không phải việc thêm, mà là <em>viết lại UC bằng ký hiệu chuẩn</em>:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Mục trong UC</th><th>Phần tử BPMN 2.0</th><th>Ghi chú</th></tr></thead>
+    <tbody>
+      <tr><td>Actor</td><td><strong>Pool / Lane</strong></td><td>Mỗi actor một lane. Hệ thống ngoài (payment, LLM API) là pool riêng, nối bằng message flow.</td></tr>
+      <tr><td>Trigger</td><td><strong>Start Event</strong></td><td>Click nút = none start; webhook = message start; cron = timer start. Loại start khác nhau → kiến trúc code khác nhau.</td></tr>
+      <tr><td>Preconditions</td><td>Gateway ngay sau start, hoặc ghi ở annotation</td><td>Không thoả thì kết thúc sớm bằng end event có tên.</td></tr>
+      <tr><td>Main Flow</td><td><strong>Task</strong> nối bằng sequence flow</td><td>User task cho bước khách làm, service task cho bước hệ thống làm.</td></tr>
+      <tr><td>Alternative Flows</td><td><strong>Exclusive Gateway</strong> (XOR)</td><td>Mỗi nhánh có điều kiện ghi rõ trên mũi tên — đúng chỗ quyết định ngầm hay trốn.</td></tr>
+      <tr><td>Exceptions</td><td><strong>Error Boundary Event</strong> trên task</td><td>Mỗi E# là một boundary event → nhánh xử lý → end event có tên. Bắt buộc có màn hình tương ứng.</td></tr>
+      <tr><td>Postconditions</td><td><strong>End Event</strong> có tên</td><td>Nhiều end event là bình thường: "Đã kích hoạt", "Bị từ chối", "Chờ thử lại".</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout">
+    <div class="lab">Quy ước lưu</div>
+    <p>File <code>.bpmn</code> là XML — git diff được, AI đọc được nhưng sửa vụng. Nên: <strong>anh vẽ BPMN bằng Camunda Modeler</strong>, export <code>.svg</code> đặt cạnh để đọc không cần tool. Mọi biểu đồ khác viết Mermaid ngay trong file <code>.md</code>, vì Mermaid gọn, AI sinh và sửa trực tiếp được, và render ở GitHub lẫn trong trang này. Trong playbook, các BPMN được vẽ lại bằng Mermaid để đọc tại chỗ — bản chuẩn trong repo vẫn là <code>.bpmn</code>.</p>
+  </div>
+</section>
+
+<section class="part" id="p0">
+  <div class="phase-head"><span class="phase-num">PHASE 0</span><h2>Foundation</h2><span class="sub">một lần cho cả dự án</span></div>
+  <p>Mục tiêu của phase này không phải viết spec, mà là dựng <em>cái khung để spec có chỗ đứng</em>. Làm trong một buổi, commit đầu tiên của repo là commit này. Không có code.</p>
+  <h3>Checklist Foundation</h3>
+  <ul class="check">
+    <li>Tạo cấu trúc repo đầy đủ (mục <a href="#repo">Cấu trúc repo</a>), kể cả folder trống có <code>README.md</code> một dòng nói folder này chứa gì.</li>
+    <li>Chốt hệ ID và ghi vào <code>specs/README.md</code> — bảng ở mục <a href="#ids">Hệ ID</a> copy sang là đủ.</li>
+    <li>Commit template cho <code>git</code> (<code>.gitmessage</code>) ép format <code>&lt;type&gt;(UC-###): …</code>.</li>
+    <li>Ba checklist: Definition of Ready, Definition of Done, Self-review — nội dung ở dưới.</li>
+    <li>Hai prompt cố định: <code>prompts/adversarial-pass.md</code> và <code>prompts/design-brief.md</code>.</li>
+    <li>Cài Spec Kit (<code>specify init</code>) và gắn skill <code>speckit-decompose</code> đã có.</li>
+    <li>Cài Camunda Modeler (hoặc bookmark bpmn.io) — cho BPMN và DMN.</li>
+    <li><strong>Dựng Design System trên Claude Design</strong>: màu, chữ, khoảng cách, component cơ bản (nút, ô nhập, thông báo lỗi, trạng thái rỗng, trạng thái chờ). Mọi màn hình SCR sau này kế thừa từ đây.</li>
+    <li>Viết <code>STATE.md</code> lần đầu, dù chỉ để ghi "chưa có UC nào".</li>
+  </ul>
+
+  <h3>Definition of Ready — điều kiện để được mở Claude Code</h3>
+  <p>Đây là <strong>cổng thay cho reviewer</strong>. Team chặn ở merge; solo chặn ở đây, chỗ anh còn kiểm soát được. Một UC được coi là <em>ready</em> khi:</p>
+  <ul class="check">
+    <li>UC có đủ Actor, Trigger, Preconditions, Main Flow, ít nhất các Exception rõ nhất, Postconditions.</li>
+    <li>Mọi rule nghiệp vụ trong UC trích <span class="id spec">RULE-###</span> có sẵn trong <code>rules.md</code> — không có rule "ngầm" trong AC.</li>
+    <li>Có ít nhất một AC cho Main Flow và một AC cho mỗi Exception. Viết dạng Given / When / Then.</li>
+    <li>BPMN của UC đã vẽ và khớp số exception với số error boundary event.</li>
+    <li>Mọi entity UC chạm tới có trong <code>entities.md</code>; entity có <code>status</code> đã có state diagram và UC chỉ chuyển trạng thái theo mũi tên có sẵn.</li>
+    <li>Mọi Exception có ít nhất một trạng thái màn hình <span class="id design">SCR</span>; mọi trạng thái màn hình trỏ về một bước hoặc một E# trong UC.</li>
+    <li>Adversarial pass đã chạy, câu hỏi phát sinh đã được trả lời trong spec hoặc ghi vào <code>## Open Questions</code> với quyết định tạm.</li>
+    <li>Spec đã được đọc lại ở <strong>một buổi khác</strong> với buổi viết.</li>
+    <li>Đã commit <code>docs(UC-###): spec v1</code>.</li>
+  </ul>
+
+  <h3>Definition of Done — bản solo</h3>
+  <ul class="check">
+    <li>Mỗi AC có ít nhất một file test mang đúng <code>UC-###/AC-#</code>, và test kiểm hành vi từ spec, không kiểm chi tiết cài đặt.</li>
+    <li>Không có rule trong code mà spec không nói. Nếu phát hiện khi code: dừng, sửa spec, commit <code>docs(UC-###)</code>, rồi code tiếp.</li>
+    <li>Self-review theo năm câu (mục Phase 3) đã làm, kết quả câu 5 ghi vào <code>docs/decisions.md</code> nếu có quyết định kỹ thuật.</li>
+    <li><code>## History</code> của UC có dòng mới nếu spec đổi trong lúc code.</li>
+    <li>UC status chuyển <code>implemented</code>; <code>traceability.md</code> có dòng của UC này.</li>
+    <li><code>STATE.md</code> cập nhật.</li>
+  </ul>
+
+  <div class="callout design">
+    <div class="lab">Claude Design ở Phase 0</div>
+    <p>Design System dựng một lần để khoá <em>ngôn ngữ hình ảnh</em>: khách của khoskill là người kinh doanh và marketing, không phải dev — thông báo lỗi phải nói bằng tiếng của họ, trạng thái chờ phải nói đang chờ cái gì. Có Design System rồi thì mỗi màn hình SCR ở Phase 3 chỉ còn là việc lắp component, và anh không phải quyết lại màu nút mỗi UC.</p>
+  </div>
+</section>
+
+<section class="part" id="p1">
+  <div class="phase-head"><span class="phase-num">PHASE 1</span><h2>Inception</h2><span class="sub">một lần, lặp lại khi mở hướng kinh doanh mới</span></div>
+  <p>Sách dành ngày đầu cho Business Requirement. Với solo, phần dễ trượt nhất của ngày này là <strong>Out of Scope</strong>: team có PO cản scope, anh không có ai cản ngoài dòng chữ đó. Impact Map là công cụ làm cho Out of Scope có lý do, thay vì là danh sách cảm tính.</p>
+
+  <h3>1.1 · Business Requirement</h3>
+  <p>Một file <code>br.md</code>, mỗi BR một mục có ID. Template ở Phụ lục B của sách giữ nguyên: Background, Goal, Success Metrics, In Scope, Out of Scope, Related Use Cases, Constraints, Open Questions, History. Điểm cần kỷ luật với solo là <strong>Success Metric phải đo được bằng cái anh thật sự có</strong> — nếu chưa có analytics thì viết cách đo thủ công, không viết một con số đẹp.</p>
+<pre><code># BR-002: Khách tự kích hoạt plugin đã mua, không cần hỗ trợ thủ công
+
+## Goal
+Khách mua plugin trên khoskill.com kích hoạt được trên thiết bị/agent của mình
+mà không cần nhắn tin cho người bán.
+
+## Success Metrics
+- Tỷ lệ kích hoạt thành công không qua hỗ trợ: ___ → ___   (đo qua: ________)
+- Số yêu cầu hỗ trợ liên quan kích hoạt / tháng: ___          (đo qua: ________)
+  &lt;!-- để trống cho tới khi có cách đo thật; không điền số ước --&gt;
+
+## Out of Scope (v1)
+- Chuyển license sang thiết bị khác (→ BR-00x, sau)
+- Đội/nhóm dùng chung license
+- Kích hoạt offline hoàn toàn không cần mạng lần đầu</code></pre>
+
+  <h3>1.2 · Impact Map — từ mục tiêu ra danh sách UC</h3>
+  <p>Impact Mapping (Gojko Adzic) đi bốn tầng: <em>Why</em> (mục tiêu) → <em>Who</em> (actor) → <em>How</em> (hành vi của actor cần thay đổi) → <em>What</em> (deliverable). Tầng <em>What</em> chính là danh sách UC; nhánh nào không nối được về mục tiêu là Out of Scope có lý do.</p>
+  <figure>
+<pre class="mermaid">
+flowchart LR
+  G["<b>WHY</b><br/>BR-002<br/>Khách tự kích hoạt,<br/>không cần hỗ trợ"]
+  A1["<b>WHO</b><br/>Khách đã mua"]
+  A2["<b>WHO</b><br/>Khách bị từ chối<br/>kích hoạt"]
+  A3["<b>WHO</b><br/>Người bán (anh)"]
+  H1["<b>HOW</b><br/>Tự nhập key và dùng được<br/>trong một lần"]
+  H2["<b>HOW</b><br/>Tự hiểu vì sao bị từ chối<br/>và tự xử lý"]
+  H3["<b>HOW</b><br/>Không phải trả lời<br/>câu hỏi lặp lại"]
+  W1["<b>WHAT</b><br/>UC-001 Nhận key sau thanh toán"]
+  W2["<b>WHAT</b><br/>UC-002 Kích hoạt trên thiết bị"]
+  W3["<b>WHAT</b><br/>UC-004 Xem &amp; gỡ thiết bị"]
+  W4["<b>WHAT</b><br/>UC-005 Gia hạn license"]
+  W5["<b>WHAT</b><br/>Trang trạng thái license<br/>khách tự xem"]
+  X1["Chuyển license<br/>sang thiết bị khác"]
+  G --> A1 --> H1 --> W1 & W2
+  G --> A2 --> H2 --> W3 & W4
+  G --> A3 --> H3 --> W5
+  A1 -.-> X1
+  classDef out fill:#F8E7E1,stroke:#B4472B,stroke-dasharray:4 3,color:#1A222C
+  class X1 out
+</pre>
+    <figcaption><b>Impact Map cho BR-002.</b> Mỗi UC ở cột WHAT có một đường về mục tiêu — đó là lý do nó tồn tại. Nhánh đứt "chuyển license" không đổi hành vi nào cần cho mục tiêu v1 → vào Out of Scope, với lý do đọc được ngay trên bản đồ.</figcaption>
+  </figure>
+
+  <h3>1.3 · Context Map — chia nghĩa trước khi chia code</h3>
+  <p>Mục 2.4 của sách: cùng một từ mang hai nghĩa ở hai chỗ thì sớm muộn sinh lỗi. Với khoskill, <code>License</code> ở phía bán là <em>quyền đã mua</em>; ở phía plugin đang chạy nó là <em>token đang hiệu lực</em>; ở phía điều phối job nó là <em>quyền dùng công thức nào</em>. Ba nghĩa → ba context. Bản đồ dưới là <strong>gợi ý ban đầu để anh xác nhận</strong>, không phải kết luận.</p>
+  <figure>
+<pre class="mermaid">
+flowchart LR
+  CAT["<b>Catalog &amp; Orders</b><br/>Plan · Order · Customer<br/><i>License = quyền đã mua</i>"]
+  LIC["<b>Licensing</b><br/>License · Activation · Device<br/><i>License = quyền đang hiệu lực<br/>trên thiết bị</i>"]
+  ORC["<b>Orchestration</b><br/>Recipe · Job · Adapter<br/><i>Entitlement = công thức<br/>nào được chạy</i>"]
+  MEM["<b>Customer Memory</b><br/>Profile · Glossary · Brand"]
+  CAT -->|"Order paid →<br/>issue License"| LIC
+  LIC -->|"token ký<br/>(ADR-002)"| ORC
+  MEM -->|"context của khách"| ORC
+  CAT -.->|"gói nào có<br/>công thức nào"| ORC
+</pre>
+    <figcaption><b>Context Map gợi ý.</b> Mũi tên ghi thứ đi qua ranh giới. Khi AI làm việc trong <code>specs/contexts/licensing/</code>, nó không bị kéo sang nghĩa "quyền đã mua" của Catalog — đó là cách ngăn god object <code>License</code> từ sớm.</figcaption>
+  </figure>
+
+  <h3>1.4 · User Story Map — cắt release</h3>
+  <p>User Story Mapping (Jeff Patton): hàng trên là <em>backbone</em> — chuỗi hoạt động khách làm theo thứ tự thời gian; các hàng dưới là chi tiết, cắt ngang thành release. Với dự án lớn nhiều đợt phát hành, đây là bản đồ trả lời "v1 gồm gì" mà không phải tranh cãi từng UC.</p>
+  <div class="storymap" aria-label="User Story Map luồng license">
+    <div class="row">
+      <div class="cell lab">Backbone</div>
+      <div class="cell bb">Mua plugin</div>
+      <div class="cell bb">Nhận key</div>
+      <div class="cell bb">Kích hoạt</div>
+      <div class="cell bb">Dùng &amp; quản lý</div>
+      <div class="cell bb">Gia hạn / kết thúc</div>
+    </div>
+    <div class="row">
+      <div class="cell lab">v1</div>
+      <div class="cell v1">Chọn gói, thanh toán (Catalog)</div>
+      <div class="cell v1">UC-001 Nhận key qua email + trang đơn hàng</div>
+      <div class="cell v1">UC-002 Kích hoạt trên thiết bị</div>
+      <div class="cell v1">UC-004 Xem &amp; gỡ thiết bị</div>
+      <div class="cell v1">UC-005 Gia hạn</div>
+    </div>
+    <div class="row">
+      <div class="cell lab">v1</div>
+      <div class="cell empty"></div>
+      <div class="cell v1">Gửi lại key</div>
+      <div class="cell v1">Kích hoạt lại cùng máy (idempotent)</div>
+      <div class="cell v1">Trang trạng thái license</div>
+      <div class="cell v1">Thu hồi khi hoàn tiền</div>
+    </div>
+    <div class="row">
+      <div class="cell lab">sau</div>
+      <div class="cell later">Mua cho nhóm</div>
+      <div class="cell later">Key theo tổ chức</div>
+      <div class="cell later">Chuyển license sang máy khác</div>
+      <div class="cell later">Cảnh báo sắp hết hạn</div>
+      <div class="cell later">Tự động gia hạn</div>
+    </div>
+  </div>
+  <p>Đường cắt giữa hàng "v1" và "sau" là đường ranh giới release; mỗi ô v1 phải xuất hiện trong <code>In Scope</code> của một BR, mỗi ô "sau" phải xuất hiện trong <code>Out of Scope</code>. Hai bản đồ (Impact Map và Story Map) nói cùng một điều theo hai trục: một trục "vì sao", một trục "khi nào".</p>
+
+  <div class="callout gate">
+    <div class="lab">Cổng ra Phase 1</div>
+    <p>Mọi UC trong Story Map v1 có mặt ở tầng WHAT của một Impact Map. Mọi từ xuất hiện ở hai context với hai nghĩa đã có trong <code>glossary.md</code> kèm context. Commit: <code>docs(BR-002): inception — impact map, context map, story map v1</code>.</p>
+  </div>
+</section>
+
+<section class="part" id="p2">
+  <div class="phase-head"><span class="phase-num">PHASE 2</span><h2>Elaboration</h2><span class="sub">mỗi bounded context một lần</span></div>
+  <p>Ngày 2 của sách: use case diagram và entity model. Đây là phase rẻ nhất mà lời nhất với AI — mục 2.4 của sách chỉ ra prompt có tên nghiệp vụ đúng cho code tốt hơn vì AI có nhiều móc bám hơn. Với solo, thêm một lý do: entity model là <strong>nơi quyết định ngầm dễ bị lộ nhất</strong>, đặc biệt ở trạng thái.</p>
+
+  <h3>2.1 · Domain Model — danh từ và quan hệ</h3>
+  <p>Không phải ERD: chưa có index, datatype, foreign key. Chỉ tên, ý nghĩa, quan hệ, trạng thái. Mermaid <code>classDiagram</code> viết ngay trong <code>entities.md</code>.</p>
+  <figure>
+<pre class="mermaid">
+classDiagram
+  direction LR
+  class Customer {
+    email
+    displayName
+  }
+  class Plan {
+    name
+    maxDevices — RULE-004
+    durationDays
+    recipeSet
+  }
+  class License {
+    key
+    status — issued / active / expired / revoked
+    issuedAt
+    expiresAt
+  }
+  class Activation {
+    status — active / deactivated
+    activatedAt
+    lastSeenAt
+  }
+  class Device {
+    fingerprint
+    label
+  }
+  Customer "1" --> "*" License : sở hữu
+  Plan "1" --> "*" License : quy định
+  License "1" --> "0..*" Activation : có
+  Activation "*" --> "1" Device : trên
+</pre>
+    <figcaption><b>Domain Model — Licensing context.</b> <code>maxDevices</code> gắn nhãn RULE-004 để ai đọc cũng biết con số đó không phải default của model mà là chính sách có chủ. Đây là chỗ <code>max_activations = 1</code> ở Bài 1 đáng lẽ đã được đặt tên.</figcaption>
+  </figure>
+
+  <h3>2.2 · State Machine — vòng đời, và nơi quyết định ngầm trốn</h3>
+  <p>Mỗi entity có <code>status</code> phải có một state diagram. Lý do không phải cho đẹp: <strong>mỗi mũi tên là một quyết định</strong>, và mỗi mũi tên <em>không có</em> cũng là một quyết định. <code>expired → active</code> có cho phép không? <code>revoked</code> có quay lại được không? Không vẽ thì AI sẽ tự trả lời khi code.</p>
+  <figure>
+<pre class="mermaid">
+stateDiagram-v2
+  [*] --> issued : Order paid (UC-001)
+  issued --> active : kích hoạt đầu tiên (UC-002)
+  active --> expired : hết expiresAt
+  expired --> active : gia hạn (UC-005)
+  active --> revoked : hoàn tiền / vi phạm
+  issued --> revoked : hoàn tiền trước khi dùng
+  expired --> revoked : hoàn tiền
+  revoked --> [*]
+  note right of revoked
+    Không có mũi tên ra khỏi revoked.
+    Đây là quyết định, ghi ở RULE-006.
+  end note
+</pre>
+    <figcaption><b>Vòng đời License.</b> Mỗi mũi tên ghi UC nào được phép kéo nó. Một UC muốn chuyển trạng thái theo mũi tên không có trên hình là tín hiệu spec sai hoặc hình thiếu — sửa một trong hai trước khi code.</figcaption>
+  </figure>
+  <figure>
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  [*] --> active : License.active và còn slot theo RULE-004
+  active --> active : kích hoạt lại cùng device (idempotent, UC-002/AC-2)
+  active --> deactivated : khách gỡ (UC-004)
+  active --> deactivated : License → revoked (cascade)
+  deactivated --> [*]
+</pre>
+    <figcaption><b>Vòng đời Activation.</b> Vòng tự lặp <code>active → active</code> là cách vẽ idempotency — mất mạng rồi bấm lại không tạo Activation thứ hai. Bài học UC-042 vòng hai của sách, đưa lên hình từ đầu.</figcaption>
+  </figure>
+
+  <h3>2.3 · Use Case Diagram — tổng quan actor ↔ UC</h3>
+  <p>Một hình cho cả context. Sách dùng PlantUML; ở đây Mermaid flowchart với hình bo tròn là đủ để thấy ai chạm vào gì, và UC nào chưa có actor.</p>
+  <figure>
+<pre class="mermaid">
+flowchart LR
+  K(["👤 Khách đã mua"])
+  S(["⚙ Hệ thống · scheduler"])
+  B(["👤 Người bán"])
+  P(["⬚ Payment gateway"])
+  UC1(["UC-001<br/>Nhận key sau thanh toán"])
+  UC2(["UC-002<br/>Kích hoạt trên thiết bị"])
+  UC3(["UC-003<br/>Thu hồi license"])
+  UC4(["UC-004<br/>Xem &amp; gỡ thiết bị"])
+  UC5(["UC-005<br/>Gia hạn license"])
+  UC6(["UC-006<br/>Hết hạn tự động"])
+  P -->|"webhook paid"| UC1
+  K --> UC2 & UC4 & UC5
+  B --> UC3
+  S --> UC6
+  UC2 -.->|"extend: vượt slot → gỡ máy"| UC4
+</pre>
+    <figcaption><b>Use Case Diagram — Licensing.</b> Actor khác nhau dẫn tới permission và validation khác nhau (mục 2.3 của sách): UC-003 do người bán, UC-006 do scheduler — hai UC này không có màn hình khách, nhưng vẫn cần AC và test.</figcaption>
+  </figure>
+
+  <h3>2.4 · UC stub và Glossary</h3>
+  <p>Cuối phase, mỗi UC có một file stub: ID, tên, actor, một dòng mô tả, status <code>draft</code>. Chưa cần Main Flow. Và <code>glossary.md</code> có mọi danh từ trên domain model kèm định nghĩa một câu — đây là Ubiquitous Language, thứ anh sẽ paste vào đầu mỗi session Claude Code.</p>
+<pre><code># Glossary — Licensing
+
+- **License** — quyền dùng một Plan, gắn với một Customer, có vòng đời issued → active → expired/revoked.
+  Không nhầm với "Order" (Catalog) là giao dịch mua.
+- **Activation** — việc một License đang có hiệu lực trên một Device cụ thể. Một License có tối đa
+  Plan.maxDevices Activation đang active (RULE-004).
+- **Device** — thiết bị hoặc agent runtime được nhận diện bằng fingerprint. Cách sinh fingerprint: ADR-003.
+- **Entitlement** (Orchestration) — công thức nào License này được chạy. Tính từ Plan.recipeSet, không lưu.</code></pre>
+
+  <div class="callout gate">
+    <div class="lab">Cổng ra Phase 2</div>
+    <p>Mọi entity có <code>status</code> đã có state diagram. Mọi UC trong Story Map v1 có stub. Glossary phủ hết danh từ trên Domain Model. Commit: <code>docs(licensing): elaboration — entities, states, use case diagram, UC stubs</code>.</p>
+  </div>
+</section>
+
+<section class="part" id="p3">
+  <div class="phase-head"><span class="phase-num">PHASE 3</span><h2>Vòng lặp mỗi use case</h2><span class="sub">lõi của quy trình — chạy cho từng UC</span></div>
+  <p>Ngày 3–4 của sách, viết lại cho một người: bốn lane thay cho bốn vai. Lane <em>Spec</em> và <em>Design</em> là việc anh làm bằng tay và bằng Claude Design; lane <em>Review</em> là chỗ thay reviewer bằng AI + thời gian; lane <em>Code</em> là chỗ Claude Code chạy và anh giữ tay lái. Cổng đỏ ở giữa là điểm không được vượt khi chưa đủ điều kiện.</p>
+  <div class="legend"><span class="s">Spec</span><span class="d">Design</span><span class="g">Cổng / Review</span><span class="c">Code &amp; test</span></div>
+  <figure>
+<svg viewBox="0 -12 960 574" role="img" aria-label="Vòng lặp một use case theo bốn lane: Spec, Design, Review, Code; cổng Definition of Ready nằm giữa Review và Code; hai đường quay lại từ cổng về bước 1 và từ bước 11 về bước 2" style="max-width:100%;height:auto;font-family:var(--body);font-size:12px;color:var(--ink)">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+    <marker id="arg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--gate)"/></marker>
+  </defs>
+  <!-- lanes -->
+  <g style="stroke:var(--line)">
+    <rect x="0" y="30" width="960" height="130" style="fill:var(--spec-soft);fill-opacity:.55"/>
+    <rect x="0" y="160" width="960" height="130" style="fill:var(--design-soft);fill-opacity:.55"/>
+    <rect x="0" y="290" width="960" height="130" style="fill:var(--gate-soft);fill-opacity:.5"/>
+    <rect x="0" y="420" width="960" height="130" style="fill:var(--code-soft);fill-opacity:.55"/>
+    <line x1="125" y1="30" x2="125" y2="550"/>
+  </g>
+  <g font-family="var(--display)" font-weight="600" font-size="13" fill="currentColor">
+    <text x="16" y="88">Spec</text><text x="16" y="106" font-family="var(--mono)" font-weight="400" font-size="10.5" style="fill:var(--ink-3)">anh viết</text>
+    <text x="16" y="218">Design</text><text x="16" y="236" font-family="var(--mono)" font-weight="400" font-size="10.5" style="fill:var(--ink-3)">Claude Design</text>
+    <text x="16" y="348">Review</text><text x="16" y="366" font-family="var(--mono)" font-weight="400" font-size="10.5" style="fill:var(--ink-3)">thay người thứ 2</text>
+    <text x="16" y="478">Code</text><text x="16" y="496" font-family="var(--mono)" font-weight="400" font-size="10.5" style="fill:var(--ink-3)">Claude Code</text>
+  </g>
+  <!-- boxes -->
+  <g style="fill:var(--surface)" stroke-width="1.2">
+    <rect x="140" y="51" width="175" height="88" rx="4" style="stroke:var(--spec)"/>
+    <rect x="335" y="51" width="175" height="88" rx="4" style="stroke:var(--spec)"/>
+    <rect x="530" y="51" width="175" height="88" rx="4" style="stroke:var(--spec)"/>
+    <rect x="725" y="51" width="175" height="88" rx="4" style="stroke:var(--spec)"/>
+    <rect x="140" y="181" width="175" height="88" rx="4" style="stroke:var(--design)"/>
+    <rect x="335" y="181" width="175" height="88" rx="4" style="stroke:var(--design)"/>
+    <rect x="140" y="311" width="175" height="88" rx="4" style="stroke:var(--gate)"/>
+    <rect x="335" y="311" width="175" height="88" rx="4" style="stroke:var(--gate)"/>
+    <polygon points="622,311 778,311 800,355 778,399 622,399 600,355" style="stroke:var(--gate);fill:var(--gate-soft)" stroke-width="1.6"/>
+    <rect x="140" y="441" width="145" height="88" rx="4" style="stroke:var(--code)"/>
+    <rect x="300" y="441" width="145" height="88" rx="4" style="stroke:var(--code)"/>
+    <rect x="460" y="441" width="145" height="88" rx="4" style="stroke:var(--code)"/>
+    <rect x="620" y="441" width="145" height="88" rx="4" style="stroke:var(--code)"/>
+    <rect x="780" y="441" width="145" height="88" rx="4" style="stroke:var(--code)"/>
+  </g>
+  <!-- box text -->
+  <g fill="currentColor" text-anchor="middle" font-size="11.5">
+    <text x="227" y="78"><tspan font-weight="600" font-size="12.5">① Mở UC stub</tspan><tspan x="227" dy="17">Main Flow · Alt · Exceptions</tspan><tspan x="227" dy="15" style="fill:var(--ink-3)">time-box 1–2 giờ (sách)</tspan></text>
+    <text x="422" y="78"><tspan font-weight="600" font-size="12.5">② Trích RULE-###</tspan><tspan x="422" dy="17">thiếu → thêm vào rules.md</tspan><tspan x="422" dy="15" style="fill:var(--ink-3)">≥ 3 điều kiện → DMN table</tspan></text>
+    <text x="617" y="78"><tspan font-weight="600" font-size="12.5">③ Viết AC</tspan><tspan x="617" dy="17">Given / When / Then</tspan><tspan x="617" dy="15" style="fill:var(--ink-3)">1 cho main · 1 cho mỗi E#</tspan></text>
+    <text x="812" y="78"><tspan font-weight="600" font-size="12.5">④ Vẽ BPMN 2.0</tspan><tspan x="812" dy="17">lane = actor · XOR = alt</tspan><tspan x="812" dy="15" style="fill:var(--ink-3)">error event = E#</tspan></text>
+    <text x="227" y="208"><tspan font-weight="600" font-size="12.5">⑤ Design brief từ UC</tspan><tspan x="227" dy="17">mỗi bước có UI → 1 SCR</tspan><tspan x="227" dy="15" style="fill:var(--ink-3)">mỗi E# → 1 trạng thái</tspan></text>
+    <text x="422" y="208"><tspan font-weight="600" font-size="12.5">⑥ Đối chiếu</tspan><tspan x="422" dy="17">SCR ↔ E# ↔ state diagram</tspan><tspan x="422" dy="15" style="fill:var(--ink-3)">ô trống = spec thiếu</tspan></text>
+    <text x="227" y="338"><tspan font-weight="600" font-size="12.5">⑦ Adversarial pass</tspan><tspan x="227" dy="17">3 vai · prompt cố định</tspan><tspan x="227" dy="15" style="fill:var(--ink-3)">trả lời hoặc Open Question</tspan></text>
+    <text x="422" y="338"><tspan font-weight="600" font-size="12.5">⑧ Ngủ qua đêm</tspan><tspan x="422" dy="17">đọc lại buổi sau</tspan><tspan x="422" dy="15" style="fill:var(--ink-3)">với vai người trả lời ticket</tspan></text>
+    <text x="700" y="345"><tspan font-weight="700" font-size="12.5" style="fill:var(--gate)">⑨ CỔNG · Definition of Ready</tspan><tspan x="700" dy="17">đủ → commit docs(UC-###)</tspan><tspan x="700" dy="15">thiếu → không mở Claude Code</tspan></text>
+    <text x="212" y="470"><tspan font-weight="600" font-size="12.5">⑩ /plan</tspan><tspan x="212" dy="17">đọc plan trước</tspan><tspan x="212" dy="15" style="fill:var(--ink-3)">bắt chỗ lệch spec</tspan></text>
+    <text x="372" y="470"><tspan font-weight="600" font-size="12.5">⑪ /tasks · /implement</tspan><tspan x="372" dy="17">từng task</tspan><tspan x="372" dy="15" style="fill:var(--ink-3)">review từng commit nhỏ</tspan></text>
+    <text x="532" y="470"><tspan font-weight="600" font-size="12.5">⑫ Test theo AC</tspan><tspan x="532" dy="17">…/UC-###/AC-#.test</tspan><tspan x="532" dy="15" style="fill:var(--ink-3)">test đầu tiên tự đọc kỹ</tspan></text>
+    <text x="692" y="470"><tspan font-weight="600" font-size="12.5">⑬ Self-review 5 câu</tspan><tspan x="692" dy="17">AI quyết hay mình quyết</tspan><tspan x="692" dy="15" style="fill:var(--ink-3)">→ decisions.md</tspan></text>
+    <text x="852" y="470"><tspan font-weight="600" font-size="12.5">⑭ Commit feat(UC-#)</tspan><tspan x="852" dy="17">History · traceability</tspan><tspan x="852" dy="15" style="fill:var(--ink-3)">STATE.md</tspan></text>
+  </g>
+  <!-- solid edges -->
+  <g fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)">
+    <line x1="315" y1="95" x2="333" y2="95"/>
+    <line x1="510" y1="95" x2="528" y2="95"/>
+    <line x1="705" y1="95" x2="723" y2="95"/>
+    <polyline points="812,139 812,154 227,154 227,179"/>
+    <line x1="315" y1="225" x2="333" y2="225"/>
+    <polyline points="422,269 422,280 227,280 227,309"/>
+    <line x1="315" y1="355" x2="333" y2="355"/>
+    <line x1="510" y1="355" x2="598" y2="355"/>
+    <polyline points="700,399 700,410 212,410 212,439"/>
+  </g>
+  <!-- dashed loop-backs -->
+  <g fill="none" style="stroke:var(--gate)" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arg)">
+    <polyline points="800,355 935,355 935,6 227,6 227,49"/>
+    <polyline points="372,441 372,432 560,432 560,145 422,145 422,141"/>
+  </g>
+  <g font-size="11" style="fill:var(--gate)">
+    <text x="710" y="408" font-size="10.5" style="fill:var(--ink-2)">đủ</text>
+    <text x="560" y="2" text-anchor="middle">thiếu → quay về ①</text>
+    <text x="566" y="300">rule spec</text><text x="566" y="313">chưa nói</text><text x="566" y="326">→ về ②</text>
+  </g>
+</svg>
+
+    <figcaption><b>Vòng lặp một UC, bốn lane.</b> Hai mũi tên đứt là hai đường quay lại hợp lệ: thiếu điều kiện ở cổng thì về Spec; đang code mà AI đụng rule spec chưa nói thì về ② — không được "nhớ trong đầu, lát sửa". Tổng 14 bước, nhưng ①–④ và ⑩–⑭ là việc sách đã có; phần solo thêm vào là ⑤–⑨.</figcaption>
+  </figure>
+
+  <h3>Ví dụ xuyên suốt: UC-002 Kích hoạt license trên một thiết bị</h3>
+  <p>Toàn bộ artifact của một UC, để anh thấy chúng nối nhau thế nào. Nghiệp vụ là ví dụ minh hoạ theo định hình v1 của khoskill — chi tiết anh sẽ thay, cấu trúc thì giữ.</p>
+
+  <h4>① – ③ · Spec đầy đủ</h4>
+<pre><code># UC-002: Kích hoạt license trên một thiết bị
+
+## Metadata
+- **ID:** UC-002
+- **Bounded Context:** Licensing
+- **Liên quan tới BR:** BR-002
+- **Status:** reviewed
+- **Owner:** anh (spec + code)
+- **Last updated:** 2026-09-__
+
+## Actor
+Khách đã mua (có License ở trạng thái issued hoặc active)
+
+## Trigger
+Khách mở trang Kích hoạt trên khoskill.com, hoặc được agent chuyển hướng tới
+khi kết nối MCP khoskill lần đầu
+
+## Preconditions
+- Khách đăng nhập bằng email đã mua
+- Thiết bị/agent gửi được fingerprint (ADR-003)
+
+## Main Flow
+1. Hệ thống hiển thị SCR-002-1: ô nhập key, nút "Kích hoạt", link "Tôi chưa có key"
+2. Khách dán key, bấm "Kích hoạt"
+3. Hệ thống hiển thị SCR-002-2 (đang xác minh), gửi key + fingerprint lên server
+4. Server kiểm tra License.status và số Activation đang active theo RULE-004
+5. Server tạo Activation(active), chuyển License issued → active nếu là lần đầu
+6. Server cấp token ký theo ADR-002, trả về
+7. Thiết bị lưu token; hiển thị SCR-002-3: tên gói, "đang dùng x/N thiết bị", nút "Bắt đầu"
+
+## Alternative Flows
+- 4a. Đã có Activation(active) cho cùng fingerprint: không tạo mới, cấp lại token,
+      lastSeenAt = now. Đi tiếp bước 6. (idempotent)
+- 4b. License.status = expired và Plan cho phép gia hạn: hiển thị SCR-002-1 với
+      thông báo hết hạn + nút "Gia hạn" (→ UC-005). Kết thúc.
+
+## Exceptions
+- E1. Key sai định dạng hoặc không tồn tại: SCR-002-1 hiện lỗi inline
+      "Key không hợp lệ. Kiểm tra lại email đơn hàng." Không tạo record.
+- E2. License.status = revoked: SCR-002-1 hiện "License này đã bị thu hồi." + link hỗ trợ.
+- E3. License.status = expired và Plan không cho gia hạn: như E2, nội dung "đã hết hạn".
+- E4. Số Activation(active) đã bằng Plan.maxDevices (RULE-004): SCR-002-4 liệt kê
+      thiết bị đang dùng, nút "Gỡ" từng máy (→ UC-004), rồi cho thử lại.
+- E5. Không gọi được server hoặc timeout: SCR-002-1 hiện "Chưa kết nối được. Thử lại."
+      Không đổi trạng thái gì.
+
+## Postconditions
+- Thành công: có đúng một Activation(active) cho (License, Device); License.status = active;
+  thiết bị có token còn hạn.
+- Thất bại: không có record mới; License.status không đổi.
+
+## Acceptance Criteria
+
+### AC-1: Kích hoạt hợp lệ lần đầu
+Given: License L status = issued, Plan.maxDevices = N, chưa có Activation
+When:  gửi key hợp lệ của L + fingerprint F
+Then:  tạo Activation(active) cho (L, F)
+And:   L.status = active
+And:   trả token ký còn hạn theo ADR-002
+
+### AC-2: Kích hoạt lại cùng thiết bị là idempotent
+Given: đã có Activation(active) cho (L, F)
+When:  gửi lại key + F
+Then:  không tạo Activation mới
+And:   trả token mới, lastSeenAt cập nhật
+
+### AC-3: Vượt số thiết bị theo RULE-004
+Given: L có N Activation(active), N = Plan.maxDevices
+When:  gửi key + fingerprint G chưa từng kích hoạt
+Then:  từ chối, trả danh sách N thiết bị đang dùng
+And:   không tạo Activation
+
+### AC-4: License đã thu hồi
+Given: L.status = revoked
+When:  gửi key + bất kỳ fingerprint
+Then:  từ chối với lý do "revoked"
+And:   không tạo Activation, không cấp token
+
+### AC-5: Mất kết nối không đổi trạng thái
+Given: server không phản hồi trong ngưỡng T (CON-003)
+When:  khách bấm Kích hoạt
+Then:  hiển thị E5, cho thử lại
+And:   không có Activation nào được tạo khi server nhận được request muộn hơn
+       mà thiết bị đã bỏ (xử lý: request có idempotency key)
+
+## Screens
+- SCR-002-1 Nhập key — trạng thái: rỗng · đang gửi · lỗi E1 · lỗi E2 · lỗi E3 · lỗi E5 · hết hạn (4b)
+- SCR-002-2 Đang xác minh
+- SCR-002-3 Đã kích hoạt
+- SCR-002-4 Vượt số thiết bị (E4)
+Canvas: &lt;link Claude Design&gt; · Export: ./screens/
+
+## Dependencies
+- Upstream UC: UC-001 (phải có License)
+- Downstream UC: UC-004 (gỡ thiết bị), UC-005 (gia hạn)
+- Rules: RULE-004, RULE-006 · ADR: ADR-002, ADR-003 · Constraints: CON-003
+
+## Open Questions
+- [ ] Khách đổi email đăng nhập thì License theo email cũ xử lý sao? (tạm: chưa hỗ trợ v1)
+
+## History
+- v1 (2026-09-__, anh): initial
+- v2 (2026-09-__, anh): thêm 4a idempotent + AC-2 sau adversarial pass vai "kẻ lợi dụng"
+- v3 (2026-09-__, anh): thêm E5 + AC-5 sau khi vẽ SCR-002-2 — "đang xác minh mà rớt mạng thì sao?"</code></pre>
+  <p>Hai dòng cuối của <code>## History</code> là bằng chứng quy trình đang làm việc: AC-2 sinh ra từ adversarial pass, AC-5 sinh ra từ việc vẽ màn hình. Không có hai bước đó, hai case này sẽ được AI tự quyết trong code.</p>
+
+  <h4>② · RULE-004 dưới dạng DMN Decision Table</h4>
+  <p>Rule "số thiết bị theo gói" có ba đầu vào — gói, trạng thái license, số slot đang dùng — nên theo quy ước thì viết bảng DMN thay cho văn xuôi. Bảng này nằm ở <code>rules.md</code>, và AC-3 chỉ trích <code>RULE-004</code>. Hit policy <em>First</em>: dòng đầu khớp thì dừng.</p>
+  <div class="tbl"><table>
+    <thead><tr><th colspan="3" style="text-align:center;background:var(--spec-soft);color:var(--spec)">Đầu vào</th><th colspan="2" style="text-align:center;background:var(--code-soft);color:var(--code)">Kết quả</th></tr>
+    <tr><th>License.status</th><th>Đã có Activation cho device này?</th><th>Số Activation active so với Plan.maxDevices</th><th>Quyết định</th><th>Exception / AC</th></tr></thead>
+    <tbody>
+      <tr><td><code>revoked</code></td><td>—</td><td>—</td><td>Từ chối</td><td>E2 · AC-4</td></tr>
+      <tr><td><code>expired</code></td><td>—</td><td>—</td><td>Từ chối, đề nghị gia hạn nếu Plan cho phép</td><td>E3 / 4b</td></tr>
+      <tr><td><code>issued</code> hoặc <code>active</code></td><td>Có</td><td>—</td><td>Cấp lại token, không tạo Activation</td><td>4a · AC-2</td></tr>
+      <tr><td><code>issued</code> hoặc <code>active</code></td><td>Không</td><td><code>&lt; maxDevices</code></td><td>Tạo Activation, cấp token</td><td>Main · AC-1</td></tr>
+      <tr><td><code>issued</code> hoặc <code>active</code></td><td>Không</td><td><code>= maxDevices</code></td><td>Từ chối, trả danh sách thiết bị</td><td>E4 · AC-3</td></tr>
+    </tbody>
+  </table></div>
+  <p><code>maxDevices</code> của từng gói là một bảng nhỏ riêng trong <code>rules.md</code> (Plan → N), để trống cho tới khi anh chốt giá. Mọi chỗ khác trích ID, không chép số.</p>
+
+  <h4>④ · BPMN của UC-002</h4>
+  <p>Bản chuẩn là <code>diagrams/UC-002.bpmn</code> vẽ ở Camunda. Dưới đây là bản Mermaid tương đương để đọc tại chỗ; đối chiếu: hai lane, một XOR cho 4a, năm error event cho E1–E5, ba end event có tên.</p>
+  <figure>
+<pre class="mermaid">
+flowchart LR
+  subgraph K["Lane: Khách"]
+    direction LR
+    k0(("▶ mở trang<br/>Kích hoạt"))
+    k1["Dán key,<br/>bấm Kích hoạt"]
+    k2["Xem SCR-002-3<br/>Bắt đầu dùng"]
+    k3["Gỡ 1 thiết bị<br/>(→ UC-004)"]
+  end
+  subgraph S["Lane: Hệ thống khoskill"]
+    direction LR
+    s1["Hiển thị<br/>SCR-002-1"]
+    s2["Xác minh key<br/>+ fingerprint"]
+    g1{"Kết quả<br/>theo RULE-004"}
+    s3["Tạo Activation<br/>issued→active"]
+    s4["Cấp token ký<br/>(ADR-002)"]
+    s5["Cấp lại token<br/>(4a idempotent)"]
+    e1(("⚡E1 key sai"))
+    e2(("⚡E2 revoked"))
+    e3(("⚡E3 expired"))
+    e4(("⚡E4 hết slot"))
+    e5(("⚡E5 timeout"))
+    x1(("■ Bị từ chối"))
+    x2(("■ Chờ thử lại"))
+    x3(("■ Đã kích hoạt"))
+  end
+  k0 --> s1 --> k1 --> s2
+  s2 --> g1
+  g1 -->|"chưa có Activation<br/>còn slot"| s3 --> s4 --> k2 --> x3
+  g1 -->|"đã có Activation<br/>cùng device"| s5 --> k2
+  s2 -.-> e1 --> x1
+  s2 -.-> e2 --> x1
+  s2 -.-> e3 --> x1
+  g1 -.->|"slot = maxDevices"| e4 --> k3 -.->|"thử lại"| k1
+  s2 -.-> e5 --> x2 -.->|"thử lại"| k1
+  classDef err fill:#F8E7E1,stroke:#B4472B,color:#1A222C
+  classDef endok fill:#E3F1EF,stroke:#0E6B66,color:#1A222C
+  class e1,e2,e3,e4,e5,x1,x2 err
+  class x3 endok
+</pre>
+    <figcaption><b>UC-002 theo ký hiệu BPMN (vẽ lại bằng Mermaid).</b> Vòng tròn có ⚡ là error boundary event — mỗi E# trong spec một cái, không hơn không kém; đếm lệch là spec và hình đang nói hai chuyện khác nhau. Ba end event có tên là ba Postcondition.</figcaption>
+  </figure>
+
+  <h4>Sequence diagram — vì UC-002 có ranh giới mạng</h4>
+  <figure>
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor K as Khách
+  participant D as Thiết bị / agent
+  participant API as khoskill API
+  participant L as Licensing (domain)
+  K->>D: dán key, bấm Kích hoạt
+  D->>D: sinh fingerprint (ADR-003)<br/>+ idempotency key
+  D->>API: POST /activations {key, fingerprint, idemKey}
+  API->>L: activate(key, fingerprint)
+  L->>L: RULE-004 · state License/Activation
+  alt hợp lệ, chưa có Activation
+    L-->>API: Activation created, License active
+    API->>API: ký token (ADR-002, hạn N ngày)
+    API-->>D: 201 {token, plan, used/max}
+    D-->>K: SCR-002-3
+  else đã có Activation cùng device (4a)
+    L-->>API: existing, lastSeenAt updated
+    API-->>D: 200 {token mới}
+  else từ chối (E1–E4)
+    L-->>API: reason
+    API-->>D: 4xx {reason, devices?}
+    D-->>K: SCR-002-1 lỗi inline / SCR-002-4
+  end
+  Note over D,API: timeout T (CON-003) → E5, thiết bị không đổi trạng thái.<br/>Request đến muộn bị API bỏ nhờ idemKey
+</pre>
+    <figcaption><b>Trình tự kích hoạt.</b> Sequence chỉ vẽ khi có ranh giới mạng, vì đó là nơi timeout, retry và idempotency sống — ba thứ BPMN không nói rõ. Hộp <code>alt</code> map thẳng sang các dòng của bảng DMN.</figcaption>
+  </figure>
+
+  <h4>⑤ – ⑥ · Claude Design: màn hình là công cụ kiểm tra spec</h4>
+  <div class="callout design">
+    <div class="lab">Quy tắc ràng</div>
+    <p><strong>Mỗi Exception E# phải có một trạng thái màn hình. Mỗi trạng thái trên state diagram phải nhìn thấy được ở đâu đó trên UI.</strong> Ngược lại, mỗi trạng thái màn hình phải trỏ về một bước hoặc một E# — màn hình không có nguồn trong spec là màn hình bịa.</p>
+  </div>
+  <p>Design brief (<code>prompts/design-brief.md</code>) sinh từ UC: liệt kê bước có UI, exception, dữ liệu mỗi màn hình cần hiển thị, hành động chính/phụ. Claude Design dựng canvas từ Design System ở Phase 0. Kết quả đối chiếu bằng bảng dưới — <em>ô nào trống là spec thiếu, không phải design thiếu</em>:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Nguồn trong spec</th><th>Màn hình / trạng thái</th><th>Khách thấy gì</th><th>Hành động</th></tr></thead>
+    <tbody>
+      <tr><td>Main 1</td><td><span class="id design">SCR-002-1</span> rỗng</td><td>Ô nhập key, gợi ý "key nằm trong email đơn hàng"</td><td>Kích hoạt · Tôi chưa có key</td></tr>
+      <tr><td>Main 3</td><td><span class="id design">SCR-002-2</span></td><td>"Đang xác minh key…" + gói đang kiểm tra</td><td>—</td></tr>
+      <tr><td>Main 7</td><td><span class="id design">SCR-002-3</span></td><td>Tên gói · "Đang dùng x/N thiết bị" · tên thiết bị này</td><td>Bắt đầu · Quản lý thiết bị</td></tr>
+      <tr><td>4b expired</td><td><span class="id design">SCR-002-1</span> hết hạn</td><td>"License hết hạn ngày __" </td><td>Gia hạn (→ UC-005)</td></tr>
+      <tr><td>E1</td><td><span class="id design">SCR-002-1</span> lỗi E1</td><td>Lỗi inline dưới ô nhập</td><td>Sửa key</td></tr>
+      <tr><td>E2</td><td><span class="id design">SCR-002-1</span> lỗi E2</td><td>"License đã bị thu hồi"</td><td>Liên hệ hỗ trợ</td></tr>
+      <tr><td>E3</td><td><span class="id design">SCR-002-1</span> lỗi E3</td><td>"License đã hết hạn và gói này không gia hạn"</td><td>Xem gói khác</td></tr>
+      <tr><td>E4</td><td><span class="id design">SCR-002-4</span></td><td>Danh sách N thiết bị: tên, lần dùng gần nhất</td><td>Gỡ (mỗi máy) · Thử lại</td></tr>
+      <tr><td>E5</td><td><span class="id design">SCR-002-1</span> lỗi E5</td><td>"Chưa kết nối được"</td><td>Thử lại</td></tr>
+    </tbody>
+  </table></div>
+  <p>Chính khi vẽ SCR-002-2 ("đang xác minh") câu hỏi <em>"rớt mạng lúc này thì khách thấy gì?"</em> xuất hiện — và E5 + AC-5 ra đời ở History v3. Đây là cách Design đóng vai người phản biện thứ hai cho một người không có PO.</p>
+
+  <h4>⑦ – ⑧ · Adversarial pass và tách theo thời gian</h4>
+  <p>Prompt cố định trong <code>prompts/adversarial-pass.md</code>, chạy trong một session Claude <em>mới</em> (không phải session đang viết spec — session đó đã bị neo bởi giả định của anh). Ba vai, mỗi vai một lượt, AI chỉ được <strong>hỏi</strong>, không được đề xuất code hay sửa spec:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Vai</th><th>Câu hỏi họ hay bắt được</th><th>Ví dụ đã bắt trên UC-002</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Khách cuối</strong> — người kinh doanh, không rành kỹ thuật</td><td>Chỗ nào không hiểu phải làm gì tiếp; thông báo lỗi nào đọc không ra</td><td>"Key không hợp lệ" — vậy tôi tìm key ở đâu? → thêm gợi ý vào SCR-002-1</td></tr>
+      <tr><td><strong>Người vận hành / kế toán</strong></td><td>Rule "đương nhiên" chưa ghi; tiền, hoàn tiền, hạn</td><td>Hoàn tiền sau khi đã kích hoạt 2 máy thì Activation đi đâu? → cascade revoked, RULE-006</td></tr>
+      <tr><td><strong>Kẻ lợi dụng</strong></td><td>Cách dùng vượt quyền, lặp, race</td><td>Bấm Kích hoạt hai lần liên tiếp có tạo 2 Activation không? → 4a + AC-2 + idempotency key</td></tr>
+    </tbody>
+  </table></div>
+  <p>Mỗi câu hỏi có ba đầu ra hợp lệ: trả lời trong spec (thêm rule/AC/E#), ghi vào <code>## Open Questions</code> với quyết định tạm, hoặc đẩy vào Out of Scope của BR. Không có đầu ra "để đó".</p>
+  <p>Sau đó <strong>đóng máy</strong>. Buổi sau mở lại, đọc UC từ trên xuống với tư thế người sẽ trả lời ticket hỗ trợ, không phải người viết. Đây là rẻ nhất trong mọi cơ chế ở đây và hay bị bỏ nhất.</p>
+
+  <div class="callout gate">
+    <div class="lab">⑨ · Cổng — Definition of Ready</div>
+    <p>Chạy checklist DoR ở Phase 0. Đủ → <code>git commit -m "docs(UC-002): spec v3 — reviewed"</code> và mới mở Claude Code. Thiếu → quay về ①. Không có ngoại lệ "UC nhỏ thôi": UC nhỏ thì checklist chạy nhanh, không phải bỏ.</p>
+  </div>
+
+  <h4>⑩ – ⑭ · Code, với anh giữ tay lái</h4>
+  <ol class="steps">
+    <li><b class="t">/plan UC-002 — đọc kỹ trước khi cho chạy tiếp</b><span class="who">Claude Code · anh đọc</span>
+      <p>Đây là bước An bắt được AI đề xuất trừ balance sai thời điểm ở Chương 4. Với UC-002, chỗ cần soi: plan có tạo Activation trước khi kiểm RULE-004 không; có ký token bằng khoá ở đúng chỗ theo ADR-002 không; có đặt logic RULE-004 trong adapter HTTP thay vì domain không. Lệch → sửa plan, không sửa spec (trừ khi spec sai thật, thì quay lại ②).</p></li>
+    <li><b class="t">/tasks → /implement — review từng commit nhỏ</b><span class="who">Claude Code · anh review</span>
+      <p>Khi AI hỏi một quyết định nghiệp vụ spec chưa nói, không để nó đoán. Dừng, mở spec, thêm rule, commit <code>docs(UC-002)</code>, chạy lại. Đây là đường đứt trên hình từ ⑪ về ②.</p></li>
+    <li><b class="t">Test theo AC, một file một AC</b><span class="who">Claude Code sinh · anh đọc test đầu tiên</span>
+      <p><code>tests/use-cases/licensing/UC-002/AC-1.test.ts … AC-5.test.ts</code>. Test kiểm hành vi ở tầng domain (gọi <code>activate()</code>, soi Activation và License), không chỉ mock HTTP trả 200 — đó là lỗi "test mock domain" trong bảng 6.5 của sách. Test đầu tiên cho một pattern anh tự đọc kỹ; sau đó AI clone pattern.</p></li>
+    <li><b class="t">Self-review — năm câu của mục 6.4, bản một người</b><span class="who">anh</span>
+      <p>① Đọc spec trước, code sau — flow đã rõ, AC test được, exception có thiếu case hiển nhiên không? ② Commit có UC ID chưa, và commit docs có đứng trước không? ③ Mỗi AC có test chưa; AC quan trọng không có test thì lý do ghi ở đâu? ④ Có rule nào trong code mà spec không nói không — grep các số, enum, điều kiện <code>if</code>? ⑤ <em>Đoạn này AI quyết hay mình quyết?</em> — quyết định kỹ thuật đáng nhớ thì một dòng vào <code>docs/decisions.md</code>; đủ nặng thì ADR.</p></li>
+    <li><b class="t">Đóng UC</b><span class="who">anh</span>
+      <p><code>git commit -m "feat(UC-002): activate license on device — AC-1..5"</code>. UC status → <code>implemented</code>. Thêm dòng vào <code>traceability.md</code>. Cập nhật <code>## History</code> nếu spec đổi trong lúc code. Viết <code>STATE.md</code>.</p></li>
+  </ol>
+<pre><code># STATE.md — cuối buổi
+Đang làm:            UC-002 · xong AC-1..5, còn dọn tên biến ở adapter
+Quyết định gần nhất: token hạn N ngày ký bằng khoá riêng — ADR-002; fingerprint = ADR-003
+Câu hỏi treo:        khách đổi email đăng nhập → License theo email cũ? (tạm: chưa hỗ trợ v1)
+Việc tiếp theo:      UC-004 Xem &amp; gỡ thiết bị — đã có stub, chưa có AC
+Bỏ dở vì:            hết buổi</code></pre>
+</section>
+
+<section class="part" id="p4">
+  <div class="phase-head"><span class="phase-num">PHASE 4</span><h2>Release &amp; feedback</h2><span class="sub">mỗi đợt phát hành</span></div>
+  <p>Ngày 5 của sách. Điểm giữ nguyên: <strong>feedback đi vào spec trước, code sau</strong>. Điểm đổi cho solo: không có buổi sprint review để ép việc này xảy ra, nên thay bằng một bảng phân loại cố định — mọi feedback phải rơi vào đúng một dòng, và mỗi dòng có đích đến trong repo.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Feedback thuộc loại</th><th>Dấu hiệu</th><th>Đích đến</th><th>Commit</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Đã Out of Scope</strong></td><td>Có trong Out of Scope của BR hoặc hàng "sau" của Story Map</td><td>Ghi nhận vào BR <code>## Open Questions</code> hoặc nâng lên Story Map cho release sau</td><td><code>docs(BR-###)</code></td></tr>
+      <tr><td><strong>Spec thiếu</strong></td><td>Hành vi khách mong đợi nhưng không có E#/AC nào nói tới</td><td>Thêm AC/E#, cập nhật BPMN + SCR, History → regen code</td><td><code>docs(UC-###)</code> rồi <code>feat(UC-###)</code></td></tr>
+      <tr><td><strong>Bug</strong></td><td>Có AC nói rõ, code làm khác</td><td>Sửa code, test AC tương ứng phải đỏ trước khi sửa</td><td><code>fix(UC-###)</code></td></tr>
+      <tr><td><strong>Rule sai</strong></td><td>AC đúng như viết nhưng viết sai so với thực tế kinh doanh</td><td>Sửa <code>rules.md</code>, đánh dấu AC cũ deprecated, thêm AC mới — không xoá lịch sử</td><td><code>docs(RULE-###)</code></td></tr>
+      <tr><td><strong>UX</strong></td><td>Hành vi đúng, khách vẫn không làm được</td><td>Sửa SCR trên canvas, cập nhật <code>## Screens</code></td><td><code>docs(UC-###)</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>Ranh giới quan trọng nhất là giữa <em>bug</em> và <em>spec thiếu</em>. Sách nói ở mục 2.3: "QR hết hạn thì hiển thị lỗi và cho tạo lại" là exception, "app crash khi QR hết hạn" là bug. Nếu anh không phân biệt được ở feedback này, đó là tín hiệu spec chưa đủ rõ để test được — sửa spec trước.</p>
+
+  <h3>Đo — bằng git, không bằng dashboard</h3>
+  <p>Hai con số của sách đáng giữ với solo, đo thủ công hoặc bằng script nhỏ trong <code>scripts/</code>:</p>
+  <div class="kv">
+    <dt>Trace Ratio</dt><dd>Số commit vào <code>src/</code> và <code>tests/</code> có <code>(UC-###)</code> trong message, chia tổng commit vào hai folder đó. Cách đếm: <code>git log --format=%s -- src tests | grep -cE '\((UC|BR|RULE|ADR|CHG)-[0-9]+\)'</code>. Mục tiêu theo sách cho greenfield là gần toàn bộ; anh tự đặt ngưỡng sau release đầu.</dd>
+    <dt>AC Coverage</dt><dd>Số AC có file test đúng tên, chia tổng AC. Đếm: số file <code>AC-*.test.*</code> trong <code>tests/use-cases/</code> so với số heading <code>### AC-</code> trong <code>specs/</code>. Đây là chỉ số sách xếp trên code coverage, vì AC không có test thì regen là đánh cược.</dd>
+    <dt>Không đo</dt><dd>Số dòng spec, số UC đóng mỗi tuần, code coverage đơn thuần — bảng ở mục 6.6 của sách giải thích vì sao ba số này khuyến khích sai hành vi.</dd>
+  </div>
+
+  <h3>Retro theo mốc</h3>
+  <p>Team retro theo sprint; solo retro theo release. Ba câu, ghi vào <code>STATE.md</code> mục "Retro" rồi xoá khi release sau:</p>
+  <ul>
+    <li>Adversarial pass bắt được bao nhiêu case mà sau đó khách thật cũng gặp? Bao nhiêu case khách gặp mà adversarial pass không bắt? Lệch nhiều → sửa prompt vai.</li>
+    <li>Có lần nào code trước spec không? Kiểm bằng git log: commit <code>feat</code> nào không có <code>docs</code> cùng UC đứng trước.</li>
+    <li>Bước nào trong 14 bước bị bỏ qua nhiều nhất? Bỏ nhiều là bước đó đang thiết kế sai cho một người — sửa quy trình, không tự trách.</li>
+  </ul>
+</section>
+
+<section class="part" id="p5">
+  <div class="phase-head"><span class="phase-num">PHASE 5</span><h2>Thay đổi trên baseline</h2><span class="sub">chỉ sau khi hành vi đã ship và có khách phụ thuộc</span></div>
+  <p>Trước khi ship, spec sai thì sửa thẳng vào <code>specs/</code> — đó là Phase 3 lặp lại. Sau khi ship, một UC ở trạng thái <code>implemented</code> có khách đang dựa vào hành vi hiện tại; sửa thẳng baseline làm anh mất khả năng phân biệt <em>hệ thống đang làm gì</em> với <em>mình muốn nó làm gì</em>. Đây là mô hình <code>specs/</code> ↔ <code>changes/</code> của OpenSpec mà sách khen ở mục 2.2 và 5.2, và nó đặc biệt hợp solo vì anh sẽ là chính "dev gốc đã nghỉ" của Chương 5 sau một năm.</p>
+  <figure>
+<pre class="mermaid">
+stateDiagram-v2
+  [*] --> proposed : tạo changes/CHG-###/proposal.md
+  proposed --> specified : viết delta spec<br/>ADDED / MODIFIED / REMOVED
+  specified --> designed : design.md + SCR mới<br/>+ adversarial pass
+  designed --> applying : tasks.md · /implement
+  applying --> verified : test AC mới xanh<br/>test AC cũ được giữ vẫn xanh
+  verified --> archived : merge delta vào specs/<br/>History của UC bị đổi
+  archived --> [*]
+  proposed --> [*] : bỏ — proposal lưu lại lý do
+</pre>
+    <figcaption><b>Vòng đời một thay đổi.</b> Baseline trong <code>specs/</code> chỉ đổi ở bước cuối. Trong lúc thay đổi còn sống, ai đọc <code>specs/</code> vẫn thấy đúng hành vi đang chạy — kể cả session AI đang sửa bug ở chỗ khác.</figcaption>
+  </figure>
+<pre class="tree">changes/CHG-007-transfer-license/
+├── proposal.md          <span class="c">vì sao đổi · BR nào · phạm vi · ảnh hưởng tới UC nào</span>
+├── specs/
+│   └── UC-002.delta.md  <span class="c">## MODIFIED: E4 thêm nút "Chuyển sang máy này" · ## ADDED: AC-6</span>
+├── design.md            <span class="c">hướng kỹ thuật · ADR mới nếu có · SCR-002-4 v2</span>
+└── tasks.md             <span class="c">checklist triển khai, mỗi task trỏ AC</span></pre>
+  <p>Quy ước delta của OpenSpec giữ nguyên: mỗi mục là <code>ADDED</code>, <code>MODIFIED</code> hoặc <code>REMOVED</code>, và <code>REMOVED</code> không xoá AC cũ khỏi baseline khi archive mà đánh dấu <code>deprecated</code> kèm ngày — mục 3.3 của sách: lịch sử giúp người sau hiểu vì sao rule hiện tại tồn tại.</p>
+  <div class="callout gate">
+    <div class="lab">Khi nào bắt buộc đi qua Phase 5</div>
+    <p>UC có <code>Status: implemented</code> <em>và</em> thay đổi làm một AC cũ không còn đúng. Thêm AC mới mà không phá AC cũ thì vẫn là Phase 3 với History v+1. Ranh giới là AC cũ có bị lật hay không, không phải kích cỡ thay đổi.</p>
+  </div>
+</section>
+
+<section class="part" id="day">
+  <div class="eyebrow">Vận hành</div>
+  <h2>Một buổi làm điển hình</h2>
+  <p>Mục 6.8 của sách viết cho team lúc chín giờ sáng. Bản một người, một buổi ba tiếng, ví dụ:</p>
+  <ol class="steps">
+    <li><b class="t">Mở <code>STATE.md</code>, không mở code</b><span class="who">5 phút</span><p>Đọc năm dòng. Nếu "câu hỏi treo" có thứ trả lời được hôm nay, trả lời vào spec trước khi làm gì khác.</p></li>
+    <li><b class="t">Đọc lại spec của UC hôm qua viết — với vai người trả lời ticket</b><span class="who">15 phút · bước ⑧</span><p>Đây là buổi review bị tách ra khỏi buổi viết. Sửa gì thì History v+1.</p></li>
+    <li><b class="t">Chạy checklist DoR, commit <code>docs(UC-004)</code></b><span class="who">10 phút · bước ⑨</span></li>
+    <li><b class="t">Mở Claude Code, paste glossary + UC + rules liên quan, <code>/plan</code></b><span class="who">20 phút · bước ⑩</span><p>Đọc plan. Soi ba chỗ: thứ tự kiểm rule, vị trí logic (domain hay adapter), trạng thái nào bị chuyển.</p></li>
+    <li><b class="t"><code>/tasks</code>, <code>/implement</code>, review từng commit</b><span class="who">80 phút · bước ⑪–⑫</span><p>AI hỏi "gỡ thiết bị đang là máy hiện tại thì có tự đăng xuất không?" — spec không nói. Dừng. Thêm E3 vào UC-004, commit docs, chạy tiếp.</p></li>
+    <li><b class="t">Self-review năm câu, một dòng vào <code>decisions.md</code></b><span class="who">15 phút · bước ⑬</span></li>
+    <li><b class="t">Viết <code>STATE.md</code>, đóng máy</b><span class="who">5 phút</span><p>Nếu còn thời gian: viết stub + Main Flow cho UC tiếp theo — <em>không</em> viết AC. AC viết ở buổi sau, khi đầu đã rời khỏi UC vừa code.</p></li>
+  </ol>
+  <p>Không có gì kịch tính. Quy trình đúng là quy trình trông giống một buổi làm bình thường.</p>
+</section>
+
+<section class="part" id="notuse">
+  <div class="eyebrow">Vận hành</div>
+  <h2>Khi nào không dùng</h2>
+  <p>Phần Kết của sách liệt kê năm trường hợp không nên dùng SDD, và "side project một người" nằm trong đó. Lý do quy trình này vẫn đứng được là vì khoskill không phải side project: nó là hệ thống sẽ sống lâu, có rule về tiền và quyền, và AI viết phần lớn code. Nhưng bên trong khoskill vẫn có việc không đáng đi qua 14 bước:</p>
+  <ul>
+    <li><strong>Spike kỹ thuật</strong> — thử một cách ký token, thử một MCP transport. Vibe coding trong branch riêng, kết quả đi vào ADR, code vứt.</li>
+    <li><strong>Script một lần</strong> — migrate dữ liệu thử, dọn bảng. Một dòng trong <code>decisions.md</code> là đủ.</li>
+    <li><strong>Prototype để nhìn</strong> — dựng nhanh một màn hình để xem ý tưởng có đứng không. Làm trên Claude Design, không vào repo.</li>
+    <li><strong>Việc thuần kỹ thuật không đổi hành vi</strong> — nâng version thư viện, đổi CI. Không cần UC; commit <code>chore</code>.</li>
+  </ul>
+  <p>Bộ lọc một câu: <em>nếu sáu tháng sau có khách hỏi "vì sao chỗ này như vậy?" thì việc này có phải trả lời không?</em> Có → đi qua quy trình. Không → làm nhanh rồi thôi.</p>
+</section>
+
+<section class="part" id="refs">
+  <div class="eyebrow">Đối chiếu</div>
+  <h2>Đối chiếu với ebook và tài liệu gốc</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Trong playbook</th><th>Trong ebook</th><th>Thay đổi</th></tr></thead>
+    <tbody>
+      <tr><td>Bốn tầng BR / UC / Entity / AC</td><td>Mục 2.2</td><td>Giữ nguyên. Thêm biểu đồ chuẩn cho mỗi tầng.</td></tr>
+      <tr><td>Template UC, BR</td><td>Phụ lục A, B</td><td>Giữ nguyên; thêm <code>## Screens</code>, cột Screens trong Exceptions.</td></tr>
+      <tr><td>Sáu nguyên tắc</td><td>Chương 3</td><td>Giữ nguyên; câu tự kiểm viết lại cho một người.</td></tr>
+      <tr><td>Phase 1–4</td><td>Chương 4 (5 ngày greenfield)</td><td>Cùng nhịp; thêm Impact Map, Story Map, Context Map ở Inception; State diagram ở Elaboration.</td></tr>
+      <tr><td>Phase 3 lane Design</td><td>—</td><td>Mới. Sách mô tả UI bằng văn xuôi trong Main Flow.</td></tr>
+      <tr><td>Phase 3 lane Review</td><td>Nguyên tắc 5, mục 6.2 "team nhỏ"</td><td>Thay PO bằng adversarial pass ba vai + tách theo thời gian.</td></tr>
+      <tr><td>Cổng DoR trước Claude Code</td><td>Mục 4.7 "không AC thì không code", 6.4 spec PR/code PR</td><td>Chuyển gate từ merge về trước khi mở tool; giữ hai commit spec/code.</td></tr>
+      <tr><td>Phase 5 <code>changes/</code></td><td>Mục 2.2, 5.3, 6.3 (OpenSpec)</td><td>Giữ nguyên mô hình; quy định rõ điều kiện bắt buộc dùng.</td></tr>
+      <tr><td><code>STATE.md</code>, <code>decisions.md</code></td><td>—</td><td>Mới. Thay standup và bảng tra ADR cho một người.</td></tr>
+      <tr><td>Bỏ dashboard chỉ số</td><td>Mục 6.6</td><td>Giữ Trace Ratio và AC Coverage, đo bằng git; bỏ Regen Success Rate và Spec Coverage.</td></tr>
+      <tr><td>Gom spec theo context</td><td>Mục 6.3 tách <code>use-cases/</code> và <code>entities/</code></td><td>Đổi: mỗi context một folder, để AI lấy ngữ cảnh theo folder.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Tài liệu gốc của các ký hiệu và kỹ thuật</h3>
+  <ul>
+    <li>Nguyễn Thế Huy — <em>Spec Driven Development: Cách team engineering hiện đại làm việc với AI</em>, huynt.dev.</li>
+    <li>OMG — <em>Business Process Model and Notation (BPMN) 2.0</em> và <em>Decision Model and Notation (DMN)</em>, đặc tả tại omg.org.</li>
+    <li>Gojko Adzic — <em>Impact Mapping</em> (2012).</li>
+    <li>Jeff Patton — <em>User Story Mapping</em> (2014).</li>
+    <li>Alistair Cockburn — <em>Writing Effective Use Cases</em> (2000); <em>Hexagonal Architecture</em> (2005).</li>
+    <li>Michael Nygard — <em>Documenting Architecture Decisions</em> (2011) — nguồn của định dạng ADR.</li>
+    <li>Eric Evans — <em>Domain-Driven Design</em> (2003); Vaughn Vernon — <em>Implementing DDD</em> (2013) — Bounded Context, Ubiquitous Language.</li>
+    <li>Michael Feathers — <em>Working Effectively with Legacy Code</em> (2004) — characterization test.</li>
+    <li>Simon Martinelli — AI Unified Process; GitHub Spec Kit; OpenSpec (Fission AI).</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>SDD-Solo cho khoskill · v1 · 09/2026 · Bộ template repo đi kèm: <code>sdd-solo-templates.zip</code>. Mọi con số về thời gian trong trang là gợi ý của sách hoặc ví dụ, không phải số đo.</p>
+  </div>
+</footer>

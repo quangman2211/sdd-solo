@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# sdd-solo pre-commit hook: không trộn spec và code trong một commit.
+STAGED="$(git diff --cached --name-only)"
+SPEC=0; CODE=0
+echo "$STAGED" | grep -vE '/_template/' | grep -qE '^specs/.*UC-[0-9]+\.md$|^specs/rules\.md$' && SPEC=1
+echo "$STAGED" | grep -vE 'README\.md$' | grep -qE '^(src|tests)/' && CODE=1
+if [ "$SPEC" = 1 ] && [ "$CODE" = 1 ]; then
+  echo "✗ Commit đang trộn spec (specs/) và code (src/ tests/). Tách: commit docs(UC-###) trước, rồi feat(UC-###)." >&2
+  exit 1
+fi
+exit 0
