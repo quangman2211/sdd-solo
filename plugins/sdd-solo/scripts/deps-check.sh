@@ -83,7 +83,15 @@ info "Claude Design — không kiểm được bằng script; cần cho Phase 0 
 # ── cài lại spec-template nếu vừa init Spec Kit ──────────────────────────
 if [ "$NEED_SCAFFOLD" = "1" ]; then
   echo; info "--fix: chạy lại scaffold --update để thay spec-template…"
-  "$PLUGIN/scripts/scaffold.sh" "$PLUGIN" "$ROOT" --update 2>&1 | sed 's/^/      /'
+  SC="$(plugin_script scaffold.sh "$PLUGIN")"
+  if [ -n "$SC" ]; then
+    "$SC" "$(dirname "$(dirname "$SC")")" "$ROOT" --update 2>&1 | sed 's/^/      /'
+  else
+    # Bản sao .sdd/scripts/ cố ý không có scaffold.sh. Thoái lui tử tế thay vì
+    # để lỗi shell "No such file or directory" lòi ra. Xem #10.
+    bad "không tìm thấy scaffold.sh — bản sao .sdd/scripts/ không chứa nó và máy này chưa cài plugin"
+    info "→ chạy /sdd-solo:init --update trong Claude Code, hoặc gọi scaffold.sh từ thư mục plugin"
+  fi
 fi
 
 # đã đụng tay vào máy thì kiểm lại từ đầu, đừng tin sổ sách

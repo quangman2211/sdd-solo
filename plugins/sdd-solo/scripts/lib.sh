@@ -105,3 +105,17 @@ repo_has_code() {
     | grep -vE '^(specs|\.sdd|docs|changes|checklists|prompts|\.githooks)/' \
     | grep -qE '\.(js|ts|tsx|jsx|py|go|rb|java|cs|kt|swift|rs|php|c|cc|cpp|h|hpp|sh|sql|vue|svelte)$'
 }
+# plugin_script <tên> — tìm script CHỈ có ở plugin (scaffold.sh, session-start.sh).
+# Bản sao ở .sdd/scripts/ cố ý không chứa chúng, nên script chạy từ bản sao phải
+# tìm sang plugin thật thay vì suy đường dẫn cạnh mình. In rỗng nếu không thấy.
+# Xem #10.
+plugin_script() {
+  # 1) cạnh mình (đang chạy từ chính plugin)
+  [ -x "$2/scripts/$1" ] && { printf '%s' "$2/scripts/$1"; return; }
+  # 2) bản ĐANG CÀI theo installed_plugins.json — không vơ bừa bản cũ trong cache
+  IP="$(installed_path sdd-solo)"
+  [ -n "$IP" ] && [ -x "$IP/scripts/$1" ] && { printf '%s' "$IP/scripts/$1"; return; }
+  # 3) cùng lắm mới quét cache, lấy version cao nhất
+  find "$HOME/.claude/plugins/cache" -type f -name "$1" -path '*sdd-solo*' 2>/dev/null \
+    | sort -t/ -k7 -V | tail -1
+}

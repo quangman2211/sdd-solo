@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.3 — 2026-09-08
+Đóng #10, và một lỗ cùng họ tự lộ ra khi thử.
+
+- **`deps-check --fix` chết ở bản sao `.sdd/scripts/`** (#10, runxops-93 báo). Nó suy đường dẫn `scaffold.sh` cạnh chỗ nó nằm, mà bản sao **cố ý** không chứa `scaffold.sh` — nên bản sao, đúng thứ README 2.0.0 dạy dùng cho CI, đổ ra `No such file or directory`. Thêm `plugin_script()` trong `lib.sh`: tìm cạnh mình → **bản đang cài theo `installed_plugins.json`** → cùng lắm mới quét cache và lấy version cao nhất. Không thấy thì in `✗` kèm câu nhắc, thoái lui tử tế thay vì để lỗi shell lòi ra.
+- **Chặn hạ cấp.** Thử #10 lộ ra: bản vá đầu vơ bừa `scaffold.sh` **1.3.0** trong cache và chạy nó lên một repo đã 2.0 — nó dựng lại nguyên cây 1.x (`checklists/ prompts/ .githooks/ .gitmessage`) cạnh cây 2.x, đúng trạng thái "hai cây" mà 2.0.1 vừa đi chặn. Chốt chặn 2.0.1 chỉ canh chiều tiến (plugin mới trên repo cũ). Giờ `scaffold` cũng từ chối khi `.sdd/version` **mới hơn** version plugin đang chạy.
+
+runxops-93 ghi nhận một chỗ đáng giữ: phần "Kiểm lại sau khi cài" của `deps-check --fix` **không nói dối** — nó chạy lại từ đầu và báo `✗ spec-template vẫn là bản gốc` kèm lệnh sửa, nên #10 chỉ gây phiền chứ không thành một ca hỏng im lặng nữa. Đúng lời hứa "không tin bộ đếm" ở 1.1.0.
+
 ## 2.0.2 — 2026-09-08
 Đóng #9 — bộ lọc literal của 1.6.0 lọc theo **độ dài chữ số** nên nuốt mất ngưỡng nghiệp vụ một chữ số.
 
