@@ -34,7 +34,14 @@ echo "$SCR" | grep -qE 'SCR-[0-9]+-[0-9]+' || bad "chưa có SCR-###-# nào tron
 # 4. RULE trích phải có trong rules.md
 RF="$ROOT/specs/rules.md"
 for r in $(grep -oE 'RULE-[0-9]+' "$F" | sort -u); do
-  grep -qE "^## $r\b" "$RF" 2>/dev/null && ok "$r có trong rules.md" || bad "$r được trích nhưng không có heading trong specs/rules.md"
+  # grep -c in "0" RỒI exit 1, nên "|| echo 0" tạo chuỗi hai dòng và phá cả
+  # hai phép so sánh bên dưới. Đừng thêm fallback ở đây.
+  C="$(grep -cE "^## $r\b" "$RF" 2>/dev/null)"; [ -z "$C" ] && C=0
+  H="$(grep -E "^## $r\b" "$RF" 2>/dev/null | head -1)"
+  if [ "$C" = "0" ]; then bad "$r được trích nhưng không có heading trong specs/rules.md"
+  elif [ "$C" -gt 1 ]; then bad "$r có $C heading trong rules.md — trùng ID, sửa lại (#13)"
+  elif echo "$H" | grep -q '<'; then bad "$r vẫn là placeholder của template: $H — viết rule thật hoặc bỏ trích (#13)"
+  else ok "$r có trong rules.md"; fi
 done
 
 # 5. BPMN
@@ -54,6 +61,26 @@ grep -q 'stateDiagram' "$ROOT/specs/contexts/$CTX/entities.md" 2>/dev/null || wa
 AP="$(sed -n '/^## Adversarial pass/,/^## /p' "$F")"
 if echo "$AP" | grep -qE 'Ngày chạy: *[0-9]{4}-[0-9]{2}-[0-9]{2}'; then ok "adversarial pass đã chạy"; else bad "mục ## Adversarial pass chưa có 'Ngày chạy: YYYY-MM-DD'"; fi
 echo "$AP" | grep -qE '<câu hỏi|→ xử lý ở đâu>' && bad "adversarial pass còn placeholder"
+# Lời khai "→ spec" phải kèm ID có thật, nếu không thì không ai kiểm được là
+# đã thực hiện hay chưa — chính adversarial pass bắt ra chỗ này. Xem #12.
+SO="$(echo "$AP" | grep -E '→ *spec' || true)"
+if [ -n "$SO" ]; then
+  while IFS= read -r ln; do
+    [ -z "$ln" ] && continue
+    IDS="$(printf '%s' "$ln" | sed 's/.*→ *spec//' | grep -oE '(RULE-[0-9]+|AC-[0-9]+|E[0-9]+)' | sort -u)"
+    if [ -z "$IDS" ]; then
+      bad "adversarial: '→ spec' không kèm ID nên không kiểm được: $(printf '%s' "$ln" | cut -c1-60)"
+      continue
+    fi
+    for id in $IDS; do
+      case "$id" in
+        RULE-*) grep -qE "^## $id\b" "$RF" 2>/dev/null && ok "adversarial → $id có thật" || bad "adversarial khai → $id nhưng rules.md không có";;
+        AC-*)   grep -qE "^### $id\b" "$F" && ok "adversarial → $id có thật" || bad "adversarial khai → $id nhưng UC không có";;
+        E*)     grep -qE "^- +(\*\*)?$id[.:]" "$F" && ok "adversarial → $id có thật" || bad "adversarial khai → $id nhưng UC không có";;
+      esac
+    done
+  done <<< "$SO"
+fi
 
 # 8. open questions phải có quyết định tạm
 OQ="$(sed -n '/^## Open Questions/,/^## /p' "$F" | grep -E '^- \[ \]')"

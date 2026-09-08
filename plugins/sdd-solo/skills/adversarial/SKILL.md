@@ -9,17 +9,23 @@ allowed-tools: Bash Read Write Edit Grep Agent
 Adversarial pass cho `$1`.
 
 1. Tìm file UC: `find specs/contexts -path "*use-cases/$1-*/$1.md"`. Đọc nó, `specs/glossary.md`, các `RULE-###` nó trích trong `specs/rules.md`, và `entities.md` của context.
-2. Kiểm tiền điều kiện, thiếu thì dừng và nói rõ: có `## Main Flow` có nội dung; có ≥ 1 `### AC-`; có ≥ 1 E# trong Exceptions; bảng `## Screens` có ít nhất một dòng. Adversarial pass trên spec rỗng là vô ích.
+2. Kiểm tiền điều kiện bằng **script**, không tự đánh giá — bốn điều kiện cũ đo cấu trúc nên template rỗng qua hết (#11):
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/uc-ready.sh" $1
+```
+Exit ≠ 0 → **dừng**, in nguyên output, nói user viết xong nội dung rồi chạy lại. Không chạy ba vai trên spec còn placeholder.
 3. **Chạy ba vai bằng subagent riêng** (Agent tool, mỗi vai một agent, không dùng context của session này để tránh bị neo bởi giả định đã có). Prompt cho mỗi agent: nội dung `.sdd/prompts/adversarial-pass.md` trong repo, phần vai tương ứng, kèm toàn bộ UC + glossary + RULE liên quan. Ràng buộc chuyển nguyên văn: chỉ hỏi, không đề xuất code/kiến trúc, không sửa spec, tối đa 12 câu, xếp theo hậu quả (tiền / quyền / dữ liệu khách trước), mỗi câu kèm bước/E#/AC liên quan.
 4. Gộp kết quả, bỏ trùng, ghi vào mục `## Adversarial pass` của file UC theo dạng:
 ```
 - Ngày chạy: YYYY-MM-DD · Session mới: [x]
 - Vai khách cuối:
-  - Q1 <câu hỏi> [liên quan: bước N / E# / AC-#] → <đầu ra: spec | Open Question | Out of Scope | ___>
+  - Q1 <câu hỏi> [liên quan: bước N / E# / AC-#] → <đầu ra: ___>
 - Vai vận hành/kế toán: ...
 - Vai kẻ lợi dụng: ...
 ```
-Cột "đầu ra" để `___` — **user quyết**, không tự điền.
+Cột "đầu ra" để `___` — **user quyết**, không tự điền. Khi user chọn, ghi kèm **ID của thứ đã tạo**:
+`→ spec: RULE-003` · `→ spec: E4, AC-5` · `→ Open Question` · `→ Out of Scope`.
+Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắt (#12).
 5. Trình cho user từng câu, hỏi user chọn đầu ra. Với mỗi lựa chọn:
    - spec → sửa đúng chỗ (thêm E#, AC, sửa RULE trong `rules.md`, thêm dòng Screens), rồi `## History` v+1 ghi "sau adversarial pass vai ___".
    - Open Question → thêm `- [ ] <câu> (quyết định tạm: <user nói>)`.

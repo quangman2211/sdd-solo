@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.0 — 2026-09-08
+Đóng #11 #12 #13 — cả ba do runxops-93 tìm ra khi chạy `/sdd-solo:adversarial` thật. Chủ đề chung: **chốt đo cấu trúc chứ không đo nội dung**.
+
+- **#11 — tiền điều kiện adversarial là chốt tuỳ lượt.** Bốn điều kiện ở `skills/adversarial` bước 2 đếm cấu trúc (có bước Main Flow, có AC, có E#, có dòng Screens) nên **template rỗng qua hết** — mà `/sdd-solo:start` copy chính template đó, nên mọi UC vừa tạo đều lọt. Thêm `scripts/uc-ready.sh`: giữ bốn kiểm cũ, thêm **đếm placeholder** (`<...>`, `___`) và in ra tối đa 8 chỗ. Skill gọi script thay vì tự đánh giá — biến chốt do model thi hành thành kiểm cơ học, đúng như README hứa "chặn cứng".
+- **#12 — lời khai `→ spec` không kiểm được.** UC ghi `Q3 … → spec` mà không tạo RULE/AC/E# nào, gate vẫn `✓ adversarial pass đã chạy` rồi QUA CỔNG. Chỗ này **do chính adversarial pass bắt ra** — hai vai độc lập cùng chỉ vào nó. Giờ `→ spec` phải kèm ID (`→ spec: RULE-003`, `→ spec: E4, AC-5`) và `gate-check` kiểm ID đó có thật trong `rules.md` hoặc trong file UC. Thiếu ID cũng là ✗ — lời khai không kiểm được thì không tính là đã làm.
+- **#13 — placeholder RULE của template trả lời thay.** `rules.md` phát sẵn `## RULE-001:` và `## RULE-002:` — đúng hai ID dự án đầu tiên chắc chắn dùng tới, nên UC trích `RULE-001` **qua cổng dù chưa ai viết rule nào**; viết rồi thì file có hai heading cùng ID mà gate vẫn `✓`. Đổi ID mẫu sang `RULE-000`/`RULE-000b` cho nhất quán với `UC-000`/`ADR-000`, và `gate-check` giờ bắt cả **ID trùng heading** lẫn **heading còn placeholder**.
+
+Một lỗi tự bắt khi thử: `C="$(grep -cE … || echo 0)"` — `grep -c` in `0` **rồi mới** exit 1, nên `|| echo 0` tạo chuỗi hai dòng và phá cả hai phép so sánh phía sau, khiến ca "không có heading" lại báo `✓`. Fallback đặt sai chỗ còn tệ hơn không có.
+
 ## 2.0.3 — 2026-09-08
 Đóng #10, và một lỗ cùng họ tự lộ ra khi thử.
 
