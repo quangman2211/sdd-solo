@@ -186,7 +186,7 @@ footer p{max-width:none}
       <tr><td>Dashboard chỉ số cho EM</td><td>Không có team để nghẽn</td><td>Đếm bằng <code>git log</code>: tỷ lệ commit có UC ID, số AC có file test.</td></tr>
     </tbody>
   </table></div>
-  <p>Hai điều chỉnh khác không đến từ solo mà đến từ cách anh đọc: <strong>mỗi tầng yêu cầu có ít nhất một biểu đồ</strong> chuẩn (BPMN 2.0, DMN, UML) vì đó cũng là ngôn ngữ nghề BPM của anh; và <strong>Claude Design là một bước chính thức</strong> giữa Acceptance Criteria và <code>/plan</code>, vì sách mô tả UI bằng văn xuôi và để AI tự bịa phần còn lại.</p>
+  <p>Hai điều chỉnh khác không đến từ solo mà đến từ cách anh đọc: <strong>mỗi tầng yêu cầu có ít nhất một biểu đồ</strong> chuẩn (BPMN 2.0, DMN, UML) vì đó cũng là ngôn ngữ nghề BPM của anh; và <strong>Claude Design là một bước chính thức</strong> giữa Acceptance Criteria và <code>/speckit-plan</code>, vì sách mô tả UI bằng văn xuôi và để AI tự bịa phần còn lại.</p>
 </section>
 
 <section class="part" id="overview">
@@ -688,8 +688,8 @@ flowchart LR
     <text x="227" y="338"><tspan font-weight="600" font-size="12.5">⑦ Adversarial pass</tspan><tspan x="227" dy="17">3 vai · prompt cố định</tspan><tspan x="227" dy="15" style="fill:var(--ink-3)">trả lời hoặc Open Question</tspan></text>
     <text x="422" y="338"><tspan font-weight="600" font-size="12.5">⑧ Ngủ qua đêm</tspan><tspan x="422" dy="17">đọc lại buổi sau</tspan><tspan x="422" dy="15" style="fill:var(--ink-3)">với vai người trả lời ticket</tspan></text>
     <text x="700" y="345"><tspan font-weight="700" font-size="12.5" style="fill:var(--gate)">⑨ CỔNG · Definition of Ready</tspan><tspan x="700" dy="17">đủ → commit docs(UC-###)</tspan><tspan x="700" dy="15">thiếu → không mở Claude Code</tspan></text>
-    <text x="212" y="470"><tspan font-weight="600" font-size="12.5">⑩ /plan</tspan><tspan x="212" dy="17">đọc plan trước</tspan><tspan x="212" dy="15" style="fill:var(--ink-3)">bắt chỗ lệch spec</tspan></text>
-    <text x="372" y="470"><tspan font-weight="600" font-size="12.5">⑪ /tasks · /implement</tspan><tspan x="372" dy="17">từng task</tspan><tspan x="372" dy="15" style="fill:var(--ink-3)">review từng commit nhỏ</tspan></text>
+    <text x="212" y="470"><tspan font-weight="600" font-size="12.5">⑩ /speckit-plan</tspan><tspan x="212" dy="17">đọc plan trước</tspan><tspan x="212" dy="15" style="fill:var(--ink-3)">bắt chỗ lệch spec</tspan></text>
+    <text x="372" y="470"><tspan font-weight="600" font-size="12.5">⑪ /speckit-tasks · /speckit-implement</tspan><tspan x="372" dy="17">từng task</tspan><tspan x="372" dy="15" style="fill:var(--ink-3)">review từng commit nhỏ</tspan></text>
     <text x="532" y="470"><tspan font-weight="600" font-size="12.5">⑫ Test theo AC</tspan><tspan x="532" dy="17">…/UC-###/AC-#.test</tspan><tspan x="532" dy="15" style="fill:var(--ink-3)">test đầu tiên tự đọc kỹ</tspan></text>
     <text x="692" y="470"><tspan font-weight="600" font-size="12.5">⑬ Self-review 5 câu</tspan><tspan x="692" dy="17">AI quyết hay mình quyết</tspan><tspan x="692" dy="15" style="fill:var(--ink-3)">→ decisions.md</tspan></text>
     <text x="852" y="470"><tspan font-weight="600" font-size="12.5">⑭ Commit feat(UC-#)</tspan><tspan x="852" dy="17">History · traceability</tspan><tspan x="852" dy="15" style="fill:var(--ink-3)">STATE.md</tspan></text>
@@ -966,9 +966,9 @@ sequenceDiagram
 
   <h4>⑩ – ⑭ · Code, với anh giữ tay lái</h4>
   <ol class="steps">
-    <li><b class="t">/plan UC-002 — đọc kỹ trước khi cho chạy tiếp</b><span class="who">Claude Code · anh đọc</span>
+    <li><b class="t">/speckit-plan UC-002 — đọc kỹ trước khi cho chạy tiếp</b><span class="who">Claude Code · anh đọc</span>
       <p>Đây là bước An bắt được AI đề xuất trừ balance sai thời điểm ở Chương 4. Với UC-002, chỗ cần soi: plan có tạo Activation trước khi kiểm RULE-004 không; có ký token bằng khoá ở đúng chỗ theo ADR-002 không; có đặt logic RULE-004 trong adapter HTTP thay vì domain không. Lệch → sửa plan, không sửa spec (trừ khi spec sai thật, thì quay lại ②).</p></li>
-    <li><b class="t">/tasks → /implement — review từng commit nhỏ</b><span class="who">Claude Code · anh review</span>
+    <li><b class="t">/speckit-tasks → /speckit-implement — review từng commit nhỏ</b><span class="who">Claude Code · anh review</span>
       <p>Khi AI hỏi một quyết định nghiệp vụ spec chưa nói, không để nó đoán. Dừng, mở spec, thêm rule, commit <code>docs(UC-002)</code>, chạy lại. Đây là đường đứt trên hình từ ⑪ về ②.</p></li>
     <li><b class="t">Test theo AC, một file một AC</b><span class="who">Claude Code sinh · anh đọc test đầu tiên</span>
       <p><code>tests/use-cases/licensing/UC-002/AC-1.test.ts … AC-5.test.ts</code>. Test kiểm hành vi ở tầng domain (gọi <code>activate()</code>, soi Activation và License), không chỉ mock HTTP trả 200 — đó là lỗi "test mock domain" trong bảng 6.5 của sách. Test đầu tiên cho một pattern anh tự đọc kỹ; sau đó AI clone pattern.</p></li>
@@ -1026,7 +1026,7 @@ stateDiagram-v2
   [*] --> proposed : tạo changes/CHG-###/proposal.md
   proposed --> specified : viết delta spec<br/>ADDED / MODIFIED / REMOVED
   specified --> designed : design.md + SCR mới<br/>+ adversarial pass
-  designed --> applying : tasks.md · /implement
+  designed --> applying : tasks.md · /speckit-implement
   applying --> verified : test AC mới xanh<br/>test AC cũ được giữ vẫn xanh
   verified --> archived : merge delta vào specs/<br/>History của UC bị đổi
   archived --> [*]
@@ -1055,8 +1055,8 @@ stateDiagram-v2
     <li><b class="t">Mở <code>STATE.md</code>, không mở code</b><span class="who">5 phút</span><p>Đọc năm dòng. Nếu "câu hỏi treo" có thứ trả lời được hôm nay, trả lời vào spec trước khi làm gì khác.</p></li>
     <li><b class="t">Đọc lại spec của UC hôm qua viết — với vai người trả lời ticket</b><span class="who">15 phút · bước ⑧</span><p>Đây là buổi review bị tách ra khỏi buổi viết. Sửa gì thì History v+1.</p></li>
     <li><b class="t">Chạy checklist DoR, commit <code>docs(UC-004)</code></b><span class="who">10 phút · bước ⑨</span></li>
-    <li><b class="t">Mở Claude Code, paste glossary + UC + rules liên quan, <code>/plan</code></b><span class="who">20 phút · bước ⑩</span><p>Đọc plan. Soi ba chỗ: thứ tự kiểm rule, vị trí logic (domain hay adapter), trạng thái nào bị chuyển.</p></li>
-    <li><b class="t"><code>/tasks</code>, <code>/implement</code>, review từng commit</b><span class="who">80 phút · bước ⑪–⑫</span><p>AI hỏi "gỡ thiết bị đang là máy hiện tại thì có tự đăng xuất không?" — spec không nói. Dừng. Thêm E3 vào UC-004, commit docs, chạy tiếp.</p></li>
+    <li><b class="t">Mở Claude Code, paste glossary + UC + rules liên quan, <code>/speckit-plan</code></b><span class="who">20 phút · bước ⑩</span><p>Đọc plan. Soi ba chỗ: thứ tự kiểm rule, vị trí logic (domain hay adapter), trạng thái nào bị chuyển.</p></li>
+    <li><b class="t"><code>/speckit-tasks</code>, <code>/speckit-implement</code>, review từng commit</b><span class="who">80 phút · bước ⑪–⑫</span><p>AI hỏi "gỡ thiết bị đang là máy hiện tại thì có tự đăng xuất không?" — spec không nói. Dừng. Thêm E3 vào UC-004, commit docs, chạy tiếp.</p></li>
     <li><b class="t">Self-review năm câu, một dòng vào <code>decisions.md</code></b><span class="who">15 phút · bước ⑬</span></li>
     <li><b class="t">Viết <code>STATE.md</code>, đóng máy</b><span class="who">5 phút</span><p>Nếu còn thời gian: viết stub + Main Flow cho UC tiếp theo — <em>không</em> viết AC. AC viết ở buổi sau, khi đầu đã rời khỏi UC vừa code.</p></li>
   </ol>

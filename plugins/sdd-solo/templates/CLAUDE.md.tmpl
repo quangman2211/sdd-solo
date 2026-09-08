@@ -8,11 +8,11 @@ Repo này viết spec trước, code sau. Đọc theo thứ tự trước khi l�
 5. `docs/decisions.md` và ADR liên quan.
 
 Quy tắc cứng:
-- KHÔNG chạy `/specify`, `/plan`, `/tasks`, `/implement` cho UC chưa có `.sdd/gate/UC-###.ok`. Bảo user chạy `/sdd-solo:gate UC-###` trước.
+- KHÔNG chạy `/speckit-specify`, `/speckit-plan`, `/speckit-tasks`, `/speckit-implement` cho UC chưa có `.sdd/gate/UC-###.ok`. Bảo user chạy `/sdd-solo:gate UC-###` trước.
 - Gặp quyết định nghiệp vụ mà spec chưa nói (số, ngưỡng, enum, ai được làm gì) → DỪNG và hỏi. Không chọn giá trị mặc định. Khi user trả lời, nhắc user ghi vào spec và commit `docs(UC-###)` trước khi code tiếp.
 - Test đặt ở `tests/use-cases/<ctx>/UC-###/AC-#.test.*`, describe có `"UC-### / AC-#"`. Test hành vi ở tầng domain, không chỉ mock HTTP.
 - Logic nghiệp vụ ở `src/domain` + `src/use-cases`; DB/HTTP/provider ở `src/adapters`.
 - Commit message `<type>(UC-###): <mô tả>`. Không trộn thay đổi spec và code trong một commit.
-- Khi `/specify`: file trong `.specify/` CHỈ trích ID và link tới file UC trong `specs/`. Không chép nội dung.
+- Khi `/speckit-specify`: file trong `.specify/` CHỈ trích ID và link tới file UC trong `specs/`. Không chép nội dung.
 
-Lệnh của quy trình: `/sdd-solo:start` → (AIUP `/use-case-spec`) → tay: RULE, AC, BPMN, Claude Design → `/sdd-solo:adversarial` → đóng máy → `/sdd-solo:gate` → `/specify` → `/plan` → `/tasks` → `/implement` → `/sdd-solo:close` → `/sdd-solo:state`.
+Lệnh của quy trình: `/sdd-solo:start` → (AIUP `/use-case-spec`) → tay: RULE, AC, BPMN, Claude Design → `/sdd-solo:adversarial` → đóng máy → `/sdd-solo:gate` → `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → `/sdd-solo:close` → `/sdd-solo:state`.

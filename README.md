@@ -12,7 +12,7 @@ Nền: ebook *Spec Driven Development* (Nguyễn Thế Huy) · AI Unified Proces
 ```
 
 Đi kèm (cài riêng, plugin không tự cài thay bạn):
-- **GitHub Spec Kit** — `specify init --here` trong repo → cho `/specify /plan /tasks /implement`
+- **GitHub Spec Kit** — `specify init --here` trong repo → cho `/speckit-specify /speckit-plan /speckit-tasks /speckit-implement`
 - **AIUP** — `/plugin marketplace add ai-unified-process/marketplace` · `/plugin install aiup-core` → cho `/requirements /entity-model /use-case-diagram /use-case-spec`
 - **Camunda Modeler** (BPMN 2.0, DMN) · **Claude Design** (Design System, màn hình SCR)
 
@@ -26,7 +26,7 @@ Trong repo dự án:
 | Mở session | hook tự đọc `STATE.md`, nói đang ở bước nào |
 | Bắt đầu một use case | `/sdd-solo:start UC-### [ctx] [slug]` rồi `/use-case-spec UC-###` (AIUP) |
 | Sau khi viết RULE, AC, vẽ BPMN, vẽ màn hình | `/sdd-solo:adversarial UC-###` → **đóng máy** |
-| Buổi sau, đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/specify` → `/plan` → `/tasks` → `/implement` |
+| Buổi sau, đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` |
 | Code xong | `/sdd-solo:close UC-###` |
 | Cuối buổi | `/sdd-solo:state` |
 | Đang tới đâu | `/sdd-solo:status` |
@@ -41,7 +41,7 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 ## Mức chặn — nói thật
 
 - **Chặn cứng**: git hook `commit-msg` từ chối commit code không có ID hoặc UC chưa qua cổng; `pre-commit` từ chối trộn spec và code. Không có cờ bỏ qua.
-- **Chặn mềm**: `/specify` `/plan` là lệnh của Spec Kit, plugin không đứng giữa được. Khối `CLAUDE.md` và hook SessionStart dạy session từ chối khi chưa có marker `.sdd/gate/UC-###.ok`; AI tuân, người thì có thể ép.
+- **Chặn mềm**: `/speckit-specify` `/speckit-plan` là lệnh của Spec Kit, plugin không đứng giữa được. Khối `CLAUDE.md` và hook SessionStart dạy session từ chối khi chưa có marker `.sdd/gate/UC-###.ok`; AI tuân, người thì có thể ép.
 
 ## Báo lỗi · yêu cầu sửa
 

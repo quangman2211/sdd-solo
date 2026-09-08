@@ -49,7 +49,7 @@ if [ -d "$ROOT/.specify/templates" ]; then
   [ -f "$T" ] && ! grep -q 'sdd-solo' "$T" && cp "$T" "$T.bak"
   cp "$PLUGIN/templates/speckit/spec-template.md" "$T"; ok ".specify/templates/spec-template.md — bản mỏng trích ID (bản cũ .bak)"
 else
-  warn "chưa có .specify/ — chạy 'specify init' rồi /sdd-solo:init --update để thay spec-template"
+  warn "chưa có .specify/ — chạy 'specify init --here --force --non-interactive --integration claude' TRƯỚC, rồi /sdd-solo:init --update để thay spec-template"
 fi
 # git hooks
 if [ -d "$ROOT/.git" ]; then

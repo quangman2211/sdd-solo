@@ -25,7 +25,7 @@ Ranh giới spec/doc: **khách cảm nhận được → spec** (`specs/`). Ch�
 `BR-###` · `UC-###` · `UC-###/AC-#` · `RULE-###` · `CON-###` (trong BR) · `SCR-###-#` (màn hình của UC-###) · `ADR-###` · `CHG-###` (Phase 5). Commit: `<type>(ID): mô tả`. Test: `tests/use-cases/<ctx>/UC-###/AC-#.test.*`, describe `"UC-### / AC-#: tên"`.
 
 ## 14 bước cho một UC (Phase 3)
-① `/sdd-solo:start UC-###` → ② `/use-case-spec` (AIUP) điền nội dung → ③ user viết RULE (rules.md, DMN nếu cần) và AC → ④ vẽ BPMN ở Camunda → ⑤ Claude Design theo `prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đóng máy, đọc lại buổi sau** → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/specify` (mỏng, trích ID) → ⑩ `/plan` — user đọc, bắt lệch → ⑪ `/tasks` `/implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
+① `/sdd-solo:start UC-###` → ② `/use-case-spec` (AIUP) điền nội dung → ③ user viết RULE (rules.md, DMN nếu cần) và AC → ④ vẽ BPMN ở Camunda → ⑤ Claude Design theo `prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đóng máy, đọc lại buổi sau** → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
 
@@ -53,7 +53,7 @@ UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn �
 ## Quy tắc cho bạn (AI) trong repo này
 1. Gặp số, ngưỡng, enum, quyền mà spec chưa nói → dừng, hỏi. Không chọn mặc định.
 2. Khi user trả lời → nhắc ghi vào spec + commit `docs(UC-###)` trước khi code tiếp.
-3. Không chạy `/specify` `/plan` `/tasks` `/implement` khi `.sdd/gate/UC-###.ok` chưa có.
+3. Không chạy `/speckit-specify` `/speckit-plan` `/speckit-tasks` `/speckit-implement` khi `.sdd/gate/UC-###.ok` chưa có.
 4. Dùng đúng tên trong `specs/glossary.md`.
 5. Không bịa số liệu để điền chỗ trống; để `___`.
 6. Khi được nhờ viết AC/UC/RULE: viết theo đúng template, tiếng Việt cho văn, tên entity/UC slug tiếng Anh.

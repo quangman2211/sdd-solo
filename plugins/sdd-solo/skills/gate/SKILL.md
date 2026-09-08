@@ -13,13 +13,13 @@ Cổng DoR cho `$1`.
 "${CLAUDE_PLUGIN_ROOT}/scripts/gate-check.sh" $1
 ```
 (nếu `${CLAUDE_PLUGIN_ROOT}` không được thay: `find ~/.claude/plugins -type f -name gate-check.sh -path '*sdd-solo*' | head -1`).
-2. Exit ≠ 0 → **KHÔNG QUA CỔNG**. Với mỗi dòng ✗, nói user cần sửa gì và ở file nào. Không tự sửa spec thay user (trừ khi user bảo). Không chạy `/specify`, `/plan`. Dừng ở đây.
+2. Exit ≠ 0 → **KHÔNG QUA CỔNG**. Với mỗi dòng ✗, nói user cần sửa gì và ở file nào. Không tự sửa spec thay user (trừ khi user bảo). Không chạy `/speckit-specify`, `/speckit-plan`. Dừng ở đây.
 3. Exit 0 → chạy:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/gate-pass.sh" $1
 ```
 Script đặt `Status: reviewed`, ghi `.sdd/gate/$1.ok`, commit `docs($1): spec reviewed — qua cổng DoR`.
-4. STATE.md: `Đang làm: $1 · bước ⑨ xong — sẵn sàng /specify`. `Việc tiếp theo: /specify (file mỏng trích ID) → /plan, đọc plan trước khi /tasks`.
+4. STATE.md: `Đang làm: $1 · bước ⑨ xong — sẵn sàng /speckit-specify`. `Việc tiếp theo: /speckit-specify (file mỏng trích ID) → /speckit-plan, đọc plan trước khi /speckit-tasks`.
 5. Nhắc user ba chỗ cần soi khi đọc plan: RULE được kiểm trước khi tạo record chưa; logic RULE nằm ở domain hay adapter; chuyển trạng thái có đúng state diagram.
 
 Không có cờ bỏ qua. Muốn vượt cổng thì phải sửa spec cho đủ.

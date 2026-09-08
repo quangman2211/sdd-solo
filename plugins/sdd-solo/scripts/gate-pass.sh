@@ -9,4 +9,4 @@ mkdir -p "$ROOT/.sdd/gate"
 git -C "$ROOT" commit -q --only -m "docs($ID): spec reviewed — qua cổng DoR" -- "$F" || true
 git -C "$ROOT" rev-parse HEAD > "$ROOT/.sdd/gate/$ID.ok"
 git -C "$ROOT" add ".sdd/gate/$ID.ok" && git -C "$ROOT" commit -q --only -m "chore(sdd): gate marker $ID" -- ".sdd/gate/$ID.ok" || true
-echo "QUA CỔNG. Status → reviewed · marker .sdd/gate/$ID.ok · đã commit. Bước tiếp: /specify (chỉ trích ID) → /plan"
+echo "QUA CỔNG. Status → reviewed · marker .sdd/gate/$ID.ok · đã commit. Bước tiếp: /speckit-specify (chỉ trích ID) → /speckit-plan"
