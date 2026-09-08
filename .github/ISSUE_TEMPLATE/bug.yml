@@ -71,7 +71,7 @@ body:
     id: env
     attributes:
       label: Môi trường
-      description: "Lấy version plugin: `cat ~/.claude/plugins/*/sdd-solo/.claude-plugin/plugin.json | grep version`"
+      description: "Dán output của: `find ~/.claude/plugins/cache -path '*sdd-solo*' -name plugin.json -exec grep -h version {} \\;` — kèm `claude --version`, `uname -sr`, `bash --version`."
       value: |
         - sdd-solo version:
         - claude --version:
