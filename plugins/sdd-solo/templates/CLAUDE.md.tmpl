@@ -16,6 +16,8 @@ Quy tắc cứng:
 - Đổi hành vi của UC đã `implemented` (một AC cũ không còn đúng) → KHÔNG sửa thẳng UC. Mở `CHG-###` trong `specs/changes/`, chạy `/sdd-solo:change CHG-###`; chưa có `.sdd/gate/CHG-###.ok` thì githook chặn mọi commit code gắn `(CHG-###)`. Thêm AC mới mà không phá AC cũ thì vẫn là Phase 3, `## History` v+1.
 - Khi `/speckit-specify`: file trong `.specify/` CHỈ trích ID và link tới file UC trong `specs/`. Không chép nội dung.
 
+Bắt đầu dự án (Phase 1): `/sdd-solo:intake` → điền `specs/br.md` → `/sdd-solo:adversarial BR-###` → `/sdd-solo:start UC-###`. Chưa có BR thì đừng mở UC: `specs/br.md` còn là template nghĩa là đang xây trên nền chưa viết.
+
 Đổi hành vi đã giao: `/sdd-solo:change CHG-###` → test AC mới → code → archive.
 
 Lệnh của quy trình: `/sdd-solo:start` → (AIUP `/use-case-spec`) → tay: RULE, AC, flow (mermaid), Claude Design → `/sdd-solo:adversarial` → đóng máy → `/sdd-solo:gate` → `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → `/sdd-solo:close` → `/sdd-solo:state`.

@@ -1,5 +1,72 @@
 # Changelog
 
+## 3.2.0 — 2026-09-08
+
+### Thêm — Phase 1 có cửa vào và có kiểm (#18, #19)
+
+Plugin đi từ 1.0.0 lên 3.1.1 với 17 issue, mà dự án nó phục vụ vẫn chưa có **một dòng BR nào**.
+Không phải lười: người dùng nói thẳng là không biết viết thế nào cho đúng. Đo lại thì tầng BR
+là tầng duy nhất trong bốn tầng không có gì đỡ ngoài một file template — không script kiểm,
+không skill, `/sdd-solo:adversarial` chỉ nhận `UC-###`. Và không skill nào của sdd-solo **hay
+của AIUP** tạo ra `vision.md` mà `/requirements` cần: nó *tiêu thụ* file đó.
+
+Chi tiết đáng ghi nhất từ phiên `runxops`: người dùng nói *"chưa có template để mô tả 1 BR đúng"*
+**trong khi đang nhìn thẳng vào một template có đủ Background, Goal, Metrics, Impact Map.** Nên
+thứ thiếu không phải cái biểu mẫu — mà là **cách đi tới nội dung**. Bản này ưu tiên theo đúng
+thứ tự đó: bộ câu hỏi trước, biểu mẫu sau.
+
+- **`/sdd-solo:intake [brief]`** — cửa vào Phase 1, đối xứng với `/sdd-solo:start` của Phase 3.
+  - *Không tham số* → **phỏng vấn**, một câu một lượt: khổ gì · ai khổ · tốn gì, rồi bốn câu đào
+    sâu. Câu 5 (*"có cách nào đạt được điều đó mà không xây phần mềm không?"*) là câu hay bị bỏ
+    nhất và là thứ duy nhất chặn được việc xây một phần mềm không cần tồn tại.
+  - *Có đường dẫn* → **chuyển brief** của agent khác, theo bốn luật không có ngoại lệ: số không
+    nguồn thì `___` + Open Question **kể cả khi brief có ghi số** (brief *đề xuất* ≠ ai đó *đã
+    duyệt*) · mọi "xây X" phải đẩy ngược lên được một mục tiêu đo được, không ra thì đánh dấu mồ
+    côi · khẳng định không bằng chứng thì thành Open Question chứ không thành Background · cuối
+    phiên phải in ra thứ đã bỏ kèm lý do.
+- **`specs/_intake.md`** — bộ bảy câu hỏi nằm **trong dự án**, dùng được cả khi không mở Claude Code.
+- **`scripts/br-check.sh BR-###`** — kiểm cơ học tầng BR. Đáng kể nhất: Success Metrics được phép
+  để `___` ở phần **số** nhưng **không** được thiếu **cách đo** — đó là ranh giới giữa một metric
+  thật và một câu nói hay; Impact Map phải có ít nhất một nhánh `-.->`, vì không có nhánh đứt nào
+  nghĩa là chưa map gì, chỉ là đường thẳng từ Goal xuống danh sách việc đã định sẵn; và Goal dùng
+  từ mơ hồ (*tối ưu · cải thiện · nâng cao*) khi Metrics chưa có số nào thì đỏ.
+- **`/sdd-solo:adversarial BR-###`** — ba vai của tầng BR, hỏi về **lý do tồn tại** chứ không phải
+  hành vi: *người trả tiền* · *người sẽ phải vận hành nó mãi* · *người hoài nghi*. Vai thứ ba không
+  có ở tầng UC và là vai quan trọng nhất — nó bắt lỗi **BR viết ngược từ giải pháp**. *"Xây dashboard
+  theo dõi đơn hàng"* không phải BR; BR thật nằm ở câu hỏi *vì sao cần theo dõi*. Nếu vai này kết
+  luận BR đang là giải pháp viết ngược thì **dừng và viết lại**, không ghi thành Open Question rồi đi tiếp.
+- **`BR-000` — một BR điền đủ, nằm trong `specs/br.md` của dự án**, kèm cả mục Adversarial pass đã
+  chạy. Đọc một BR viết đúng cạnh cái mình sắp viết là cách dạy rẻ nhất; `RULE-000` đã làm vậy ở #13.
+  `br-check.sh` bỏ qua `BR-000`.
+- **`/sdd-solo:status`** liệt kê BR kèm trạng thái, **đỏ** khi `br.md` còn nguyên template mà repo đã
+  có UC (đang xây trên nền chưa viết — loại sai đắt nhất vì nó ở gốc), và cảnh báo khi có
+  `docs/requirements.md` của AIUP mà chưa có BR.
+
+Hai chỗ cố ý **mềm hơn** đề xuất trong issue, vì bản gắt sẽ đỏ trên mọi BR trung thực:
+
+- **`___` chỉ cảnh báo, không đỏ.** Ở Phase 1, `___` là dốt một cách trung thực. Ép điền sớm đẻ ra
+  đúng loại số bịa mà cả bước intake đang cố chặn. Placeholder `<...>` thì vẫn đỏ.
+- **UC trong `## Related Use Cases` chưa tồn tại chỉ cảnh báo** — BR viết *trước* UC, đỏ ở đây thì
+  không sửa được. Nhưng **chiều ngược thì đỏ**: UC đã khai `Liên quan tới BR: BR-###` mà BR không
+  liệt kê nó là trôi thật, và luôn sửa được. Cùng bài học hai chiều của #12, #15, #17.
+
+### Sửa
+
+- `filled()` trong `br-check.sh` và `change-check.sh` không bắt được **placeholder trải nhiều dòng**:
+  `<Vì sao có requirement này —` mở ở dòng này, `... như sự thật>` đóng ở dòng sau, nên regex một
+  dòng `<[^>]+>` không khớp cái nào và mục rỗng đi qua như có nội dung. `## Background` của khung BR
+  trống lọt đúng theo đường này. Nay bắt cả dòng chỉ mở và dòng chỉ đóng.
+
+### Cách nâng
+
+```
+/plugin marketplace update sdd-solo
+/plugin update sdd-solo
+/sdd-solo:init --update          # br.md, _intake.md, prompts nằm trong templates/
+```
+`specs/br.md` đã sửa tay thì `init --update` **không** ghi đè — bản mới nằm cạnh dưới tên `br.md.new`,
+tự merge rồi xoá `.new`.
+
 ## 3.1.1 — 2026-09-08
 
 ### Sửa

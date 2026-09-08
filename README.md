@@ -26,6 +26,8 @@ Trong repo dự án:
 |---|---|
 | Lần đầu / sau khi update plugin | `/sdd-solo:init` · `/sdd-solo:init --update` · `--with-deps` để cài luôn Spec Kit + AIUP |
 | Mở session | hook tự đọc `STATE.md`, nói đang ở bước nào |
+| **Bắt đầu dự án — chưa biết viết gì** | `/sdd-solo:intake` (phỏng vấn 7 câu) hoặc `/sdd-solo:intake brief.md` (chuyển brief của agent khác) |
+| BR viết xong | `/sdd-solo:adversarial BR-###` — ba vai người trả tiền / vận hành mãi / hoài nghi |
 | Bắt đầu một use case | `/sdd-solo:start UC-### [ctx] [slug]` rồi `/use-case-spec UC-###` (AIUP) |
 | Sau khi viết RULE, AC, vẽ flow, vẽ màn hình | `/sdd-solo:adversarial UC-###` → **đóng máy** |
 | Buổi sau, đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` |
@@ -123,9 +125,9 @@ sdd-solo/
 ├── .claude-plugin/marketplace.json
 └── plugins/sdd-solo/
     ├── .claude-plugin/plugin.json
-    ├── skills/  sdd-process · init · start · adversarial · gate · close · state · status
+    ├── skills/  sdd-process · init · intake · start · adversarial · gate · change · close · state · status · update
     ├── hooks/hooks.json            SessionStart → scripts/session-start.sh
-    ├── scripts/                    scaffold · gate-check/pass · close-check/pass · status · trace-ratio · ac-coverage
+    ├── scripts/                    scaffold · br-check · gate-check/pass · change-check/pass · close-check/pass · status · trace-ratio · ac-coverage
     ├── templates/
     │   ├── project/                specs/ docs/ changes/ checklists/ prompts/ STATE.md .gitmessage
     │   ├── CLAUDE.md.tmpl          khối quy tắc, ghép vào CLAUDE.md của repo

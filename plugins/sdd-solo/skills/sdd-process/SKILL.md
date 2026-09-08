@@ -13,7 +13,7 @@ Spec là giao diện giữa ba người đọc: user hôm nay, user ba tháng sa
 ## Bốn tầng, bốn câu hỏi, bốn nơi
 | Tầng | Câu hỏi | File | Biểu đồ đi kèm |
 |---|---|---|---|
-| BR | Vì sao làm | `specs/br.md` | Impact Map (Mermaid) · Story Map (`specs/story-map.md`) |
+| BR | Vì sao làm | `specs/br.md` — `BR-000` là mẫu điền đủ, đọc trước khi viết | Impact Map (Mermaid, bắt buộc có ≥ 1 nhánh `-.->`) · Story Map |
 | UC | Ai làm gì | `specs/contexts/<ctx>/use-cases/UC-###-slug/UC-###.md` | Flow mermaid (`UC-###.flow.md`, cùng thư mục UC) · Sequence nếu có mạng |
 | Entity | Khái niệm nào, vòng đời nào | `specs/contexts/<ctx>/entities.md` | Domain Model (classDiagram) · State Machine cho mỗi entity có status |
 | AC | Biết đúng bằng cách nào | trong file UC, `### AC-#` Given/When/Then | — |
@@ -23,6 +23,11 @@ Ranh giới spec/doc: **khách cảm nhận được → spec** (`specs/`). Ch�
 
 ## Hệ ID
 `BR-###` · `UC-###` · `UC-###/AC-#` · `RULE-###` · `CON-###` (trong BR) · `SCR-###-#` (màn hình của UC-###) · `ADR-###` · `CHG-###` (Phase 5). Commit: `<type>(ID): mô tả`. Test: `tests/use-cases/<ctx>/UC-###/AC-#.test.*`, describe `"UC-### / AC-#: tên"`.
+
+## Phase 1 — trước khi có UC nào
+`/sdd-solo:intake` là cửa vào: không tham số thì phỏng vấn bảy câu (khổ gì · ai khổ · tốn gì · không làm thì sao · có cách nào không xây phần mềm · cố ý không làm gì · đo bằng gì), có đường dẫn brief thì chuyển brief của agent khác thành BR theo luật **không bịa số** — số không nguồn thì `___` + Open Question, kể cả khi brief có ghi số. Rồi `br-check.sh BR-###` kiểm cơ học, và `/sdd-solo:adversarial BR-###` chạy ba vai *người trả tiền · người vận hành mãi · người hoài nghi*. Vai hoài nghi hỏi câu đắt nhất của cả tầng: **BR này có thật là BR, hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do?**
+
+Ở tầng này `___` là câu trả lời hợp lệ và số bịa thì không. `br-check` chỉ **cảnh báo** khi còn `___`, nhưng **đỏ** khi mục còn nguyên placeholder `<...>`.
 
 ## 14 bước cho một UC (Phase 3)
 ① `/sdd-solo:start UC-###` → ② `/use-case-spec` (AIUP) điền nội dung → ③ user viết RULE (rules.md, DMN nếu cần) và AC → ④ vẽ flow mermaid trong `UC-###.flow.md` → ⑤ Claude Design theo `.sdd/prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đóng máy, đọc lại buổi sau** → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.

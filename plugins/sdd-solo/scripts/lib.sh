@@ -30,6 +30,13 @@ find_chg() {
   printf '%s' "$d"
 }
 
+# br_body BR-001 <root> — nội dung một mục BR trong specs/br.md (rỗng nếu không có)
+br_body() { awk -v h="# $1:" 'index($0,h)==1{f=1;next} f&&/^# BR-/{exit} f{print}' "$2/specs/br.md" 2>/dev/null; }
+# br_ids <root> — mọi BR có trong br.md
+br_ids() { grep -oE '^# BR-[0-9]+' "$1/specs/br.md" 2>/dev/null | awk '{print $2}'; }
+# br_untouched <root> — 0 nếu br.md chưa được đụng tới (chỉ còn mẫu + khung trống)
+br_untouched() { grep -q '<Tên business requirement>' "$1/specs/br.md" 2>/dev/null; }
+
 sha() { if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | cut -d' ' -f1; else sha256sum "$1" | cut -d' ' -f1; fi; }
 today() { date +%Y-%m-%d; }
 

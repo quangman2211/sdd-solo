@@ -18,7 +18,10 @@ nonempty() { printf '%s' "$1" | grep -qvE '^[[:space:]]*$'; }
 # đi qua cổng như một câu trả lời hợp lệ.
 filled() {
   nonempty "$1" || return 1
-  printf '%s' "$1" | grep -qE '<[^>]+>' && return 1
+  # Placeholder có thể TRẢI NHIỀU DÒNG: '<Vì sao ...' mở ở dòng này, '...>' đóng ở
+  # dòng sau. Regex một dòng '<[^>]+>' không khớp cái nào, nên mục rỗng đi qua như
+  # có nội dung. Phải bắt cả dòng chỉ mở và dòng chỉ đóng.
+  printf '%s' "$1" | grep -qE '<[^>]+>|^[[:space:]]*<|>[[:space:]]*$' && return 1
   printf '%s' "$1" | grep -vE '^[[:space:]]*$' \
     | grep -qvE '^[[:space:]]*([-*][[:space:]]*)?\.\.\.[[:space:]]*$' || return 1
   return 0
