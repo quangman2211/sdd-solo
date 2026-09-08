@@ -5,6 +5,25 @@ set -e
 PLUGIN="$1"; ROOT="$2"; MODE="${3:-}"
 . "$PLUGIN/scripts/lib.sh"
 VER="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$PLUGIN/.claude-plugin/plugin.json" 2>/dev/null || grep -oE '"version": *"[^"]+"' "$PLUGIN/.claude-plugin/plugin.json" | head -1 | sed -E 's/.*"([^"]+)"$/\1/')"
+# Repo đã cài sdd-solo mà còn dấu vết bố cục 1.x → PHẢI migrate trước.
+# Chạy scaffold trước migrate là dựng sẵn toàn bộ cây đích bằng template rỗng,
+# rồi migrate thấy đích đã có nên bỏ qua hết — nội dung thật kẹt ở chỗ cũ, mọi
+# file nhân đôi, không một dòng lỗi nào. Xem #8.
+if [ -f "$ROOT/.sdd/version" ]; then
+  OLD1X=""
+  for m in checklists/definition-of-ready.md prompts/adversarial-pass.md \
+           specs/contexts/_template changes/_template .githooks/commit-msg .gitmessage; do
+    [ -e "$ROOT/$m" ] && OLD1X="$OLD1X $m"
+  done
+  if [ -n "$OLD1X" ]; then
+    bad "repo còn bố cục 1.x:$OLD1X"
+    info "chạy MIGRATE TRƯỚC, init sau — ngược lại là nội dung thật kẹt ở chỗ cũ:"
+    info "  bash \"$PLUGIN/scripts/migrate-1to2.sh\" --dry-run   # xem trước"
+    info "  bash \"$PLUGIN/scripts/migrate-1to2.sh\"             # làm thật"
+    info "  rồi mới /sdd-solo:init --update"
+    exit 1
+  fi
+fi
 MAN="$ROOT/.sdd/manifest"; mkdir -p "$ROOT/.sdd/gate"; touch "$MAN"
 TPL="$PLUGIN/templates/project"
 COPIED=0; KEPT=0; NEW=0

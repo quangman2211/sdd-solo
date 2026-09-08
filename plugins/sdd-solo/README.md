@@ -63,6 +63,20 @@ uc_test_dir=tests/use-cases
 
 Githook và mọi script kiểm đều đọc file này. Trước 1.5.0 hai đường dẫn viết chết là `src`/`tests`, nên repo đặt code ở `app/` thì hook **cho qua mọi commit code không ID mà không nói một lời** — chặn cứng thành không chặn gì. Giờ commit có file nguồn mà không thư mục nào trong `code_paths` tồn tại thì hook **chặn** và chỉ vào `.sdd/config`; `/sdd-solo:status` cũng kiểm lại.
 
+## Nâng cấp 1.x → 2.0.0
+
+**Thứ tự bắt buộc: migrate TRƯỚC, `init --update` SAU.** Ngược lại thì `init` dựng sẵn cây đích bằng template rỗng, migrate thấy đích đã có nên bỏ qua, và nội dung thật kẹt ở chỗ cũ. Từ 2.0.1 cả hai lệnh đều tự chặn nếu gọi sai thứ tự.
+
+```bash
+/plugin marketplace update sdd-solo && /plugin update sdd-solo   # lấy 2.0.x
+bash <plugin>/scripts/migrate-1to2.sh --dry-run                  # xem trước
+bash <plugin>/scripts/migrate-1to2.sh                            # git mv, giữ history
+/sdd-solo:init --update                                          # rồi mới tới bước này
+git add -A && git commit -m "chore(sdd): migrate bố cục 2.0.0"
+```
+
+Script dừng ngay từ đầu nếu working tree bẩn hoặc nếu cây cũ và cây mới cùng tồn tại — trong cả hai ca nó chưa đụng file nào.
+
 ## Đang chạy bản nào
 
 Bốn chỗ giữ version, lệch chỗ nào thì lệnh sửa khác nhau:
