@@ -8,3 +8,5 @@ for f in $(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' -not -pa
   printf '  %-8s %-12s%s\n' "$id" "${st:-?}" "$g"
 done
 echo; "$HERE/trace-ratio.sh"; "$HERE/ac-coverage.sh"
+# phụ thuộc: chỉ nói khi thiếu, đủ thì im
+D="$("$HERE/deps-check.sh" 2>&1)" || { echo; echo "$D"; }
