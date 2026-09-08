@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Hỏi cách dùng quy trình SDD-Solo
+    url: https://github.com/quangman2211/sdd-solo/discussions
+    about: Không chắc là lỗi? Hỏi ở Discussions trước — nhanh hơn mở issue.
+  - name: Đọc README trước khi báo lỗi
+    url: https://github.com/quangman2211/sdd-solo#readme
+    about: Phần lớn lỗi cài đặt là do thiếu Spec Kit / AIUP, hoặc quên chạy /sdd-solo:init.

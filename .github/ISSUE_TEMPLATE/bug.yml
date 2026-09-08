@@ -1,0 +1,94 @@
+name: Báo lỗi
+description: Plugin cài không được, lệnh chạy sai, script báo lỗi, hook không chặn
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Điền đủ các mục dưới. Thiếu log hoặc thiếu bước tái hiện thì issue sẽ bị hỏi lại chứ chưa sửa được.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Lỗi ở đâu
+      options:
+        - Cài đặt (/plugin marketplace add · /plugin install · /plugin update)
+        - Khởi tạo dự án (/sdd-solo:init · init --update)
+        - Lệnh skill (/sdd-solo:start · adversarial · gate · close · state · status)
+        - Script kiểm (gate-check · close-check · trace-ratio · ac-coverage)
+        - Git hook (commit-msg · pre-commit chặn sai hoặc không chặn)
+        - Hook SessionStart (mở session không đọc được STATE.md)
+        - Template / tài liệu sai
+        - Khác
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: Lệnh đã chạy
+      description: Nguyên văn, kể cả tham số.
+      placeholder: |
+        /sdd-solo:gate UC-012
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Output lỗi
+      description: Copy nguyên khối, đừng tóm tắt. Nếu là script, chạy lại với `bash -x` rồi dán 40 dòng cuối.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Kỳ vọng vs thực tế
+      placeholder: |
+        Kỳ vọng: gate báo xanh vì UC-012 đã đủ 5 AC và có BPMN.
+        Thực tế: báo ✗ "thiếu BPMN" dù file specs/UC-012/flow.bpmn có tồn tại.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Tái hiện thế nào
+      description: Từ repo trắng thì làm gì để ra lỗi này.
+      placeholder: |
+        1. mkdir demo && cd demo && git init
+        2. /sdd-solo:init
+        3. /sdd-solo:start UC-001 checkout dat-hang
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Môi trường
+      description: "Lấy version plugin: `cat ~/.claude/plugins/*/sdd-solo/.claude-plugin/plugin.json | grep version`"
+      value: |
+        - sdd-solo version:
+        - claude --version:
+        - OS (macOS / Linux / WSL):
+        - bash --version:
+        - Có cài Spec Kit chưa (specify --version):
+        - Có cài AIUP chưa:
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Đã kiểm tra
+      options:
+        - label: Đã chạy `/plugin update sdd-solo` và lỗi vẫn còn
+          required: true
+        - label: Nếu lỗi liên quan template, đã chạy `/sdd-solo:init --update`
+        - label: Đã tìm issue cũ, chưa ai báo trùng
+          required: true

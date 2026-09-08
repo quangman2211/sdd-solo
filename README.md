@@ -7,7 +7,7 @@ Nền: ebook *Spec Driven Development* (Nguyễn Thế Huy) · AI Unified Proces
 ## Cài
 
 ```
-/plugin marketplace add <github-user>/sdd-solo
+/plugin marketplace add quangman2211/sdd-solo
 /plugin install sdd-solo@sdd-solo
 ```
 
@@ -42,6 +42,15 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 
 - **Chặn cứng**: git hook `commit-msg` từ chối commit code không có ID hoặc UC chưa qua cổng; `pre-commit` từ chối trộn spec và code. Không có cờ bỏ qua.
 - **Chặn mềm**: `/specify` `/plan` là lệnh của Spec Kit, plugin không đứng giữa được. Khối `CLAUDE.md` và hook SessionStart dạy session từ chối khi chưa có marker `.sdd/gate/UC-###.ok`; AI tuân, người thì có thể ép.
+
+## Báo lỗi · yêu cầu sửa
+
+Mở issue tại [github.com/quangman2211/sdd-solo/issues/new/choose](https://github.com/quangman2211/sdd-solo/issues/new/choose) — có sẵn hai form:
+
+- **Báo lỗi** — plugin cài không được, lệnh chạy sai, script hoặc git hook chặn nhầm. Cần: lệnh đã chạy, output nguyên văn, cách tái hiện, môi trường.
+- **Yêu cầu sửa / thêm** — đổi một quy tắc, thêm kiểm tra, thêm lệnh. Mô tả *vấn đề đang gặp* trước, giải pháp sau.
+
+Ba loại yêu cầu bị từ chối theo thiết kế, đọc phần Ranh giới trong [CLAUDE.md](CLAUDE.md) trước khi mở issue: thêm cờ bỏ qua cho gate/hook, cho plugin ghi đè file dự án đã sửa tay, hook vào lệnh của Spec Kit.
 
 ## Tài liệu
 

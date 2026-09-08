@@ -1,0 +1,69 @@
+name: Yêu cầu sửa / thêm
+description: Đổi một quy tắc, thêm kiểm tra, thêm lệnh, sửa template
+title: "change: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Trước khi viết, đọc phần **Ranh giới** trong [CLAUDE.md](https://github.com/quangman2211/sdd-solo/blob/main/CLAUDE.md).
+        Ba loại yêu cầu sau sẽ bị từ chối, không phải vì lười mà vì đó là thiết kế:
+
+        - **Thêm cờ bỏ qua** (`--skip`, `--force`, `--no-verify`) cho gate-check, commit-msg, pre-commit.
+          Nếu một quy tắc sai thật → xin *sửa quy tắc*, đừng xin cửa thoát.
+        - **Cho plugin ghi đè file dự án đã sửa tay.** File đã sửa luôn ra `.new`, không ghi đè.
+        - **Hook vào lệnh của Spec Kit** (`/specify` `/plan`). Plugin chỉ chặn mềm được.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Vấn đề đang gặp
+      description: Mô tả tình huống thật, không mô tả giải pháp. "Em muốn thêm cờ X" không phải vấn đề.
+      placeholder: |
+        Mỗi lần làm UC nhỏ chỉ có 2 AC, gate-check bắt tối thiểu 3 AC nên phải bịa
+        thêm một AC vô nghĩa cho qua cổng. Cuối cùng spec có rác.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Đề xuất
+      description: Sửa gì, ở file nào nếu biết.
+      placeholder: |
+        gate-check.sh: ngưỡng AC tối thiểu tính theo số RULE của UC thay vì cố định 3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Đụng vào đâu
+      multiple: true
+      options:
+        - skills/ (lệnh)
+        - scripts/ (kiểm cơ học)
+        - hooks/ (SessionStart)
+        - templates/project/ (nội dung phát cho dự án)
+        - templates/githooks/ (commit-msg, pre-commit)
+        - templates/CLAUDE.md.tmpl
+        - Tài liệu (README, CHANGELOG, docs/)
+        - Chưa rõ
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Hiện đang xoay xở thế nào
+      description: Nếu có cách làm tạm, ghi ra — giúp cân nhắc mức ưu tiên.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Xác nhận
+      options:
+        - label: Yêu cầu này không phải là xin cờ bỏ qua một kiểm tra
+          required: true
+        - label: Đã đọc phần Ranh giới trong CLAUDE.md
+          required: true
