@@ -16,33 +16,15 @@ for a in "$@"; do
   [ "$a" = "--brief" ] && BRIEF=1
 done
 
-# ── đọc version trong json: python3, fallback grep ──────────────────────
-jver() {
-  python3 -c 'import json,sys
-d=json.load(open(sys.argv[1]))
-for k in sys.argv[2].split("."):
-    d = d[int(k)] if isinstance(d,list) else d[k]
-print(d)' "$1" "$2" 2>/dev/null \
-  || grep -oE '"version" *: *"[^"]+"' "$1" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"$/\1/'
-}
-# vcmp a b → -1 nếu a<b, 0 nếu bằng, 1 nếu a>b. '-' và '?' coi như 0.0.0
-vcmp() { awk -v a="$1" -v b="$2" 'BEGIN{na=split(a,x,".");nb=split(b,y,".");
-  for(i=1;i<=3;i++){va=(i<=na?x[i]+0:0);vb=(i<=nb?y[i]+0:0);
-  if(va<vb){print "-1";exit}if(va>vb){print "1";exit}}print "0"}'; }
-known() { python3 -c 'import json,sys
-d=json.load(open(sys.argv[1])).get(sys.argv[2],{})
-for k in sys.argv[3].split("."): d = d.get(k,{}) if isinstance(d,dict) else ""
-print(d if isinstance(d,str) else "")' "$CFG/known_marketplaces.json" "$MKTNAME" "$1" 2>/dev/null; }
-
 # ── bốn mắt xích ────────────────────────────────────────────────────────
 PROJ="$(cat "$ROOT/.sdd/version" 2>/dev/null || echo '-')"
 RUN="$(jver "$PLUGIN/.claude-plugin/plugin.json" version)"; [ -z "$RUN" ] && RUN='-'
-MKTNAME="$(echo "$PLUGIN" | sed -nE 's#.*/plugins/cache/([^/]+)/[^/]+/[^/]+$#\1#p')"
+MKTNAME="$(mkt_of "$PLUGIN")"
 DEV=0; [ -z "$MKTNAME" ] && { MKTNAME="sdd-solo"; DEV=1; }   # chạy bằng --plugin-dir
-MKTLOC="$(known installLocation)"
+MKTLOC="$(mkt_field "$MKTNAME" installLocation)"
 MKT='-'; [ -n "$MKTLOC" ] && [ -f "$MKTLOC/.claude-plugin/marketplace.json" ] && \
   MKT="$(jver "$MKTLOC/.claude-plugin/marketplace.json" plugins.0.version)"
-SRC="$(known source.repo)"
+SRC="$(mkt_field "$MKTNAME" source.repo)"
 
 REM='-'
 if [ "$REMOTE" = "1" ] && [ -n "$SRC" ]; then

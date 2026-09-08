@@ -32,6 +32,7 @@ Trong repo dự án:
 | Code xong | `/sdd-solo:close UC-###` |
 | Cuối buổi | `/sdd-solo:state` |
 | Đang tới đâu · có đang chạy bản cũ không | `/sdd-solo:status` |
+| Có bản mới | `/sdd-solo:update` — chạy trọn ba khe, rồi mở session mới |
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
 
@@ -54,7 +55,7 @@ GitHub ──①──▶ marketplace đã tải ──②──▶ plugin đã 
 | ② plugin cũ hơn bản đã tải | `/plugin update sdd-solo` |
 | ① GitHub có bản mới | `/plugin marketplace update sdd-solo` |
 
-`/sdd-solo:status` tự kiểm cả ba (hỏi GitHub tối đa 3 giây, nhớ 24 tiếng) và chỉ nói khi lệch. Hook mở session cũng cảnh báo, nhưng **chỉ so cục bộ, không gọi mạng** — nên khe ① chỉ lộ ra khi chạy `status`.
+`/sdd-solo:status` tự kiểm cả ba (hỏi GitHub tối đa 3 giây, nhớ 24 tiếng) và chỉ nói khi lệch. `/sdd-solo:update` chạy đúng những khe đang lệch trong một lệnh — nhưng **bản mới chỉ có hiệu lực ở session sau**, giống hệt cách Claude Code tự update chính nó. Hook mở session cũng cảnh báo, nhưng **chỉ so cục bộ, không gọi mạng** — nên khe ① chỉ lộ ra khi chạy `status`.
 
 ## Mức chặn — nói thật
 

@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# update.sh — chạy trọn chuỗi update theo đúng thứ tự, chỉ những khe đang lệch.
+#   ① claude plugin marketplace update   ② claude plugin update   ③ scaffold --update
+# Bản mới KHÔNG áp vào phiên đang mở — giống hệt Claude Code, phải mở session mới.
+HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
+PLUGIN="${SDD_PLUGIN:-$(dirname "$HERE")}"; ROOT="$(project_root)"
+PNAME="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["name"])' "$PLUGIN/.claude-plugin/plugin.json" 2>/dev/null || echo sdd-solo)"
+MKTNAME="$(mkt_of "$PLUGIN")"
+
+if [ -z "$MKTNAME" ]; then
+  warn "plugin đang chạy từ --plugin-dir, không phải bản cài qua marketplace"
+  info "bỏ qua ① ②, chỉ chạy ③ scaffold --update"
+else
+  # ① marketplace clone ← GitHub
+  echo "① làm mới marketplace…"
+  OUT="$(claude plugin marketplace update "$MKTNAME" </dev/null 2>&1)"; RC=$?
+  echo "$OUT" | sed 's/^/    /'
+  [ "$RC" -eq 0 ] && ok "marketplace $MKTNAME" \
+                  || bad "không làm mới được marketplace — mất mạng? Chạy tiếp bằng bản đã tải."
+  # ② bản cài ← marketplace clone
+  MKTLOC="$(mkt_field "$MKTNAME" installLocation)"
+  MJ="$MKTLOC/.claude-plugin/marketplace.json"
+  MKT='-'
+  if [ -f "$MJ" ]; then
+    MKT="$(jver "$MJ" plugins.0.version)"
+    # ① vừa ghi lại clone xong; đọc trúng lúc file viết dở thì thử lại một lần
+    case "$MKT" in [0-9]*.[0-9]*) : ;; *) MKT="$(jver "$MJ" plugins.0.version)" ;; esac
+  fi
+  CUR="$(jver "$PLUGIN/.claude-plugin/plugin.json" version)"
+  if [ "$(vcmp "$CUR" "$MKT")" = "-1" ]; then
+    echo "② cài $PNAME $CUR → $MKT…"
+    OUT="$(claude plugin update "$PNAME@$MKTNAME" </dev/null 2>&1)"; RC=$?
+    echo "$OUT" | sed 's/^/    /'
+    [ "$RC" -eq 0 ] && ok "đã cài $MKT" || bad "cài không xong — làm tay: claude plugin update $PNAME@$MKTNAME"
+  else
+    ok "② bản cài đã là mới nhất ($CUR)"
+  fi
+fi
+
+# ③ .sdd/ của dự án ← scaffold của bản MỚI NHẤT, không phải bản đang chạy
+NEW="$(python3 -c '
+import json,sys,os
+p=os.path.expanduser("~/.claude/plugins/installed_plugins.json")
+d=json.load(open(p))["plugins"]
+for k,v in d.items():
+    if k.split("@")[0]==sys.argv[1] and v:
+        print(v[-1].get("installPath",""));break
+' "$PNAME" 2>/dev/null)"
+[ -n "$NEW" ] && [ -x "$NEW/scripts/scaffold.sh" ] || NEW="$PLUGIN"
+echo "③ cập nhật .sdd/ và template của dự án (scaffold từ $(jver "$NEW/.claude-plugin/plugin.json" version))…"
+"$NEW/scripts/scaffold.sh" "$NEW" "$ROOT" --update 2>&1 | sed 's/^/    /'
+
+RUNNING="$(jver "$PLUGIN/.claude-plugin/plugin.json" version)"
+INSTALLED="$(jver "$NEW/.claude-plugin/plugin.json" version)"
+echo
+echo "=== Sau khi update ==="
+printf '  %-8s %s\n' "$INSTALLED" "bản đã cài"
+printf '  %-8s %s\n' "$(cat "$ROOT/.sdd/version" 2>/dev/null || echo '-')" "dự án .sdd/"
+printf '  %-8s %s\n' "$RUNNING"   "phiên NÀY vẫn đang chạy"
+echo
+if [ "$(vcmp "$RUNNING" "$INSTALLED")" = "-1" ]; then
+  echo "Mở session mới để nạp $INSTALLED. Giống Claude Code: bản mới không áp vào phiên đang mở."
+else
+  ok "đang chạy bản mới nhất"
+fi
