@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.2 — 2026-09-08
+Đóng #9 — bộ lọc literal của 1.6.0 lọc theo **độ dài chữ số** nên nuốt mất ngưỡng nghiệp vụ một chữ số.
+
+`[0-9]{2,}` quét sạch `graceDays: 7` · `maxRetries: 3` · `otpLength: 6` · `maxDevices: 1` — loại phổ biến nhất. Và nó không im lặng bỏ qua mà **khẳng định sạch**: `✓ không thấy số literal lạ` cộng `ĐÓNG ĐƯỢC (0 cảnh báo)`. Cùng họ với #5, khác ở chỗ nguyên nhân nằm trong bộ lọc chứ không trong phạm vi quét.
+
+Ca do runxops-93 dựng nói đúng vấn đề: dự án test có **RULE-001 "một license một thiết bị"**, con số của rule đó là `1`, code viết `maxDevices: 1` — `close-check` không nhìn thấy con số của chính cái rule nó đi soi.
+
+Lọc theo ngữ cảnh thay vì độ dài: bắt mọi số đứng ngay sau so sánh, `:`, `=`, `,` hoặc `(`; loại chỉ số mảng, biến đếm vòng lặp (`i j k n idx index`), số version. **Bỏ hẳn bộ lọc chuỗi** — pattern vốn không khớp số nằm sau dấu nháy (`log("đã nạp 3 mục")` không dính), và thà dương tính giả: đây là bước ngồi soi cùng user, không phải cổng chặn.
+
+Đo trên mẫu chỉ có số một chữ số: bắt `!== 6` `graceDays: 7` `maxDevices: 1`, vẫn bỏ `list[0]`, `for (let i = 0; i < list.length; i++)`, `n * 2`, `VERSION = "1.4.2"`.
+
 ## 2.0.1 — 2026-09-08
 Đóng #8 — lỗi nặng nhất của cả đợt, và là lỗi trong **hướng dẫn của chính tôi**.
 

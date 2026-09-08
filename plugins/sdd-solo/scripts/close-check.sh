@@ -38,9 +38,16 @@ if [ -n "$SDS" ]; then
   NF_="$(cd "$ROOT" && find $SDS -type f 2>/dev/null | grep -vcE '\.(test|spec)\.' )"
 fi
 if [ "$NF_" -gt 0 ]; then
-  L="$(cd "$ROOT" && grep -rnE '([=<>!]=?|:|,|\() *[0-9]{2,}\b' $SDS 2>/dev/null \
+  # Lọc theo NGỮ CẢNH, không theo độ dài chữ số. Bản 1.6.0 dùng {2,} nên quét
+  # sạch luôn ngưỡng nghiệp vụ một chữ số — mà đó là loại phổ biến nhất:
+  # graceDays: 7 · maxRetries: 3 · otpLength: 6 · maxDevices: 1. Xem #9.
+  # KHÔNG lọc chuỗi: pattern vốn không khớp số nằm sau dấu nháy, và thà dương
+  # tính giả — đây là bước ngồi soi cùng user, không phải cổng chặn.
+  L="$(cd "$ROOT" && grep -rnE '([=<>!]=?|:|,|\() *[0-9]+\b' $SDS 2>/dev/null \
        | grep -vE '\.(test|spec)\.[a-z]+:|RULE-|CON-|ADR-' \
-       | grep -vE '\[[0-9]+\]|v?[0-9]+\.[0-9]+\.[0-9]+|"[^"]*[0-9]{2,}[^"]*"' \
+       | grep -vE '\[[0-9]+\]' \
+       | grep -vE '\b(i|j|k|n|idx|index)\b *[=<>!]=? *[0-9]+' \
+       | grep -vE 'v?[0-9]+\.[0-9]+\.[0-9]+' \
        | head -8)"
   if [ -n "$L" ]; then
     warn "số literal cần soi (phải trích RULE/CON hoặc giải thích):"; echo "$L" | sed 's/^/      /'
