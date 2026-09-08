@@ -46,14 +46,18 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 Bốn chỗ giữ version, lệch chỗ nào thì lệnh sửa khác nhau:
 
 ```
-GitHub ──①──▶ marketplace đã tải ──②──▶ plugin đã cài ──③──▶ .sdd/ của dự án
+GitHub ─①─▶ marketplace đã tải ─②─▶ bản đã cài ─③─▶ .sdd/ của dự án
+                                        └───④─▶ phiên Claude Code đang mở
 ```
 
 | Khe | Lệnh |
 |---|---|
-| ③ `.sdd/` cũ hơn plugin | `/sdd-solo:init --update` |
-| ② plugin cũ hơn bản đã tải | `/plugin update sdd-solo` |
+| ③ `.sdd/` cũ hơn bản đã cài | `/sdd-solo:init --update` |
+| ② bản đã cài cũ hơn bản đã tải | `/plugin update sdd-solo` |
 | ① GitHub có bản mới | `/plugin marketplace update sdd-solo` |
+| ④ phiên đang mở còn chạy bản cũ | **không lệnh nào sửa được** — mở session mới |
+
+Khe ④ là khe nguy hiểm nhất: vừa `/plugin update` xong, `.sdd/` đã mới, mọi thứ trên đĩa đều đúng, nhưng phiên đang mở vẫn chạy code cũ nạp lúc mở — gõ `/sdd-solo:gate` là nhận logic cũ. Chỉ hook SessionStart biết được phiên nạp bản nào, nên nó ghi lại để `version-check` đọc.
 
 `/sdd-solo:status` tự kiểm cả ba (hỏi GitHub tối đa 3 giây, nhớ 24 tiếng) và chỉ nói khi lệch. `/sdd-solo:update` chạy đúng những khe đang lệch trong một lệnh — nhưng **bản mới chỉ có hiệu lực ở session sau**, giống hệt cách Claude Code tự update chính nó. Hook mở session cũng cảnh báo, nhưng **chỉ so cục bộ, không gọi mạng** — nên khe ① chỉ lộ ra khi chạy `status`.
 

@@ -46,3 +46,23 @@ for k in sys.argv[3].split("."): d = d.get(k,{}) if isinstance(d,dict) else ""
 print(d if isinstance(d,str) else "")' "$CLAUDE_PLUGINS_DIR/known_marketplaces.json" "$1" "$2" 2>/dev/null; }
 # mkt_of <plugin_root> → tên marketplace suy từ cache/<mkt>/<plugin>/<ver>, rỗng nếu chạy --plugin-dir
 mkt_of() { echo "$1" | sed -nE 's#.*/plugins/cache/([^/]+)/[^/]+/[^/]+$#\1#p'; }
+# installed_ver <tên plugin> → version đang cài trên đĩa (installed_plugins.json)
+installed_ver() { python3 -c 'import json,sys,os
+p=os.path.expanduser("~/.claude/plugins/installed_plugins.json")
+try: d=json.load(open(p))["plugins"]
+except Exception: sys.exit(0)
+for k,v in d.items():
+    if k.split("@")[0]==sys.argv[1] and v: print(v[-1].get("version","")); break' "$1" 2>/dev/null; }
+# installed_path <tên plugin> → thư mục bản đang cài
+installed_path() { python3 -c 'import json,sys,os
+p=os.path.expanduser("~/.claude/plugins/installed_plugins.json")
+try: d=json.load(open(p))["plugins"]
+except Exception: sys.exit(0)
+for k,v in d.items():
+    if k.split("@")[0]==sys.argv[1] and v: print(v[-1].get("installPath","")); break' "$1" 2>/dev/null; }
+# Bản mà PHIÊN Claude Code đang mở thật sự nạp. Chỉ hook SessionStart biết được
+# (nó chạy từ thư mục plugin đã nạp), nên hook ghi lại, ai cần thì đọc.
+# CLAUDE_PLUGIN_ROOT KHÔNG phải env var — nó là token Claude Code thay trong
+# hooks.json và SKILL.md, nên script gọi từ bash không đọc được.
+sess_file() { echo "${XDG_CACHE_HOME:-$HOME/.cache}/sdd-solo/session-${1:-${CLAUDE_CODE_SESSION_ID:-none}}"; }
+sess_ver()  { cat "$(sess_file)" 2>/dev/null; }
