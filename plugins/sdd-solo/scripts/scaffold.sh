@@ -76,6 +76,10 @@ if [ ! -f "$ROOT/.sdd/config" ]; then
     echo "uc_test_dir=$UCT"
   } > "$ROOT/.sdd/config"
   ok ".sdd/config — code_paths=$DC · test_paths=$DT (dò từ repo; sửa nếu sai)"
+  # tests/ · __tests__/ · spec/ là ba quy ước khác hẳn nhau. Đoán trượt thì
+  # ac-coverage mù mà không ai biết, nên nói ngay thay vì ghi lặng.
+  [ -d "$ROOT/$(printf '%s' "$DT" | awk '{print $1}')" ] || \
+    warn ".sdd/config: uc_test_dir=$UCT là ĐOÁN — thư mục test chưa tồn tại. Sửa cho khớp quy ước của repo (tests/ · __tests__/ · spec/)."
 else
   info ".sdd/config đã có — code_paths=$(code_paths "$ROOT")"
 fi

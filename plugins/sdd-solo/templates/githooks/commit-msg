@@ -15,8 +15,12 @@ RE="^($(printf '%s %s' "$CP" "$TP" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
 # Config sai thì hook mù. Phân biệt "repo chưa có code" với "config sai" bằng
 # chính danh sách file đang commit: có file nguồn mà không khớp đường dẫn nào
 # → chặn, đừng cho qua trong im lặng.
+# Danh sách LOẠI TRỪ chứ không phải danh sách cho phép: sai sót nghiêng về
+# chặn nhầm, đỡ hơn nghiêng về bỏ lọt. File không có phần mở rộng (Makefile,
+# Dockerfile…) không tính, để repo chưa có code không bị chặn oan.
 SRCLIKE="$(echo "$STAGED" | grep -vE '^(specs|docs|changes|checklists|prompts|\.sdd|\.githooks)/' \
-          | grep -E '\.(js|ts|tsx|jsx|py|go|rb|java|cs|kt|swift|rs|php|c|cc|cpp|h|hpp|vue|svelte)$')"
+          | grep -E '\.[A-Za-z0-9]+$' \
+          | grep -viE '\.(md|markdown|txt|json|jsonc|lock|ya?ml|toml|ini|cfg|conf|env|csv|tsv|svg|png|jpe?g|gif|ico|webp|pdf|bpmn|dmn|drawio|mmd|html?|css|scss|less|gitignore|editorconfig|npmrc|nvmrc|bak|new)$')"
 OUTSIDE="$(echo "$SRCLIKE" | grep -vE "$RE")"
 HAVE=0; for d in $CP $TP; do [ -d "$ROOT/$d" ] && HAVE=1; done
 if [ -n "$SRCLIKE" ] && [ "$HAVE" = 0 ]; then

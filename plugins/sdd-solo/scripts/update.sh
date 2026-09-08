@@ -33,7 +33,12 @@ else
     bad "② bỏ qua vì không đọc được version marketplace → làm tay: claude plugin update $PNAME@$MKTNAME"
     MKT='-'
   elif [ "$(vcmp "$CUR" "$MKT")" = "-1" ]; then
-    echo "② cài $PNAME $CUR → $MKT…"
+    # is_semver neo hai đầu đã cho qua tới đây, nghĩa là BIẾN sạch mà HIỂN THỊ
+    # hỏng. Nghi ký tự nhiều byte đứng sát số (→ và … quanh $MKT); dòng bảng
+    # của version-check in version trước nhãn sau thì chưa ai báo lỗi bao giờ.
+    # Bỏ hết ký tự nhiều byte khỏi dòng này, và đo bytes một lần cho dứt điểm.
+    printf '  [đo #6] MKT bytes: '; printf '%s' "$MKT" | od -c | head -1
+    echo "  2. cai $PNAME: $CUR -> $MKT"
     OUT="$(claude plugin update "$PNAME@$MKTNAME" </dev/null 2>&1)"; RC=$?
     echo "$OUT" | sed 's/^/    /'
     [ "$RC" -eq 0 ] && ok "đã cài $MKT" || bad "cài không xong — làm tay: claude plugin update $PNAME@$MKTNAME"
