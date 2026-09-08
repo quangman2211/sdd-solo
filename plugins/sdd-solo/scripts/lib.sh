@@ -119,3 +119,15 @@ plugin_script() {
   find "$HOME/.claude/plugins/cache" -type f -name "$1" -path '*sdd-solo*' 2>/dev/null \
     | sort -t/ -k7 -V | tail -1
 }
+# id_exists <ID> <root> → 0 nếu ID có thật. Cùng luật với githook commit-msg
+# (hook chạy bash trần nên phải chép logic, không dùng được hàm này).
+id_exists() {
+  case "$1" in
+    UC-*)   [ -n "$(find_uc "$1" "$2")" ];;
+    CHG-*)  ls -d "$2/specs/changes/$1-"* >/dev/null 2>&1 || ls -d "$2/changes/$1-"* >/dev/null 2>&1;;
+    RULE-*) grep -qE "^## $1\b" "$2/specs/rules.md" 2>/dev/null;;
+    BR-*)   grep -qE "^#{1,2} $1\b" "$2/specs/br.md" 2>/dev/null;;
+    ADR-*)  ls "$2/specs/internal/adr/$1"* >/dev/null 2>&1 || ls "$2/docs/adr/$1"* >/dev/null 2>&1;;
+    *) return 1;;
+  esac
+}

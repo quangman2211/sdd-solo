@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.1.2 — 2026-09-08
+
+### Sửa
+
+- **`commit-msg` chỉ kiểm ID có thật với tiền tố `UC-`** (#15, nặng). Bốn tiền tố còn
+  lại — `CHG-` `ADR-` `BR-` `RULE-` — chỉ bị kiểm *hình dạng*: đúng regex là qua.
+  `feat(CHG-999): …` với ID bịa hoàn toàn commit được, `feat(ADR-777)`, `feat(BR-888)`,
+  `feat(RULE-666)` cũng vậy. Đây là đường vòng ba ký tự quanh lời hứa "không có cờ bỏ
+  qua": không cần cờ, chỉ cần đổi `UC` thành `CHG` trong message. Giờ mỗi tiền tố phải
+  chứng minh ID tồn tại — `CHG` cần `specs/changes/<ID>-*/`, `ADR` cần file trong
+  `specs/internal/adr/`, `RULE` và `BR` cần heading tương ứng trong `specs/rules.md` /
+  `specs/br.md`. Không tìm thấy thì chặn và nói rõ chỗ phải tạo.
+- **`ls a* b*` trả lỗi nếu *bất kỳ* glob nào không khớp** — nên nhánh `CHG-`/`ADR-`
+  vừa viết ở trên chặn nhầm cả ID thật: `specs/changes/CHG-001-…/` có thật, nhưng
+  glob đường dẫn 1.x (`changes/CHG-001-*`) không khớp là `ls` exit 1 và hook kết luận
+  "ID bịa". Tách thành hai phép thử nối bằng `||`. Cùng họ với bẫy `grep -c || echo 0`
+  và command substitution dưới `set -e`: **lệnh thành công một phần vẫn là lệnh thất bại**.
+- **`trace-ratio.sh` đếm mọi thứ trông giống ID** (#16, một phần). Chỉ số "commit có
+  trace" vì thế đếm luôn cả nhãn dán. Giờ chỉ đếm ID `id_exists()` xác nhận có thật,
+  và cảnh báo riêng số commit mang ID không tồn tại ở đâu trong repo.
+- `specs/changes/README.md` trỏ `_template/` — đường dẫn 1.x, đã đổi từ 2.0.0. Sửa
+  thành `.sdd/templates/change/`.
+
+### Thêm
+
+- `id_exists <ID> <root>` trong `lib.sh` — một chỗ định nghĩa "ID có thật". Githook
+  chạy bash trần không nạp `lib.sh` được nên vẫn phải chép logic; hai bản phải đi cùng nhau.
+
 ## 2.1.1 — 2026-09-08
 Đóng #14 — **2.0.3 chặn sạch `/sdd-solo:init` trên repo trắng, chết im lặng.**
 

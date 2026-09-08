@@ -7,4 +7,4 @@ Vòng đời: proposed → specified → designed → applying → verified → 
 Baseline trong `specs/` chỉ đổi ở bước archive. Delta dùng `ADDED / MODIFIED / REMOVED`.
 `REMOVED` không xoá AC khỏi baseline khi archive — đánh dấu `deprecated` kèm ngày.
 
-Copy `_template/` thành `CHG-###-slug/`.
+Copy `.sdd/templates/change/` thành `CHG-###-slug/` (2.0.0 dời template ra khỏi cây nội dung).

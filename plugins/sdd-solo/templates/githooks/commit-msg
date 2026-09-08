@@ -42,12 +42,37 @@ if [ "$TOUCH_CODE" = 1 ]; then
   if [ -z "$ID" ]; then
     echo "✗ Commit đụng $CP hoặc $TP phải có ID: <type>(UC-###): ..." >&2; exit 1
   fi
-  case "$ID" in UC-*)
+  # MỌI tiền tố phải chứng minh ID có thật. Trước 2.1.2 chỉ UC-* bị kiểm, nên
+  # đổi nhãn thành feat(CHG-999) là qua hết — kể cả ID bịa hoàn toàn. Đó là một
+  # cờ bỏ qua dài đúng ba chữ, trong khi README hứa không có cờ nào. Xem #15.
+  case "$ID" in
+  UC-*)
     if [ ! -f "$ROOT/.sdd/gate/$ID.ok" ]; then
       echo "✗ $ID chưa qua cổng DoR (.sdd/gate/$ID.ok không có). Spec trước, code sau — chạy /sdd-solo:gate $ID." >&2; exit 1
     fi
     if ! git log --format=%s | grep -qE "^docs\($ID\)"; then
       echo "✗ Chưa có commit docs($ID) nào trước commit code này." >&2; exit 1
+    fi;;
+  CHG-*)
+    # 2.0.0 dời changes/ → specs/changes/; nhận cả hai cho repo chưa migrate
+    # ls a b trả lỗi nếu BẤT KỲ đối số nào hỏng — glob thứ hai không khớp là
+    # chặn luôn cả ID thật. Phải hỏi từng chỗ một.
+    if ! ls -d "$ROOT/specs/changes/$ID-"* >/dev/null 2>&1 && \
+       ! ls -d "$ROOT/changes/$ID-"* >/dev/null 2>&1; then
+      echo "✗ $ID không có thư mục specs/changes/$ID-*/ — ID bịa hoặc chưa tạo change." >&2; exit 1
+    fi;;
+  RULE-*)
+    if ! grep -qE "^## $ID\b" "$ROOT/specs/rules.md" 2>/dev/null; then
+      echo "✗ $ID không có heading trong specs/rules.md." >&2; exit 1
+    fi;;
+  BR-*)
+    if ! grep -qE "^#{1,2} $ID\b" "$ROOT/specs/br.md" 2>/dev/null; then
+      echo "✗ $ID không có heading trong specs/br.md." >&2; exit 1
+    fi;;
+  ADR-*)
+    if ! ls "$ROOT/specs/internal/adr/$ID"* >/dev/null 2>&1 && \
+       ! ls "$ROOT/docs/adr/$ID"* >/dev/null 2>&1; then
+      echo "✗ $ID không có file trong specs/internal/adr/." >&2; exit 1
     fi;;
   esac
 fi
