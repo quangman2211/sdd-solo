@@ -96,4 +96,5 @@ Bốn luật khi chuyển:
 2. Mọi "xây X" phải đẩy ngược lên được một mục tiêu đo được. Không ra → tính năng mồ côi,
    vào Out of Scope hoặc Open Question, không giữ im lặng.
 3. Khẳng định không bằng chứng ("khách phàn nàn nhiều") → Open Question, không vào Background.
-4. Cuối cùng phải liệt kê thứ đã **bỏ** và lý do. Bỏ im lặng là cách nhanh nhất để mất thứ quan trọng.
+4. Thứ đã **bỏ** phải ghi vào mục `## Đã loại khỏi brief` trong BR, mỗi dòng một lý do — không
+   phải chỉ nói miệng rồi thôi. Sáu tháng sau, thứ duy nhất còn lại là file.

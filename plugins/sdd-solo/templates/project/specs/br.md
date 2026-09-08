@@ -22,6 +22,7 @@ bộ 24 kiểm ở cổng DoR bảo vệ rất kỷ luật suốt phần đời 
 
 ## Metadata
 - **Status:** approved
+- **Nguồn:** phỏng vấn (/sdd-solo:intake)
 - **Target release:** v1
 - **Last updated:** 2026-01-15
 
@@ -116,6 +117,7 @@ chỉ là đường thẳng từ Goal xuống danh sách việc đã định là
 
 ## Metadata
 - **Status:** draft | approved | in-progress | done
+- **Nguồn:** phỏng vấn (/sdd-solo:intake) | brief `<đường/dẫn>` | tự viết
 - **Target release:** v___
 - **Last updated:** YYYY-MM-DD
 
@@ -135,6 +137,11 @@ Khẳng định nào không có số hoặc nguồn thì đưa xuống Open Ques
 
 ## Out of Scope
 - <Những thứ cố ý không làm — mỗi dòng nên là một nhánh trên Impact Map không nối về Goal>
+
+<!-- Mục dưới CHỈ có khi BR chuyển từ brief. Viết từ phỏng vấn thì xoá đi —
+     không loại cái gì khỏi brief thì không có gì để ghi. -->
+## Đã loại khỏi brief
+- <mục trong brief> — <lý do không đưa vào spec>
 
 ## Related Use Cases
 - UC-###: ...

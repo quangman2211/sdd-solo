@@ -82,9 +82,21 @@ chưa rõ (Open Questions).
 3. **Khẳng định không bằng chứng không được vào Background.** Brief hay viết "khách hàng phàn nàn
    nhiều về…" mà không có số. Câu đó thành Open Question *"lấy ở đâu con số này?"*, không thành
    sự thật trong Background.
-4. **Nói ra cái đã bỏ.** Kết thúc phải in danh sách câu/mục trong brief **không** được đưa vào
-   spec, kèm lý do từng cái. Bỏ im lặng là cách nhanh nhất để mất thứ quan trọng.
+4. **Ghi ra cái đã bỏ — vào FILE, không phải ra màn hình.** Mọi câu/mục trong brief không được
+   đưa vào spec phải thành một dòng `- <mục> — <lý do>` trong mục `## Đã loại khỏi brief` của BR,
+   rồi mới đọc lại cho user nghe. Bản 3.2.0 chỉ bảo "in danh sách" nên toàn bộ sản phẩm của luật
+   này sống trong lời nói: đóng terminal là mất, và sáu tháng sau không ai biết brief từng có
+   những gì và vì sao chúng biến mất. Ba luật trên đều để lại `___` hoặc Open Question trong file;
+   luật này cũng phải để lại dấu vết. Xem #21.
 5. **Không tự viết UC.** Chỉ sinh ID + tên UC ứng viên.
+6. **Ghi nguồn vào Metadata của BR:** dòng `- **Nguồn:** brief <đường/dẫn>`. Đó là thứ cho
+   `br-check.sh` biết BR này phải có mục `## Đã loại khỏi brief`.
+
+**Ranh giới số — số nào cấm, số nào không.** Luật 1 cấm số ở chỗ **quyết định nghiệp vụ**: ngưỡng,
+thời hạn, quota, quyền. Nó **không** cấm số ở chỗ **cách đo**: "bấm giờ 20 lượt đặt bàn liên tiếp"
+là một cách đo cụ thể và tốt hơn hẳn "bấm giờ vài lượt". Cách đo mơ hồ thì metric không kiểm được,
+tức mất đúng thứ `BR-000` đang dạy. Cụ thể ở cách đo là đúng; cụ thể ở quyết định mà không có ai
+duyệt là bịa.
 
 Vì sao bộ luật này gắt: brief do LLM viết gần như luôn kèm số nghe hợp lý mà không ai quyết —
 *"khoá 15 phút sau 5 lần sai"*, *"giữ tồn kho 30 phút"*. Chép thẳng vào `specs/` thì từ đó trở đi

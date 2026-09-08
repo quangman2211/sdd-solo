@@ -115,17 +115,30 @@ for uf in $(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' \
     || bad "$uid khai thuộc $ID nhưng ## Related Use Cases của $ID không liệt kê nó"
 done
 
-# 9. adversarial pass — CẢNH BÁO, không đỏ. Phase 1 mềm hơn Phase 3: BR viết xong
+# 9. BR chuyển từ brief phải giữ lại dấu vết của thứ đã loại.
+# Luật 4 của intake trước 3.2.2 chỉ bảo "in danh sách" nên sản phẩm của nó sống
+# trong lời nói: đóng terminal là mất. Luật không để lại dấu vết trong file thì
+# không kiểm được, và cái gì không kiểm được thì cuối cùng sẽ trôi. Xem #21.
+if printf '%s' "$B" | grep -qiE '\*\*Nguồn:\*\*.*brief'; then
+  DR="$(sec '## Đã loại khỏi brief')"
+  if filled "$DR" && printf '%s' "$DR" | grep -qE '^[[:space:]]*[-*] .*—'; then
+    ok "có ## Đã loại khỏi brief"
+  else
+    warn "Nguồn là brief mà không có ## Đã loại khỏi brief (mỗi dòng '- <mục> — <lý do>') — thứ bị bỏ đang không có chỗ nào ghi lại"
+  fi
+fi
+
+# 10. adversarial pass — CẢNH BÁO, không đỏ. Phase 1 mềm hơn Phase 3: BR viết xong
 # đã dùng được để mở UC; ba vai là bước làm nó chắc, không phải điều kiện tồn tại.
 printf '%s' "$(sec '## Adversarial pass')" | grep -qE 'Ngày chạy: *[0-9]{4}-[0-9]{2}-[0-9]{2}' \
   && ok "adversarial pass đã chạy" \
   || warn "chưa chạy /sdd-solo:adversarial $ID — ba vai tầng BR hay bắt ra 'đây là giải pháp viết ngược thành lý do'"
 
-# 10. History
+# 11. History
 printf '%s' "$(sec '## History')" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}' \
   && ok "History có dòng ghi ngày" || bad "## History chưa có dòng 'v1 (YYYY-MM-DD)'"
 
-# 11. ___ là hợp lệ ở Phase 1 — cảnh báo, không đỏ. Ép điền sớm đẻ ra đúng loại
+# 12. ___ là hợp lệ ở Phase 1 — cảnh báo, không đỏ. Ép điền sớm đẻ ra đúng loại
 # số bịa mà cả bước intake đang cố chặn.
 U="$(printf '%s' "$B" | grep -o '___' | wc -l | tr -d ' ')"
 [ "$U" -gt 0 ] && warn "còn $U chỗ ___ — hợp lệ ở Phase 1, nhưng là nợ: mỗi chỗ nên có một dòng Open Question"

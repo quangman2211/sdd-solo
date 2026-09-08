@@ -1,5 +1,42 @@
 # Changelog
 
+## 3.2.2 — 2026-09-08
+
+### Sửa
+
+- **Luật 4 của `/sdd-solo:intake` không để lại dấu vết nào trong file** (#21). Luật này bảo
+  *"in danh sách thứ đã bỏ kèm lý do"* — và agent làm đúng chữ đó: đọc ra một danh sách khá kỹ,
+  rồi thôi. Grep toàn bộ BR sinh ra: không mục nào ghi thứ đã bỏ. Toàn bộ sản phẩm của luật này
+  sống trong **lời nói**; đóng terminal là mất, và sáu tháng sau không ai biết brief từng có
+  những gì, vì sao chúng biến mất.
+
+  Ba luật kia đều để lại dấu vết trong file — `___`, Open Question, nhánh `-.->` — nên kiểm được.
+  Luật 4 là luật duy nhất không. Cùng họ với #11 #12 #13: **cái gì không kiểm được thì cuối cùng
+  sẽ trôi**; khác ở chỗ lần này thứ trôi là một luật chứ không phải một cổng.
+
+  - Template `br.md` có thêm mục `## Đã loại khỏi brief` (chỉ dùng khi BR chuyển từ brief) và
+    dòng `- **Nguồn:**` trong Metadata.
+  - `br-check.sh` **cảnh báo** khi Metadata nói nguồn là brief mà mục đó thiếu hoặc rỗng. Chỉ
+    cảnh báo, và chỉ với BR từ brief — BR viết từ phỏng vấn không loại cái gì nên không có mục
+    đó là đúng.
+  - Luật 4 trong SKILL.md đổi từ *"in danh sách"* thành *"ghi vào `## Đã loại khỏi brief`, rồi
+    mới đọc lại cho user nghe"*.
+
+### Làm rõ
+
+- **Ranh giới số trong luật 1.** Luật cấm số ở chỗ **quyết định nghiệp vụ** — ngưỡng, thời hạn,
+  quota, quyền. Nó **không** cấm số ở chỗ **cách đo**: *"bấm giờ 20 lượt đặt bàn liên tiếp"* là
+  một cách đo cụ thể và tốt hơn hẳn *"bấm giờ vài lượt"*. Cấm luôn thì cách đo tụt về mơ hồ, tức
+  mất đúng thứ `BR-000` đang dạy. Cụ thể ở cách đo là đúng; cụ thể ở quyết định mà không ai duyệt
+  là bịa. Đã nói rõ trong `skills/intake/SKILL.md`.
+
+### Ghi nhận
+
+Ba luật đầu chạy đúng trên brief giả 29 dòng: mọi số không nguồn bị hạ thành
+`___ (brief đề xuất …, chưa ai duyệt)`, ba khẳng định không bằng chứng xuống Open Questions,
+5/8 tính năng ra Out of Scope kèm nhánh `-.->`, dark mode bị gọi thẳng là mồ côi. Con số duy
+nhất được giữ nguyên là một số hiệu nghị định — thứ có nguồn thật.
+
 ## 3.2.1 — 2026-09-08
 
 ### Sửa
