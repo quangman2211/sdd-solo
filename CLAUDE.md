@@ -33,9 +33,29 @@ CHANGELOG.md                         mỗi bản một mục — đây là ## Hi
    - skill/hook: `cd <repo dự án> && claude --plugin-dir <đường dẫn repo này>/plugins/sdd-solo`
    - smoke test đầy đủ: tạo repo tạm, chạy scaffold → viết UC giả → gate (đỏ) → điền đủ, commit docs lùi ngày → gate (xanh) → gate-pass → commit feat (hook phải chặn khi thiếu marker, cho qua khi có) → close-check/-pass. Xem CHANGELOG 1.0.0 cho kịch bản gốc.
 3. `claude plugin validate .` và `claude plugin validate plugins/sdd-solo` — cả hai phải pass.
-4. Bump version ở **hai** file (`plugin.json`, `marketplace.json`), thêm mục CHANGELOG.
+4. **Bump version — bắt buộc, không có ngoại lệ.** Sửa ở **hai** file: `plugins/sdd-solo/.claude-plugin/plugin.json` và `.claude-plugin/marketplace.json`. Hai số phải khớp nhau. Thêm một mục CHANGELOG.
 5. Commit `fix(sdd-solo): …` / `feat(sdd-solo): …`, push.
 6. Ở dự án: `/plugin marketplace update sdd-solo` → `/plugin update sdd-solo`; nếu đụng `templates/` → `/sdd-solo:init --update`.
+
+### Vì sao không được quên bump
+Claude Code cache plugin theo **thư mục tên version**:
+
+```
+~/.claude/plugins/cache/sdd-solo/sdd-solo/1.0.0/
+                                        └── version ở đây
+```
+
+Push mà không bump → `/plugin update` thấy version trùng, **không tải lại gì cả**. Dự án vẫn chạy code cũ trong khi git đã có code mới. Không có thông báo lỗi — đây là loại hỏng im lặng tốn nhiều giờ nhất để tìm ra.
+
+Kiểm version dự án đang thực sự chạy:
+```bash
+find ~/.claude/plugins/cache -path '*sdd-solo*' -name plugin.json -exec grep -h version {} \;
+```
+Số này phải khớp `plugin.json` trên `main`. Lệch là chưa update tới.
+
+**Khi nào KHÔNG cần bump:** chỉ khi thay đổi nằm hoàn toàn ngoài `plugins/sdd-solo/` — `README.md`, `CLAUDE.md` gốc, `.github/`, `LICENSE`. Đụng bất cứ file nào **trong** `plugins/sdd-solo/` (skill, hook, script, template, docs của plugin) → bump.
+
+Quy tắc bump: sửa lỗi → patch (1.0.0 → 1.0.1) · thêm lệnh, thêm kiểm tra, đổi template → minor (1.0.0 → 1.1.0) · đổi quy tắc khiến dự án đang chạy phải sửa tay → major.
 
 ## Cái gì lan tới dự án bằng cách nào
 | Sửa | Sau `/plugin update` | Cần thêm |
@@ -44,6 +64,8 @@ CHANGELOG.md                         mỗi bản một mục — đây là ## Hi
 | templates/project/* | chưa | `/sdd-solo:init --update` |
 | templates/CLAUDE.md.tmpl | chưa | `init --update` thay khối giữa marker |
 | templates/githooks/* | chưa | `init --update` ghi đè `.githooks/` |
+
+Cả bảng này chỉ đúng khi đã bump version. Chưa bump thì `/plugin update` không tải gì, mọi dòng trên thành vô nghĩa.
 
 ## Khi viết script
 - bash 3.2: không dùng mảng kết hợp, `mapfile`, `${var,,}`. `sed -i.bak` rồi `rm .bak`. `shasum -a 256` có fallback `sha256sum` trong `lib.sh`.
