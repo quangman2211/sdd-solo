@@ -10,3 +10,5 @@ done
 echo; "$HERE/trace-ratio.sh"; "$HERE/ac-coverage.sh"
 # phụ thuộc: chỉ nói khi thiếu, đủ thì im
 D="$("$HERE/deps-check.sh" 2>&1)" || { echo; echo "$D"; }
+# version: hỏi GitHub tối đa 3s, nhớ 24h. Chỉ nói khi lệch.
+V="$("$HERE/version-check.sh" --remote 2>&1)" || { echo; echo "$V"; }

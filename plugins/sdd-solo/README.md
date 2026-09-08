@@ -31,7 +31,7 @@ Trong repo dự án:
 | Buổi sau, đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` |
 | Code xong | `/sdd-solo:close UC-###` |
 | Cuối buổi | `/sdd-solo:state` |
-| Đang tới đâu | `/sdd-solo:status` |
+| Đang tới đâu · có đang chạy bản cũ không | `/sdd-solo:status` |
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
 
@@ -39,6 +39,22 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 
 - **Plugin** (`plugins/sdd-solo/`) giữ *hành vi*: skill, hook, script kiểm, template gốc, prompt, checklist. Update một chỗ.
 - **Dự án** giữ *nội dung*: `specs/`, `docs/`, `changes/`, `STATE.md`, `CLAUDE.md`. Plugin không bao giờ ghi đè file bạn đã sửa — `init --update` để bản mới cạnh dưới tên `.new`.
+
+## Đang chạy bản nào
+
+Bốn chỗ giữ version, lệch chỗ nào thì lệnh sửa khác nhau:
+
+```
+GitHub ──①──▶ marketplace đã tải ──②──▶ plugin đã cài ──③──▶ .sdd/ của dự án
+```
+
+| Khe | Lệnh |
+|---|---|
+| ③ `.sdd/` cũ hơn plugin | `/sdd-solo:init --update` |
+| ② plugin cũ hơn bản đã tải | `/plugin update sdd-solo` |
+| ① GitHub có bản mới | `/plugin marketplace update sdd-solo` |
+
+`/sdd-solo:status` tự kiểm cả ba (hỏi GitHub tối đa 3 giây, nhớ 24 tiếng) và chỉ nói khi lệch. Hook mở session cũng cảnh báo, nhưng **chỉ so cục bộ, không gọi mạng** — nên khe ① chỉ lộ ra khi chạy `status`.
 
 ## Mức chặn — nói thật
 

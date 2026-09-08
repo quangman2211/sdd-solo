@@ -47,11 +47,11 @@ Claude Code cache plugin theo **thư mục tên version**:
 
 Push mà không bump → `/plugin update` thấy version trùng, **không tải lại gì cả**. Dự án vẫn chạy code cũ trong khi git đã có code mới. Không có thông báo lỗi — đây là loại hỏng im lặng tốn nhiều giờ nhất để tìm ra.
 
-Kiểm version dự án đang thực sự chạy:
+Kiểm bằng script (1.2.0+), nó so cả bốn mắt xích và chỉ đúng lệnh cho từng chỗ lệch:
 ```bash
-find ~/.claude/plugins/cache -path '*sdd-solo*' -name plugin.json -exec grep -h version {} \;
+bash plugins/sdd-solo/scripts/version-check.sh --remote
 ```
-Số này phải khớp `plugin.json` trên `main`. Lệch là chưa update tới.
+Chuỗi là `GitHub → marketplace clone → plugin đã cài → .sdd/ của dự án`; mỗi khe một lệnh sửa khác nhau, đừng gõ cả ba. Không có `--remote` thì nó thuần cục bộ — và **cục bộ không bao giờ thấy được khe ①**, vì máy chỉ biết có bản mới sau khi hỏi GitHub.
 
 **Khi nào KHÔNG cần bump:** chỉ khi thay đổi nằm hoàn toàn ngoài `plugins/sdd-solo/` — `README.md`, `CLAUDE.md` gốc, `.github/`, `LICENSE`. Đụng bất cứ file nào **trong** `plugins/sdd-solo/` (skill, hook, script, template, docs của plugin) → bump.
 
