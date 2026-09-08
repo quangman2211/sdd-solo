@@ -3,12 +3,39 @@
 MSG="$(head -1 "$1")"
 ROOT="$(git rev-parse --show-toplevel)"
 STAGED="$(git diff --cached --name-only)"
-TOUCH_CODE=0; echo "$STAGED" | grep -vE 'README\.md$' | grep -qE '^(src|tests)/' && TOUCH_CODE=1
+
+# Đường dẫn code/test đọc từ .sdd/config. Hook chạy bash trần, không có lib.sh
+# nên parse tay. Trước 1.5.0 hai đường dẫn này viết chết là src|tests — repo
+# nào đặt code ở app/ là hook cho qua hết mà không nói một lời.
+cfg() { sed -n "s/^$1=//p" "$ROOT/.sdd/config" 2>/dev/null | tail -1 | sed 's/[[:space:]]*$//'; }
+CP="$(cfg code_paths)"; [ -z "$CP" ] && CP="src"
+TP="$(cfg test_paths)"; [ -z "$TP" ] && TP="tests"
+RE="^($(printf '%s %s' "$CP" "$TP" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
+
+# Config sai thì hook mù. Phân biệt "repo chưa có code" với "config sai" bằng
+# chính danh sách file đang commit: có file nguồn mà không khớp đường dẫn nào
+# → chặn, đừng cho qua trong im lặng.
+SRCLIKE="$(echo "$STAGED" | grep -vE '^(specs|docs|changes|checklists|prompts|\.sdd|\.githooks)/' \
+          | grep -E '\.(js|ts|tsx|jsx|py|go|rb|java|cs|kt|swift|rs|php|c|cc|cpp|h|hpp|vue|svelte)$')"
+OUTSIDE="$(echo "$SRCLIKE" | grep -vE "$RE")"
+HAVE=0; for d in $CP $TP; do [ -d "$ROOT/$d" ] && HAVE=1; done
+if [ -n "$SRCLIKE" ] && [ "$HAVE" = 0 ]; then
+  echo "✗ sdd-solo: commit có file nguồn nhưng không thư mục nào trong '$CP $TP' tồn tại." >&2
+  echo "  .sdd/config đang sai bố cục repo → hook không kiểm được gì. Sửa code_paths/test_paths:" >&2
+  echo "$SRCLIKE" | sed 's/^/    /' >&2
+  exit 1
+elif [ -n "$OUTSIDE" ]; then
+  echo "! sdd-solo: file nguồn nằm ngoài '$CP $TP' nên không được kiểm:" >&2
+  echo "$OUTSIDE" | sed 's/^/    /' >&2
+  echo "  Thêm vào code_paths trong .sdd/config nếu đó là code thật." >&2
+fi
+
+TOUCH_CODE=0; echo "$STAGED" | grep -vE 'README\.md$' | grep -qE "$RE" && TOUCH_CODE=1
 echo "$MSG" | grep -qE '^Merge|^Revert|^chore\(sdd\)' && exit 0
 if [ "$TOUCH_CODE" = 1 ]; then
   ID="$(echo "$MSG" | grep -oE '\((UC|BR|RULE|ADR|CHG)-[0-9]+\)' | head -1 | tr -d '()')"
   if [ -z "$ID" ]; then
-    echo "✗ Commit đụng src/ hoặc tests/ phải có ID: <type>(UC-###): ..." >&2; exit 1
+    echo "✗ Commit đụng $CP hoặc $TP phải có ID: <type>(UC-###): ..." >&2; exit 1
   fi
   case "$ID" in UC-*)
     if [ ! -f "$ROOT/.sdd/gate/$ID.ok" ]; then

@@ -41,6 +41,18 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 - **Plugin** (`plugins/sdd-solo/`) giữ *hành vi*: skill, hook, script kiểm, template gốc, prompt, checklist. Update một chỗ.
 - **Dự án** giữ *nội dung*: `specs/`, `docs/`, `changes/`, `STATE.md`, `CLAUDE.md`. Plugin không bao giờ ghi đè file bạn đã sửa — `init --update` để bản mới cạnh dưới tên `.new`.
 
+## Repo của bạn đặt code ở đâu
+
+`.sdd/config` — sinh một lần lúc `init` bằng cách dò repo, và `init --update` **không bao giờ ghi đè**:
+
+```
+code_paths=src app lib
+test_paths=tests
+uc_test_dir=tests/use-cases
+```
+
+Githook và mọi script kiểm đều đọc file này. Trước 1.5.0 hai đường dẫn viết chết là `src`/`tests`, nên repo đặt code ở `app/` thì hook **cho qua mọi commit code không ID mà không nói một lời** — chặn cứng thành không chặn gì. Giờ commit có file nguồn mà không thư mục nào trong `code_paths` tồn tại thì hook **chặn** và chỉ vào `.sdd/config`; `/sdd-solo:status` cũng kiểm lại.
+
 ## Đang chạy bản nào
 
 Bốn chỗ giữ version, lệch chỗ nào thì lệnh sửa khác nhau:

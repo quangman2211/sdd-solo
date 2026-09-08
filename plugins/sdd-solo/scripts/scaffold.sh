@@ -60,5 +60,31 @@ if [ -d "$ROOT/.git" ]; then
 else
   warn "chưa có .git — git init rồi chạy lại để cài hook"
 fi
+# .sdd/config — sinh một lần, dò từ repo. KHÔNG nằm trong templates/project nên
+# init --update không bao giờ ghi đè: đây là nội dung của dự án, không phải hành vi.
+if [ ! -f "$ROOT/.sdd/config" ]; then
+  D="$(detect_paths "$ROOT")"; DC="${D%%|*}"; DT="${D##*|}"
+  [ -z "$DC" ] && DC="$CFG_DEFAULT_CODE"; [ -z "$DT" ] && DT="$CFG_DEFAULT_TEST"
+  UCT="$(printf '%s' "$DT" | awk '{print $1}')/use-cases"
+  {
+    echo "# sdd-solo — đường dẫn code/test của repo này."
+    echo "# Githook và script kiểm đều đọc file này. Sai đường dẫn thì hook chặn hụt"
+    echo "# trong im lặng, nên /sdd-solo:status có kiểm lại giúp."
+    echo "# Danh sách cách nhau bằng dấu cách. Sửa tay thoải mái, init --update không đụng."
+    echo "code_paths=$DC"
+    echo "test_paths=$DT"
+    echo "uc_test_dir=$UCT"
+  } > "$ROOT/.sdd/config"
+  ok ".sdd/config — code_paths=$DC · test_paths=$DT (dò từ repo; sửa nếu sai)"
+else
+  info ".sdd/config đã có — code_paths=$(code_paths "$ROOT")"
+fi
+if ! has_code_path "$ROOT"; then
+  if repo_has_code "$ROOT"; then
+    bad ".sdd/config: không thư mục nào trong code_paths=$(code_paths "$ROOT") tồn tại, mà repo đã có file nguồn → githook đang chặn hụt. Sửa .sdd/config."
+  else
+    info "chưa có thư mục code nào — bình thường với repo mới; nhớ sửa .sdd/config khi đặt code"
+  fi
+fi
 echo "$VER" > "$ROOT/.sdd/version"
 echo; echo "Xong. Commit: git add -A && git commit -m \"chore(sdd): init sdd-solo $VER\""; echo "Bước tiếp: đọc specs/README.md · viết STATE.md · /requirements (AIUP) hoặc tự viết specs/br.md"

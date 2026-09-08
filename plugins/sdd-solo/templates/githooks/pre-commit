@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 # sdd-solo pre-commit hook: không trộn spec và code trong một commit.
+ROOT="$(git rev-parse --show-toplevel)"
 STAGED="$(git diff --cached --name-only)"
+
+cfg() { sed -n "s/^$1=//p" "$ROOT/.sdd/config" 2>/dev/null | tail -1 | sed 's/[[:space:]]*$//'; }
+CP="$(cfg code_paths)"; [ -z "$CP" ] && CP="src"
+TP="$(cfg test_paths)"; [ -z "$TP" ] && TP="tests"
+RE="^($(printf '%s %s' "$CP" "$TP" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
+
 SPEC=0; CODE=0
 echo "$STAGED" | grep -vE '/_template/' | grep -qE '^specs/.*UC-[0-9]+\.md$|^specs/rules\.md$' && SPEC=1
-echo "$STAGED" | grep -vE 'README\.md$' | grep -qE '^(src|tests)/' && CODE=1
+echo "$STAGED" | grep -vE 'README\.md$' | grep -qE "$RE" && CODE=1
 if [ "$SPEC" = 1 ] && [ "$CODE" = 1 ]; then
-  echo "✗ Commit đang trộn spec (specs/) và code (src/ tests/). Tách: commit docs(UC-###) trước, rồi feat(UC-###)." >&2
+  echo "✗ Commit đang trộn spec (specs/) và code ($CP $TP). Tách: commit docs(UC-###) trước, rồi feat(UC-###)." >&2
   exit 1
 fi
 exit 0

@@ -74,3 +74,34 @@ is_semver() { printf '%s' "$1" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; }
 clean_ver() { if is_semver "$1"; then printf '%s' "$1"; else printf '%s' '-'; fi; }
 # dump_bad <nhãn> <chuỗi> — in bytes để lần sau còn lần ra, thay vì đoán
 dump_bad() { warn "$1 không đúng dạng version — bytes:"; printf '%s' "$2" | od -c | head -3 | sed 's/^/      /'; }
+
+# ── .sdd/config — đường dẫn code/test của dự án ─────────────────────────
+# Định dạng cố tình đơn giản (key=giá trị, danh sách cách nhau bằng dấu cách)
+# để githook parse được bằng shell thuần, không cần lib.sh này.
+CFG_DEFAULT_CODE="src"; CFG_DEFAULT_TEST="tests"; CFG_DEFAULT_UCTEST="tests/use-cases"
+cfg_get() { # cfg_get <key> <root> [mặc định]
+  V="$(sed -n "s/^$1=//p" "$2/.sdd/config" 2>/dev/null | tail -1 | sed 's/[[:space:]]*$//')"
+  [ -n "$V" ] && printf '%s' "$V" || printf '%s' "$3"
+}
+code_paths()  { cfg_get code_paths  "$1" "$CFG_DEFAULT_CODE"; }
+test_paths()  { cfg_get test_paths  "$1" "$CFG_DEFAULT_TEST"; }
+uc_test_dir() { cfg_get uc_test_dir "$1" "$CFG_DEFAULT_UCTEST"; }
+# paths_re "src app" → ^(src|app)/  — dùng cho grep -E trên đường dẫn git
+paths_re() { printf '^(%s)/' "$(printf '%s' "$1" | tr -s ' ' '|' | sed 's/|$//')"; }
+# detect_paths <root> → đoán code_paths từ thư mục đang có. KHÔNG nhận specs/
+# (của sdd-solo) làm thư mục test.
+detect_paths() {
+  C=""; for d in src app lib cmd internal pkg apps packages source; do
+    [ -d "$1/$d" ] && C="$C $d"; done
+  T=""; for d in tests test __tests__ spec; do [ -d "$1/$d" ] && T="$T $d"; done
+  printf '%s|%s' "$(printf '%s' "$C" | sed 's/^ *//')" "$(printf '%s' "$T" | sed 's/^ *//')"
+}
+# has_code_path <root> → 0 nếu có ít nhất một code_path tồn tại
+has_code_path() { for d in $(code_paths "$1"); do [ -d "$1/$d" ] && return 0; done; return 1; }
+# repo_has_code <root> → 0 nếu repo có file nguồn ngoài các thư mục của quy trình.
+# Dùng để phân biệt "config sai" với "repo chưa viết code dòng nào".
+repo_has_code() {
+  git -C "$1" ls-files 2>/dev/null \
+    | grep -vE '^(specs|docs|changes|checklists|prompts|\.sdd|\.githooks)/' \
+    | grep -qE '\.(js|ts|tsx|jsx|py|go|rb|java|cs|kt|swift|rs|php|c|cc|cpp|h|hpp|sh|sql|vue|svelte)$'
+}
