@@ -57,17 +57,27 @@ if [ -f "$FL" ]; then
   grep -qE '^```mermaid' "$FL" && grep -qE '^[[:space:]]*(flowchart|graph)\b' "$FL" \
     || warn "$ID.flow.md chưa có khối mermaid với flowchart/graph — chưa vẽ được gì"
   grep -qE '\(\[' "$FL" || warn "$ID.flow.md chưa có node kết dạng ([...]) — Postcondition chưa có đường tới"
-  # chiều xuôi: E# khai trong UC phải có đường đi trong sơ đồ
+  # CHỈ NHÃN CẠNH mới tính: phần giữa hai dấu | trên dòng có mũi tên. Id node
+  # không bao giờ nằm ở đó. Bản 3.1.0 khớp E<số> ở BẤT CỨ ĐÂU trong file, nên
+  # một node kết đặt tên E1([Đăng nhập được]) — tức một kết thúc THÀNH CÔNG —
+  # làm cổng tin rằng đường lỗi E1 đã được vẽ, trong khi nhánh ngoại lệ thật
+  # không còn nhãn nào. ✓ giả, và sai về đúng phía nguy hiểm. Xem #17.
+  LBL="$(grep -E '(-->|==>|-\.->|--x|--o)' "$FL" 2>/dev/null | grep -oE '\|[^|]*\|')"
+  # chiều xuôi: E# khai trong UC phải có một mũi tên mang nhãn đó
   for e in $(grep -oE '^- +(\*\*)?E[0-9]+' "$F" | grep -oE 'E[0-9]+' | sort -u); do
-    grep -qE "(^|[^A-Za-z0-9])$e([^0-9]|$)" "$FL" && ok "$e có nhánh trong flow" \
-      || bad "$e có trong ## Exceptions nhưng $ID.flow.md không có nhánh nào cho nó"
+    printf '%s' "$LBL" | grep -qE "(^|[^A-Za-z0-9])$e([^0-9]|$)" && ok "$e có nhánh trong flow" \
+      || bad "$e có trong ## Exceptions nhưng không mũi tên nào trong $ID.flow.md mang nhãn |$e ...| — nhãn phải nằm giữa hai dấu |, tên node không tính"
   done
   # chiều ngược: nhãn trong sơ đồ phải là E# có thật. Nhãn bịa đi qua mọi cổng
   # nếu không ai đối chiếu ngược — bài học #12 và #15.
-  for e in $(grep -oE 'E[0-9]+' "$FL" | sort -u); do
+  for e in $(printf '%s' "$LBL" | grep -oE 'E[0-9]+' | sort -u); do
     grep -qE "^- +(\*\*)?$e[.:]" "$F" \
-      || bad "$ID.flow.md có $e nhưng ## Exceptions của UC không có $e"
+      || bad "$ID.flow.md có nhãn $e nhưng ## Exceptions của UC không có $e"
   done
+  # id node dạng E<số> không còn giả mạo được nhãn, nhưng vẫn khó đọc cho người.
+  # Không bắt X#([E1: ...]) — ở đó E1 đứng trước dấu hai chấm, không phải id.
+  grep -qE '(^|[[:space:]])E[0-9]+ *[[({]' "$FL" \
+    && warn "$ID.flow.md đặt id node dạng E<số> — dễ đọc nhầm thành ngoại lệ; dùng P# cho node kết thường, X# cho node kết của ngoại lệ"
 elif [ -f "$BP" ]; then
   ok "$ID.bpmn (đường cũ — .flow.md mermaid đếm được E#, cân nhắc chuyển)"
   [ -f "$BP.svg" ] || warn "chưa export $ID.bpmn.svg"

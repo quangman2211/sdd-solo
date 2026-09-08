@@ -1,5 +1,29 @@
 # Changelog
 
+## 3.1.1 — 2026-09-08
+
+### Sửa
+
+- **Phép đếm E# của 3.1.0 khớp `E<số>` ở bất cứ đâu trong file, kể cả tên node — nên
+  cho `✓` GIẢ** (#17). Đặt một node kết là `E1([Đăng nhập được])` — tức một kết thúc
+  **thành công** — thì cổng tin rằng đường lỗi `E1` đã được vẽ, kể cả khi nhánh ngoại lệ
+  thật không còn nhãn nào. Sai về đúng phía nguy hiểm: không phải đỏ oan, mà là xanh sai.
+  Chiều ngược thì kêu nhầm chỗ — node tên `E7` bị báo là "nhãn bịa".
+
+  Nay **chỉ nhãn cạnh được đếm**: phần nằm giữa hai dấu `|` trên dòng có mũi tên. Tên node
+  không bao giờ ở đó. Kèm một cảnh báo mềm khi vẫn có id node dạng `E<số>` — nó không giả
+  mạo được nhãn nữa nhưng vẫn khó đọc cho người.
+
+  Đáng sửa vì nó chạm đúng lý do đổi sang mermaid ở 3.1.0: để phép đếm *"số nhánh ngoại lệ
+  = số E#"* **chạy được bằng máy** thay vì là một dòng chữ trong checklist. Đếm khớp cả tên
+  node thì phép đếm đó chưa đúng, tức lợi ích chính của 3.1.0 chưa thành.
+
+### Đính chính
+
+- CHANGELOG 3.1.0 nói hồi quy chạy trên `runxops`. Không đúng: **`runxops` chưa có UC nào**
+  — nó còn ở Phase 0, `specs/` toàn template. Mọi UC có `.bpmn` thật đều nằm ở bàn thử.
+  Nên tới giờ chưa có bằng chứng nào từ một repo sản xuất, cho cả 3.1.0 lẫn bản này.
+
 ## 3.1.0 — 2026-09-08
 
 ### Đổi — bước ④ vẽ bằng Mermaid, không cần cài app

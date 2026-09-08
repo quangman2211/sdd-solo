@@ -12,4 +12,4 @@ Chỉ diagram **cấp context** nằm ở đây (context map, domain model). Sơ
 - Mỗi Exception `E#` = một mũi tên có nhãn `|E# ...|` dẫn tới node kết `X#([E#: ...])`.
 - Mỗi Postcondition = một node kết `P#([...])`.
 
-Dòng `E#` được `/sdd-solo:gate` kiểm bằng máy, **cả hai chiều**: E# khai trong UC mà sơ đồ không có nhánh → đỏ; nhãn E# trong sơ đồ mà UC không có Exception đó → cũng đỏ. Hai dòng còn lại là văn xuôi tự do nên chỉ có anh kiểm.
+Dòng `E#` được `/sdd-solo:gate` kiểm bằng máy, **cả hai chiều**: E# khai trong UC mà sơ đồ không có mũi tên mang nhãn đó → đỏ; nhãn E# trong sơ đồ mà UC không có Exception đó → cũng đỏ. Chỉ phần **giữa hai dấu `|`** được đếm — tên node không tính. Hai dòng còn lại là văn xuôi tự do nên chỉ có anh kiểm.

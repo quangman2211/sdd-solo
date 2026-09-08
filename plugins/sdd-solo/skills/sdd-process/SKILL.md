@@ -41,7 +41,7 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 
 **Entity** — Mermaid `classDiagram` (tên, quan hệ, trường đáng chú ý gắn RULE-ID), rồi `stateDiagram-v2` cho mỗi entity có status; mỗi mũi tên ghi UC nào được kéo nó; trạng thái không có đường ra thì viết note nói đó là quyết định.
 
-**Flow ↔ UC** (`UC-###.flow.md`, mermaid `flowchart`) — Actor = `subgraph` (chỉ khi ≥ 2 actor) · Trigger = node đầu `S([...])`, loại trigger ghi vào tên · Main Flow = `T#[...]` · Alternative = `D#{...}` với điều kiện trên mũi tên · Exception E# = mũi tên nhãn `|E# ...|` → node kết `X#([E#: ...])` · Postcondition = node kết `P#([...])`. Đừng đặt id node bằng chữ `E` kèm số cho việc khác — dạng đó luôn được đọc là ngoại lệ. Cổng DoR đối chiếu E# **cả hai chiều**: khai trong UC mà sơ đồ không có nhánh → đỏ; nhãn trong sơ đồ mà UC không có → cũng đỏ. `.bpmn` vẫn được nhận nhưng không đếm được gì.
+**Flow ↔ UC** (`UC-###.flow.md`, mermaid `flowchart`) — Actor = `subgraph` (chỉ khi ≥ 2 actor) · Trigger = node đầu `S([...])`, loại trigger ghi vào tên · Main Flow = `T#[...]` · Alternative = `D#{...}` với điều kiện trên mũi tên · Exception E# = mũi tên nhãn `|E# ...|` → node kết `X#([E#: ...])` · Postcondition = node kết `P#([...])`. **Chỉ nhãn giữa hai dấu `|` được đếm** — tên node không tính, kể cả khi chứa `E#`. Cổng DoR đối chiếu E# **cả hai chiều**: khai trong UC mà sơ đồ không có nhánh → đỏ; nhãn trong sơ đồ mà UC không có → cũng đỏ. `.bpmn` vẫn được nhận nhưng không đếm được gì.
 
 **Màn hình (Claude Design)** — mỗi E# có một trạng thái màn hình; mỗi trạng thái entity nhìn thấy được ở đâu đó; không vẽ nút/trường không có nguồn trong UC. Ô trống trong bảng đối chiếu = spec thiếu, không phải design thiếu.
 
