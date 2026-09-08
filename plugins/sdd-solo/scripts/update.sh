@@ -23,11 +23,16 @@ else
   MKT='-'
   if [ -f "$MJ" ]; then
     MKT="$(jver "$MJ" plugins.0.version)"
-    # ① vừa ghi lại clone xong; đọc trúng lúc file viết dở thì thử lại một lần
-    case "$MKT" in [0-9]*.[0-9]*) : ;; *) MKT="$(jver "$MJ" plugins.0.version)" ;; esac
+    # ① vừa ghi lại clone xong. Thử lại một nhịp nếu đọc ra thứ không phải version.
+    is_semver "$MKT" || { sleep 0.3; MKT="$(jver "$MJ" plugins.0.version)"; }
   fi
-  CUR="$(jver "$PLUGIN/.claude-plugin/plugin.json" version)"
-  if [ "$(vcmp "$CUR" "$MKT")" = "-1" ]; then
+  CUR="$(clean_ver "$(jver "$PLUGIN/.claude-plugin/plugin.json" version)")"
+  if ! is_semver "$MKT"; then
+    # Không đoán, không quyết định trên giá trị không tin được — xem khe ④ ở 1.4.0.
+    dump_bad "② version của marketplace" "$MKT"
+    bad "② bỏ qua vì không đọc được version marketplace → làm tay: claude plugin update $PNAME@$MKTNAME"
+    MKT='-'
+  elif [ "$(vcmp "$CUR" "$MKT")" = "-1" ]; then
     echo "② cài $PNAME $CUR → $MKT…"
     OUT="$(claude plugin update "$PNAME@$MKTNAME" </dev/null 2>&1)"; RC=$?
     echo "$OUT" | sed 's/^/    /'

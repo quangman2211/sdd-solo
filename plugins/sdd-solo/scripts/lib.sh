@@ -66,3 +66,11 @@ for k,v in d.items():
 # hooks.json và SKILL.md, nên script gọi từ bash không đọc được.
 sess_file() { echo "${XDG_CACHE_HOME:-$HOME/.cache}/sdd-solo/session-${1:-${CLAUDE_CODE_SESSION_ID:-none}}"; }
 sess_ver()  { cat "$(sess_file)" 2>/dev/null; }
+# is_semver <chuỗi> → 0 nếu đúng dạng X.Y.Z. Glob lỏng kiểu [0-9]*.[0-9]* CHO QUA
+# "1.4.0<rác>" nên đừng dùng; đây là kiểm chặt, neo hai đầu.
+is_semver() { printf '%s' "$1" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; }
+# clean_ver <chuỗi> → chính nó nếu là semver, ngược lại '-'. Dùng trước mọi so sánh
+# để quyết định không bao giờ chạy trên giá trị không tin được.
+clean_ver() { if is_semver "$1"; then printf '%s' "$1"; else printf '%s' '-'; fi; }
+# dump_bad <nhãn> <chuỗi> — in bytes để lần sau còn lần ra, thay vì đoán
+dump_bad() { warn "$1 không đúng dạng version — bytes:"; printf '%s' "$2" | od -c | head -3 | sed 's/^/      /'; }

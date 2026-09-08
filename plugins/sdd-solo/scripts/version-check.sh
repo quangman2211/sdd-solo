@@ -30,6 +30,9 @@ MKTLOC="$(mkt_field "$MKTNAME" installLocation)"
 MKT='-'; [ -f "$MKTLOC/.claude-plugin/marketplace.json" ] && MKT="$(jver "$MKTLOC/.claude-plugin/marketplace.json" plugins.0.version)"
 SESS="$(sess_ver)"; [ -z "$SESS" ] && SESS='-'
 SRC="$(mkt_field "$MKTNAME" source.repo)"
+# Không để giá trị lạ lọt vào vcmp: nó tách theo "." rồi +0 nên "1.4.0<rác>"
+# vẫn ra 1.4.0 và quyết định trên dữ liệu không tin được.
+PROJ="$(clean_ver "$PROJ")"; INST="$(clean_ver "$INST")"; MKT="$(clean_ver "$MKT")"; SESS="$(clean_ver "$SESS")"
 
 REM='-'
 if [ "$REMOTE" = "1" ] && [ -n "$SRC" ]; then
@@ -41,7 +44,7 @@ if [ "$REMOTE" = "1" ] && [ -n "$SRC" ]; then
   if [ "$REM" = '-' ]; then
     R="$(curl -fsS --max-time 3 "https://raw.githubusercontent.com/$SRC/main/.claude-plugin/marketplace.json" 2>/dev/null \
          | grep -oE '"version" *: *"[^"]+"' | head -1 | sed -E 's/.*"([^"]+)"$/\1/')"
-    if [ -n "$R" ]; then REM="$R"; mkdir -p "$CACHE_D" && echo "$NOW $R" > "$CACHE"
+    if is_semver "$R"; then REM="$R"; mkdir -p "$CACHE_D" && echo "$NOW $R" > "$CACHE"
     else REM='?'; fi   # mất mạng: im, không coi là lệch
   fi
 fi
