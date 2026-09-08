@@ -24,6 +24,14 @@ Chưa xong ba câu này thì chưa viết `br.md`.
 | 2 | Ai khổ? (tôi · khách · người vận hành · hệ thống khác) | `## Goal` · WHO trên Impact Map |
 | 3 | Giờ họ xoay xở thế nào, và tốn gì? (thời gian · số lần sai · tiền) | `## Background` |
 
+Chỗ trả lời — viết thẳng vào đây:
+
+> **1.**
+>
+> **2.**
+>
+> **3.**
+
 Câu 3 là chỗ ra con số baseline. Chưa đếm bao giờ thì ghi `___` **và ghi luôn cách sẽ đếm** —
 "đếm thread trong inbox mỗi thứ Hai" là một cách đo hợp lệ, không cần analytics.
 
@@ -40,6 +48,16 @@ Chỉ hỏi khi ba câu trên đã có. Được phép kết thúc bằng `___`.
 
 **Câu 5 là câu đáng giá nhất và hay bị bỏ nhất.** Nó là thứ duy nhất chặn được việc xây một
 phần mềm không cần tồn tại. Đang hào hứng thì càng phải hỏi.
+
+Chỗ trả lời:
+
+> **4.**
+>
+> **5.**
+>
+> **6.**
+>
+> **7.**
 
 **Câu 6 không có câu trả lời = BR chưa nghĩ xong.** Team có PO cản scope; làm một mình thì
 chỉ có dòng Out of Scope đó cản.

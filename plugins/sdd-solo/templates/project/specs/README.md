@@ -1,5 +1,14 @@
 # specs/ — source of truth nghiệp vụ
 
+## Bắt đầu từ đâu
+
+`specs/br.md` còn nguyên template → **`/sdd-solo:intake`**. Nó hỏi bảy câu rồi viết BR giúp.
+Cầm sẵn brief của agent khác thì `/sdd-solo:intake duong/dan/brief.md`.
+Muốn tự viết: đọc `BR-000` mẫu trong `br.md`, và `_intake.md` là bảy câu đó bản giấy bút.
+
+Có BR rồi mới tới UC: `/sdd-solo:start UC-###`. Ngược lại là xây trên nền chưa viết —
+`/sdd-solo:status` sẽ báo đỏ.
+
 ## Ranh giới
 - **spec** = hệ thống phải hành xử thế nào. Khách hàng cảm nhận được. Đổi khi nghiệp vụ đổi. → `specs/`
 - **doc** = mình đã chọn xây bằng cách nào và vì sao. Chỉ người xây quan tâm. → `docs/`

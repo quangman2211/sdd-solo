@@ -132,4 +132,12 @@ done
 chmod +x "$ROOT/.sdd/scripts/"*.sh 2>/dev/null
 ok ".sdd/scripts/ — bản sao $VER, chạy được không cần plugin (CI dùng .sdd/scripts/gate-check.sh)"
 echo "$VER" > "$ROOT/.sdd/version"
-echo; echo "Xong. Commit: git add -A && git commit -m \"chore(sdd): init sdd-solo $VER\""; echo "Bước tiếp: đọc specs/README.md · viết STATE.md · /requirements (AIUP) hoặc tự viết specs/br.md"
+echo; echo "Xong. Commit: git add -A && git commit -m \"chore(sdd): init sdd-solo $VER\""
+# Dòng này là câu chỉ đường ĐẦU TIÊN user đọc, trước khi biết bất cứ thứ gì khác.
+# Tới 3.2.0 nó vẫn nói "/requirements (AIUP) hoặc tự viết specs/br.md" — mà
+# /requirements đọc vision.md (không ai tạo), còn "tự viết br.md" chính là chỗ
+# người ta đứng lại. Xem #20.
+echo "BƯỚC TIẾP — Phase 1: gõ /sdd-solo:intake"
+echo "  Nó hỏi 7 câu (khổ gì · ai khổ · tốn gì · ...) rồi tự viết specs/br.md."
+echo "  Đang cầm sẵn brief của agent khác: /sdd-solo:intake duong/dan/brief.md"
+echo "  Muốn tự viết: đọc BR-000 mẫu trong specs/br.md, hoặc specs/_intake.md để tự hỏi mình."

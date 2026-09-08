@@ -1,5 +1,38 @@
 # Changelog
 
+## 3.2.1 — 2026-09-08
+
+### Sửa
+
+- **Cửa vào mới của 3.2.0 chưa được gắn vào đường cũ** (#20). `/sdd-solo:intake` tồn tại,
+  nhưng câu chỉ đường **đầu tiên** user đọc — dòng cuối của `scaffold.sh`, ngay sau
+  `/sdd-solo:init` — vẫn là:
+
+  > *Bước tiếp: đọc specs/README.md · viết STATE.md · /requirements (AIUP) hoặc tự viết specs/br.md*
+
+  Cả hai lựa chọn đó đều dẫn vào tường: `/requirements` đọc `docs/vision.md` mà không skill
+  nào tạo ra, còn *"tự viết br.md"* chính là chỗ người ta đứng lại. `grep intake scripts/`
+  ra 5 chỗ trong `status.sh` và **0 chỗ** trong `scaffold.sh` — file nói trước là file sai,
+  file đúng chỉ nói khi user đã biết gõ `status`.
+
+  Sửa **sáu** chỗ cùng loại, không phải một:
+  - `scaffold.sh` — dòng chỉ đường sau `init`.
+  - `skills/init/SKILL.md` bước 5 — chỗ này tệ hơn cả, vì nó là chỉ dẫn cho **chính AI**:
+    *"nói bước tiếp là Phase 1 — `/requirements` hoặc tự viết BR"*. Tức trợ lý được dặn
+    chỉ sai đường ngay sau khi cài xong.
+  - `hooks` SessionStart — khi `br.md` còn nguyên template thì câu đầu mỗi phiên nói thẳng
+    *đang ở Phase 1, đừng nói về UC, đừng đề xuất viết code*, thay vì "đang ở UC nào".
+  - `specs/README.md` — thêm mục **Bắt đầu từ đâu** lên đầu.
+  - `STATE.md` — dòng `Đang làm:` giả định sẵn là đang ở một UC nào đó trong 14 bước.
+  - `README.md` — bước sau `init`.
+
+- `specs/_intake.md` không có **chỗ để viết câu trả lời**: nó bảo "không có Claude Code thì
+  tự trả lời bảy câu bằng giấy bút", nhưng bảy câu nằm trong hai bảng markdown, không ô trống
+  nào. Thêm hai khối trích dẫn đánh số sẵn.
+
+Bài học chung với #10 và #17: thứ mình vừa xây chạy đúng, nhưng chỗ người dùng thật sự đứng
+thì vẫn trỏ đi hướng cũ.
+
 ## 3.2.0 — 2026-09-08
 
 ### Thêm — Phase 1 có cửa vào và có kiểm (#18, #19)

@@ -13,6 +13,8 @@ Nền: ebook *Spec Driven Development* (Nguyễn Thế Huy) · AI Unified Proces
 
 Rồi trong repo dự án: `/sdd-solo:init` — hoặc `/sdd-solo:init --with-deps` để nó cài giúp Spec Kit và AIUP theo đúng thứ tự. Không có cờ thì nó chỉ kiểm và in lệnh, không đụng vào máy.
 
+Rồi **`/sdd-solo:intake`** — nó hỏi bảy câu (khổ gì · ai khổ · tốn gì · không làm thì sao · có cách nào không xây phần mềm · cố ý không làm gì · đo bằng gì) và viết `specs/br.md` giúp bạn. Đang cầm brief do một AI khác viết thì `/sdd-solo:intake brief.md`.
+
 Đi kèm (cài riêng, plugin không tự cài thay bạn):
 - **GitHub Spec Kit** — `specify init --here` trong repo → cho `/speckit-specify /speckit-plan /speckit-tasks /speckit-implement`
 - **AIUP** — `/plugin marketplace add ai-unified-process/marketplace` · `/plugin install aiup-core` → cho `/requirements /entity-model /use-case-diagram /use-case-spec`

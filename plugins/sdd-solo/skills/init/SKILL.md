@@ -24,5 +24,5 @@ In nguyên output. Script tự lo thứ tự bắt buộc (`specify init` trư�
    - Exit ≠ 0 và user **không** gõ `--with-deps`: đọc lại các dòng ✗ cho user, nói rõ họ có thể chạy `/sdd-solo:init --with-deps` để cài giúp. Không tự chạy.
    - `--fix` không cài được lệnh `specify` (cần `uv`) — chỗ đó vẫn là việc của user.
    - AIUP vừa cài xong thì lệnh `/requirements` chưa có trong session hiện tại; nhắc user mở session mới.
-5. Nếu là repo mới (chưa có `specs/br.md` nội dung): nói bước tiếp là Phase 1 — `/requirements` hoặc tự viết BR; đừng đề xuất viết code.
+5. Nếu `specs/br.md` còn nguyên template (có chuỗi `<Tên business requirement>`): nói bước tiếp là **`/sdd-solo:intake`** — nó hỏi bảy câu rồi tự viết BR. Đừng đề xuất `/requirements` ở đây: AIUP đọc `docs/vision.md` mà không skill nào tạo ra file đó, và nó nhảy thẳng vào "hệ thống làm gì", bỏ qua tầng "vì sao làm". Đừng đề xuất viết code.
 6. Nếu có file `.new` trong output: liệt kê và nói user tự merge; không tự ghi đè.
