@@ -8,7 +8,11 @@ VER="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"]
 # Chiều ngược: plugin CŨ chạy trên repo MỚI. Bản 1.x scaffold vào repo 2.x sẽ
 # dựng lại cả cây 1.x (checklists/ prompts/ .githooks/) cạnh cây 2.x — rồi lần
 # migrate sau lại thấy "hai cây cùng tồn tại". Chặn hạ cấp ngay từ đây.
-PV="$(cat "$ROOT/.sdd/version" 2>/dev/null)"
+# || true là BẮT BUỘC: dưới set -e, một command substitution thất bại ở vế
+# phải của phép gán làm thoát ngay. Repo trắng chưa có .sdd/version — chính
+# scaffold mới là thứ tạo ra nó — nên 2.0.3 chặn sạch /sdd-solo:init trên
+# repo trắng, exit 1, không một dòng output. Xem #14.
+PV="$(cat "$ROOT/.sdd/version" 2>/dev/null || true)"
 if [ -n "$PV" ] && [ "$(vcmp "$PV" "$VER")" = "1" ]; then
   bad "dự án ở $PV, plugin đang chạy là $VER — không hạ cấp bố cục dự án"
   info "cập nhật plugin rồi chạy lại: /plugin marketplace update sdd-solo → /plugin update sdd-solo"
@@ -122,7 +126,7 @@ fi
 # plugin (CI, người clone repo). Đổi lại: bản sao có thể trôi version — .sdd/version
 # so với version plugin, lệch thì session-start và status cảnh báo.
 mkdir -p "$ROOT/.sdd/scripts"
-for f in lib.sh gate-check.sh gate-pass.sh close-check.sh close-pass.sh status.sh trace-ratio.sh ac-coverage.sh version-check.sh deps-check.sh migrate-1to2.sh; do
+for f in lib.sh gate-check.sh gate-pass.sh close-check.sh close-pass.sh status.sh trace-ratio.sh ac-coverage.sh version-check.sh deps-check.sh migrate-1to2.sh uc-ready.sh; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done
 chmod +x "$ROOT/.sdd/scripts/"*.sh 2>/dev/null

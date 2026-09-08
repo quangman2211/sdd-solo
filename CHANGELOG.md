@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.1.1 — 2026-09-08
+Đóng #14 — **2.0.3 chặn sạch `/sdd-solo:init` trên repo trắng, chết im lặng.**
+
+`PV="$(cat "$ROOT/.sdd/version" 2>/dev/null)"` — chốt chặn hạ cấp thêm ở 2.0.3. Dưới `set -e`, một command substitution thất bại ở **vế phải của phép gán** làm thoát ngay. Repo trắng chưa có `.sdd/version` — chính `scaffold` mới là thứ tạo ra nó — nên:
+
+```
+2.0.2:  exit=0 · 49 dòng output · 55 file
+2.1.0:  exit=1 ·  0 dòng output ·  0 file      ← không một dòng ✗, stderr rỗng
+```
+
+Người dùng thấy con trỏ nhảy về và `ls` chỉ có `.git`. Thêm `|| true`.
+
+**Vì sao nó lọt qua khâu kiểm của cả hai bên:** chỉ dính repo **trắng**. Mọi bàn thử đều đã có `.sdd/version` từ bản trước nên `init --update` chạy bình thường; runxops-93 vấp phải vì đang dựng repo trắng để kiểm #13, không phải vì đi tìm nó. Ba bản 2.0.3 → 2.1.0 đều được kiểm trên repo đã cài sẵn.
+
+Quét cả ba script có `set -e` tìm chỗ cùng dạng: `close-pass.sh:8,10,15` và `scaffold.sh:45,62` đều an toàn — chúng là pipeline (mã thoát của `head`/`tr`/`tail`) hoặc đọc file luôn tồn tại trong plugin. Chỉ có đúng một chỗ hỏng.
+
+Kèm: `uc-ready.sh` được chép vào `.sdd/scripts/` cho đủ bộ — runxops-93 hỏi đúng, tuy `gate-check` không gọi nó nên chưa lặp lại #10.
+
 ## 2.1.0 — 2026-09-08
 Đóng #11 #12 #13 — cả ba do runxops-93 tìm ra khi chạy `/sdd-solo:adversarial` thật. Chủ đề chung: **chốt đo cấu trúc chứ không đo nội dung**.
 
