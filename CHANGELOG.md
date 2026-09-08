@@ -1,5 +1,33 @@
 # Changelog
 
+## 3.0.1 — 2026-09-08
+
+### Sửa
+
+- `close-check.sh` — bớt nhiễu ở bước soi số literal, theo số đo của phiên `runxops`
+  trên một file 18 dòng viết theo lối thường: 4 dòng bị nêu, 2 đúng 2 sai. Hai ca sai
+  đều là dạng máy loại được:
+  - `+= n` / `-= n` — phép tăng giảm, lọt vào vì có dấu `=` ngay trước số. Gần như
+    không bao giờ là ngưỡng nghiệp vụ.
+  - `substring(0, 8)` / `slice(a, b)` / `padStart` / `padEnd` / `charAt` / `toFixed` —
+    tham số chỉ số chuỗi, cùng họ với `[0]` đã loại từ trước.
+
+  Dòng nào chứa chuỗi `số * số` thì **giữ trước khi xét hai luật đó**: `timeout += 30 * 60 * 1000`
+  là tham số nghiệp vụ chứ không phải phép đếm, và luật `+=` một mình sẽ nuốt mất nó.
+  Trên cùng file thử: từ 4 dòng (2 đúng 2 sai) còn 3 dòng, cả ba đều là tham số thật.
+
+  Không đo được trên code sản xuất: `runxops` chưa có dòng code ứng dụng nào, `src/`
+  chỉ có README stub. Con số trên là file viết cho giống code thường, không phải bằng
+  chứng từ repo thật — ghi rõ ở đây để lần sau không ai trích nó như thể là.
+
+### Không đổi
+
+- Hồi quy 3.0.0 trên `runxops`: cổng Phase 5 đúng cả bốn mục, không mở issue nào.
+  Một CHG do người viết tay (delta viết văn xuôi tự do, không theo dạng template) vẫn
+  parse chuẩn — `✓ sửa AC-1 · ✓ sửa AC-4 · ✓ thêm AC-5`. Đây là rủi ro lớn nhất của
+  3.0.0 (cổng chỉ được thử trên change do chính tác giả viết đúng template) và nó không
+  xảy ra. Bốn dòng ✗ mà change đó rớt đều là lỗi thật của người viết.
+
 ## 3.0.0 — 2026-09-08
 
 **Nâng cấp có phá vỡ.** Repo đang có `CHG-###` dở dang phải chạy `/sdd-solo:change CHG-###`

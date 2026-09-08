@@ -48,10 +48,18 @@ if [ "$NF_" -gt 0 ]; then
   # nhân không nằm trong nhóm đầu), mà đó gần như luôn là một khoảng thời gian
   # hoặc kích thước — tức tham số nghiệp vụ. Không nới sang '+' '-': 'i + 1'
   # nhiều vô kể, còn 'số * số' thì hầu như không bao giờ là biến đếm.
+  # Khối awk loại hai dạng nhiễu đo được trên code thật (3.0.1): '+= 1' lọt vì
+  # có dấu '=' ngay trước số, và tham số chỉ số chuỗi 'substring(0, 8)' cùng họ
+  # với '[0]' đã loại. Dòng nào có chuỗi 'số * số' thì GIỮ trước khi xét hai
+  # luật đó — 'timeout += 30 * 60 * 1000' là tham số nghiệp vụ, không phải đếm.
   L="$(cd "$ROOT" && grep -rnE '([=<>!]=?|:|,|\() *[0-9]+\b|[0-9]+ *\* *[0-9]+' $SDS 2>/dev/null \
        | grep -vE '\.(test|spec)\.[a-z]+:|RULE-|CON-|ADR-' \
        | grep -vE '\[[0-9]+\]' \
        | grep -vE '\b(i|j|k|n|idx|index)\b *[=<>!]=? *[0-9]+' \
+       | awk '{ if ($0 ~ /[0-9]+ *\* *[0-9]+/) { print; next }
+                if ($0 ~ /[-+*\/]= *[0-9]+/) next
+                if ($0 ~ /(substring|substr|slice|splice|padStart|padEnd|charAt|repeat|toFixed)\(/) next
+                print }' \
        | grep -vE 'v?[0-9]+\.[0-9]+\.[0-9]+' \
        | head -8)"
   if [ -n "$L" ]; then
