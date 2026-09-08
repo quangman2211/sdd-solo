@@ -53,10 +53,10 @@ else
 fi
 # git hooks
 if [ -d "$ROOT/.git" ]; then
-  mkdir -p "$ROOT/.githooks"; cp "$PLUGIN/templates/githooks/"* "$ROOT/.githooks/"; chmod +x "$ROOT/.githooks/"*
-  git -C "$ROOT" config core.hooksPath .githooks
-  [ -f "$ROOT/.gitmessage" ] && git -C "$ROOT" config commit.template .gitmessage
-  ok "git hooks: commit-msg, pre-commit (core.hooksPath=.githooks)"
+  mkdir -p "$ROOT/.sdd/hooks"; cp "$PLUGIN/templates/githooks/"* "$ROOT/.sdd/hooks/"; chmod +x "$ROOT/.sdd/hooks/"*
+  git -C "$ROOT" config core.hooksPath .sdd/hooks
+  [ -f "$ROOT/.sdd/gitmessage" ] && git -C "$ROOT" config commit.template .sdd/gitmessage
+  ok "git hooks: commit-msg, pre-commit (core.hooksPath=.sdd/hooks)"
 else
   warn "chưa có .git — git init rồi chạy lại để cài hook"
 fi
@@ -90,5 +90,14 @@ if ! has_code_path "$ROOT"; then
     info "chưa có thư mục code nào — bình thường với repo mới; nhớ sửa .sdd/config khi đặt code"
   fi
 fi
+# 2.0.0: chép script kiểm vào dự án để cổng DoR chạy được ngoài máy đã cài
+# plugin (CI, người clone repo). Đổi lại: bản sao có thể trôi version — .sdd/version
+# so với version plugin, lệch thì session-start và status cảnh báo.
+mkdir -p "$ROOT/.sdd/scripts"
+for f in lib.sh gate-check.sh gate-pass.sh close-check.sh close-pass.sh status.sh trace-ratio.sh ac-coverage.sh version-check.sh deps-check.sh migrate-1to2.sh; do
+  [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
+done
+chmod +x "$ROOT/.sdd/scripts/"*.sh 2>/dev/null
+ok ".sdd/scripts/ — bản sao $VER, chạy được không cần plugin (CI dùng .sdd/scripts/gate-check.sh)"
 echo "$VER" > "$ROOT/.sdd/version"
 echo; echo "Xong. Commit: git add -A && git commit -m \"chore(sdd): init sdd-solo $VER\""; echo "Bước tiếp: đọc specs/README.md · viết STATE.md · /requirements (AIUP) hoặc tự viết specs/br.md"

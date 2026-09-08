@@ -19,6 +19,7 @@ RE="^($(printf '%s %s' "$CP" "$TP" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
 # chặn nhầm, đỡ hơn nghiêng về bỏ lọt. File không có phần mở rộng (Makefile,
 # Dockerfile…) không tính, để repo chưa có code không bị chặn oan.
 SRCLIKE="$(echo "$STAGED" | grep -vE '^(specs|docs|changes|checklists|prompts|\.sdd|\.githooks)/' \
+          | grep -vE '(^|/)\.[A-Za-z0-9_-]+$' \
           | grep -E '\.[A-Za-z0-9]+$' \
           | grep -viE '\.(md|markdown|txt|json|jsonc|lock|ya?ml|toml|ini|cfg|conf|env|csv|tsv|svg|png|jpe?g|gif|ico|webp|pdf|bpmn|dmn|drawio|mmd|html?|css|scss|less|gitignore|editorconfig|npmrc|nvmrc|bak|new)$')"
 OUTSIDE="$(echo "$SRCLIKE" | grep -vE "$RE")"

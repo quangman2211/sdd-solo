@@ -1,6 +1,6 @@
 ---
 name: init
-description: Cài quy trình SDD-Solo vào repo hiện tại (scaffold specs/ docs/ changes/ STATE.md, khối CLAUDE.md, spec-template mỏng cho Spec Kit, git hooks) hoặc cập nhật lên bản plugin mới mà không ghi đè file đã sửa tay. --with-deps cài luôn Spec Kit và AIUP.
+description: Cài quy trình SDD-Solo vào repo hiện tại (scaffold specs/ .sdd/ STATE.md, khối CLAUDE.md, spec-template mỏng cho Spec Kit, git hooks) hoặc cập nhật lên bản plugin mới mà không ghi đè file đã sửa tay. --with-deps cài luôn Spec Kit và AIUP.
 disable-model-invocation: true
 argument-hint: "[--update] [--with-deps]"
 allowed-tools: Bash Read

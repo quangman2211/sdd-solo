@@ -11,7 +11,7 @@ info "file: ${F#$ROOT/}"
 # 0. status
 STL="$(grep -E '\*\*Status:\*\*' "$F" | head -1)"; echo "$STL" | grep -q '|' && bad "Status còn là danh sách lựa chọn — chọn một giá trị"
 ST="$(echo "$STL" | grep -oE '\*\*Status:\*\* *[a-z]+' | awk '{print $2}')"
-case "$ST" in draft|reviewed) ok "status: $ST";; implemented) bad "status đã implemented — dùng Phase 5 (changes/) nếu đổi hành vi";; *) bad "status không hợp lệ: '$ST'";; esac
+case "$ST" in draft|reviewed) ok "status: $ST";; implemented) bad "status đã implemented — dùng Phase 5 (specs/changes/) nếu đổi hành vi";; *) bad "status không hợp lệ: '$ST'";; esac
 
 # 1. các mục bắt buộc
 for sec in "## Actor" "## Trigger" "## Preconditions" "## Main Flow" "## Exceptions" "## Postconditions" "## Acceptance Criteria" "## Screens" "## History"; do
@@ -38,8 +38,12 @@ for r in $(grep -oE 'RULE-[0-9]+' "$F" | sort -u); do
 done
 
 # 5. BPMN
-BP="$ROOT/specs/contexts/$CTX/diagrams/$ID.bpmn"
-[ -f "$BP" ] && ok "diagrams/$ID.bpmn" || bad "thiếu specs/contexts/$CTX/diagrams/$ID.bpmn"
+# 2.0.0: .bpmn nằm TRONG thư mục UC, không còn ở diagrams/ cấp context.
+BP="$DIR/$ID.bpmn"
+OLD="$ROOT/specs/contexts/$CTX/diagrams/$ID.bpmn"
+if [ -f "$BP" ]; then ok "$ID.bpmn (trong thư mục UC)"
+elif [ -f "$OLD" ]; then bad "$ID.bpmn còn ở chỗ cũ specs/contexts/$CTX/diagrams/ — chạy .sdd/scripts/migrate-1to2.sh"
+else bad "thiếu ${DIR#$ROOT/}/$ID.bpmn"; fi
 [ -f "$BP.svg" ] || warn "chưa export $ID.bpmn.svg"
 
 # 6. entities
@@ -57,7 +61,14 @@ if [ -n "$OQ" ]; then echo "$OQ" | grep -vqi 'quyết định tạm' && bad "Ope
 
 # 9. commit docs + ngủ qua đêm
 LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" 2>/dev/null)"
+LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" 2>/dev/null)"
 if [ -z "$LAST" ]; then bad "chưa có commit docs($ID) — /sdd-solo:adversarial kết thúc bằng commit này"
+elif [ "$LAST" = "$(today)" ] && [ "$LASTS" = "docs($ID): spec reviewed — qua cổng DoR" ]; then
+  # Commit docs mới nhất do chính gate-pass tạo, không phải người sửa spec.
+  # Không có nhánh này thì hành động qua cổng tự phá điều kiện qua cổng và
+  # gate-check đỏ liên tục tới hôm sau. Sửa spec THẬT sau khi qua cổng vẫn
+  # sinh commit docs khác tiêu đề, nên vẫn phải ngủ lại một đêm. Xem #7.
+  ok "docs($ID) hôm nay là commit của gate-pass — đã qua cổng trước đó"
 elif [ "$LAST" = "$(today)" ]; then bad "commit docs($ID) mới hôm nay ($LAST) — spec phải được đọc lại ở một buổi khác"
 else ok "docs($ID) commit $LAST — đã qua ít nhất một đêm"; fi
 git -C "$ROOT" status --porcelain -- "$DIR" "$RF" 2>/dev/null | grep -q . && bad "còn thay đổi chưa commit trong spec — commit docs($ID) trước"

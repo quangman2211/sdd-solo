@@ -14,24 +14,24 @@ Spec là giao diện giữa ba người đọc: user hôm nay, user ba tháng sa
 | Tầng | Câu hỏi | File | Biểu đồ đi kèm |
 |---|---|---|---|
 | BR | Vì sao làm | `specs/br.md` | Impact Map (Mermaid) · Story Map (`specs/story-map.md`) |
-| UC | Ai làm gì | `specs/contexts/<ctx>/use-cases/UC-###-slug/UC-###.md` | BPMN 2.0 (`diagrams/UC-###.bpmn`) · Sequence nếu có mạng |
+| UC | Ai làm gì | `specs/contexts/<ctx>/use-cases/UC-###-slug/UC-###.md` | BPMN 2.0 (`UC-###.bpmn`, cùng thư mục UC) · Sequence nếu có mạng |
 | Entity | Khái niệm nào, vòng đời nào | `specs/contexts/<ctx>/entities.md` | Domain Model (classDiagram) · State Machine cho mỗi entity có status |
 | AC | Biết đúng bằng cách nào | trong file UC, `### AC-#` Given/When/Then | — |
 | RULE | Ràng buộc xuyên UC | `specs/rules.md` — nơi duy nhất; UC/AC chỉ trích ID | DMN table khi ≥ 3 điều kiện |
 
-Ranh giới spec/doc: **khách cảm nhận được → spec** (`specs/`). Chỉ người xây quan tâm → doc (`docs/adr/`, `docs/decisions.md`). Đang làm tới đâu → `STATE.md` ở root.
+Ranh giới spec/doc: **khách cảm nhận được → spec** (`specs/`). Chỉ người xây quan tâm → doc (`specs/internal/adr/`, `specs/internal/decisions.md`). Đang làm tới đâu → `STATE.md` ở root.
 
 ## Hệ ID
 `BR-###` · `UC-###` · `UC-###/AC-#` · `RULE-###` · `CON-###` (trong BR) · `SCR-###-#` (màn hình của UC-###) · `ADR-###` · `CHG-###` (Phase 5). Commit: `<type>(ID): mô tả`. Test: `tests/use-cases/<ctx>/UC-###/AC-#.test.*`, describe `"UC-### / AC-#: tên"`.
 
 ## 14 bước cho một UC (Phase 3)
-① `/sdd-solo:start UC-###` → ② `/use-case-spec` (AIUP) điền nội dung → ③ user viết RULE (rules.md, DMN nếu cần) và AC → ④ vẽ BPMN ở Camunda → ⑤ Claude Design theo `prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đóng máy, đọc lại buổi sau** → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
+① `/sdd-solo:start UC-###` → ② `/use-case-spec` (AIUP) điền nội dung → ③ user viết RULE (rules.md, DMN nếu cần) và AC → ④ vẽ BPMN ở Camunda → ⑤ Claude Design theo `.sdd/prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đóng máy, đọc lại buổi sau** → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
 
 ## Cách viết từng thứ
 
-**UC** — template ở `specs/contexts/_template/use-cases/UC-000-template/UC-000.md`. Bắt buộc: Actor, Trigger, Preconditions, Main Flow (bước "Hệ thống hiển thị" phải nêu SCR-ID), Alternative Flows (Na.), Exceptions (E#: điều kiện → màn hình → thông điệp bằng tiếng của khách → hệ thống làm gì), Postconditions, AC, Screens (bảng Nguồn | Màn hình | Khách thấy gì | Hành động), Dependencies, Open Questions (mỗi câu có "quyết định tạm"), Adversarial pass, History.
+**UC** — template ở `.sdd/templates/use-case/UC-000.md`. Bắt buộc: Actor, Trigger, Preconditions, Main Flow (bước "Hệ thống hiển thị" phải nêu SCR-ID), Alternative Flows (Na.), Exceptions (E#: điều kiện → màn hình → thông điệp bằng tiếng của khách → hệ thống làm gì), Postconditions, AC, Screens (bảng Nguồn | Màn hình | Khách thấy gì | Hành động), Dependencies, Open Questions (mỗi câu có "quyết định tạm"), Adversarial pass, History.
 
 **AC** — Given/When/Then, một cho Main Flow, một cho mỗi E#. Không chép rule: viết "theo RULE-004". Mỗi AC sẽ thành đúng một file test.
 
@@ -47,8 +47,8 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 
 **ADR** — chỉ khi quyết định đắt để đảo ngược VÀ có phương án thay thế hợp lý bị loại. Phải có mục Alternatives considered và ít nhất một dấu trừ trong Consequences. Bài test: khách quan tâm → không phải ADR, là RULE/AC.
 
-## Khi nào dùng `changes/` (Phase 5)
-UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn đúng. Tạo `changes/CHG-###-slug/` (proposal, delta ADDED/MODIFIED/REMOVED, design, tasks); baseline trong `specs/` chỉ đổi khi archive. Thêm AC mới không phá AC cũ → vẫn là Phase 3, History v+1.
+## Khi nào dùng `specs/changes/` (Phase 5)
+UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn đúng. Tạo `specs/changes/CHG-###-slug/` (proposal, delta ADDED/MODIFIED/REMOVED, design, tasks); baseline trong `specs/` chỉ đổi khi archive. Thêm AC mới không phá AC cũ → vẫn là Phase 3, History v+1.
 
 ## Quy tắc cho bạn (AI) trong repo này
 1. Gặp số, ngưỡng, enum, quyền mà spec chưa nói → dừng, hỏi. Không chọn mặc định.

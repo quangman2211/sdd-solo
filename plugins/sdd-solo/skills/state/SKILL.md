@@ -9,7 +9,7 @@ Viết lại `STATE.md` (root repo) theo đúng 5 dòng. Nguồn: STATE cũ, `gi
 
 ```
 Đang làm:            UC-### · bước N — <một cụm>
-Quyết định gần nhất: <một câu> (→ ADR-### | docs/decisions.md)
+Quyết định gần nhất: <một câu> (→ ADR-### | specs/internal/decisions.md)
 Câu hỏi treo:        <một câu> (quyết định tạm: ___)  | không có
 Việc tiếp theo:      <lệnh hoặc việc cụ thể đầu tiên của buổi sau>
 Bỏ dở vì:            <lý do thật, kể cả "hết pin">

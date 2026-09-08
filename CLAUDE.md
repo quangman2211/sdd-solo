@@ -20,7 +20,8 @@ CHANGELOG.md                         mỗi bản một mục — đây là ## Hi
 ```
 
 ## Ranh giới — quyết định đã chốt, không mở lại tuỳ tiện
-- **Plugin giữ hành vi, dự án giữ nội dung.** `scaffold.sh` chỉ ghi đè file có sha khớp manifest (user chưa sửa tay); file đã sửa → tạo `.new`, không ghi đè. Không đổi quy tắc này.
+- **Plugin giữ NGUỒN của hành vi; dự án giữ một bản sao có đánh version của phần hành vi cần chạy được khi không có plugin** (githook, script kiểm ở `.sdd/scripts/`). Bản sao do `init --update` phát; lệch version thì hook SessionStart và `/sdd-solo:status` cảnh báo. Đổi từ 2.0.0 — giá phải trả là bản sao có thể trôi, đổi lại cổng DoR chạy được ở CI và trên máy người clone repo, chứ không dừng ở máy tác giả.
+- **Dự án giữ nội dung.** `scaffold.sh` chỉ ghi đè file có sha khớp manifest (user chưa sửa tay); file đã sửa → tạo `.new`, không ghi đè. Không đổi quy tắc này.
 - **Không có cờ bỏ qua** cho `gate-check.sh`, `commit-msg`, `pre-commit`. Đây là tính năng. Nếu một quy tắc sai thật, sửa quy tắc và ghi CHANGELOG — không thêm `--skip`.
 - **`/specify` `/plan` là của Spec Kit**, plugin không chặn cứng được; chặn mềm qua `CLAUDE.md.tmpl` + hook SessionStart. Không tìm cách "hook" vào lệnh của Spec Kit.
 - **`speckit-decompose` để ngoài** plugin này (quyết định 09/2026).
@@ -69,6 +70,7 @@ Cả bảng này chỉ đúng khi đã bump version. Chưa bump thì `/plugin up
 
 ## Khi viết script
 - bash 3.2: không dùng mảng kết hợp, `mapfile`, `${var,,}`. `sed -i.bak` rồi `rm .bak`. `shasum -a 256` có fallback `sha256sum` trong `lib.sh`.
+- **Không đặt biến sát ký tự nhiều byte.** `echo "$VAR…"` trong bash 3.2 (macOS) dưới locale UTF-8 nuốt mất nội dung biến và byte đầu của ký tự theo sau — không riêng `…`, mà cả `→`, `✓`, chữ có dấu. Dùng `printf '…%s…\n' "$VAR"`, hoặc chèn một ký tự ASCII vào giữa. Bảng đo ở CHANGELOG 1.6.2 và issue #6. Mọi script ở đây đều bash và mọi thông điệp đều tiếng Việt, nên bẫy này còn lặp lại.
 - Mọi kiểm cơ học in `✓ / ✗ / !` qua `ok/bad/warn` của `lib.sh`; exit 1 nếu có ✗.
 - Commit từ script dùng `git commit --only -- <file>` để không kéo theo thứ user đang stage.
 - Đường dẫn dự án lấy từ `project_root()` (`$CLAUDE_PROJECT_DIR` → `git rev-parse --show-toplevel` → `pwd`).

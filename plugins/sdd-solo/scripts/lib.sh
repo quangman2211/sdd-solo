@@ -102,6 +102,6 @@ has_code_path() { for d in $(code_paths "$1"); do [ -d "$1/$d" ] && return 0; do
 # Dùng để phân biệt "config sai" với "repo chưa viết code dòng nào".
 repo_has_code() {
   git -C "$1" ls-files 2>/dev/null \
-    | grep -vE '^(specs|docs|changes|checklists|prompts|\.sdd|\.githooks)/' \
+    | grep -vE '^(specs|\.sdd|docs|changes|checklists|prompts|\.githooks)/' \
     | grep -qE '\.(js|ts|tsx|jsx|py|go|rb|java|cs|kt|swift|rs|php|c|cc|cpp|h|hpp|sh|sql|vue|svelte)$'
 }

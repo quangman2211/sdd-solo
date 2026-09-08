@@ -8,7 +8,7 @@ allowed-tools: Bash Read Edit
 
 Đóng `$1`.
 
-1. Chạy self-review 5 câu cùng user trước (từ `checklists/self-review.md`), đặc biệt câu 5 *"AI quyết hay mình quyết?"* — nếu có quyết định kỹ thuật đáng nhớ, append một dòng vào `docs/decisions.md` theo format trong file.
+1. Chạy self-review 5 câu cùng user trước (từ `.sdd/checklists/self-review.md`), đặc biệt câu 5 *"AI quyết hay mình quyết?"* — nếu có quyết định kỹ thuật đáng nhớ, append một dòng vào `specs/internal/decisions.md` theo format trong file.
 2. Chạy và in output:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/close-check.sh" $1

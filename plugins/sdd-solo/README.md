@@ -38,8 +38,18 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 
 ## Cái gì nằm ở đâu
 
-- **Plugin** (`plugins/sdd-solo/`) giữ *hành vi*: skill, hook, script kiểm, template gốc, prompt, checklist. Update một chỗ.
-- **Dự án** giữ *nội dung*: `specs/`, `docs/`, `changes/`, `STATE.md`, `CLAUDE.md`. Plugin không bao giờ ghi đè file bạn đã sửa — `init --update` để bản mới cạnh dưới tên `.new`.
+Từ 2.0.0, repo dự án chỉ còn **hai thư mục của quy trình**:
+
+```
+.sdd/     bộ máy — config, gate/, scripts/, hooks/, checklists/, prompts/, templates/
+specs/    toàn bộ nội dung — br.md rules.md contexts/ internal/ changes/
+STATE.md  CLAUDE.md  <code>/  <tests>/
+```
+
+- **`.sdd/`** giữ bộ máy, kể cả **một bản sao script kiểm** — nên `bash .sdd/scripts/gate-check.sh UC-###` chạy được ở CI và trên máy người clone repo, không cần cài plugin. Lệch version so với plugin thì hook và `status` cảnh báo.
+- **`specs/`** giữ mọi thứ mô tả hệ thống. Ranh giới spec↔doc không mất, nó tụt một tầng: khách cảm nhận được → `contexts/`, chỉ người xây quan tâm → `internal/`. Đang sửa dở → `changes/`.
+- Artifact của một UC nằm **trọn trong thư mục UC**, kể cả `.bpmn`.
+- Plugin không bao giờ ghi đè file bạn đã sửa — `init --update` để bản mới cạnh dưới tên `.new`.
 
 ## Repo của bạn đặt code ở đâu
 
