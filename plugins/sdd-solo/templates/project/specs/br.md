@@ -32,6 +32,11 @@ kích hoạt, trung bình 2 lượt qua lại mỗi đơn (đếm tay trong inbo
 chỉ trả lời được vào buổi tối, nên khách mua ngoài giờ phải chờ tới hôm sau mới dùng được
 thứ đã trả tiền.
 
+**Vì sao vẫn xây:** có cách không-phần-mềm — gửi key tay theo lô mỗi tối. Bỏ vì CON-003 giới hạn
+người bán một lần mỗi ngày, nên khách mua buổi sáng vẫn phải chờ tới tối, tức không giải quyết
+được đúng chỗ đau. Hai phương án khác đã cân: thuê người trực (không đủ đơn để trả lương) và bán
+qua sàn có sẵn cơ chế cấp key (mất 20% doanh thu).
+
 ## Goal
 Khách mua plugin kích hoạt được trên thiết bị của mình mà không cần nhắn tin cho người bán.
 
@@ -124,6 +129,9 @@ chỉ là đường thẳng từ Goal xuống danh sách việc đã định là
 ## Background
 <Vì sao có requirement này — bối cảnh kinh doanh, phản hồi khách, ràng buộc bên ngoài.
 Khẳng định nào không có số hoặc nguồn thì đưa xuống Open Questions, đừng viết ở đây như sự thật>
+
+**Vì sao vẫn xây:** <đã cân những cách không-phần-mềm nào, bỏ vì sao. Chưa cân cái nào thì ghi
+thẳng "chưa có lý do" — đó là câu trả lời trung thực, và vai hoài nghi sẽ bấu vào đúng chỗ này>
 
 ## Goal
 <Một câu. Tránh "tối ưu", "cải thiện", "nâng cao" nếu Success Metrics chưa có số>

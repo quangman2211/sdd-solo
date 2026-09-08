@@ -33,8 +33,15 @@ filled() {
 grep -qE "^# $ID: *[^ <]" "$BF" && ok "có tiêu đề" || bad "dòng '# $ID:' chưa có tên thật"
 
 # 2. Background — khẳng định không nguồn thì thuộc Open Questions, không thuộc đây
-filled "$(sec '## Background')" && ok "## Background có nội dung" \
-  || bad "## Background rỗng hoặc còn placeholder"
+BG="$(sec '## Background')"
+filled "$BG" && ok "## Background có nội dung" || bad "## Background rỗng hoặc còn placeholder"
+# Câu 5 của intake ("có cách nào không xây phần mềm không?") là câu duy nhất chặn
+# được việc xây thứ không cần tồn tại — nhưng trả lời "chưa nghĩ tới" chỉ thành một
+# Open Question, mà Open Question không chặn gì. BR chưa chứng minh được lý do tồn
+# tại đi qua cổng y hệt BR đã chứng minh xong. Cảnh báo, không đỏ. Xem #22.
+printf '%s' "$BG" | grep -qE '\*\*Vì sao vẫn xây:\*\*' \
+  && ok "Background có dòng 'Vì sao vẫn xây'" \
+  || warn "Background chưa có dòng '**Vì sao vẫn xây:**' — chưa ai chứng minh phần mềm này cần tồn tại; đây là chỗ vai hoài nghi sẽ bấu vào"
 
 # 3. Goal — một câu, và không được mơ hồ khi chưa có số nào để đo
 G="$(sec '## Goal')"

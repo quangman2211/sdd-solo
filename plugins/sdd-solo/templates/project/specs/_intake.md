@@ -8,6 +8,8 @@ Không có thì tự trả lời bảy câu dưới đây bằng giấy bút, r�
 
 1. **"Không biết" là câu trả lời hợp lệ.** Ghi `___` và đánh dấu thành Open Question.
    Một con số đoán bừa ở đây sẽ được cả bộ 24 kiểm ở cổng DoR bảo vệ suốt phần đời còn lại của dự án.
+   Cả số mình **tự đoán** cũng vậy — "tuần nào cũng vài lần" là ước lượng, không phải số đếm được;
+   ghi rõ nó là ước lượng, đừng để nó thành sự thật trong `## Background`.
 2. **Kể chuyện, đừng kê tính năng.** Nếu câu trả lời bắt đầu bằng "xây một cái…" thì đó là
    giải pháp, không phải vấn đề. Hỏi ngược mình: *cái đó để tôi biết hoặc làm được chuyện gì mà giờ không?*
 3. **Một câu một lượt.** Đọc cả bảy câu rồi ngồi nghĩ chung sẽ ra bảy câu trả lời chung chung.
@@ -48,6 +50,14 @@ Chỉ hỏi khi ba câu trên đã có. Được phép kết thúc bằng `___`.
 
 **Câu 5 là câu đáng giá nhất và hay bị bỏ nhất.** Nó là thứ duy nhất chặn được việc xây một
 phần mềm không cần tồn tại. Đang hào hứng thì càng phải hỏi.
+
+Chưa nghĩ tới thì đừng để trống — **đó cũng là một câu trả lời**. Ghi vào `## Background` một dòng
+`**Vì sao vẫn xây:** chưa có lý do — chưa cân phương án không-phần-mềm nào`. Trung thực hơn nhiều
+so với một câu nghe như đã cân nhắc xong, và `br-check` sẽ nhắc chừng nào dòng đó chưa có.
+
+Bí thì tự liệt kê **ít nhất ba** cách không-phần-mềm rồi bác từng cái: đổi quy trình · làm tay
+theo lô · mua công cụ có sẵn · thuê người · một cái kệ và tờ nhãn. Nêu đúng một cái thì mình
+đang tự dẫn mình vào nó.
 
 Chỗ trả lời:
 

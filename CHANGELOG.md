@@ -1,5 +1,47 @@
 # Changelog
 
+## 3.2.3 — 2026-09-08
+
+Ba phát hiện từ phép thử bộ câu hỏi (#22): hai subagent đóng vai người dùng, hai đóng vai người
+phỏng vấn, **không bên nào biết đang bị đo cái gì**; cả hai nhân vật gật đầu ngay với bất kỳ con số
+nào người phỏng vấn nêu ra, nên số nào có trong BR mà không có trong lời nhân vật đều là số do
+skill đẻ ra — so file với transcript là ra.
+
+Kết quả nền: cả ba BR qua `br-check` vòng đầu, **0 số nghiệp vụ bịa**, không BR nào để giải pháp
+lọt vào Goal.
+
+### Sửa
+
+- **Câu 5 không chặn được gì — chỗ nặng nhất.** SKILL.md gọi câu 5 (*"có cách nào đạt được điều đó
+  mà không xây phần mềm không?"*) là *"thứ duy nhất chặn được việc xây một phần mềm không cần tồn
+  tại"*. Nhưng khi user trả lời *"chưa nghĩ tới"*, hướng dẫn chỉ bảo ghi một Open Question rồi đi
+  tiếp — mà Open Question **không chặn gì**. Một BR ghi thẳng trong Background *"BR này hiện chưa
+  có lý do chọn xây phần mềm"* vẫn ra `BR DÙNG ĐƯỢC`, không gì phân biệt nó với BR đã chứng minh xong.
+
+  `## Background` nay có một dòng bắt buộc `**Vì sao vẫn xây:**`, `br-check` **cảnh báo** khi thiếu
+  (không đỏ — Phase 1 vẫn phải mềm), và vai hoài nghi ở `/sdd-solo:adversarial BR-###` đọc dòng đó
+  **trước tiên**; ghi *"chưa có lý do"* thì đó là câu hỏi số một của nó. Ghi *"chưa có lý do"* vẫn
+  qua kiểm — trung thực là hợp lệ; thứ không hợp lệ là im lặng.
+
+- **Bẫy gật đầu: hai luật trong SKILL.md đá nhau.** Một dòng cấm gợi ý số để user gật; một dòng
+  khác bắt cách đo không được để trống. Với người chưa từng đo cái gì thì hai câu đó không cùng
+  thoả được — họ cần một ví dụ, mà ví dụ nào cũng kèm ngưỡng. Phép thử bắt được đúng ca này: người
+  phỏng vấn nêu *"quá một ngày mới trả lời"*, user gật ngay. Nó thoát **nhờ tự giác** (tự ghi Open
+  Question rằng số đó là của mình), **không nhờ luật** — và `br-check` báo ✓ cả hai đằng, vì nó
+  kiểm *có* cách đo chứ không kiểm cách đo đó **của ai**.
+
+  Ranh giới nay viết rõ: được nêu **khung đếm** (đếm ở đâu · đếm cái gì · bao lâu một lần), không
+  được nêu **ngưỡng bên trong khung**; ngưỡng luôn `___` kể cả khi user đã gật. Kèm một mẫu câu an
+  toàn, và bắt buộc ghi Open Question *"số này do người phỏng vấn nêu, user chưa quyết"*.
+
+- **Câu 5 mâu thuẫn nhẹ với luật "không đề xuất tính năng".** Muốn user bác được phương án
+  không-phần-mềm thì phải nêu phương án; người chưa nghĩ tới không tự liệt kê được. Nay nói rõ đây
+  là ngoại lệ có chủ ý, với hai ràng buộc: chỉ nêu phương án **không-phần-mềm**, và nêu **ít nhất
+  ba** để user không bị dẫn vào đúng một cái rồi gật.
+
+- `_intake.md`: thêm cảnh báo về số **user tự đoán** (*"tuần nào cũng vài lần"*) — ca này khó hơn
+  *"không biết"* thẳng, vì chính user mở đường cho con số vào Background.
+
 ## 3.2.2 — 2026-09-08
 
 ### Sửa

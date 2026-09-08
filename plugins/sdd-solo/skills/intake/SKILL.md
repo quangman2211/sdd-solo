@@ -26,8 +26,17 @@ sửa BR đang có.
   người đang mơ hồ nhìn bảy câu sẽ không trả lời câu nào.
 - **Nhắc lại điều vừa nghe bằng một câu, rồi mới hỏi tiếp.** "Vậy là ___, đúng không anh?"
   Đây là chỗ bắt hiểu nhầm rẻ nhất, và nó cho user thấy mình đang được nghe.
-- **"Không biết" là câu trả lời hợp lệ.** Ghi `___` và một dòng Open Question. Không ép,
-  không gợi ý một con số để user gật đầu — đó chính là cách quyết định ngầm chui vào spec.
+- **"Không biết" là câu trả lời hợp lệ.** Ghi `___` và một dòng Open Question. Không ép.
+- **Được gợi ý KHUNG ĐẾM, không được gợi ý NGƯỠNG.** Hai luật "đừng gợi ý số" và "cách đo không
+  được để trống" đá nhau với người chưa từng đo cái gì — họ cần một ví dụ, mà ví dụ nào cũng kèm
+  con số. Ranh giới: *đếm ở đâu · đếm cái gì · bao lâu một lần* thì được nêu; **ngưỡng bên trong
+  khung đó thì không**, luôn để `___` kể cả khi user đã gật.
+  Mẫu câu an toàn: *"cách đếm thì kiểu mỗi Chủ nhật mở lại từng kênh, đếm tin để lâu mới trả lời —
+  anh thấy làm được không? Còn 'lâu' là bao lâu thì mình chưa chốt, để trống đã."*
+- **User gật với con số do MÌNH nêu ra thì con số đó chưa phải của user.** Người đang mơ hồ sẽ gật
+  cho xong. Bắt buộc: để `___` ở chỗ ngưỡng, **và** ghi một dòng Open Question nói rõ *"số này do
+  người phỏng vấn nêu, user chưa quyết"*. Không có dòng đó thì sáu tháng sau không ai phân biệt
+  được số của user với số của máy.
 - **Không đề xuất tính năng.** Nếu user hỏi "nên làm gì", trả lời bằng câu hỏi về vấn đề.
   Việc của bước này là hiểu, không phải thiết kế.
 - **Nếu user trả lời câu 1 bằng một giải pháp** ("em muốn làm một cái dashboard"), đừng ghi nó
@@ -51,6 +60,17 @@ Câu 5 là câu hay bị bỏ nhất và là câu đáng giá nhất — nó là
 một phần mềm không cần tồn tại. Đừng lướt qua nó vì user đã hào hứng.
 Câu 6 sinh ra Out of Scope; câu 7 sinh ra Success Metrics.
 
+**Riêng câu 5 được phép nêu phương án** — đây là ngoại lệ có chủ ý của luật "không đề xuất tính
+năng". Người chưa nghĩ tới thì không tự liệt kê được cách làm không-phần-mềm, nên không nêu gì
+là bỏ luôn câu hỏi. Hai ràng buộc: chỉ nêu phương án **không-phần-mềm** (đổi quy trình, làm tay
+theo lô, mua sẵn, thuê người, một cái kệ và tờ nhãn), và nêu **ít nhất ba** để user không bị dẫn
+vào đúng một cái rồi gật.
+
+**Câu 5 trả lời "chưa nghĩ tới" là một kết quả, không phải một chỗ trống.** Ghi vào `## Background`
+một dòng `**Vì sao vẫn xây:** chưa có lý do — user chưa cân phương án không-phần-mềm nào` và một
+Open Question. Đừng viết dòng đó thành một câu nghe như đã cân nhắc xong. `br-check` cảnh báo khi
+thiếu dòng này, và vai hoài nghi ở `/sdd-solo:adversarial BR-###` sẽ bấu thẳng vào nó.
+
 **Viết ra:**
 
 - Câu 1 + 3 → `## Background`. Chỉ những gì user thật sự nói. Con số user nêu thì ghi kèm nguồn
@@ -59,8 +79,10 @@ Câu 6 sinh ra Out of Scope; câu 7 sinh ra Success Metrics.
 - Câu 7 → `## Success Metrics`. Số để `___` thoải mái; **cách đo thì không được để trống**.
   Chưa có analytics thì viết cách đếm tay — "đếm thread trong inbox mỗi thứ Hai" là một cách đo hợp lệ.
 - Câu 6 → `## Out of Scope`, và mỗi dòng thành một nhánh `-.->` trên Impact Map.
-- Câu 5 → nếu có cách không-xây-phần-mềm mà user vẫn chọn xây, ghi lý do vào `## Background`.
-  Nếu chưa nghĩ ra → Open Question, đừng bỏ qua.
+- Câu 5 → **luôn** ghi một dòng `**Vì sao vẫn xây:** ...` vào `## Background`, dù câu trả lời là
+  gì. Có phương án không-phần-mềm mà user vẫn chọn xây → ghi lý do. Chưa nghĩ tới → ghi thẳng
+  *"chưa có lý do"* + Open Question. Dòng này là thứ duy nhất trong BR nói được rằng phần mềm
+  này đã được chứng minh là cần tồn tại.
 - Câu 4 → `## Background` hoặc một `CON-###` nếu nó là ràng buộc thời gian.
 - UC ứng viên → `## Related Use Cases`, **chỉ ID + tên**. Không viết chi tiết UC ở đây.
 

@@ -52,7 +52,9 @@ Vai:
 2. **Người sẽ phải vận hành nó mãi** — người trực ticket và sửa lúc nửa đêm. Hỏi: hỏng lúc 2 giờ
    sáng thì ai chịu? cái gì trong Out of Scope hôm nay sẽ quay lại thành ticket tuần sau? việc này
    đẻ thêm bao nhiêu việc tay mỗi tháng? ai xử khi dữ liệu vào sai ngay từ đầu?
-3. **Người hoài nghi** — người không tin là cần xây gì cả. Hỏi: có cách nào đạt Goal mà **không viết
+3. **Người hoài nghi** — người không tin là cần xây gì cả. **Đọc dòng `**Vì sao vẫn xây:**` trong
+   Background trước tiên; nếu nó ghi "chưa có lý do" thì đó là câu hỏi số một của bạn.** Hỏi tiếp:
+   có cách nào đạt Goal mà **không viết
    phần mềm** không (mua sẵn, đổi quy trình, thuê người, làm tay theo lô)? BR này có thật là một BR,
    hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do? nếu xoá hẳn BR này thì ai kêu, và
    sau bao lâu?

@@ -56,7 +56,7 @@ Còn dòng ✗ → **dừng**, in output, bảo user viết xong BR rồi chạy
 
    - **Người trả tiền** — vì sao việc này đáng làm **trước** việc khác? không làm thì mất gì **đo được**? con số baseline lấy ở đâu?
    - **Người sẽ phải vận hành nó mãi** — ai chịu trách nhiệm khi nó hỏng lúc 2 giờ sáng? cái gì trong Out of Scope hôm nay sẽ thành ticket tuần sau?
-   - **Người hoài nghi** — có cách nào đạt Goal mà **không xây gì** không? BR này có thật là một BR, hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do?
+   - **Người hoài nghi** — dòng `**Vì sao vẫn xây:**` trong Background nói gì? nếu nó ghi *"chưa có lý do"* thì **bắt đầu từ đó**: đã cân phương án không-phần-mềm nào chưa, cân xong chưa? có cách nào đạt Goal mà **không xây gì** không? BR này có thật là một BR, hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do?
 
    Vai thứ ba là vai quan trọng nhất và không có ở tầng UC. *"BR: xây dashboard theo dõi đơn hàng"* không phải BR — đó là giải pháp; BR thật nằm ở câu hỏi *vì sao cần theo dõi*. Nếu vai này kết luận BR đang là giải pháp viết ngược, **dừng và viết lại BR**, đừng ghi nó thành một Open Question rồi đi tiếp.
 
