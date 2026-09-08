@@ -7,6 +7,17 @@ for f in $(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' -not -na
   g=""; [ -f "$ROOT/.sdd/gate/$id.ok" ] && g=" · gate ✓"
   printf '  %-8s %-12s%s\n' "$id" "${st:-?}" "$g"
 done
+# Phase 5: change nào đang mở, đã qua cổng chưa
+CD="$(ls -d "$ROOT/specs/changes/CHG-"* "$ROOT/changes/CHG-"* 2>/dev/null)"
+if [ -n "$CD" ]; then
+  echo; echo "=== Change đang mở (Phase 5) ==="
+  for d in $CD; do
+    id="$(basename "$d" | grep -oE '^CHG-[0-9]+')"
+    st="$(awk 'index($0,"## Status")==1{f=1;next} f&&/^## /{exit} f&&NF{print;exit}' "$d/proposal.md" 2>/dev/null | tr -d "[:space:]")"
+    g=""; [ -f "$ROOT/.sdd/gate/$id.ok" ] && g=" · gate ✓"
+    printf '  %-9s %-12s%s\n' "$id" "${st:-?}" "$g"
+  done
+fi
 echo; "$HERE/trace-ratio.sh"; "$HERE/ac-coverage.sh"
 # phụ thuộc: chỉ nói khi thiếu, đủ thì im
 D="$("$HERE/deps-check.sh" 2>&1)" || { echo; echo "$D"; }

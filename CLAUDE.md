@@ -7,10 +7,10 @@ Repo này là **plugin Claude Code** (đồng thời là marketplace một plugi
 .claude-plugin/marketplace.json      version phải khớp plugin.json
 plugins/sdd-solo/
   .claude-plugin/plugin.json         version
-  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · start · adversarial · gate · close · state · status
+  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · start · adversarial · gate · change · close · state · status · update
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
-  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · gate-check/-pass · close-check/-pass · status · trace-ratio · ac-coverage
+  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · gate-check/-pass · change-check/-pass · close-check/-pass · status · trace-ratio · ac-coverage · version-check · update · migrate-1to2 · uc-ready · deps-check
   templates/project/                 được copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
   templates/speckit/spec-template.md bản mỏng thay spec-template của Spec Kit

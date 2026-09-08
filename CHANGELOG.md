@@ -1,5 +1,61 @@
 # Changelog
 
+## 3.0.0 — 2026-09-08
+
+**Nâng cấp có phá vỡ.** Repo đang có `CHG-###` dở dang phải chạy `/sdd-solo:change CHG-###`
+một lần cho mỗi change, nếu không githook sẽ chặn commit code gắn `(CHG-###)`.
+Xem mục *Cách nâng* cuối bản này.
+
+### Thêm — cổng Phase 5 (#16)
+
+Phase 3 có 22 kiểm cơ học ở `gate-check.sh`. Phase 5 — chỗ **đổi hành vi đã giao cho
+khách** — trước bản này có **không một kiểm nào**: không script, không skill. Một change
+vào được repo với `proposal.md` nguyên xi template, không nói đụng UC nào, không nói lật
+AC nào, và không gì chặn. Rủi ro của Phase 5 cao hơn Phase 3 mà hàng rào thì thấp hơn.
+
+- **`/sdd-solo:change CHG-###`** — skill mới, cổng của Phase 5.
+- **`change-check.sh`** kiểm, trong đó ba nhóm đáng kể:
+  - *Có đúng là Phase 5 không.* Mọi UC trong `## Scope` phải có thật, phải `implemented`,
+    phải có `.sdd/gate/UC-###.ok`. UC còn `draft` → đây là Phase 3, đóng change lại.
+    Và phải có ít nhất một mục `MODIFIED`/`REMOVED`: chỉ thêm AC mới thì cũng là Phase 3.
+  - *Delta có nói đúng về baseline không.* `REMOVED AC-7` khi baseline không có `AC-7`,
+    `ADDED AC-1` khi baseline đã có `AC-1` — hai kiểu này trước đây không ai bắt, và
+    chúng có nghĩa là delta đang mô tả một baseline khác với baseline thật.
+  - *Có phải template không.* `<...>` còn sót, chuỗi `CHG-000`, `delta/UC-000.delta.md`,
+    và mục chỉ chứa `...`. Bản thử đầu để lọt đúng cái cuối: `- ...` trong
+    `## Rủi ro và cách lùi` đi qua cổng như một câu trả lời hợp lệ, vì nó *không rỗng*.
+  - Cùng luật ngủ-qua-đêm với cổng DoR: `docs(CHG-###)` phải commit từ một buổi khác.
+- **`change-pass.sh`** đặt `Status: applying`, thêm dòng History, ghi `.sdd/gate/CHG-###.ok`.
+- `/sdd-solo:status` liệt kê change đang mở kèm status và dấu cổng.
+
+### Đổi quy tắc
+
+- **`commit-msg`: commit code gắn `(CHG-###)` giờ đòi `.sdd/gate/CHG-###.ok`**, không chỉ
+  đòi thư mục tồn tại. Đây là phần phá vỡ. Nó làm cho `CHG-` đối xứng với `UC-`: cả hai
+  đều phải qua cổng trước khi được đụng vào code.
+
+### Sửa
+
+- `close-check.sh` bỏ sót chuỗi nhân giữa các hằng số: `15 * 60 * 1000`, `24 * 60 * 60`,
+  `1024 * 1024`. Toán tử nhân không nằm trong nhóm toán tử của bản trước, mà một chuỗi
+  như vậy gần như luôn là khoảng thời gian hoặc kích thước — tức tham số nghiệp vụ. Ca
+  thật do phiên `runxops` đo được: spec ghi `thời gian khoá = ___` còn code chạy
+  `15 * 60 * 1000` và bước soi số literal không hề nêu nó ra. Chỉ nới cho `số * số`,
+  không nới sang `+` `-` (`i + 1` nhiều vô kể).
+
+### Cách nâng
+
+```
+/plugin marketplace update sdd-solo
+/plugin update sdd-solo
+/sdd-solo:init --update          # bắt buộc: hook và template nằm trong templates/
+```
+Rồi với **mỗi** change đang dở (`Status` chưa phải `verified`/`archived`):
+```
+/sdd-solo:change CHG-###
+```
+Change nào đã `archived` thì bỏ qua — không còn commit code nào gắn ID đó nữa.
+
 ## 2.1.2 — 2026-09-08
 
 ### Sửa

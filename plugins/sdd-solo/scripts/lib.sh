@@ -21,6 +21,15 @@ ctx_of() { echo "$1" | sed -E 's#.*/specs/contexts/([^/]+)/.*#\1#'; }
 # slug_of <path> → phần sau UC-###-
 slug_of() { basename "$(dirname "$1")" | sed -E 's/^UC-[0-9]+-//'; }
 
+# find_chg CHG-001 <root> → thư mục change (rỗng nếu không có). 2.0.0 dời
+# changes/ → specs/changes/; nhận cả hai cho repo chưa migrate.
+find_chg() {
+  local d
+  d="$(ls -d "$2/specs/changes/$1-"* 2>/dev/null | head -1)"
+  [ -z "$d" ] && d="$(ls -d "$2/changes/$1-"* 2>/dev/null | head -1)"
+  printf '%s' "$d"
+}
+
 sha() { if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | cut -d' ' -f1; else sha256sum "$1" | cut -d' ' -f1; fi; }
 today() { date +%Y-%m-%d; }
 

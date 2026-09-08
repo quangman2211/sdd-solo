@@ -43,7 +43,12 @@ if [ "$NF_" -gt 0 ]; then
   # graceDays: 7 · maxRetries: 3 · otpLength: 6 · maxDevices: 1. Xem #9.
   # KHÔNG lọc chuỗi: pattern vốn không khớp số nằm sau dấu nháy, và thà dương
   # tính giả — đây là bước ngồi soi cùng user, không phải cổng chặn.
-  L="$(cd "$ROOT" && grep -rnE '([=<>!]=?|:|,|\() *[0-9]+\b' $SDS 2>/dev/null \
+  # Nhánh thứ hai '[0-9]+ *\* *[0-9]+' bắt chuỗi nhân giữa hai HẰNG SỐ:
+  # 15 * 60 * 1000 · 24 * 60 * 60 · 1024 * 1024. Bản trước không bắt (toán tử
+  # nhân không nằm trong nhóm đầu), mà đó gần như luôn là một khoảng thời gian
+  # hoặc kích thước — tức tham số nghiệp vụ. Không nới sang '+' '-': 'i + 1'
+  # nhiều vô kể, còn 'số * số' thì hầu như không bao giờ là biến đếm.
+  L="$(cd "$ROOT" && grep -rnE '([=<>!]=?|:|,|\() *[0-9]+\b|[0-9]+ *\* *[0-9]+' $SDS 2>/dev/null \
        | grep -vE '\.(test|spec)\.[a-z]+:|RULE-|CON-|ADR-' \
        | grep -vE '\[[0-9]+\]' \
        | grep -vE '\b(i|j|k|n|idx|index)\b *[=<>!]=? *[0-9]+' \

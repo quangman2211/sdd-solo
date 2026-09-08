@@ -60,6 +60,12 @@ if [ "$TOUCH_CODE" = 1 ]; then
     if ! ls -d "$ROOT/specs/changes/$ID-"* >/dev/null 2>&1 && \
        ! ls -d "$ROOT/changes/$ID-"* >/dev/null 2>&1; then
       echo "✗ $ID không có thư mục specs/changes/$ID-*/ — ID bịa hoặc chưa tạo change." >&2; exit 1
+    fi
+    # 3.0.0: thư mục tồn tại là chưa đủ. Trước đó Phase 5 không có cổng nào, nên
+    # một change đụng hành vi ĐÃ giao cho khách vào repo được với proposal rỗng,
+    # delta rỗng, không nói lật AC nào. Xem #16.
+    if [ ! -f "$ROOT/.sdd/gate/$ID.ok" ]; then
+      echo "✗ $ID chưa qua cổng Phase 5 (.sdd/gate/$ID.ok không có) — chạy /sdd-solo:change $ID." >&2; exit 1
     fi;;
   RULE-*)
     if ! grep -qE "^## $ID\b" "$ROOT/specs/rules.md" 2>/dev/null; then

@@ -12,7 +12,10 @@ Quy tắc cứng:
 - Gặp quyết định nghiệp vụ mà spec chưa nói (số, ngưỡng, enum, ai được làm gì) → DỪNG và hỏi. Không chọn giá trị mặc định. Khi user trả lời, nhắc user ghi vào spec và commit `docs(UC-###)` trước khi code tiếp.
 - Test đặt ở `tests/use-cases/<ctx>/UC-###/AC-#.test.*`, describe có `"UC-### / AC-#"`. Test hành vi ở tầng domain, không chỉ mock HTTP.
 - Logic nghiệp vụ ở `src/domain` + `src/use-cases`; DB/HTTP/provider ở `src/adapters`.
-- Commit message `<type>(UC-###): <mô tả>`. Không trộn thay đổi spec và code trong một commit.
+- Commit message `<type>(UC-###): <mô tả>`. Không trộn thay đổi spec và code trong một commit. Mọi ID trong ngoặc phải có thật: `CHG-` cần `specs/changes/CHG-###-*/`, `ADR-` cần file trong `specs/internal/adr/`, `RULE-`/`BR-` cần heading trong `specs/rules.md` / `specs/br.md`.
+- Đổi hành vi của UC đã `implemented` (một AC cũ không còn đúng) → KHÔNG sửa thẳng UC. Mở `CHG-###` trong `specs/changes/`, chạy `/sdd-solo:change CHG-###`; chưa có `.sdd/gate/CHG-###.ok` thì githook chặn mọi commit code gắn `(CHG-###)`. Thêm AC mới mà không phá AC cũ thì vẫn là Phase 3, `## History` v+1.
 - Khi `/speckit-specify`: file trong `.specify/` CHỈ trích ID và link tới file UC trong `specs/`. Không chép nội dung.
+
+Đổi hành vi đã giao: `/sdd-solo:change CHG-###` → test AC mới → code → archive.
 
 Lệnh của quy trình: `/sdd-solo:start` → (AIUP `/use-case-spec`) → tay: RULE, AC, BPMN, Claude Design → `/sdd-solo:adversarial` → đóng máy → `/sdd-solo:gate` → `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → `/sdd-solo:close` → `/sdd-solo:state`.
