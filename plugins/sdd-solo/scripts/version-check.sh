@@ -6,15 +6,17 @@
 # Khe ④ không lệnh nào sửa được — chỉ mở session mới.
 # --remote: hỏi thêm GitHub (tối đa 3s, nhớ 24h). Không có cờ thì thuần cục bộ.
 # --brief : chỉ in dòng lệch. Dùng cho hook SessionStart.
+# --no-cache: bỏ qua cache 24h, hỏi GitHub ngay.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 PLUGIN="${SDD_PLUGIN:-$(dirname "$HERE")}"; ROOT="$(project_root)"
 CACHE_D="${XDG_CACHE_HOME:-$HOME/.cache}/sdd-solo"; CACHE="$CACHE_D/remote-check"
 TTL=86400   # 24h
 
-REMOTE=0; BRIEF=0
+REMOTE=0; BRIEF=0; NOCACHE=0
 for a in "$@"; do
   [ "$a" = "--remote" ] && REMOTE=1
   [ "$a" = "--brief" ] && BRIEF=1
+  [ "$a" = "--no-cache" ] && { NOCACHE=1; REMOTE=1; }
 done
 
 PNAME="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["name"])' "$PLUGIN/.claude-plugin/plugin.json" 2>/dev/null || echo sdd-solo)"
@@ -37,9 +39,13 @@ PROJ="$(clean_ver "$PROJ")"; INST="$(clean_ver "$INST")"; MKT="$(clean_ver "$MKT
 REM='-'
 if [ "$REMOTE" = "1" ] && [ -n "$SRC" ]; then
   NOW="$(date +%s)"
-  if [ -f "$CACHE" ]; then
+  if [ "$NOCACHE" = "0" ] && [ -f "$CACHE" ]; then
     CT="$(awk '{print $1}' "$CACHE" 2>/dev/null)"; CV="$(awk '{print $2}' "$CACHE" 2>/dev/null)"
-    [ -n "$CT" ] && [ $((NOW - CT)) -lt "$TTL" ] && REM="$CV"
+    # Cache còn hạn CHƯA đủ: nếu bản cục bộ đã vượt số trong cache thì cache
+    # chắc chắn thiu (tác giả bump nhiều lần trong một buổi) → hỏi lại.
+    if [ -n "$CT" ] && [ $((NOW - CT)) -lt "$TTL" ] && [ "$(vcmp "$CV" "$MKT")" != "-1" ]; then
+      REM="$CV"
+    fi
   fi
   if [ "$REM" = '-' ]; then
     R="$(curl -fsS --max-time 3 "https://raw.githubusercontent.com/$SRC/main/.claude-plugin/marketplace.json" 2>/dev/null \
@@ -71,8 +77,13 @@ sev() { # major lệch thì ✗, còn lại !
   sev "$PROJ" "$INST" "③ dự án cũ hơn bản đã cài ($PROJ < $INST) → /sdd-solo:init --update"
 [ "$(vcmp "$INST" "$MKT")" = "-1" ] && \
   sev "$INST" "$MKT" "② bản đã cài cũ hơn bản đã tải ($INST < $MKT) → /plugin update $PNAME"
-[ "$REMOTE" = "1" ] && [ "$REM" != '-' ] && [ "$REM" != '?' ] && [ "$(vcmp "$MKT" "$REM")" = "-1" ] && \
-  sev "$MKT" "$REM" "① có bản mới trên GitHub ($MKT < $REM) → /plugin marketplace update $MKTNAME"
+if [ "$REMOTE" = "1" ] && [ "$REM" != '-' ] && [ "$REM" != '?' ]; then
+  C1="$(vcmp "$MKT" "$REM")"
+  [ "$C1" = "-1" ] && sev "$MKT" "$REM" "① có bản mới trên GitHub ($MKT < $REM) → /plugin marketplace update $MKTNAME"
+  # Chiều ngược cũng có nghĩa: cục bộ mới hơn GitHub = có bản chưa push.
+  # Im ở đây là đúng loại hỏng im lặng mà cả file này sinh ra để chống.
+  [ "$C1" = "1" ] && warn "① cục bộ ($MKT) mới hơn GitHub ($REM) — có bản chưa push"
+fi
 # ④ chỉ thấy được nhờ hook ghi lại; không lệnh nào sửa, phải mở session mới
 [ "$SESS" != '-' ] && [ "$(vcmp "$SESS" "$INST")" = "-1" ] && \
   sev "$SESS" "$INST" "④ phiên này vẫn chạy $SESS trong khi đã cài $INST → MỞ SESSION MỚI (không lệnh nào sửa được)"
