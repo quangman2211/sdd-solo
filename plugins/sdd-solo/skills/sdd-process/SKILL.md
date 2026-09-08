@@ -1,11 +1,11 @@
 ---
 name: sdd-process
-description: Kiến thức nền của quy trình SDD-Solo — 4 tầng yêu cầu (BR/UC/Entity/AC), hệ ID, cấu trúc repo, 14 bước mỗi UC, cách viết UC/AC/RULE/DMN, khi nào dùng changes/. Dùng khi user đang viết hoặc sửa spec, AC, rule, entity, BPMN, màn hình, ADR trong repo có STATE.md, hoặc hỏi quy trình nên làm gì tiếp.
+description: Kiến thức nền của quy trình SDD-Solo — 4 tầng yêu cầu (BR/UC/Entity/AC), hệ ID, cấu trúc repo, 14 bước mỗi UC, cách viết UC/AC/RULE/DMN, khi nào dùng changes/. Dùng khi user đang viết hoặc sửa spec, AC, rule, entity, sơ đồ luồng, màn hình, ADR trong repo có STATE.md, hoặc hỏi quy trình nên làm gì tiếp.
 ---
 
 # SDD-Solo — cách hệ thống này viết spec
 
-Nguồn: ebook *Spec Driven Development* (Nguyễn Thế Huy), AIUP, GitHub Spec Kit, OpenSpec; ký hiệu BPMN 2.0, DMN, UML, Impact Mapping, User Story Mapping. Bản này dành cho **một dev + AI**: giữ nguyên artifact của sách, thay mọi cơ chế cần người thứ hai.
+Nguồn: ebook *Spec Driven Development* (Nguyễn Thế Huy), AIUP, GitHub Spec Kit, OpenSpec; ký hiệu Mermaid (flowchart, stateDiagram, sequenceDiagram), DMN, UML, Impact Mapping, User Story Mapping. Bản này dành cho **một dev + AI**: giữ nguyên artifact của sách, thay mọi cơ chế cần người thứ hai.
 
 ## Luận điểm
 Spec là giao diện giữa ba người đọc: user hôm nay, user ba tháng sau, và mỗi session AI mới. Mục tiêu duy nhất: **không để quyết định nghiệp vụ nào được đưa ra mà không ai biết nó đã được đưa ra**. Khi prompt thiếu rule, model lấp bằng xác suất → đó là quyết định ngầm. Việc của bạn khi làm việc trong repo này: **phát hiện và hỏi**, không lấp.
@@ -14,7 +14,7 @@ Spec là giao diện giữa ba người đọc: user hôm nay, user ba tháng sa
 | Tầng | Câu hỏi | File | Biểu đồ đi kèm |
 |---|---|---|---|
 | BR | Vì sao làm | `specs/br.md` | Impact Map (Mermaid) · Story Map (`specs/story-map.md`) |
-| UC | Ai làm gì | `specs/contexts/<ctx>/use-cases/UC-###-slug/UC-###.md` | BPMN 2.0 (`UC-###.bpmn`, cùng thư mục UC) · Sequence nếu có mạng |
+| UC | Ai làm gì | `specs/contexts/<ctx>/use-cases/UC-###-slug/UC-###.md` | Flow mermaid (`UC-###.flow.md`, cùng thư mục UC) · Sequence nếu có mạng |
 | Entity | Khái niệm nào, vòng đời nào | `specs/contexts/<ctx>/entities.md` | Domain Model (classDiagram) · State Machine cho mỗi entity có status |
 | AC | Biết đúng bằng cách nào | trong file UC, `### AC-#` Given/When/Then | — |
 | RULE | Ràng buộc xuyên UC | `specs/rules.md` — nơi duy nhất; UC/AC chỉ trích ID | DMN table khi ≥ 3 điều kiện |
@@ -25,7 +25,7 @@ Ranh giới spec/doc: **khách cảm nhận được → spec** (`specs/`). Ch�
 `BR-###` · `UC-###` · `UC-###/AC-#` · `RULE-###` · `CON-###` (trong BR) · `SCR-###-#` (màn hình của UC-###) · `ADR-###` · `CHG-###` (Phase 5). Commit: `<type>(ID): mô tả`. Test: `tests/use-cases/<ctx>/UC-###/AC-#.test.*`, describe `"UC-### / AC-#: tên"`.
 
 ## 14 bước cho một UC (Phase 3)
-① `/sdd-solo:start UC-###` → ② `/use-case-spec` (AIUP) điền nội dung → ③ user viết RULE (rules.md, DMN nếu cần) và AC → ④ vẽ BPMN ở Camunda → ⑤ Claude Design theo `.sdd/prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đóng máy, đọc lại buổi sau** → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
+① `/sdd-solo:start UC-###` → ② `/use-case-spec` (AIUP) điền nội dung → ③ user viết RULE (rules.md, DMN nếu cần) và AC → ④ vẽ flow mermaid trong `UC-###.flow.md` → ⑤ Claude Design theo `.sdd/prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đóng máy, đọc lại buổi sau** → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
 
@@ -41,7 +41,7 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 
 **Entity** — Mermaid `classDiagram` (tên, quan hệ, trường đáng chú ý gắn RULE-ID), rồi `stateDiagram-v2` cho mỗi entity có status; mỗi mũi tên ghi UC nào được kéo nó; trạng thái không có đường ra thì viết note nói đó là quyết định.
 
-**BPMN ↔ UC** — Actor = lane · Trigger = start event (click/none, webhook/message, cron/timer) · Main Flow = task · Alternative = exclusive gateway · Exception E# = error boundary event → end event có tên · Postcondition = end event có tên. Số error event phải = số E#.
+**Flow ↔ UC** (`UC-###.flow.md`, mermaid `flowchart`) — Actor = `subgraph` (chỉ khi ≥ 2 actor) · Trigger = node đầu `S([...])`, loại trigger ghi vào tên · Main Flow = `T#[...]` · Alternative = `D#{...}` với điều kiện trên mũi tên · Exception E# = mũi tên nhãn `|E# ...|` → node kết `X#([E#: ...])` · Postcondition = node kết `P#([...])`. Đừng đặt id node bằng chữ `E` kèm số cho việc khác — dạng đó luôn được đọc là ngoại lệ. Cổng DoR đối chiếu E# **cả hai chiều**: khai trong UC mà sơ đồ không có nhánh → đỏ; nhãn trong sơ đồ mà UC không có → cũng đỏ. `.bpmn` vẫn được nhận nhưng không đếm được gì.
 
 **Màn hình (Claude Design)** — mỗi E# có một trạng thái màn hình; mỗi trạng thái entity nhìn thấy được ở đâu đó; không vẽ nút/trường không có nguồn trong UC. Ô trống trong bảng đối chiếu = spec thiếu, không phải design thiếu.
 

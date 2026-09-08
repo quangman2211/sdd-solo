@@ -12,6 +12,6 @@ entities.md      E# của context, kèm stateDiagram
 use-cases.md     danh sách UC và trạng thái
 diagrams/        chỉ diagram cấp context (context map, domain model)
 use-cases/UC-###-slug/
-    UC-###.md  UC-###.sequence.md  UC-###.bpmn  UC-###.bpmn.svg  screens/
+    UC-###.md  UC-###.flow.md  UC-###.sequence.md  screens/
 ```
-Artifact của một UC nằm trọn trong thư mục UC đó — kể cả `.bpmn`.
+Artifact của một UC nằm trọn trong thư mục UC đó — kể cả sơ đồ luồng.

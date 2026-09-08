@@ -13,7 +13,7 @@ Tạo khung cho use case `$1`.
 3. Context (`$2`): nếu không có, liệt kê `specs/contexts/*/` và hỏi user chọn. Nếu context chưa có → hỏi có tạo từ `.sdd/templates/context/` không.
 4. Slug (`$3`): tiếng Anh, kebab-case, là động từ + danh từ theo glossary (ví dụ `activate-device`). Không có → đề xuất từ tên UC trong `specs/contexts/<ctx>/use-cases.md` nếu UC đã có stub ở đó, rồi hỏi xác nhận.
 5. Tạo:
-   - `specs/contexts/<ctx>/use-cases/$1-<slug>/` từ `.sdd/templates/use-case/` (copy `UC-000.md` → `$1.md`, `UC-000.sequence.md` → `$1.sequence.md`, `screens/README.md`). Thay mọi `UC-000` thành `$1`, `<ctx>` thành context, `Last updated` thành hôm nay, `Status: draft`.
+   - `specs/contexts/<ctx>/use-cases/$1-<slug>/` từ `.sdd/templates/use-case/` (copy `UC-000.md` → `$1.md`, `UC-000.flow.md` → `$1.flow.md`, `UC-000.sequence.md` → `$1.sequence.md`, `screens/README.md`). Thay mọi `UC-000` thành `$1`, `<ctx>` thành context, `Last updated` thành hôm nay, `Status: draft`.
    - Kiểm BR: hỏi user UC này phục vụ BR nào; phải có heading `# BR-###` trong `specs/br.md`. Điền vào Metadata.
    - Thêm/cập nhật dòng của UC trong bảng `specs/contexts/<ctx>/use-cases.md`.
 6. STATE.md: sửa dòng `Đang làm:` thành `$1 · bước ① — khung đã tạo, chưa có nội dung`; `Việc tiếp theo:` thành `/use-case-spec $1 (AIUP) rồi viết RULE + AC`.

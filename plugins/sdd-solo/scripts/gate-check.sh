@@ -44,14 +44,35 @@ for r in $(grep -oE 'RULE-[0-9]+' "$F" | sort -u); do
   else ok "$r có trong rules.md"; fi
 done
 
-# 5. BPMN
-# 2.0.0: .bpmn nằm TRONG thư mục UC, không còn ở diagrams/ cấp context.
+# 5. Flow — mermaid (mặc định từ 3.1.0) hoặc .bpmn (đường cũ, vẫn nhận)
+# .bpmn là XML nén nên script chỉ kiểm được "file có tồn tại". Phép đếm mà
+# checklist DoR đòi từ đầu — "số error boundary event = số E#" — chưa bao giờ
+# chạy được bằng máy. .flow.md là text nên đếm được thật, cả hai chiều.
+# 2.0.0: diagram nằm TRONG thư mục UC, không còn ở diagrams/ cấp context.
+FL="$DIR/$ID.flow.md"
 BP="$DIR/$ID.bpmn"
 OLD="$ROOT/specs/contexts/$CTX/diagrams/$ID.bpmn"
-if [ -f "$BP" ]; then ok "$ID.bpmn (trong thư mục UC)"
+if [ -f "$FL" ]; then
+  ok "$ID.flow.md (mermaid, trong thư mục UC)"
+  grep -qE '^```mermaid' "$FL" && grep -qE '^[[:space:]]*(flowchart|graph)\b' "$FL" \
+    || warn "$ID.flow.md chưa có khối mermaid với flowchart/graph — chưa vẽ được gì"
+  grep -qE '\(\[' "$FL" || warn "$ID.flow.md chưa có node kết dạng ([...]) — Postcondition chưa có đường tới"
+  # chiều xuôi: E# khai trong UC phải có đường đi trong sơ đồ
+  for e in $(grep -oE '^- +(\*\*)?E[0-9]+' "$F" | grep -oE 'E[0-9]+' | sort -u); do
+    grep -qE "(^|[^A-Za-z0-9])$e([^0-9]|$)" "$FL" && ok "$e có nhánh trong flow" \
+      || bad "$e có trong ## Exceptions nhưng $ID.flow.md không có nhánh nào cho nó"
+  done
+  # chiều ngược: nhãn trong sơ đồ phải là E# có thật. Nhãn bịa đi qua mọi cổng
+  # nếu không ai đối chiếu ngược — bài học #12 và #15.
+  for e in $(grep -oE 'E[0-9]+' "$FL" | sort -u); do
+    grep -qE "^- +(\*\*)?$e[.:]" "$F" \
+      || bad "$ID.flow.md có $e nhưng ## Exceptions của UC không có $e"
+  done
+elif [ -f "$BP" ]; then
+  ok "$ID.bpmn (đường cũ — .flow.md mermaid đếm được E#, cân nhắc chuyển)"
+  [ -f "$BP.svg" ] || warn "chưa export $ID.bpmn.svg"
 elif [ -f "$OLD" ]; then bad "$ID.bpmn còn ở chỗ cũ specs/contexts/$CTX/diagrams/ — chạy .sdd/scripts/migrate-1to2.sh"
-else bad "thiếu ${DIR#$ROOT/}/$ID.bpmn"; fi
-[ -f "$BP.svg" ] || warn "chưa export $ID.bpmn.svg"
+else bad "thiếu ${DIR#$ROOT/}/$ID.flow.md (mermaid) — hoặc $ID.bpmn nếu vẫn dùng BPMN"; fi
 
 # 6. entities
 [ -f "$ROOT/specs/contexts/$CTX/entities.md" ] && ok "context $CTX có entities.md" || bad "thiếu specs/contexts/$CTX/entities.md"

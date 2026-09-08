@@ -1,6 +1,6 @@
 # sdd-solo — Spec-Driven Development cho một dev + AI
 
-Plugin Claude Code đóng gói quy trình SDD-Solo: giữ nguyên bốn tầng yêu cầu của Spec-Driven Development (BR → Use Case → Entity → Acceptance Criteria), thêm biểu đồ chuẩn ở mỗi tầng (BPMN 2.0, DMN, UML, Impact Map, Story Map), chèn Claude Design thành một bước chính thức, và thay mọi cơ chế cần người thứ hai bằng cơ chế một người làm được: adversarial pass ba vai, cổng Definition of Ready trước khi mở Spec Kit, `STATE.md` thay standup, git hook thay reviewer.
+Plugin Claude Code đóng gói quy trình SDD-Solo: giữ nguyên bốn tầng yêu cầu của Spec-Driven Development (BR → Use Case → Entity → Acceptance Criteria), thêm biểu đồ chuẩn ở mỗi tầng (flow và state bằng Mermaid, DMN, UML, Impact Map, Story Map), chèn Claude Design thành một bước chính thức, và thay mọi cơ chế cần người thứ hai bằng cơ chế một người làm được: adversarial pass ba vai, cổng Definition of Ready trước khi mở Spec Kit, `STATE.md` thay standup, git hook thay reviewer.
 
 Nền: ebook *Spec Driven Development* (Nguyễn Thế Huy) · AI Unified Process · GitHub Spec Kit · OpenSpec.
 
@@ -16,7 +16,7 @@ Rồi trong repo dự án: `/sdd-solo:init` — hoặc `/sdd-solo:init --with-de
 Đi kèm (cài riêng, plugin không tự cài thay bạn):
 - **GitHub Spec Kit** — `specify init --here` trong repo → cho `/speckit-specify /speckit-plan /speckit-tasks /speckit-implement`
 - **AIUP** — `/plugin marketplace add ai-unified-process/marketplace` · `/plugin install aiup-core` → cho `/requirements /entity-model /use-case-diagram /use-case-spec`
-- **Camunda Modeler** (BPMN 2.0, DMN) · **Claude Design** (Design System, màn hình SCR)
+- **Claude Design** (Design System, màn hình SCR) · Camunda Modeler chỉ khi muốn chạy RULE bằng DMN engine — sơ đồ luồng vẽ bằng Mermaid, không cần app
 
 ## Dùng
 
@@ -27,7 +27,7 @@ Trong repo dự án:
 | Lần đầu / sau khi update plugin | `/sdd-solo:init` · `/sdd-solo:init --update` · `--with-deps` để cài luôn Spec Kit + AIUP |
 | Mở session | hook tự đọc `STATE.md`, nói đang ở bước nào |
 | Bắt đầu một use case | `/sdd-solo:start UC-### [ctx] [slug]` rồi `/use-case-spec UC-###` (AIUP) |
-| Sau khi viết RULE, AC, vẽ BPMN, vẽ màn hình | `/sdd-solo:adversarial UC-###` → **đóng máy** |
+| Sau khi viết RULE, AC, vẽ flow, vẽ màn hình | `/sdd-solo:adversarial UC-###` → **đóng máy** |
 | Buổi sau, đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` |
 | Code xong | `/sdd-solo:close UC-###` |
 | Cuối buổi | `/sdd-solo:state` |
@@ -48,7 +48,7 @@ STATE.md  CLAUDE.md  <code>/  <tests>/
 
 - **`.sdd/`** giữ bộ máy, kể cả **một bản sao script kiểm** — nên `bash .sdd/scripts/gate-check.sh UC-###` chạy được ở CI và trên máy người clone repo, không cần cài plugin. Lệch version so với plugin thì hook và `status` cảnh báo.
 - **`specs/`** giữ mọi thứ mô tả hệ thống. Ranh giới spec↔doc không mất, nó tụt một tầng: khách cảm nhận được → `contexts/`, chỉ người xây quan tâm → `internal/`. Đang sửa dở → `changes/`.
-- Artifact của một UC nằm **trọn trong thư mục UC**, kể cả `.bpmn`.
+- Artifact của một UC nằm **trọn trong thư mục UC**, kể cả sơ đồ luồng `UC-###.flow.md`.
 - Plugin không bao giờ ghi đè file bạn đã sửa — `init --update` để bản mới cạnh dưới tên `.new`.
 
 ## Repo của bạn đặt code ở đâu

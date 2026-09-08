@@ -1,5 +1,54 @@
 # Changelog
 
+## 3.1.0 — 2026-09-08
+
+### Đổi — bước ④ vẽ bằng Mermaid, không cần cài app
+
+Bước ④ trước đây đòi `UC-###.bpmn` vẽ bằng **Camunda Modeler**, một app desktop phải cài.
+Đọc lại thì cái giá đó gần như không mua được gì:
+
+- `gate-check.sh` **chỉ kiểm file có tồn tại**. `.bpmn` là XML nén, script không đọc nổi.
+- Checklist DoR đòi *"số error boundary event = số E#"* — một phép **đếm**, và đó mới là
+  giá trị thật của bước này: nó ép tìm cho đủ ngoại lệ. Phép đếm ấy **chưa bao giờ chạy
+  bằng máy**, chỉ là một dòng trong checklist.
+- `git diff` trên `.bpmn` không đọc được, và phải nhớ export thêm `.bpmn.svg`.
+
+Mermaid đảo cả ba: là text nên gõ bằng bàn phím, `git diff` đọc được, Claude sửa được,
+VS Code (`Cmd+Shift+V`) và GitHub render sẵn. Và vì là text nên **cổng DoR đếm được E# thật**.
+
+- **`UC-###.flow.md`** — artifact mới, mermaid `flowchart`, nằm trong thư mục UC.
+  Template ở `.sdd/templates/use-case/UC-000.flow.md`.
+- **`gate-check.sh` đối chiếu E# cả hai chiều**: E# khai trong `## Exceptions` mà sơ đồ
+  không có nhánh → đỏ; nhãn `E#` trong sơ đồ mà UC không có Exception đó → cũng đỏ.
+  Chiều ngược là bài học của #12 và #15: nhãn bịa đi qua mọi cổng nếu không ai đối chiếu.
+  Thêm hai cảnh báo mềm: không có khối mermaid `flowchart`; không có node kết `([...])`.
+- Không đếm lane/actor và Postcondition bằng máy — hai mục đó là văn xuôi tự do, đếm bằng
+  regex sẽ đỏ oan. Bài học #16: file người viết tay trình bày tự do vẫn phải parse được.
+- **Camunda Modeler xuống hàng tuỳ chọn** trong `deps-check.sh` — chỉ còn cần khi muốn
+  chạy RULE bằng DMN engine, hoặc mở `.bpmn` cũ (`https://demo.bpmn.io` mở được trên
+  trình duyệt, không phải cài).
+
+**Không phá vỡ.** `.bpmn` vẫn được cổng DoR chấp nhận, chỉ không đếm được gì. Repo đang
+dùng `.bpmn` không phải sửa gì.
+
+### Sửa
+
+- `.sdd/templates/use-case/UC-000.md` — dòng metadata trỏ `../../diagrams/UC-000.bpmn.svg`,
+  sai từ 2.0.0 (bản đó đã dời diagram vào trong thư mục UC) mà không ai để ý. Nay là
+  `**Flow:** UC-000.flow.md`.
+- `skills/start/SKILL.md` liệt kê **đích danh** ba file để copy khi tạo UC mới, nên một
+  template mới thêm vào `.sdd/templates/use-case/` sẽ không bao giờ tới tay dự án. Đã thêm
+  `UC-000.flow.md` vào danh sách — chỗ này đáng nhớ cho mọi lần thêm template UC sau.
+
+### Cách nâng
+
+```
+/plugin marketplace update sdd-solo
+/plugin update sdd-solo
+/sdd-solo:init --update          # template mới nằm trong templates/, không tự lan
+```
+UC đang dùng `.bpmn` cứ để nguyên. UC mới sẽ có sẵn `UC-###.flow.md`.
+
 ## 3.0.1 — 2026-09-08
 
 ### Sửa

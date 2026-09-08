@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # deps-check.sh [--fix]
-# Kiểm phụ thuộc ngoài của SDD-Solo (Spec Kit, AIUP, Camunda).
+# Kiểm phụ thuộc ngoài của SDD-Solo (Spec Kit, AIUP; Camunda là tuỳ chọn).
 # Mặc định chỉ kiểm và in lệnh copy-paste. --fix thì cài luôn theo đúng thứ tự.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 PLUGIN="$(dirname "$HERE")"; ROOT="$(project_root)"
@@ -71,12 +71,15 @@ else
   fi
 fi
 
-# ── Camunda ─────────────────────────────────────────────────────────────
+# ── Camunda — TUỲ CHỌN từ 3.1.0 ─────────────────────────────────────────
+# Bước ④ giờ vẽ bằng mermaid trong UC-###.flow.md: là text, không cần app,
+# và cổng DoR đếm được E# — thứ .bpmn không cho đếm. Camunda chỉ còn cần khi
+# muốn chạy RULE bằng DMN engine, hoặc mở .bpmn cũ.
 if [ -d "/Applications/Camunda Modeler.app" ]; then
-  ok "Camunda Modeler — có (bước ④ vẽ BPMN)"
+  ok "Camunda Modeler — có (tuỳ chọn: DMN engine, mở .bpmn cũ)"
 else
-  warn "Camunda Modeler — không thấy ở /Applications (chỉ kiểm được trên macOS)"
-  info "→ https://camunda.com/download/modeler/ · cần cho bước ④ BPMN và DMN"
+  info "Camunda Modeler — không có, và không cần: bước ④ vẽ mermaid trong UC-###.flow.md"
+  info "  cần mở .bpmn cũ mà không muốn cài gì → https://demo.bpmn.io (trình duyệt)"
 fi
 info "Claude Design — không kiểm được bằng script; cần cho Phase 0 và bước ⑤"
 

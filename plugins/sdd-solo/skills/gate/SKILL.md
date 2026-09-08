@@ -1,6 +1,6 @@
 ---
 name: gate
-description: Bước ⑨ — cổng Definition of Ready cho một UC, kiểm cơ học (AC vs E#, Screens, RULE tồn tại, BPMN, adversarial pass, commit docs đã qua một đêm). Đỏ thì không được chạy Spec Kit; xanh thì đặt status reviewed, ghi marker .sdd/gate/UC-###.ok và commit.
+description: Bước ⑨ — cổng Definition of Ready cho một UC, kiểm cơ học (AC vs E#, Screens, RULE tồn tại, flow mermaid đối chiếu E# hai chiều, adversarial pass, commit docs đã qua một đêm). Đỏ thì không được chạy Spec Kit; xanh thì đặt status reviewed, ghi marker .sdd/gate/UC-###.ok và commit.
 disable-model-invocation: true
 argument-hint: "UC-###"
 allowed-tools: Bash Read
