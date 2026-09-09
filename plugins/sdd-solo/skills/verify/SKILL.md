@@ -49,11 +49,29 @@ xảy ra không** — cùng người, cùng cái neo, sáng mai lướt 30 giây
 ```
    Cổng đòi **ít nhất một** dòng `F#` có **cả `[neo: ...]` lẫn đầu ra khác `___`**. Đó là toàn bộ
    chốt chống khai gian: bịa một dòng như vậy tốn đúng bằng đọc thật.
-6. Sửa những chỗ user chọn sửa. Rồi commit **riêng, đúng tiêu đề này** — cổng nhận diện bằng nó:
+6. Sửa những chỗ user chọn sửa. **Rồi QUÉT LẠI CẢ CÂY trước khi commit — bắt buộc, không bỏ:**
+
+```bash
+# với MỖI con số / quyết định vừa đổi, tìm giá trị CŨ trên cả cây
+grep -rn '<giá trị cũ>' specs/ scripts/ *.md
+```
+   Còn hit nào **ngoài** `## History` và **ngoài** câu dạng `<cũ> → <mới>` thì **chưa xong**.
+
+   **Vì sao phép quét này nằm ở đây chứ không ở `verify-pass.md`:** luật quét chỉ có nghĩa **sau**
+   khi sửa — trước khi sửa thì chưa có "giá trị cũ" nào để quét theo. Mà hai vai verify chạy
+   **trước** khi sửa. Đặt luật ấy trong prompt của họ là đặt nó vào một cơ chế **cấu tạo không
+   chạy được nó** — và đó không phải chuyện ai quên, mà là **đặt sai bước**.
+
+   Ca thật (`runxops`): cặp số cũ nằm ở **bốn** chỗ — `entities.md` · `br.md` · docstring một
+   script · và prompt của chính plugin. **Hai vai verify đọc rất kỹ vẫn bỏ sót chỗ thứ tư.** Thứ
+   bắt được nó là một `grep -rn` chạy **sau** khi sửa. Người đọc không thấy chỗ mình không nghĩ tới
+   là có; `grep` không cần nghĩ.
+
+7. Rồi commit **riêng, đúng tiêu đề này** — cổng nhận diện bằng nó:
 ```bash
 git add specs/ && git commit -m "docs($1): đọc lại — <n> phát hiện, <m> phải sửa"
 ```
-7. Nói với user: giờ chạy `/sdd-solo:gate $1` được ngay, **không cần đợi qua đêm**. Nếu lần đọc
+8. Nói với user: giờ chạy `/sdd-solo:gate $1` được ngay, **không cần đợi qua đêm**. Nếu lần đọc
    này không ra dòng `F#` nào có đầu ra thật thì cửa thứ hai **không mở** — rơi về luật cũ, đợi
    một đêm. Nói thẳng điều đó, đừng để user chạy cổng rồi mới ngạc nhiên.
 

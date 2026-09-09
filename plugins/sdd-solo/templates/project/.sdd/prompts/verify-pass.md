@@ -130,20 +130,29 @@ thông tin*. `982` là mẫu số **bị tưởng là bao cả hai thứ trong k
 quan hệ không tồn tại*, và một quan hệ sai kéo theo **mọi suy luận dựng trên nó**, chứ không chỉ
 một con số.
 
-*(Còn một chỗ chưa đo: `555` là số **ô** mang định danh, `545` ở bảng trên là số **mã** định danh.
-Quan hệ giữa hai số đó chưa có phép đo nào — nêu ra thay vì lặng lẽ hoà giải, vì tự bịa một quan
-hệ ở đây là đúng cái lỗi cả mục này đang dạy cách bắt.)*
+Quan hệ giữa `555` và `545` — **hai câu, hai lý do khác nhau, và câu thứ hai là chỗ dễ tưởng là
+hiển nhiên nhất trong cả bảng:**
+
+```
+545 mã gỡ từ ô `Name Product`  +  10 mã từ cột `Product ID` gốc  =  555 mã
+555 mã = 555 ô     VÌ ĐO ĐƯỢC rằng mọi ô chỉ mang MỘT mã ({1: 555})
+```
+
+Câu đầu là phép cộng. Câu sau **không suy ra được** — nó là một tính chất của dữ liệu, phải đo mới
+biết: chỉ cần một ô mang hai ISBN là đẳng thức gãy, và với dữ liệu này điều đó hoàn toàn có thể.
+`545` và `555` **cùng đơn vị (mã)**, khác nhau ở **phạm vi nguồn**, không phải ở đơn vị.
+
+Bản 3.14.0 để chỗ này là **một ô trống có nhãn** *"chưa có phép đo nào"* thay vì viết
+*"555 ô ứng với 545 mã cộng 10"*. Câu đó **đúng** — và vẫn sẽ là bịa, vì tính chất một-ô-một-mã
+đang chống đỡ cả câu lúc ấy chưa ai đo. **Kết quả giống hệt, giá trị khác hẳn.** Đó là lý do một
+chỗ trống có nhãn tốt hơn một quan hệ nghe hợp lý: **không viết ra thứ mình chưa đo, kể cả khi nó
+chắc chắn đúng.**
 
 Ca mẫu này từng mang đúng cái lỗi nó dạy cách bắt. Bản 3.6.0–3.11.0 ghi `536 / 525`, hai con số ra
 từ **script khảo sát đầu tiên** — chạy trước khi bỏ ký tự vô hình `U+200E` và trước khi bắt được
 32 giá trị biến thể không mang tên trục. Sai **cùng một chiều, cùng một nguyên nhân**, đúng chữ ký
 mà đoạn này đang mô tả. `/sdd-solo:verify` tìm ra nó ở lần chạy thật đầu tiên — còn `536 + 525 ≠
 982` thì **đáng lẽ đã bắt được nó sáu bản trước, không cần verify.**
-
-Chính ca mẫu này từng mang đúng cái lỗi nó dạy cách bắt: bản 3.6.0–3.11.0 ghi `536 / 525`, hai con
-số ra từ **script khảo sát đầu tiên** — chạy trước khi bỏ ký tự vô hình `U+200E` và trước khi bắt
-được 32 giá trị biến thể không mang tên trục. Sai **cùng một chiều, cùng một nguyên nhân**, đúng
-chữ ký mà đoạn này đang mô tả. `/sdd-solo:verify` tìm ra nó ở lần chạy thật đầu tiên.
 
 Và `601 dòng` đứng cạnh `1006 giá trị` là ca *hai mẫu số cho cùng một thứ*: một ô ghi
 `Color: Brown | Dark Grey` là **một** dòng trục nhưng **hai** giá trị. Dán nhầm số nọ vào câu của

@@ -1,5 +1,65 @@
 # Changelog
 
+## 3.15.0 — 2026-09-09
+
+### Sửa — luật quét-cả-cây nằm trong một cơ chế cấu tạo không chạy được nó
+
+Chẩn đoán từ `runxops-54`, phiên đang cầm bút trên `specs/`, và nó sắc hơn một dòng bỏ sót:
+
+> Luật quét-cả-cây ở `verify-pass.md` chỉ có nghĩa **sau** khi sửa — vì **trước** khi sửa thì chưa
+> có "giá trị cũ" nào để quét theo. Nhưng verify pass chạy **trước** khi sửa. Nên luật ấy đang nằm
+> trong một cơ chế **cấu tạo không chạy được nó.**
+
+**Không phải ai quên — là đặt sai bước.** Ca thật: cặp số cũ nằm ở **bốn** chỗ (`entities.md` ·
+`br.md` · docstring một script · prompt của chính plugin), và **hai vai verify đọc rất kỹ vẫn bỏ
+sót chỗ thứ tư**. Thứ bắt được nó là một `grep -rn` chạy **sau** khi sửa.
+
+- Phép quét chuyển về **bước 6 của `skills/verify`** — sau khi người quyết đã điền đầu ra và các
+  sửa đổi đã áp, **trước** khi commit, và là **bắt buộc**: với mỗi giá trị vừa đổi, `grep -rn` giá
+  trị **cũ** trên cả cây; còn hit nào ngoài `## History` và ngoài câu `<cũ> → <mới>` thì chưa xong.
+- Prompt giữ luật ở dạng *cách soi* cho hai vai; chỗ **thi hành** nằm ở skill.
+
+Đây là ca đầu tiên trong cả loạt mà chỗ hỏng **không** ở một con số hay một nhãn, mà ở **thứ tự
+các bước** — cùng họ loại sai #5 (*"thứ tự nói ngược nội dung"*), nhưng ở **tầng quy trình** chứ
+không ở tầng tài liệu. Bốn tầng kiểm số dựng trong ngày đều đo **trạng thái**, không tầng nào đo
+**thứ tự**, và lỗ này chỉ lộ khi có người đi hết một vòng thật.
+
+### Sửa — một đoạn văn nằm HAI lần trong `verify-pass.md`
+
+Bản 3.14.0 chèn một đoạn mới mà không gỡ đoạn cũ nó thay thế, nên hai đoạn gần như y hệt cùng nằm
+trong file. Đúng loại sai #3, trong tài liệu dạy cách bắt loại #3. **Bắt được bằng `grep -rn '536'`
+chạy để kiểm chuyện khác** — không phải bằng đọc lại, dù đoạn trùng cách nhau đúng năm dòng.
+
+### Thêm — quan hệ `545 / 555`: hai câu, hai lý do khác nhau
+
+3.14.0 để chỗ này là **một ô trống có nhãn** *"chưa có phép đo nào"*. `runxops` đo xong, và kết quả
+đáng ghi vì nó cho thấy ô trống ấy là đúng:
+
+```
+545 mã gỡ từ ô `Name Product`  +  10 mã từ cột `Product ID` gốc  =  555 mã
+555 mã = 555 ô     VÌ ĐO ĐƯỢC rằng mọi ô chỉ mang MỘT mã ({1: 555})
+```
+
+Câu đầu là phép cộng. **Câu sau không suy ra được** — nó là một tính chất của dữ liệu: chỉ cần một
+ô mang hai ISBN là đẳng thức gãy. Nếu 3.14.0 viết đại *"555 ô ứng với 545 mã cộng 10"* thì câu đó
+**đúng**, và vẫn là **bịa**, vì tính chất chống đỡ nó lúc ấy chưa ai đo. **Kết quả giống hệt, giá
+trị khác hẳn.**
+
+Nguyên tắc, và nó là câu gọn nhất của cả ngày: **không viết ra thứ mình chưa đo, kể cả khi nó chắc
+chắn đúng.**
+
+### Đo được — verify: 12/12, không có dương tính giả nào
+
+Vòng đầu của `/sdd-solo:verify` trên `runxops`: **12 phát hiện đã sửa xong, 0 dương tính giả**; 17
+cái còn lại chờ người quyết. Chưa phải con số cuối, nhưng nếu 17 cái kia giữ hình đó thì phát biểu
+đúng **không** phải *"verify chấp nhận được mức nhiễu"* mà là *"verify gần như không nhiễu ở tầng
+nghiệp vụ"* — và hai phát biểu đó dẫn tới hai quyết định khác hẳn nhau về việc có bắt buộc chạy nó
+trước mọi cổng hay không. **Quyết định đó chờ số cuối, không chốt bằng 12/12.**
+
+Một dấu hiệu luật 11 viết đủ rõ: `runxops-54` **từ chối gắn lệnh đo** cho ba con số nó không tự
+dựng lại được, ghi thẳng vào tài liệu rằng chúng chưa có lệnh — *"thà thiếu nhãn còn hơn dán nhãn
+sai"* — và nó tự rút ra điều đó, không ai bảo.
+
 ## 3.14.0 — 2026-09-09
 
 ### Sửa — phép khớp chéo thêm ở 3.13.0 chỉ đúng MỘT phía
