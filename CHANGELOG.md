@@ -1,5 +1,58 @@
 # Changelog
 
+## 3.9.0 — 2026-09-09
+
+### Thêm — một con số ĐÚNG vẫn có thể là phát hiện
+
+Chín dòng luật của loại #7 tới 3.8.0 đều đi tìm số **sai**. `runxops` tìm ra chiều còn thiếu, và
+nó là chiều duy nhất mà bước 3 (*"khớp → im"*) **bỏ sót theo thiết kế**, vì chạy lại vẫn ra đúng
+con số đó.
+
+`RULE-004` khai *"phân định được 13/13 nhóm"*. Đo lại: **đúng 13/13**. Nhưng mẫu số thô là **16** —
+ba nhóm bị loại vì khoá là chữ giữ chỗ (`Does not apply`, thứ eBay tự điền khi người bán bỏ
+trống). **Loại chúng ra là quyết định đúng.** Vấn đề là `13` một mình giấu mất **9 listing không
+nhóm được bằng bất cứ khoá nào** — mà đúng chín cái đó là phần việc gán khoá tay của `UC-009`,
+tức chỗ đau chính của cả BR.
+
+- **Luật 10 của loại #7:** một con số đúng vẫn là phát hiện nếu nó là **mẫu số đã lọc mà không nói
+  đã lọc gì**. Hai câu hỏi: *phép đếm này bỏ ra bao nhiêu?* · *cái bị bỏ ra có phải chính là thứ
+  tài liệu đang bàn không?*
+- **Hệ quả cho luật 5b:** lệnh đo in **mẫu số thô lẫn mẫu số đã lọc**, kèm cái gì bị lọc và vì sao.
+  `13/13` trông hoàn hảo; `16 thô → loại 3 giữ chỗ → 13` nói thật.
+- Cùng họ với ca `437 / 32` ở 3.7.0 — thứ bắt được nó là **một con số thứ hai đứng cạnh**. Khác ở
+  chỗ ca kia con số trông vô lý, ca này **cả hai đều hợp lý**, nên không có con số thứ hai thì
+  không có gì để mà nghi.
+
+### Thêm — loại sai #8: nhãn không đi theo nội dung
+
+Tiêu đề, câu tóm tắt, số đếm trong tiêu đề — ai sửa thân thường không sửa nhãn. Tách riêng khỏi #3
+vì nó có **chữ ký riêng**: cái sai do **chính lần sửa trước gây ra**, và nó nằm cách chỗ sửa vài
+dòng tới vài trăm dòng nên không lọt vào mắt người vừa sửa.
+
+Ba ca đo được trong **một ngày**, ba người khác nhau:
+
+| Ca | Nhãn | Thân |
+|---|---|---|
+| `verify-pass.md` (bản 3.6.0–3.7.0) | *"Sáu loại sai phải soi"* | bảng **bảy** dòng |
+| `UC-009` một `AC` | tiêu đề nói một đằng | thân nói một nẻo |
+| `entities.md` mục `Sourcing` | câu văn xuôi còn *"7 nhóm"* | bảng số và History đã sửa thành **10** |
+
+Ca thứ ba đắt nhất về mặt bài học: nó **sống sót qua chính lượt đi sửa số mục**, vì người sửa sửa
+**theo chỗ mình nhớ là có số**, không theo một phép quét. Nên luật soi là: mỗi lần một con số hoặc
+một quyết định vừa đổi, **quét cả cây tìm mọi chỗ khác nhắc tới nó**. Trí nhớ của người vừa sửa là
+thứ dở nhất để dựa vào — nó nhớ **ý định**, không nhớ **chữ**. Đúng câu mở đầu của `verify-pass.md`,
+chỉ khác chỗ áp dụng.
+
+### Sửa — tiêu đề bảng loại sai thôi mang số đếm
+
+`## Bảy loại sai phải soi` → `## Các loại sai phải soi`. Một cái nhãn mang số thì **mỗi lần thêm
+dòng là một lần nó có thể mục** — 3.6.0 đã mục đúng như vậy, 3.8.0 sửa con số, và bản này bỏ hẳn
+con số đi để lần sau không còn gì để mục. Sửa nguyên nhân thay vì sửa triệu chứng.
+
+Ghi thêm cho trung thực: khi thêm luật 10 ở bản này, bản nháp đầu **chèn dòng 10 lên trước dòng
+9** — đúng loại sai #8, ngay trong lượt thêm loại sai #8. Đã sửa trước khi commit; nói ra vì nó là
+bằng chứng tốt nhất cho lập luận ở trên rằng lớp lỗi này không chừa ai.
+
 ## 3.8.0 — 2026-09-09
 
 ### Thêm — lệnh đo in dấu vân tay của dữ liệu nó đọc

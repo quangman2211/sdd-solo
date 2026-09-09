@@ -79,5 +79,7 @@ UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn �
    `/sdd-solo:verify` đo lại được chính vì lệnh đó nằm trong file. Lệnh nên in kèm **dấu vân tay
    của dữ liệu** (nguồn · số dòng · `sha256` ngắn · sửa lần cuối), và spec ghi lại vân tay đó — để
    lần chạy sau phân biệt được *dữ liệu đã đổi* với *spec sai* mà không phải đoán. Vân tay không
-   bắt được lệnh đo tự nó đổi: **có lệnh đo làm số kiểm lại được, không làm số đúng.**
+   bắt được lệnh đo tự nó đổi: **có lệnh đo làm số kiểm lại được, không làm số đúng.** Và lệnh phải
+   in **mẫu số thô lẫn mẫu số đã lọc** — `13/13` trông hoàn hảo, `16 thô → loại 3 giữ chỗ → 13`
+   nói thật; một tỉ lệ đã lọc mà không khai là đã lọc thì đúng số mà vẫn giấu mất phần đang bàn.
 6. Khi được nhờ viết AC/UC/RULE: viết theo đúng template, tiếng Việt cho văn, tên entity/UC slug tiếng Anh.

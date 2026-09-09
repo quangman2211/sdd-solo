@@ -19,7 +19,10 @@ Cùng nhu cầu với ba vai ở bước ⑦. Khác chỗ: ba vai hỏi *"spec c
 4. **Phạm vi là cả cây, không phải một file.** Phần lớn loại sai này nằm **giữa** các file — một
    file đọc riêng thì hoàn toàn hợp lý. Kiểm từng file riêng sẽ không thấy gì.
 
-## Bảy loại sai phải soi
+## Các loại sai phải soi
+
+*(Tiêu đề này cố ý **không đếm**. Bản 3.6.0 thêm một dòng vào bảng dưới mà quên sửa chữ "Sáu"
+cách đó hai dòng — một cái nhãn mang số thì mỗi lần thêm dòng là một lần nó có thể mục.)*
 
 | # | Loại | Câu hỏi |
 |---|---|---|
@@ -30,6 +33,17 @@ Cùng nhu cầu với ba vai ở bước ⑦. Khác chỗ: ba vai hỏi *"spec c
 | 5 | **Thứ tự nói ngược nội dung** | Bước đánh số 1→N đọc xuôi có ra đúng trình tự không? Đổi nội dung mà giữ số thì mọi phép kiểm cơ học đều xanh. |
 | 6 | **Hứa mà không có đường** | AC/Postcondition hứa hệ thống *biết* hoặc *không đổi* một thứ — có bước nào thật sự đi lấy hoặc thật sự không ghi không? |
 | 7 | **Con số đã mục** | Số mô tả **dữ liệu thật** (đếm dòng, tỉ lệ, "427 dòng", "10/1986") — đo lại hôm nay có ra đúng thế không? |
+| 8 | **Nhãn không đi theo nội dung** | Tiêu đề, câu tóm tắt, số đếm trong tiêu đề — có còn đúng với thân bên dưới không? Ai sửa thân thường không sửa nhãn. |
+
+Loại #8 đáng tách riêng khỏi #3 vì nó có **chữ ký riêng và chỗ nấp riêng**: cái sai do chính lần
+sửa trước gây ra, và nó nằm cách chỗ sửa vài dòng tới vài trăm dòng nên không lọt vào mắt người
+vừa sửa. Ba ca đo được trong một ngày ở `runxops` và trong plugin này, ba người khác nhau, cùng
+một hình: *"Sáu loại sai"* trên bảng bảy dòng · một `AC` có tiêu đề nói một đằng thân nói một nẻo ·
+`entities.md` sửa `7 → 10` trong bảng và History nhưng bỏ sót câu văn xuôi cách đó **190 dòng**.
+
+Cách soi: với mỗi lần một con số hoặc một quyết định vừa đổi, **quét cả cây tìm mọi chỗ khác nhắc
+tới nó** — đừng sửa theo chỗ mình nhớ là có. Trí nhớ của người vừa sửa là thứ dở nhất để dựa vào,
+vì nó nhớ **ý định** chứ không nhớ **chữ**.
 
 ## Vai thứ hai: đối chiếu tài liệu với DỮ LIỆU THẬT
 
@@ -104,6 +118,25 @@ Cách làm:
    Name` khi cột đó còn dính trục biến thể, nên một sản phẩm hai màu đếm thành hai tên)"* dạy được
    nhiều hơn `1388` trơ trọi: nó nói phép đo cũ hỏng ở đâu, nên lần sau khỏi hỏng lại. Đây cũng là
    thứ duy nhất còn lại sau khi đóng terminal.
+
+10. **Một con số ĐÚNG vẫn là phát hiện, nếu nó là mẫu số đã lọc mà không nói đã lọc gì.** Chín
+   dòng trên đều đi tìm số **sai**; dòng này khác hẳn, và nó là dòng duy nhất mà bước 3
+   (*"khớp → im"*) sẽ **bỏ sót**, vì chạy lại vẫn ra đúng con số đó.
+
+   Ca thật (`runxops`): `RULE-004` khai *"phân định được 13/13 nhóm"*. Đo lại: **đúng 13/13**.
+   Nhưng mẫu số thô là **16** — ba nhóm bị loại vì khoá là chữ giữ chỗ (`Does not apply`, thứ eBay
+   tự điền khi người bán bỏ trống). Loại chúng ra là **quyết định đúng**. Vấn đề là `13` một mình
+   giấu mất **9 listing không nhóm được bằng bất cứ khoá nào** — mà đúng chín cái đó là phần việc
+   gán khoá tay của `UC-009`, tức chỗ đau chính của cả BR.
+
+   Hỏi hai câu: *phép đếm này bỏ ra bao nhiêu?* và *cái bị bỏ ra có phải chính là thứ tài liệu
+   đang bàn không?* Nếu có → `F#`, dù con số không sai một chữ.
+
+   **Hệ quả cho lệnh đo:** in **mẫu số thô và mẫu số đã lọc cùng lúc**, kèm cái gì bị lọc và vì
+   sao — đừng chỉ in kết quả. Một tỉ lệ `13/13` trông hoàn hảo; `16 thô → loại 3 giữ chỗ → 13` nói
+   thật. Cùng họ với ca `437 / 32`: thứ bắt được nó là **một con số thứ hai đứng cạnh**. Khác ở
+   chỗ ca kia con số trông vô lý, còn ca này **cả hai đều hợp lý** — nên không có con số thứ hai
+   thì không có gì để mà nghi.
 
 ## Đầu ra
 
