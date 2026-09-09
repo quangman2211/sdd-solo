@@ -1,5 +1,68 @@
 # Changelog
 
+## 3.16.0 — 2026-09-09
+
+### Thêm — loại sai #9: số đúng, chủ ngữ sai
+
+Câu hỏi treo ở 3.15.0 (*ba con số `249 / 1006 / 2523` có mục không?*) có câu trả lời, và nó quan
+trọng hơn ánh xạ: **cả ba đo đúng. Chúng chỉ đo đúng một câu hỏi KHÁC.**
+
+```
+249   ĐÚNG cho "dòng có TỔNG giá trị > 1"     (Color: Red ; Size: L đếm 2)
+215   ĐÚNG cho "dòng gom nhiều Variant"        ← câu trong tài liệu nói về cái này
+1006  ĐÚNG cho "tổng giá trị, phép CỘNG"
+ 920  ĐÚNG cho "tổng tổ hợp, phép NHÂN"        ← số Variant thật khi bung
+2523  = 1517 + 1006
+2437  = 1517 +  920                            ← số dòng sau khi bung
+```
+
+**Đây không phải loại #7.** Loại #7 là *"số từng đúng, dữ liệu đổi bên dưới"* — chữa bằng **đo
+lại**. Loại này đo lại vẫn ra `249`, **mãi mãi**. Hỏng không nằm ở con số, nằm ở **cái câu nó được
+gắn vào**. Chữa bằng **đọc lại câu**, không bằng đo.
+
+Và **không tầng nào trong bốn tầng bắt được**: vân tay khớp · lệnh đo có thật và in đúng số · cấu
+trúc không đổi · phép cộng khớp. **Cả bốn kiểm quan hệ số ↔ dữ liệu; không tầng nào kiểm quan hệ
+số ↔ CÂU.** Luật 11 hỏi *lệnh có in ra số này không* — ở đây lệnh in ra thật, nhãn đúng, và vẫn sai.
+
+> **Loại #9 — Số đúng, chủ ngữ sai.** Phép đo hợp lệ nhưng trả lời một câu hỏi khác câu hỏi trong
+> văn bản. Dấu hiệu: **một cột sinh ra nhiều mẫu số đều hợp lệ.** Câu phải hỏi: *con số này trả
+> lời câu hỏi nào, và câu trong tài liệu đang hỏi câu nào?*
+
+**Kiểm rẻ:** cột nào sinh ra **nhiều hơn một mẫu số hợp lệ** thì mọi con số lấy từ nó **phải mang
+nhãn mẫu số, không được đứng trần**.
+
+### Sửa — ba chỗ trong ca mẫu, theo ánh xạ đo được
+
+- Ca `132 → 249` → **`132 → 215`**. Chủ ngữ của câu là *"một listing gom nhiều Variant"*, mà
+  `Color: Red ; Size: L` là hai trục mỗi trục một giá trị — **một** Variant.
+- Ca *"nhiều hơn 1986"*: `2523` → **`2437`**, và `+27%` → **`+23%`**.
+- Bảng đơn vị: `1006` **giữ nguyên nhưng nay mang nhãn `(CỘNG)`**, đứng cạnh `920 (NHÂN)`. `1006`
+  chỉ sai khi bị dùng cho phép bung; dùng cho tổng giá trị thì đúng. **Hai số cạnh nhau có nhãn
+  mẫu số là hình đúng của cả loại #9.**
+
+Phép quét bước 6 chạy sau khi sửa: hai chỗ `249` còn lại đều nằm trong đoạn **giải thích chính ca
+đó**, tức hit hợp lệ. `1517 + 920 = 2437` ✓ và `1517 + 1006 = 2523` ✓ — cộng thử trước khi ghi.
+
+### Ghi lại — `grep` bắt được cả thứ không ai đang đi tìm
+
+Nhận xét từ `runxops` về ca đoạn-văn-trùng ở 3.15.0, giữ lại vì nó là lý do đầy đủ nhất cho toàn
+bộ thiết kế của `verify`:
+
+> Bạn chạy `grep` để kiểm `536`, nó trả về một lỗi **khác hẳn**. Người đọc lại thì chỉ tìm được
+> thứ mình đang tìm.
+
+Đó là khác biệt giữa **đọc để kiểm một giả thuyết** và **một phép đếm đứng ngoài mắt mình**: cái
+đầu bị giới hạn bởi những gì mình nghĩ tới, cái sau thì không.
+
+### Và một ca `13/13` cuối, do chính người dựng ra nó mắc
+
+`runxops` viết *"tôi là người duy nhất trong ba người vi phạm luật đó hôm nay"* — một mẫu số chưa
+lọc: họ cũng là người **cầm dữ liệu nhiều nhất**, nên có nhiều cơ hội viết-trước-khi-đo nhất. Hai
+phiên kia không vi phạm vì hai phiên kia không cầm bút trên dữ liệu. Họ nhận ngay khi được chỉ ra.
+
+Đáng ghi vì nó khép lại đúng chỗ mở đầu của loạt bản này: **cái bẫy `13/13` bắt được cả người vừa
+dựng ra nó**, và lần này ở chỗ khó ngờ nhất — một câu tự kể về mình.
+
 ## 3.15.0 — 2026-09-09
 
 ### Sửa — luật quét-cả-cây nằm trong một cơ chế cấu tạo không chạy được nó

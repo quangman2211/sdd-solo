@@ -34,6 +34,25 @@ cách đó hai dòng — một cái nhãn mang số thì mỗi lần thêm dòng
 | 6 | **Hứa mà không có đường** | AC/Postcondition hứa hệ thống *biết* hoặc *không đổi* một thứ — có bước nào thật sự đi lấy hoặc thật sự không ghi không? |
 | 7 | **Con số đã mục** | Số mô tả **dữ liệu thật** (đếm dòng, tỉ lệ, "427 dòng", "10/1986") — đo lại hôm nay có ra đúng thế không? |
 | 8 | **Nhãn không đi theo nội dung** | Tiêu đề, câu tóm tắt, số đếm trong tiêu đề — có còn đúng với thân bên dưới không? Ai sửa thân thường không sửa nhãn. |
+| 9 | **Số đúng, chủ ngữ sai** | Phép đo hợp lệ, nhưng nó trả lời một câu hỏi **khác** câu hỏi trong văn bản. Đo lại vẫn ra đúng số đó, mãi mãi. |
+
+Loại #9 **không phải** loại #7. Loại #7 là *"số từng đúng, dữ liệu đổi bên dưới"* — chữa bằng **đo
+lại**. Loại #9 đo lại vẫn ra đúng con số ấy: hỏng không nằm ở con số, nằm ở **cái câu nó được gắn
+vào**. Chữa bằng **đọc lại câu**, không bằng đo.
+
+Và không tầng nào trong bốn tầng của loại #7 bắt được: vân tay khớp · lệnh đo có thật và in đúng số
+· cấu trúc không đổi · phép cộng khớp. **Cả bốn kiểm quan hệ số ↔ dữ liệu; không tầng nào kiểm quan
+hệ số ↔ CÂU.**
+
+Ca thật (`runxops`): cùng một cột `Variant` sinh ra **ba mẫu số đều hợp lệ** — `249` dòng có *tổng
+giá trị* > 1 · `215` dòng *gom nhiều Variant* · `469` dòng *có hay không có* trục. Câu trong tài
+liệu nói về listing **gom nhiều Variant**, nên đúng là `215`; `249` bị dán vào giữa đường. Cùng
+kiểu: `1006` (tổng giá trị, phép **cộng**) và `920` (tổ hợp, phép **nhân**) — dùng `1006` cho phép
+bung là sai, dùng nó cho tổng giá trị là đúng.
+
+**Kiểm rẻ:** cột nào sinh ra **nhiều hơn một mẫu số hợp lệ** thì mọi con số lấy từ nó **phải mang
+nhãn mẫu số, không được đứng trần**. Và câu hỏi phải hỏi là: *con số này trả lời câu hỏi nào, và
+câu trong tài liệu đang hỏi câu nào?*
 
 Loại #8 đáng tách riêng khỏi #3 vì nó có **chữ ký riêng và chỗ nấp riêng**: cái sai do chính lần
 sửa trước gây ra, và nó nằm cách chỗ sửa vài dòng tới vài trăm dòng nên không lọt vào mắt người
@@ -63,7 +82,7 @@ các câu `cũ → mới` — hợp lệ theo luật 9"*. Loại bỏ hẳn thì
 `→` sẽ tàng hình vĩnh viễn, và đó lại đúng là loại lỗi cả tài liệu này sinh ra để bắt.
 
 **Câu định tính đứng thay một con số cũng là hit.** *"sẽ nhiều hơn 1986 dòng"* không sai — nhưng
-số thật là **2523**, tức **+27%**, và *"nhiều hơn"* che mất đúng cái phần khiến người ta phải quyết
+số thật là **2437**, tức **+23%**, và *"nhiều hơn"* che mất đúng cái phần khiến người ta phải quyết
 khác đi. Cùng hình với `13/13` ở luật 10: câu không sai, chỉ là không đủ để ai quyết được gì.
 
 ## Vai thứ hai: đối chiếu tài liệu với DỮ LIỆU THẬT
@@ -89,7 +108,8 @@ này cố ý trưng **hai tầng**, vì mỗi tầng dạy một thứ:
 ĐƠN VỊ = MÃ / DÒNG  (KHÔNG phân rã — lớn hơn số ô, vì một ô chứa được nhiều)
   mã định danh                        545
   dòng trục biến thể                  601
-  giá trị biến thể                   1006
+  giá trị biến thể (CỘNG)            1006
+  tổ hợp biến thể  (NHÂN)             920   ← số Variant thật khi bung
 ```
 
 **Ba con số trong cùng một câu có thể mang ba đơn vị khác nhau, và không có gì trong văn bản nói
@@ -194,7 +214,7 @@ Cách làm:
 4b. **Chốt cấu trúc: lệnh đo phải khai hình dạng nó đang giả định, và kiểm trước khi đếm.**
    Đây là loại mục thứ ba, khác hẳn hai loại kia: không phải *dữ liệu đổi*, không phải *lệnh sai*,
    mà là **lệnh đúng với thế giới cũ**. Nó chạy trơn và ra một con số hoàn toàn hợp lý — nên không
-   phép so số nào bắt được. Ca thật: một phép đếm ra `132` thay vì `249` vì nó chỉ thấy dấu `|`
+   phép so số nào bắt được. Ca thật: một phép đếm ra `132` thay vì `215` vì nó chỉ thấy dấu `|`
    nằm cùng dòng với `Color:`; regex không sai, **cấu trúc nó đang đếm chưa tồn tại lúc ấy**.
 
    Cách chặn được **một nửa**: bắt lệnh khai ra giả định của nó (tên cột phải có · dấu ngăn trục là
