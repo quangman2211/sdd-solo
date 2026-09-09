@@ -1,5 +1,78 @@
 # Changelog
 
+## 3.19.0 — 2026-09-10
+
+### Sửa — `ac-coverage` trộn hai câu hỏi vào một chỉ số (#30)
+
+Trên `runxops`: `Tổng AC: 11` = `UC-009` (reviewed, 9 AC) + `UC-008` (**draft**, 2 AC). Khi
+`UC-009` implement đủ, chỉ số đọc **9/11** — và **không thể lên 100%** chừng nào `UC-008` còn
+draft, mà nằm draft nhiều tháng là chuyện `/sdd-solo:start` khuyến khích.
+
+**Đây là loại sai #9 ở tầng chỉ số:** `82%` là con số **đúng** cho một câu hỏi **không ai đang
+hỏi**. Nó trộn *"cái tôi đã cam kết có test chưa"* với *"spec xây được bao nhiêu"*. Và một chỉ số
+không bao giờ đạt được đích thì bị thôi nhìn — đúng luật 3.4.2, ở một script khác.
+
+Nay in **hai dòng, mỗi dòng khai rõ mẫu số**:
+
+```
+AC có test / AC của UC đã qua cổng:       9/9      ← đạt 100% được, nên mới có nghĩa để theo dõi
+AC có test / AC của MỌI UC (kể cả draft): 9/11
+```
+
+### Thêm — `tool_paths`: code thật không thuộc UC nào (#31)
+
+`runxops` có **695 dòng Python** trong `scripts/` không thuộc UC nào và **không thể thuộc**. Hook
+cằn nhằn mỗi commit *"Thêm vào `code_paths` nếu đó là code thật"*. Nó **là** code thật. Làm đúng
+lời khuyên rồi đo:
+
+```
+code_paths=src scripts
+  fix(scripts): sửa lệnh đo    exit=1  ✗ phải có ID
+  chore(scripts): dọn          exit=1  ✗ phải có ID
+  fix(UC-009): sửa lệnh đo     exit=0
+```
+
+**Nghe lời hook thì hook chặn.** Ba đường ra, và đường **dễ đi nhất là gắn một ID không liên
+quan** — lúc đó `id_exists` **cho qua** vì ID tồn tại thật, và `trace-ratio` đếm nó là đã truy vết.
+Cùng hình #16, khác một chữ: lần đó nhãn bịa là ID **không tồn tại**; lần này ID **tồn tại nhưng
+không liên quan**. Luật hiện tại kiểm *ID có thật không*, **không kiểm ID có dính gì tới commit
+này không** — đúng chỗ vừa ghi khi đóng #29, giờ lộ ra ở tầng thứ hai.
+
+**Và chỗ mâu thuẫn sắc nhất là của chính plugin này:** luật 5b (3.6.0) bắt *"số mô tả dữ liệu thật
+phải ghi kèm lệnh đo ra nó"* — tức **plugin đang YÊU CẦU viết loại code này** — rồi hook không cho
+commit nó mà không gắn ID giả. **Hai luật đều đúng; đặt cạnh nhau thì hở.**
+
+- `tool_paths` trong `.sdd/config`: miễn ID ở cả hai githook, **không tính vào mẫu số**
+  `trace-ratio`. **Mặc định rỗng** — repo chưa khai hành xử y hệt hôm nay.
+- **Miễn trừ theo FILE, không theo câu chữ trong commit.** Phương án rẻ hơn (miễn theo tiền tố
+  commit cấu hình được) bị bỏ vì thứ cần phân loại là **file**, không phải **câu chữ**: phân loại
+  theo câu chữ thì ai gõ nhầm tiền tố là lọt, còn file thì không tự đổi chỗ.
+- Cơ chế miễn trừ vốn đã có (`^Merge|^Revert|^chore\(sdd\)`), chỉ là đóng cứng vào một tiền tố.
+
+Đo trên repo tạm, đủ ba chiều: trước khi khai `tool_paths` mọi thứ y như cũ · khai rồi thì commit
+chỉ đụng `scripts/` qua mà **không cần ID** · commit đụng `src/` **vẫn bị chặn** như trước ·
+`trace-ratio` bỏ `scripts` khỏi danh sách mẫu số.
+
+### Thêm vào loại #7 — một PHÉP THỬ cũng là một phép đo
+
+Ghi chú phương pháp từ `runxops`, và nó **suýt làm cả #31 không tồn tại**:
+
+> Phép thử đầu cho `exit=0` cả ba dòng. Tôi dùng `touch` nên **không có gì được stage** — phép thử
+> rỗng, mà kết quả trông y hệt *"hook cho qua, không có vấn đề gì"*. Nếu tôi tin nó thì kết luận sẽ
+> **ngược hoàn toàn**.
+
+Thứ bắt được nó là **con số trông vô lý** — ba dòng `exit=0` cạnh một nhánh `exit 1` đọc thấy rõ
+trong code. Đúng luật 8, lần này áp cho một phép thử chứ không cho một con số trong tài liệu.
+
+**Và nó xảy ra lần thứ hai ngay trong bản này**: phép thử githook đầu tiên của phiên plugin cho
+`exit=127` ba dòng liền — gọi `.githooks/commit-msg` trong khi `core.hooksPath` là `.sdd/hooks`.
+Lần đó `127` lộ liễu nên bắt được ngay; nếu nó là `0` thì đã báo cáo một kết quả rỗng. Một ca nữa
+trong cùng lượt: `src/a.py` còn kẹt trong stage từ phép thử trước làm một ca "phải qua" thành
+`exit=1`.
+
+Luật thêm vào prompt: **trước khi tin một phép thử, in ra thứ nó đang đo** — danh sách file đã
+stage, số dòng đầu vào, đường dẫn thật của lệnh.
+
 ## 3.18.0 — 2026-09-10
 
 ### Sửa — bước ② trỏ vào một lệnh không nên chạy, và không ai biết nó chưa chạy (#29)

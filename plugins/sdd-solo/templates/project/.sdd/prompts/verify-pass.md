@@ -267,6 +267,13 @@ Cách làm:
    không tên trục` thay vì `32`. Thứ bắt được nó là **con số trông vô lý**, không phải phép kiểm
    nào. Nên: thấy số lệch một bậc độ lớn so với chỗ khác trong cùng tài liệu thì hỏi, đừng chép.
 
+   **Và một PHÉP THỬ cũng là một phép đo — phép thử rỗng trông y hệt phép thử qua.** Ca thật: một
+   phép thử githook cho `exit=0` cả ba dòng, kết luận *"hook cho qua, không có vấn đề"* — thật ra
+   nó dùng `touch` nên **không file nào được stage**, hook không có gì để kiểm. Nếu tin kết quả đó
+   thì cả issue đã không tồn tại và kết luận sẽ **ngược hoàn toàn**. Thứ bắt được: ba dòng `exit=0`
+   trông vô lý cạnh một nhánh `exit 1` đọc thấy rõ trong code. Nên trước khi tin một phép thử,
+   **in ra thứ nó đang đo** — danh sách file đã stage, số dòng đầu vào, đường dẫn thật của lệnh.
+
 9. **Sửa số thì GIỮ số cũ kèm lý do lệch, đừng xoá.** *"1459 → 1388 (số cũ nhóm theo `Product
    Name` khi cột đó còn dính trục biến thể, nên một sản phẩm hai màu đếm thành hai tên)"* dạy được
    nhiều hơn `1388` trơ trọi: nó nói phép đo cũ hỏng ở đâu, nên lần sau khỏi hỏng lại. Đây cũng là

@@ -7,10 +7,16 @@ cfg() { sed -n "s/^$1=//p" "$ROOT/.sdd/config" 2>/dev/null | tail -1 | sed 's/[[
 CP="$(cfg code_paths)"; [ -z "$CP" ] && CP="src"
 TP="$(cfg test_paths)"; [ -z "$TP" ] && TP="tests"
 RE="^($(printf '%s %s' "$CP" "$TP" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
+TLP="$(cfg tool_paths)"
+# tool_paths: code thật không thuộc UC nào (script đo, script chuyển đổi). Rỗng
+# thì mọi thứ dưới đây thành no-op, tức repo chưa khai hành xử y như trước (#31).
+TRE=""; [ -n "$TLP" ] && TRE="^($(printf '%s' "$TLP" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
+notool() { if [ -n "$TRE" ]; then grep -vE "$TRE"; else cat; fi; }
+
 
 SPEC=0; CODE=0
 echo "$STAGED" | grep -vE '/_template/' | grep -qE '^specs/.*UC-[0-9]+\.md$|^specs/rules\.md$' && SPEC=1
-echo "$STAGED" | grep -vE 'README\.md$' | grep -qE "$RE" && CODE=1
+echo "$STAGED" | grep -vE 'README\.md$' | notool | grep -qE "$RE" && CODE=1
 if [ "$SPEC" = 1 ] && [ "$CODE" = 1 ]; then
   echo "✗ Commit đang trộn spec (specs/) và code ($CP $TP). Tách: commit docs(UC-###) trước, rồi feat(UC-###)." >&2
   exit 1

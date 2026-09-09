@@ -106,6 +106,10 @@ if [ ! -f "$ROOT/.sdd/config" ]; then
     echo "code_paths=$DC"
     echo "test_paths=$DT"
     echo "uc_test_dir=$UCT"
+    echo "# tool_paths: code THẬT không thuộc UC nào và không thể thuộc — script đo"
+    echo "# dữ liệu, script chuyển đổi một lần, tiện ích của repo. Được miễn ID ở"
+    echo "# githook và không tính vào mẫu số trace-ratio. Để trống là hành xử như cũ."
+    echo "tool_paths="
   } > "$ROOT/.sdd/config"
   ok ".sdd/config — code_paths=$DC · test_paths=$DT (dò từ repo; sửa nếu sai)"
   # tests/ · __tests__/ · spec/ là ba quy ước khác hẳn nhau. Đoán trượt thì

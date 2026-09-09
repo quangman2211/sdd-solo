@@ -95,6 +95,13 @@ dump_bad() { warn "$1 không đúng dạng version — bytes:"; printf '%s' "$2"
 # Định dạng cố tình đơn giản (key=giá trị, danh sách cách nhau bằng dấu cách)
 # để githook parse được bằng shell thuần, không cần lib.sh này.
 CFG_DEFAULT_CODE="src"; CFG_DEFAULT_TEST="tests"; CFG_DEFAULT_UCTEST="tests/use-cases"
+# tool_paths: code THẬT nhưng KHÔNG thuộc UC nào và không thể thuộc — script đo
+# dữ liệu, script chuyển đổi một lần, tiện ích của repo. Mặc định RỖNG: repo chưa
+# khai thì hành xử y như trước (#31). Miễn ID ở githook, không tính vào mẫu số
+# trace-ratio. Vì sao cần: luật 5b BẮT "số mô tả dữ liệu thật phải kèm lệnh đo ra
+# nó" — tức plugin đang YÊU CẦU viết loại code này — rồi hook không cho commit nó
+# nếu không gắn một ID. Hai luật đều đúng, đặt cạnh nhau thì hở.
+CFG_DEFAULT_TOOL=""
 cfg_get() { # cfg_get <key> <root> [mặc định]
   V="$(sed -n "s/^$1=//p" "$2/.sdd/config" 2>/dev/null | tail -1 | sed 's/[[:space:]]*$//')"
   [ -n "$V" ] && printf '%s' "$V" || printf '%s' "$3"
@@ -102,6 +109,7 @@ cfg_get() { # cfg_get <key> <root> [mặc định]
 code_paths()  { cfg_get code_paths  "$1" "$CFG_DEFAULT_CODE"; }
 test_paths()  { cfg_get test_paths  "$1" "$CFG_DEFAULT_TEST"; }
 uc_test_dir() { cfg_get uc_test_dir "$1" "$CFG_DEFAULT_UCTEST"; }
+tool_paths()  { cfg_get tool_paths  "$1" "$CFG_DEFAULT_TOOL"; }
 # paths_re "src app" → ^(src|app)/  — dùng cho grep -E trên đường dẫn git
 paths_re() { printf '^(%s)/' "$(printf '%s' "$1" | tr -s ' ' '|' | sed 's/|$//')"; }
 # detect_paths <root> → đoán code_paths từ thư mục đang có. KHÔNG nhận specs/
