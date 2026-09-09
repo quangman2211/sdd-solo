@@ -78,14 +78,17 @@ Dùng khi tài liệu vừa đổi nhiều và cần biết còn chỗ nào nói
 
 ---
 
-## Ba giới hạn — nói với user, không giấu
+## Giới hạn — nói với user, không giấu
 
-1. **Nó sinh dương tính giả.** Đó là giá của việc đọc nghĩa thay vì đếm — và là lý do skill này
+1. **Lý do bác phải đến từ người ĐỌC phát hiện, không từ người VIẾT spec.** Đừng đưa trước cho
+   subagent một danh sách *"ngữ cảnh giúp bác nhanh"* do tác giả spec soạn — nó sẽ bác đúng những
+   chỗ tác giả tin là mình không sai, tức lấy mất chỗ đứng của cả lượt verify.
+2. **Nó sinh dương tính giả.** Đó là giá của việc đọc nghĩa thay vì đếm — và là lý do skill này
    **không phải** một script trong cổng: một phép kiểm báo đỏ oan sẽ bị học cách phớt lờ, rồi kéo
    theo cả những dòng đỏ thật.
-2. **"Không thấy gì" là bằng chứng yếu.** Không được nói *"tài liệu nhất quán"* hay *"đã kiểm toàn
+3. **"Không thấy gì" là bằng chứng yếu.** Không được nói *"tài liệu nhất quán"* hay *"đã kiểm toàn
    bộ"*. Câu đúng: *"lần đọc này không tìm ra gì trong phạm vi đã đọc"* — **kèm liệt kê phạm vi**.
-3. **Không thay bước ⑦.** Ba vai hỏi *"spec chưa trả lời gì"*; verify hỏi *"spec có tự mâu thuẫn
+4. **Không thay bước ⑦.** Ba vai hỏi *"spec chưa trả lời gì"*; verify hỏi *"spec có tự mâu thuẫn
    không"*. Chạy verify rồi bỏ adversarial là bỏ mất câu hỏi đắt nhất của cả quy trình.
 
 Không viết code. Không tự sửa spec khi user chưa chọn.

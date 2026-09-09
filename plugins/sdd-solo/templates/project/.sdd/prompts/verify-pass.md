@@ -73,9 +73,20 @@ chỗ mục nhanh nhất trong cả spec**: nó đúng lúc viết, không ai s�
 số đã mục **trông y hệt** một con số đúng. Không phép kiểm cấu trúc nào phân biệt được.
 
 Ca thật (`runxops`, 2026-09-09): `entities.md` ghi *"427 dòng đang có trục nằm kẹt trong
-`Product Name`"*. Câu đó **qua adversarial pass và ba lượt cổng**. Đo lại: **982** ô nhiều dòng —
-536 trục biến thể **và 525 định danh**. Thứ bắt được nó không phải script nào, mà là một câu của
-người biết dữ liệu: *"dữ liệu chưa chuẩn"*.
+`Product Name`"*. Câu đó **qua adversarial pass và ba lượt cổng**. Đo lại: **982** ô có nội dung
+ngoài tên+link — trong đó **545** ô mang định danh và **601** ô mang trục biến thể (*một ô mang
+được cả hai, nên hai số này KHÔNG cộng lại thành 982*). Thứ bắt được nó không phải script nào, mà
+là một câu của người biết dữ liệu: *"dữ liệu chưa chuẩn"*.
+
+Chính ca mẫu này từng mang đúng cái lỗi nó dạy cách bắt: bản 3.6.0–3.11.0 ghi `536 / 525`, hai con
+số ra từ **script khảo sát đầu tiên** — chạy trước khi bỏ ký tự vô hình `U+200E` và trước khi bắt
+được 32 giá trị biến thể không mang tên trục. Sai **cùng một chiều, cùng một nguyên nhân**, đúng
+chữ ký mà đoạn này đang mô tả. `/sdd-solo:verify` tìm ra nó ở lần chạy thật đầu tiên.
+
+Và `601 dòng` đứng cạnh `1006 giá trị` là ca *hai mẫu số cho cùng một thứ*: một ô ghi
+`Color: Brown | Dark Grey` là **một** dòng trục nhưng **hai** giá trị. Dán nhầm số nọ vào câu của
+số kia thì cả hai đều là số thật, câu vẫn trôi chảy, và không phép so nào bắt được — **luôn nói rõ
+đang đếm ĐƠN VỊ nào.**
 
 Cách làm:
 
@@ -189,6 +200,19 @@ Cách làm:
    chỗ ca kia con số trông vô lý, còn ca này **cả hai đều hợp lý** — nên không có con số thứ hai
    thì không có gì để mà nghi.
 
+11. **Lệnh đo phải THẬT SỰ in ra con số nó được gắn vào.** Kiểm bằng cách chạy lệnh rồi tìm con
+   số đó trong đầu ra. Không thấy → **nhãn sai**, và một **nhãn xác thực sai tệ hơn không có
+   nhãn**: không có nhãn thì con số trông như chưa ai kiểm, đúng như nó vốn thế; dán nhãn sai thì
+   nó trông **như đã được kiểm**.
+
+   Ca thật (`runxops`): hai con số được gắn `python3 scripts/measure-catalog.py` làm lệnh đo, mà
+   lệnh đó **không in ra con số nào trong hai**. Người dán nhãn chính là người vừa dành cả ngày
+   thuyết phục rằng mọi số phải kèm lệnh đo.
+
+   Luật này đóng chỗ hở mà **ba tầng kia không với tới**: vân tay hỏi *dữ liệu nào* · luật 5b hỏi
+   *lệnh nào* · chốt cấu trúc hỏi *lệnh còn đúng hình dạng không* — cả ba đều **giả định lệnh và
+   số là một cặp đúng**, và không tầng nào kiểm chính cái cặp đó. Nó rẻ và kiểm được bằng máy.
+
 ## Đầu ra
 
 Một danh sách `F#`, xếp theo hậu quả (tiền · quyền · dữ liệu khách trước). Mỗi dòng:
@@ -203,14 +227,21 @@ F1 <phát hiện một câu>
 
 `đầu ra: ___` để **người quyết** điền, không tự điền.
 
-## Ba giới hạn — nói thẳng, không giấu
+## Giới hạn — nói thẳng, không giấu
 
-1. **Nó sinh dương tính giả.** Đó là cái giá của việc đọc nghĩa thay vì đếm. Nên **bác một phát
+1. **Lý do bác phải đến từ người ĐỌC phát hiện, không từ người VIẾT spec.** Đưa trước cho verify
+   một danh sách *"ngữ cảnh giúp bác nhanh"* do tác giả spec soạn là lấy mất chỗ đứng của nó: nó
+   sẽ bác đúng những phát hiện mà tác giả đã có sẵn câu trả lời — tức đúng những chỗ tác giả tin
+   là mình không sai. Ca thật: một danh sách như vậy bị từ chối, và **hai mục trong đó tự rơi vào
+   nhóm "khớp / đã bác" bằng phép đo riêng của verify** — bằng chứng đó chỉ tồn tại **vì** nó
+   không nghe.
+
+2. **Nó sinh dương tính giả.** Đó là cái giá của việc đọc nghĩa thay vì đếm. Nên **bác một phát
    hiện phải rẻ** — một dòng `→ không phải lỗi vì <lý do>` là đủ, và **lý do đó được ghi lại**,
    để lần chạy sau không moi lại đúng câu đó.
-2. **"Không thấy gì" là bằng chứng yếu.** Không được in ra câu nào nghe như bảo chứng — không
+3. **"Không thấy gì" là bằng chứng yếu.** Không được in ra câu nào nghe như bảo chứng — không
    *"tài liệu nhất quán"*, không *"đã kiểm toàn bộ"*. Đúng câu được phép nói là: *"lần đọc này
    không tìm ra gì trong phạm vi đã đọc"*, kèm **liệt kê phạm vi đã đọc**.
-3. **Chi phí tăng theo cây.** Cây 2.000 dòng đọc hết được; 20.000 dòng thì không. Khi cây lớn,
+4. **Chi phí tăng theo cây.** Cây 2.000 dòng đọc hết được; 20.000 dòng thì không. Khi cây lớn,
    thu phạm vi theo **thứ vừa đổi** (`git diff` từ lần verify trước) cộng mọi file mà nó trích ID
    tới — chứ đừng đọc thưa cả cây, vì đọc thưa là cách chắc chắn nhất để bỏ sót loại 3 và loại 4.

@@ -1,5 +1,76 @@
 # Changelog
 
+## 3.12.0 — 2026-09-09
+
+### Sửa — ca mẫu của loại #7 mang đúng cái lỗi nó dạy cách bắt
+
+**`/sdd-solo:verify` chạy thật lần đầu, và thứ nó bắt được nằm trong `verify-pass.md` của chính
+plugin này.** Ca mẫu ghi *"982 ô nhiều dòng — 536 trục biến thể và 525 định danh"*. Đo lại:
+
+| | đang ghi | đúng |
+|---|---|---|
+| ô có nội dung ngoài tên+link | 982 | **982** ✓ |
+| ô mang định danh | 525 | **545** |
+| ô mang trục biến thể (số **dòng**) | 536 | **601** |
+| ô mang trục biến thể (số **giá trị**) | — | 1006 |
+
+`982` đúng; hai số kia sai **cùng một chiều, cùng một nguyên nhân** — chúng ra từ script khảo sát
+đầu tiên, chạy **trước** khi bỏ ký tự vô hình `U+200E` và trước khi bắt được 32 giá trị biến thể
+không mang tên trục. Tức **đúng chữ ký mà chính đoạn văn đó đang dạy người ta nhận ra.**
+
+Để nguyên thì thiệt hại là thật và cụ thể: ai chạy `measure` trên `runxops` và ra `545/601` sẽ
+kết luận **cơ chế sai**, chứ không phải **con số trong ví dụ sai**.
+
+- Sửa thành `982 · 545 định danh · 601 dòng trục`, kèm câu **hai số này KHÔNG cộng lại thành 982**
+  vì một ô mang được cả hai. Bản cũ đọc như một phép chia đôi mà `536 + 525` cũng chẳng ra `982` —
+  không ai để ý, vì hai con số thật đứng cạnh nhau trông luôn hợp lý.
+- Thêm ca *hai mẫu số cho cùng một thứ*: `601 dòng` cạnh `1006 giá trị` — một ô ghi
+  `Color: Brown | Dark Grey` là **một** dòng trục nhưng **hai** giá trị. Dán nhầm số nọ vào câu
+  của số kia thì cả hai đều là số thật, câu vẫn trôi chảy, không phép so nào bắt được. **Luôn nói
+  rõ đang đếm ĐƠN VỊ nào.**
+- Giữ lại trong prompt chính câu chuyện này — ca mẫu từng mang lỗi nó dạy cách bắt — vì nó dạy
+  nhiều hơn bộ số đúng.
+
+### Thêm — luật 11: lệnh đo phải THẬT SỰ in ra con số nó được gắn vào
+
+Ca nặng nhất của cả loạt. Hai con số ở `runxops` được gắn `python3 scripts/measure-catalog.py` làm
+lệnh đo, mà **lệnh đó không in ra con số nào trong hai**. Không phải số mục — là **một cái nhãn
+xác thực dán sai**, và nó **tệ hơn không có nhãn**: không nhãn thì con số trông như chưa ai kiểm,
+đúng như nó vốn thế; dán nhãn sai thì nó trông **như đã được kiểm**.
+
+> **Kiểm bằng cách chạy lệnh rồi tìm con số đó trong đầu ra. Không thấy → nhãn sai.**
+
+Luật này đóng chỗ hở mà **ba tầng kia không với tới**: vân tay hỏi *dữ liệu nào* (3.8.0) · luật 5b
+hỏi *lệnh nào* (3.6.0) · chốt cấu trúc hỏi *lệnh còn đúng hình dạng không* (3.11.0) — **cả ba đều
+giả định lệnh và số là một cặp đúng**, và không tầng nào kiểm chính cái cặp đó. Rẻ, và kiểm được
+bằng máy.
+
+### Thêm — giới hạn: lý do bác phải đến từ người ĐỌC, không từ người VIẾT spec
+
+Đưa trước cho verify một danh sách *"ngữ cảnh giúp bác nhanh"* do tác giả spec soạn là **lấy mất
+chỗ đứng của nó**: nó sẽ bác đúng những phát hiện mà tác giả đã có sẵn câu trả lời — tức đúng
+những chỗ tác giả **tin là mình không sai**.
+
+Ca thật: một danh sách như vậy bị subagent từ chối, và **hai mục trong đó sau đó tự rơi vào nhóm
+"khớp / đã bác" bằng phép đo riêng của verify**. Bằng chứng ấy chỉ tồn tại **vì** nó không nghe.
+Cùng họ với luật *"chỉ báo, không sửa"*: người có lợi ích trong kết luận không được cầm bút.
+
+### Sửa — hai cái nhãn mang số nữa, lại đúng loại #8
+
+Khi thêm luật 11, bản nháp **chèn nó trước luật 9 và 10** — lần thứ hai trong hai bản liên tiếp,
+cùng một tay, ba phút sau khi viết luật về nó. Và mục `## Ba giới hạn` thành bốn dòng ở cả
+`verify-pass.md` lẫn `skills/verify/SKILL.md`.
+
+Cả hai bắt được bằng `grep -nE '^[0-9]+\. '`, **không phải bằng đọc**. Cùng cách chữa với 3.9.0:
+tiêu đề bỏ hẳn số đếm (`## Giới hạn`), vì **một cái nhãn mang số thì mỗi lần thêm dòng là một lần
+nó có thể mục**.
+
+### Đo được — verify hoạt động, và nhiễu nằm ở đâu
+
+Lần chạy thật đầu tiên sinh **29 phát hiện** sau khi gộp; triage chưa xong nên chưa có tỉ lệ dương
+tính giả. Đã biết một nửa: **nhiễu tập trung ở tầng 5 (vệ sinh), không ở tầng 1–2.** Và bằng chứng
+đắt nhất là chính bản vá này: công cụ tìm ra một lỗi thật **trong tài liệu định nghĩa ra nó**.
+
 ## 3.11.0 — 2026-09-09
 
 ### Thêm — chốt cấu trúc: lệnh đo khai hình dạng nó giả định, sai thì DỪNG
