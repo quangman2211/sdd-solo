@@ -124,9 +124,17 @@ detect_paths() {
 has_code_path() { for d in $(code_paths "$1"); do [ -d "$1/$d" ] && return 0; done; return 1; }
 # repo_has_code <root> → 0 nếu repo có file nguồn ngoài các thư mục của quy trình.
 # Dùng để phân biệt "config sai" với "repo chưa viết code dòng nào".
+# tool_paths KHÔNG tính là "code sản phẩm" ở đây (#33). Không loại nó ra thì
+# `trace-ratio` in "repo có file nguồn nhưng không commit nào đụng src tests →
+# sửa code_paths" trên một repo vừa khai tool_paths ĐÚNG như 3.19.0 bảo. Đỏ oan,
+# và tệ hơn im lặng một bậc vì nó hướng người ta gỡ tool_paths hoặc nhét scripts
+# vào code_paths — quay ngược đúng cái bẫy #31 vừa gỡ.
 repo_has_code() {
+  _t="$(tool_paths "$1")"
+  _re='^(specs|\.sdd|docs|changes|checklists|prompts|\.githooks)/'
+  [ -n "$_t" ] && _re="$_re|^($(printf '%s' "$_t" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
   git -C "$1" ls-files 2>/dev/null \
-    | grep -vE '^(specs|\.sdd|docs|changes|checklists|prompts|\.githooks)/' \
+    | grep -vE "$_re" \
     | grep -qE '\.(js|ts|tsx|jsx|py|go|rb|java|cs|kt|swift|rs|php|c|cc|cpp|h|hpp|sh|sql|vue|svelte)$'
 }
 # plugin_script <tên> — tìm script CHỈ có ở plugin (scaffold.sh, session-start.sh).

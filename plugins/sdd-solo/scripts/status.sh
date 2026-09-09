@@ -74,7 +74,13 @@ if [ "$CP_OK" = 1 ] || [ "$UT_SAY" = 1 ]; then
       bad "code_paths=$(code_paths "$ROOT") — không thư mục nào tồn tại, mà repo đã có file nguồn."
       info "githook đang chặn hụt. Sửa .sdd/config cho khớp bố cục thật."
     else
-      warn "code_paths=$(code_paths "$ROOT") — chưa thư mục nào tồn tại (repo chưa có code)."
+      # "chưa có code" không còn đúng khi repo đã khai tool_paths: nó CÓ code,
+      # chỉ là code công cụ không thuộc UC nào (#33).
+      if [ -n "$(tool_paths "$ROOT")" ]; then
+        warn "code_paths=$(code_paths "$ROOT") — chưa thư mục nào tồn tại (repo chưa có code sản phẩm; code công cụ đã khai ở tool_paths)."
+      else
+        warn "code_paths=$(code_paths "$ROOT") — chưa thư mục nào tồn tại (repo chưa có code)."
+      fi
     fi
   fi
   # Nhắc lại chừng nào chưa khớp: `!` lúc init dễ trôi từ lần --update thứ hai

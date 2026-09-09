@@ -1,5 +1,64 @@
 # Changelog
 
+## 3.20.0 — 2026-09-10
+
+### Sửa — `uc-steps` báo xanh sai: hai script của plugin, cùng một commit, hai kết luận ngược nhau (#32)
+
+Lần đầu chạy `uc-steps.sh` trên một UC thật, nó in:
+
+```
+✓ ⑩⑪ Spec Kit + code (commit feat/fix mang UC-009)
+```
+
+Trong khi `src/` **không tồn tại**, `plan.md` và `tasks.md` **không có**, và **không một dòng code
+sản phẩm nào**. Nó xanh vì đúng một commit — `feat(UC-009): script chuyển ItemSell…` — đụng
+`scripts/itemsell-to-sheet.py`, tức **đúng `tool_paths`, thứ 3.19.0 vừa ship để khai rằng nó không
+thuộc UC nào và không thể thuộc.**
+
+**Cùng một commit, hai script của plugin, hai kết luận ngược nhau.** `trace-ratio.sh` (3.19.0) cố ý
+loại nó ra kèm chú thích *"đếm nó vào commit có ID truy vết được là hỏi một câu không có câu trả
+lời đúng"*. `uc-steps.sh` (3.18.0) lấy đúng commit ấy làm bằng chứng rằng code đã viết xong. **Hai
+bản vá cách nhau một phiên bản và không biết đến nhau.**
+
+- **⑩⑪ hỏi theo PHẠM VI FILE, không theo câu chữ trong message.** Cùng lý do đã nhận ở #31 — *thứ
+  cần phân loại là file, không phải câu chữ*. Ở #31 nó áp cho phép **chặn**; ở đây cho phép **đọc**.
+  Luật đã nằm trong code ba hôm trước, chỉ chưa áp hết chỗ.
+- **Tách ⑩ khỏi ⑪** — hai bước, hai bằng chứng khác nhau: ⑩ có `plan.md`/`tasks.md` trong `specs/`;
+  ⑪ có commit `feat`/`fix` mang ID **đụng `code_paths`/`test_paths` trừ `tool_paths`**. Gộp lại thì
+  một bằng chứng yếu ở vế này che chỗ trống ở vế kia — đúng chuyện vừa xảy ra.
+
+**Lần thứ ba trong ba ngày** của chỗ đã khai là chưa vá: *mọi luật kiểm ID **có tồn tại** không,
+không luật nào kiểm ID **có dính gì** tới thứ đang gắn nó không.* Lần một hệ ID AIUP (#29) · lần
+hai commit gắn ID không liên quan (#31) · lần ba `uc-steps` dùng ID trong message làm bằng chứng về
+**nội dung** commit.
+
+### Sửa — `repo_has_code` chưa biết `tool_paths` nên đỏ oan (#33)
+
+`repo_has_code()` không loại `tool_paths`, nên `scripts/*.py` lọt qua và `trace-ratio` in *"repo có
+file nguồn nhưng không commit nào đụng: src tests → sửa code_paths/test_paths"* trên một repo vừa
+làm **đúng** thứ 3.19.0 bảo họ làm.
+
+Đỏ oan, và tệ hơn im lặng một bậc vì **nó hướng người ta đi sửa một thứ đang đúng**: ai nghe lời sẽ
+gỡ `tool_paths` hoặc nhét `scripts` vào `code_paths` — **quay ngược đúng cái bẫy #31 vừa gỡ**. Cùng
+hình với #26, nơi một dòng đỏ oan tự tạo ra chính cái nó cảnh báo.
+
+`status.sh` dùng chung `repo_has_code` nên mang cùng lỗi (chỗ #26 từng vá) — sửa ở `lib.sh` là cả
+hai hết. Kèm một chỉnh nhỏ cho chính xác: khi đã khai `tool_paths`, câu *"repo chưa có code"* đổi
+thành *"chưa có code sản phẩm; code công cụ đã khai ở tool_paths"* — repo **có** code, chỉ là code
+không thuộc UC nào.
+
+Bốn ca đo: `tool_paths` rỗng → vẫn cảnh báo (config có thể sai thật) · khai rồi → hết đỏ oan · có
+code thật trong `src/` mà chưa commit nào đụng → **vẫn** cảnh báo · `status.sh` chuyển từ `✗` sang
+một dòng `!` nói đúng tình trạng.
+
+### Ghi nhận — phần còn lại của `uc-steps` đúng hết
+
+`runxops` đối chiếu 13 dòng còn lại với bảng đếm tay: khớp. Cơ chế phân biệt *bỏ có ghi lý do* với
+*quên làm* chạy đúng thiết kế — thêm dòng `**Bỏ bước ⑤:**` thì `?` chuyển sang `–` ngay.
+
+Và đó chính là lý do #32 phải vá nhanh, ghi nguyên văn: **mười ba dòng kia đủ tin để người ta tin
+luôn dòng thứ mười bốn.** Một bảng gần đúng nguy hiểm hơn một bảng sai hẳn.
+
 ## 3.19.0 — 2026-09-10
 
 ### Sửa — `ac-coverage` trộn hai câu hỏi vào một chỉ số (#30)

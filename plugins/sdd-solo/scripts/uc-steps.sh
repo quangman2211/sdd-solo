@@ -80,9 +80,26 @@ st "⑧" $R8 "đọc lại bằng đầu chưa neo"
 
 [ -f "$ROOT/.sdd/gate/$ID.ok" ]; st "⑨" $? "qua cổng DoR"
 
-# ⑩⑪ Spec Kit + code: có commit feat/fix mang ID chưa
-R11=1; git -C "$ROOT" log --oneline --grep="($ID)" 2>/dev/null | grep -qE '^[0-9a-f]+ (feat|fix)' && R11=0
-st "⑩⑪" $R11 "Spec Kit + code (commit feat/fix mang $ID)"
+# ⑩ Spec Kit: có plan.md / tasks.md nào của Spec Kit chưa
+R10=1; find "$ROOT/specs" -maxdepth 3 \( -name 'plan.md' -o -name 'tasks.md' \) 2>/dev/null | grep -q . && R10=0
+st "⑩" $R10 "Spec Kit (/speckit-plan · /speckit-tasks)" "chưa có plan.md/tasks.md nào trong specs/"
+
+# ⑪ code sản phẩm — hỏi theo PHẠM VI FILE, không theo câu chữ trong message (#32).
+# Trước 3.20.0 dòng này chỉ `--grep "($ID)"` trên MỌI đường dẫn, nên một commit
+# `feat(UC-009)` đụng đúng `tool_paths` — thứ 3.19.0 vừa khai là KHÔNG thuộc UC
+# nào và không thể thuộc — làm nó báo "code đã viết xong". Cùng một commit, hai
+# script của plugin, hai kết luận ngược nhau: `trace-ratio` cố ý loại nó ra,
+# `uc-steps` lấy nó làm bằng chứng. Luật đã ghi ở #31: thứ cần phân loại là
+# FILE, không phải câu chữ. Ở #31 nó áp cho phép chặn; ở đây cho phép đọc.
+CPS="$(code_paths "$ROOT") $(test_paths "$ROOT")"
+TLS="$(tool_paths "$ROOT")"
+for d in $TLS; do CPS="$(printf '%s\n' $CPS | grep -vxF "$d" | tr '\n' ' ')"; done
+R11=1
+if [ -n "$(printf '%s' "$CPS" | tr -d ' ')" ]; then
+  git -C "$ROOT" log --format='%h %s' --grep="($ID)" -- $CPS 2>/dev/null \
+    | grep -qE '^[0-9a-f]+ (feat|fix)' && R11=0
+fi
+st "⑪" $R11 "code sản phẩm (commit feat/fix mang $ID đụng $(printf '%s' "$CPS" | sed 's/ *$//'))"
 
 # ⑫ test theo AC
 UCT="$(uc_test_dir "$ROOT")"
