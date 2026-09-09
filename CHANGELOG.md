@@ -41,6 +41,35 @@ có sáu dòng), vẫn đúng về mặt kỹ thuật sau khi thêm #7 và #8, n
 và mỗi dòng thêm vào bảng là một lần nó gần hơn với chỗ sai hẳn. Cùng cách chữa với tiêu đề ở
 3.9.0: **bỏ con số đi thì không còn gì để mục.**
 
+### Nguyên tắc rút ra từ cả loạt 3.5.0–3.11.0 — và một cách kể sai đã bị bác
+
+Trong loạt này có một lúc `runxops` **dừng, không commit** `glossary.md`, dù commit đó sẽ làm dòng
+✗ cuối cùng của cổng thành ✓. Cách kể đầu tiên của phiên plugin là *"ở vị trí làm cổng xanh bằng
+một lệnh, biết nó sẽ xanh, và không làm"* — tức quy công cho phẩm chất người vận hành. **`runxops`
+bác cách kể đó, và bác đúng:**
+
+> *"Tôi không nghĩ tới chuyện 'làm cổng xanh rồi từ chối'. Tôi chỉ thấy commit đó sẽ làm dòng ✗
+> thành ✓ trong khi thứ nó đo chưa thay đổi gì. Nó không phải một lựa chọn đạo đức, nó là nhận ra
+> phép kiểm đang đo cái khác với cái tôi sắp làm."*
+
+Lý do bác quan trọng hơn chuyện ai đúng: **nếu ghi là "biết mà không làm" thì lần sau người ta
+trông chờ vào phẩm chất của người vận hành** — mà chính loạt này vừa chứng minh phẩm chất không
+dựa vào được. Cùng cái đầu đó trượt loại #8 **ba lần liền** trong cùng một ngày vì sửa theo trí
+nhớ. Hình đúng của nó là:
+
+> **Một phép kiểm đo được đúng thứ nó tuyên bố đo thì việc lách nó trông rõ ràng là lách, kể cả
+> với người đang định lách.**
+
+Đó là công của `gate-check`, không phải của ai. Và nó là **vế thứ hai, nặng hơn, của bài học #24**:
+một phép kiểm báo xanh sai không chỉ bỏ lọt lỗi — **nó còn làm việc lách trông giống việc làm**,
+kể cả trong mắt người đang lách. Đó mới là lý do đầy đủ để câu *"báo xanh sai tệ hơn không có phép
+kiểm"* đứng ở đầu repo này.
+
+Ghi kèm cách loạt bản này được làm, vì nó là điều kiện để những nguyên tắc trên có nghĩa: **sáu
+lần hai phiên bất đồng, cả sáu lần kết thúc bằng một phép đo, không lần nào bằng nhượng bộ** —
+`allowed-tools` truy trong transcript · `26/40` truy trong `br_body` · vùng loại trừ truy bằng chỗ
+dấu `→` thật sự được dùng. Không lần nào phải tin nhau.
+
 ### Ghi nhận — một chuyện đã đo trước khi bump
 
 `3.9.0 → 3.10.0` là lần đầu số minor lên hai chữ số. `vcmp` trong `lib.sh` so **từng thành phần
