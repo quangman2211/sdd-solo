@@ -80,6 +80,8 @@ UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn �
    của dữ liệu** (nguồn · số dòng · `sha256` ngắn · sửa lần cuối), và spec ghi lại vân tay đó — để
    lần chạy sau phân biệt được *dữ liệu đã đổi* với *spec sai* mà không phải đoán. Vân tay không
    bắt được lệnh đo tự nó đổi: **có lệnh đo làm số kiểm lại được, không làm số đúng.** Và lệnh phải
+   **khai hình dạng dữ liệu nó giả định và dừng hẳn nếu hình dạng đã đổi** — một con số đếm trên
+   cấu trúc đã đổi trông y hệt một con số đúng, nên im còn hơn đoán. Và lệnh phải
    in **mẫu số thô lẫn mẫu số đã lọc** — `13/13` trông hoàn hảo, `16 thô → loại 3 giữ chỗ → 13`
    nói thật; một tỉ lệ đã lọc mà không khai là đã lọc thì đúng số mà vẫn giấu mất phần đang bàn.
 6. Khi được nhờ viết AC/UC/RULE: viết theo đúng template, tiếng Việt cho văn, tên entity/UC slug tiếng Anh.

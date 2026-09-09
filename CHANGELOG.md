@@ -1,5 +1,53 @@
 # Changelog
 
+## 3.11.0 — 2026-09-09
+
+### Thêm — chốt cấu trúc: lệnh đo khai hình dạng nó giả định, sai thì DỪNG
+
+3.10.0 đặt tên cho loại mục thứ ba — **"lệnh đúng với thế giới cũ"** — và nói là không so số nào
+bắt được, vì lệnh vẫn chạy trơn và vẫn ra một con số hợp lý. `runxops` chặn được **một nửa**: bắt
+lệnh **khai ra cấu trúc nó đang giả định**, rồi kiểm cấu trúc đó **trước khi** đếm.
+
+`measure-catalog.py` khai ba giả định — tên cột phải có · dấu ngăn trục trong `Variant` là ` ; ` ·
+không ô nào còn xuống dòng. Thử đổi ` ; ` thành ` / ` trên một bản tạm:
+
+```
+itemsell-flat.csv không còn hình dạng mà lệnh này giả định — KHÔNG đếm,
+vì một con số đếm trên cấu trúc đã đổi trông y hệt một con số đúng:
+  ✗ không ô Variant nào chứa ' ; ' — dấu ngăn trục có thể đã đổi
+EXIT = 1
+```
+
+Nó **dừng, không in con số nào**. Đây là nguyên tắc mở đầu của cả repo áp vào chỗ hẹp nhất: *báo
+xanh sai tệ hơn không có phép kiểm*, nên **một lệnh đo không chắc mình đang đo đúng thứ thì việc
+đúng đắn là im, không phải đoán.**
+
+**Ba thứ, viết thành một câu** — đây là hình gọn của cả loại #7 sau một ngày, đặt lên đầu mục:
+
+> Một con số kiểm lại được cần **ba** thứ, thiếu một là mục lặng: **dữ liệu nào** (vân tay, 3.8.0)
+> · **lệnh nào** (luật 5b, 3.6.0) · **lệnh đó còn đúng với hình dạng hiện tại không** (chốt cấu
+> trúc, bản này). Hai thứ đầu bắt được số **sai**; chỉ thứ ba bắt được số **đúng-trên-thế-giới-cũ**.
+
+**Nửa còn hở, khai cho đủ:** chốt cấu trúc bắt được **cấu trúc dữ liệu** đổi. Nó **không** bắt được
+người sửa cả lệnh lẫn phần khai giả định cùng lúc cho khớp nhau — lúc đó nó lại là một lệnh đúng
+với thế giới cũ, chỉ khác là thế giới cũ vừa được viết lại cho hợp. **Ba tầng, tầng nào cũng chỉ
+đẩy chỗ mù lùi một bậc chứ không xoá được.** Prompt bắt nói ra chỗ mù còn lại, không được hứa nó
+đã hết.
+
+### Sửa — một cái nhãn mang số nữa, cùng loại #8
+
+*"Sáu loại đầu đọc tài liệu so với tài liệu"* → *"Mọi loại trên…"*. Câu đó đúng lúc viết (khi bảng
+có sáu dòng), vẫn đúng về mặt kỹ thuật sau khi thêm #7 và #8, nhưng **đã bắt đầu gây hiểu nhầm** —
+và mỗi dòng thêm vào bảng là một lần nó gần hơn với chỗ sai hẳn. Cùng cách chữa với tiêu đề ở
+3.9.0: **bỏ con số đi thì không còn gì để mục.**
+
+### Ghi nhận — một chuyện đã đo trước khi bump
+
+`3.9.0 → 3.10.0` là lần đầu số minor lên hai chữ số. `vcmp` trong `lib.sh` so **từng thành phần
+bằng số**, nên an toàn — đã chạy thử cả ba chiều trước khi bump. Nếu nó so chuỗi thì `3.10.0 <
+3.9.0` và **cả chuỗi bốn mắt xích cảnh báo version sẽ im lặng nói ngược**, đúng dạng hỏng tệ nhất
+trong cả bộ này.
+
 ## 3.10.0 — 2026-09-09
 
 ### Sửa — luật 9 và luật quét kéo ngược nhau; phân loại hit thay vì chỉ tìm hit

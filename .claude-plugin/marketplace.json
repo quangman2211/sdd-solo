@@ -7,7 +7,7 @@
       "name": "sdd-solo",
       "source": "./plugins/sdd-solo",
       "description": "SDD cho một người: cổng DoR, adversarial pass, Claude Design, BPMN/DMN, Spec Kit + AIUP",
-      "version": "3.10.0",
+      "version": "3.11.0",
       "category": "workflow"
     }
   ]

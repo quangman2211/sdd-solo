@@ -68,7 +68,7 @@ khác đi. Cùng hình với `13/13` ở luật 10: câu không sai, chỉ là k
 
 ## Vai thứ hai: đối chiếu tài liệu với DỮ LIỆU THẬT
 
-Sáu loại đầu đọc tài liệu so với tài liệu. Loại 7 khác hẳn và cần một vai riêng, vì **con số là
+Mọi loại trên đều đọc tài liệu so với tài liệu. Loại #7 khác hẳn và cần một vai riêng, vì **con số là
 chỗ mục nhanh nhất trong cả spec**: nó đúng lúc viết, không ai sửa nó khi dữ liệu đổi, và một con
 số đã mục **trông y hệt** một con số đúng. Không phép kiểm cấu trúc nào phân biệt được.
 
@@ -78,6 +78,10 @@ Ca thật (`runxops`, 2026-09-09): `entities.md` ghi *"427 dòng đang có trụ
 người biết dữ liệu: *"dữ liệu chưa chuẩn"*.
 
 Cách làm:
+
+**Một con số kiểm lại được cần BA thứ, thiếu một là mục lặng:** *dữ liệu nào* (vân tay) ·
+*lệnh nào* (luật 5b) · *lệnh đó còn đúng với hình dạng hiện tại không* (chốt cấu trúc, dưới đây).
+**Hai thứ đầu bắt được số sai; chỉ thứ ba bắt được số đúng-trên-thế-giới-cũ.**
 
 1. **Tìm mọi con số mô tả dữ liệu thật** trong phạm vi đọc. Số nghiệp vụ đã chốt (ngưỡng, thời
    hạn trong `RULE-###`) **không** thuộc loại này — đó là quyết định, không phải phép đo.
@@ -105,6 +109,32 @@ Cách làm:
    **không** bắt được **lệnh** đổi. Sửa chính lệnh đo cho nó đếm sai đi thì vân tay vẫn khớp và cả
    bảng số vẫn mục cùng một chiều — lần này còn khó thấy hơn, vì tài liệu trông như *đã được kiểm*.
    **Có lệnh đo làm số kiểm lại được, không làm số đúng.**
+4b. **Chốt cấu trúc: lệnh đo phải khai hình dạng nó đang giả định, và kiểm trước khi đếm.**
+   Đây là loại mục thứ ba, khác hẳn hai loại kia: không phải *dữ liệu đổi*, không phải *lệnh sai*,
+   mà là **lệnh đúng với thế giới cũ**. Nó chạy trơn và ra một con số hoàn toàn hợp lý — nên không
+   phép so số nào bắt được. Ca thật: một phép đếm ra `132` thay vì `249` vì nó chỉ thấy dấu `|`
+   nằm cùng dòng với `Color:`; regex không sai, **cấu trúc nó đang đếm chưa tồn tại lúc ấy**.
+
+   Cách chặn được **một nửa**: bắt lệnh khai ra giả định của nó (tên cột phải có · dấu ngăn trục là
+   gì · ô có còn xuống dòng không), kiểm trước khi đếm, và **không khớp thì DỪNG, không in con số
+   nào**:
+
+   ```
+   itemsell-flat.csv không còn hình dạng mà lệnh này giả định — KHÔNG đếm,
+   vì một con số đếm trên cấu trúc đã đổi trông y hệt một con số đúng:
+     ✗ không ô Variant nào chứa ' ; ' — dấu ngăn trục có thể đã đổi
+   EXIT = 1
+   ```
+
+   Đây là nguyên tắc mở đầu của cả repo áp vào chỗ hẹp nhất: **báo xanh sai tệ hơn không có phép
+   kiểm**, nên một lệnh đo không chắc mình đang đo đúng thứ thì việc đúng đắn là **im, không phải
+   đoán**.
+
+   Nửa còn hở, khai cho đủ: chốt cấu trúc bắt được **cấu trúc dữ liệu** đổi. Nó **không** bắt được
+   người sửa cả lệnh lẫn phần khai giả định cùng lúc cho khớp nhau — lúc đó nó lại là một lệnh
+   đúng với thế giới cũ, chỉ khác là thế giới cũ vừa được viết lại cho hợp. **Ba tầng, tầng nào
+   cũng chỉ đẩy chỗ mù lùi một bậc chứ không xoá được.** Nói ra chỗ mù còn lại, đừng hứa nó đã hết.
+
 5. **Soi kỹ chỗ phép đếm không thấy được.** Đây là chỗ ca thật ở trên trượt: phép đếm cũ **không
    sai công thức**, nó grep `Color:`/`Size:` và đếm đúng thứ nó grep. Nó trượt vì hai thứ nằm
    ngoài tầm với của mọi phép grep:
