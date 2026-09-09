@@ -18,4 +18,9 @@ Tạo khung cho use case `$1`.
    - Thêm/cập nhật dòng của UC trong bảng `specs/contexts/<ctx>/use-cases.md`.
 6. STATE.md: sửa dòng `Đang làm:` thành `$1 · bước ① — khung đã tạo, chưa có nội dung`; `Việc tiếp theo:` thành `/use-case-spec $1 (AIUP) rồi viết RULE + AC`.
 7. Báo user: đường dẫn file, và bước tiếp là `/use-case-spec $1` — **ghi vào file vừa tạo**, không tạo file mới. Nếu user không dùng AIUP, viết Main Flow cùng user theo skill `sdd-process`.
-8. Không viết code. Không commit (commit docs đầu tiên do `/sdd-solo:adversarial` làm).
+8. **Hỏi user có câu nghiệp vụ nào chưa trả lời được không, rồi phân loại giúp** — đây là chỗ user hay đứng lại mà không biết nên nghiên cứu tiếp hay chạy `/use-case-spec`:
+   - Câu đổi **hình dạng** của UC (actor là ai · dữ liệu đến từ đâu · ai được làm) → **chốt trước**, vì Main Flow viết theo giả định sai sẽ phải vứt chứ không sửa lời được. Nói thẳng: dừng ở đây, đi hỏi/đo, quay lại sau.
+   - Câu đổi **giá trị** trong một bước (ngưỡng · thời hạn · enum · khoá) → **treo được**. Ghi ngay vào `## Open Questions` dạng `- [ ] <câu> (quyết định tạm: ___)` rồi chạy tiếp. `___` ở đó là hợp lệ, `uc-ready.sh` không tính là chưa điền.
+   Bài kiểm một câu: *câu trả lời ngược lại thì Main Flow có phải viết lại không?*
+9. Nếu `specs/contexts/<ctx>/entities.md` hoặc `specs/glossary.md` còn là template, nói cho user biết ngay: hai file đó là đầu vào của ba vai ở bước ⑦ và là điều kiện cứng ở cổng ⑨. Viết chúng ở bước ③ rẻ hơn nhiều so với sau bước ⑦ — đổi mô hình sau đó thì AC phải sửa lời.
+10. Không viết code. Không commit (commit docs đầu tiên do `/sdd-solo:adversarial` làm).

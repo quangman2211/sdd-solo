@@ -84,9 +84,35 @@ elif [ -f "$BP" ]; then
 elif [ -f "$OLD" ]; then bad "$ID.bpmn còn ở chỗ cũ specs/contexts/$CTX/diagrams/ — chạy .sdd/scripts/migrate-1to2.sh"
 else bad "thiếu ${DIR#$ROOT/}/$ID.flow.md (mermaid) — hoặc $ID.bpmn nếu vẫn dùng BPMN"; fi
 
-# 6. entities
-[ -f "$ROOT/specs/contexts/$CTX/entities.md" ] && ok "context $CTX có entities.md" || bad "thiếu specs/contexts/$CTX/entities.md"
-grep -q 'stateDiagram' "$ROOT/specs/contexts/$CTX/entities.md" 2>/dev/null || warn "entities.md chưa có state diagram nào"
+# 6. entities + glossary — đo NỘI DUNG, không đo hình dạng.
+# Bản trước kiểm `grep -q stateDiagram`, mà template context có sẵn một khối
+# stateDiagram-v2 mẫu — nên phép kiểm khớp vào chính nó. entities.md còn nguyên
+# class EntityA/EntityB vẫn in ✓ và không warn một chữ. Một phép kiểm báo xanh
+# SAI tệ hơn không có phép kiểm: không có thì người ta còn tự nhớ. Cùng hình lỗi
+# với #11 (tiền điều kiện đo cấu trúc) và #13 (RULE placeholder). Xem #24.
+EF="$ROOT/specs/contexts/$CTX/entities.md"
+if [ ! -f "$EF" ]; then bad "thiếu specs/contexts/$CTX/entities.md"
+else
+  ok "context $CTX có entities.md"
+  grep -qE '(class|## )Entity[AB]([^A-Za-z0-9]|$)' "$EF" && bad "entities.md còn EntityA/EntityB của template — chưa đặt tên entity thật"
+  grep -q '<Context>' "$EF" && bad "entities.md còn tiêu đề '# Entity Model — <Context>' của template"
+  if grep -q 'stateDiagram' "$EF"; then
+    grep -qE '\-\->.*UC-[0-9]+' "$EF" && ok "state diagram có mũi tên gắn UC có thật" \
+      || bad "state diagram còn '<UC-### ...>' của template — mỗi mũi tên phải ghi UC nào kéo trạng thái đó"
+  else
+    warn "entities.md chưa có state diagram nào"
+  fi
+fi
+# glossary: trước 3.3.0 KHÔNG script nào nhắc tới nó — grep -ric glossar scripts/ ra 0.
+# Nên nó trôi im lặng suốt, trong khi CLAUDE.md của dự án bảo AI dùng đúng tên trong đó.
+GF="$ROOT/specs/glossary.md"
+if [ ! -f "$GF" ]; then warn "chưa có specs/glossary.md"
+elif grep -qE '<Thuật ngữ>|<Context A>' "$GF"; then
+  bad "specs/glossary.md còn nguyên template — CLAUDE.md bảo dùng đúng tên trong đó, mà trong đó chưa có tên nào"
+else
+  GN="$(grep -cE '^- \*\*[^<]' "$GF")"; [ -z "$GN" ] && GN=0
+  [ "$GN" -ge 1 ] && ok "glossary có $GN thuật ngữ" || bad "specs/glossary.md chưa có dòng '- **từ** — nghĩa' nào"
+fi
 
 # 7. adversarial pass có nội dung
 AP="$(sed -n '/^## Adversarial pass/,/^## /p' "$F")"

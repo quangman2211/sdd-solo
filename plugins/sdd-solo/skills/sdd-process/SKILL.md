@@ -30,9 +30,20 @@ Ranh giới spec/doc: **khách cảm nhận được → spec** (`specs/`). Ch�
 Ở tầng này `___` là câu trả lời hợp lệ và số bịa thì không. `br-check` chỉ **cảnh báo** khi còn `___`, nhưng **đỏ** khi mục còn nguyên placeholder `<...>`.
 
 ## 14 bước cho một UC (Phase 3)
-① `/sdd-solo:start UC-###` → ② `/use-case-spec` (AIUP) điền nội dung → ③ user viết RULE (rules.md, DMN nếu cần) và AC → ④ vẽ flow mermaid trong `UC-###.flow.md` → ⑤ Claude Design theo `.sdd/prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đóng máy, đọc lại buổi sau** → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
+① `/sdd-solo:start UC-###` → ② `/use-case-spec` (AIUP) điền nội dung → ③ user viết RULE (rules.md, DMN nếu cần), **`entities.md` + `glossary.md` của context**, và AC → ④ vẽ flow mermaid trong `UC-###.flow.md` → ⑤ Claude Design theo `.sdd/prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đóng máy, đọc lại buổi sau** → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
+
+## Câu hỏi nào phải chốt trước bước ②, câu nào treo được
+
+Tình huống thật, nguyên văn chủ dự án: *"anh bị phân vân là nên nghiên cứu để trả lời câu hỏi, hay chạy tiếp `use-case-spec`. Flow không có gì hướng dẫn anh."* Ranh giới có thật, chỉ là chưa ai viết ra:
+
+| Câu hỏi đổi cái gì | Ví dụ | Làm gì |
+|---|---|---|
+| **Hình dạng** của UC — actor là ai, dữ liệu đến từ đâu, ai được làm | *"đọc từ file Excel đang có hay kéo từ sàn về?"* · *"nối lần đầu bằng tay hay máy đoán rồi người duyệt?"* | **Chốt trước bước ②.** Main Flow viết ra theo giả định sai sẽ phải vứt, không phải sửa lời. |
+| **Giá trị** bên trong một bước — ngưỡng, thời hạn, enum, khoá | *"khoá nối là SKU nhà cung cấp hay mã tự sinh?"* · *"giữ tối đa bao nhiêu dòng?"* | **Treo được.** Ghi `- [ ] <câu> (quyết định tạm: ___)`, thành `RULE-###` sau. `uc-ready.sh` không tính `___` trong Open Questions là chưa điền (#23). |
+
+Bài kiểm một câu: *nếu câu trả lời ngược lại với giả định của mình, Main Flow có phải viết lại không?* Có → chốt trước. Không → treo.
 
 ## Cách viết từng thứ
 
@@ -44,7 +55,7 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 
 **RULE** — `## RULE-###: tên` · Phát biểu một câu · Áp dụng cho UC nào · Nguồn · Status. Nhiều điều kiện → bảng DMN, hit policy ghi rõ, tham số (số, ngưỡng) để trong bảng tham số riêng — `___` nếu chưa chốt, KHÔNG điền số ước.
 
-**Entity** — Mermaid `classDiagram` (tên, quan hệ, trường đáng chú ý gắn RULE-ID), rồi `stateDiagram-v2` cho mỗi entity có status; mỗi mũi tên ghi UC nào được kéo nó; trạng thái không có đường ra thì viết note nói đó là quyết định.
+**Entity** — viết **trước** bước ⑦, không phải sau. Ba vai adversarial đọc `entities.md` làm đầu vào, và cổng ⑨ đòi nó có thật; chuỗi 14 bước trước 3.3.0 không đặt tên cho việc này ở đâu cả nên nó hay bị làm sau. Mô hình đổi sau khi đã chạy ba vai thì AC phải sửa lời — không mất trắng, nhưng là việc thừa. Mermaid `classDiagram` (tên, quan hệ, trường đáng chú ý gắn RULE-ID), rồi `stateDiagram-v2` cho mỗi entity có status; mỗi mũi tên ghi UC nào được kéo nó; trạng thái không có đường ra thì viết note nói đó là quyết định.
 
 **Flow ↔ UC** (`UC-###.flow.md`, mermaid `flowchart`) — Actor = `subgraph` (chỉ khi ≥ 2 actor) · Trigger = node đầu `S([...])`, loại trigger ghi vào tên · Main Flow = `T#[...]` · Alternative = `D#{...}` với điều kiện trên mũi tên · Exception E# = mũi tên nhãn `|E# ...|` → node kết `X#([E#: ...])` · Postcondition = node kết `P#([...])`. **Chỉ nhãn giữa hai dấu `|` được đếm** — tên node không tính, kể cả khi chứa `E#`. Cổng DoR đối chiếu E# **cả hai chiều**: khai trong UC mà sơ đồ không có nhánh → đỏ; nhãn trong sơ đồ mà UC không có → cũng đỏ. `.bpmn` vẫn được nhận nhưng không đếm được gì.
 

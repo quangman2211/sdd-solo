@@ -1,5 +1,59 @@
 # Changelog
 
+## 3.3.0 — 2026-09-09
+
+**Đọc trước khi nâng:** repo nào có `entities.md` hoặc `glossary.md` còn là template sẽ bắt đầu
+**đỏ ở cổng DoR**. Đó không phải quy tắc mới — cổng vẫn luôn đòi hai file đó; phép kiểm chỉ báo
+xanh sai suốt từ đầu. Viết chúng ở bước ③ là xong.
+
+### Sửa
+
+- **`uc-ready.sh` chặn `___` trong `## Open Questions`, nên lối thoát duy nhất là bịa số** (#23).
+  Người viết trung thực `- [ ] Khoá nối là gì? (quyết định tạm: ___)` bị chặn ở bước ⑦, và cách
+  duy nhất đi tiếp là thay `___` bằng một giá trị nghĩ ra tại chỗ. Đó đúng là thứ cả tầng BR sinh
+  ra để chặn — `specs/br.md` viết thẳng *"`___` là câu trả lời hợp lệ, số bịa thì không"*, rồi bước
+  ⑦ của chính quy trình đó chặn `___`.
+
+  Ba chỗ trong quy trình đã nói ngược nhau về cùng một thứ: `gate-check` §8 cho qua (chỉ đỏ khi
+  *thiếu* `quyết định tạm`), `br-check` chỉ cảnh báo, `uc-ready` chặn. Nay `___` trong Open Questions
+  là hợp lệ và có một dòng `–` nói rõ nó được bỏ qua; `<...>` thì vẫn đỏ ở mọi chỗ, kể cả trong
+  Open Questions — đó mới là "chưa ai viết nội dung".
+
+- **`gate-check` §6 báo ✓ trên `entities.md` chưa ai đụng vào** (#24). Phép kiểm là
+  `grep -q stateDiagram`, mà template context có sẵn một khối `stateDiagram-v2` mẫu — nên nó khớp
+  vào chính nó. `entities.md` còn nguyên `class EntityA` / `class EntityB` vẫn in `✓ context <ctx>
+  có entities.md` và không warn một chữ.
+
+  **Một phép kiểm báo xanh sai tệ hơn không có phép kiểm** — không có thì người ta còn tự nhớ.
+  Cùng hình lỗi đã vá hai lần: #11 (tiền điều kiện đo cấu trúc) và #13 (RULE placeholder lọt gate).
+  Nay đo nội dung: tên entity của template, tiêu đề `<Context>`, và mũi tên state diagram phải ghi
+  một `UC-###` có thật thay vì `<UC-### tạo>`.
+
+- **`glossary.md` không script nào kiểm** — `grep -ric glossar scripts/` ra **0 trên cả 15 script**,
+  trong khi khối `CLAUDE.md` phát cho dự án bảo AI *"dùng đúng tên trong `specs/glossary.md`"*. File
+  đó trôi im lặng suốt. Nay cổng DoR đỏ nếu nó còn nguyên template, và đếm số thuật ngữ thật.
+
+### Thêm
+
+- **`uc-ready.sh` cảnh báo** (không chặn) khi `entities.md` của context hoặc `glossary.md` còn là
+  template. Ba vai adversarial đọc hai file đó làm đầu vào; chạy ba subagent trên một mô hình chưa
+  viết thì mô hình đổi sau đó và AC phải **sửa lời**. Chi phí thật là vậy — không phải mất trắng,
+  nên **cảnh báo chứ không chặn**: chặn ở đây là lặp lại đúng hình lỗi của #23.
+
+- **Chuỗi 14 bước nay đặt tên cho việc viết `entities.md` + `glossary.md`** (bước ③). Trước đây
+  bước ⑥ (*đối chiếu SCR ↔ E# ↔ state*) và cổng ⑨ đều đã đòi hai file đó, nhưng không bước nào
+  trong chuỗi nói ai viết chúng và lúc nào — nên chúng hay bị làm sau bước ⑦. `skills/adversarial`
+  không sai khi đòi đọc `entities.md`; chuỗi bước mới là chỗ thiếu.
+
+- **Câu hỏi nào phải chốt trước bước ②, câu nào treo được** — mục mới trong `sdd-process`, và
+  `/sdd-solo:start` nay hỏi và phân loại giúp. Từ câu hỏi thật của chủ dự án: *"anh bị phân vân là
+  nên nghiên cứu để trả lời câu hỏi, hay chạy tiếp `use-case-spec`. Flow không có gì hướng dẫn anh."*
+
+  Ranh giới: câu đổi **hình dạng** của UC (actor là ai · dữ liệu đến từ đâu · ai được làm) phải
+  chốt trước, vì Main Flow viết theo giả định sai sẽ phải **vứt**. Câu đổi **giá trị** trong một
+  bước (ngưỡng · thời hạn · enum · khoá) thì **treo được** bằng `quyết định tạm: ___`. Bài kiểm một
+  câu: *câu trả lời ngược lại thì Main Flow có phải viết lại không?*
+
 ## 3.2.3 — 2026-09-08
 
 Ba phát hiện từ phép thử bộ câu hỏi (#22): hai subagent đóng vai người dùng, hai đóng vai người
