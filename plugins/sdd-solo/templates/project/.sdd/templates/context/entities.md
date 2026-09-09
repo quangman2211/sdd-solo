@@ -27,12 +27,18 @@ stateDiagram-v2
   [*] --> s1 : <UC-### tạo>
   s1 --> s2 : <UC-### · điều kiện>
   s2 --> s3 : <UC-### · điều kiện>
+  s1 --> s3 : <hệ thống ngoài / hết hạn — KHÔNG do UC nào>
   s3 --> [*]
   note right of s3
     Không có mũi tên ra khỏi s3.
     Đây là quyết định — RULE-###.
   end note
 ```
+
+Mỗi mũi tên ghi **nguyên nhân** kéo nó. Thường là một `UC-###`; nhưng trạng thái đổi vì thế giới
+bên ngoài (sàn khoá tài khoản, hết hạn theo đồng hồ, hệ thống khác đẩy sang) thì ghi đúng nguyên
+nhân đó — **đừng dán một `UC-###` giả lên cho đủ hình thức**. Cổng DoR chỉ đòi ít nhất một mũi tên
+gắn UC có thật trong cả file.
 
 ## EntityB
 - ...

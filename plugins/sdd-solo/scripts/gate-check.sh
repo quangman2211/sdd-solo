@@ -97,8 +97,14 @@ else
   grep -qE '(class|## )Entity[AB]([^A-Za-z0-9]|$)' "$EF" && bad "entities.md còn EntityA/EntityB của template — chưa đặt tên entity thật"
   grep -q '<Context>' "$EF" && bad "entities.md còn tiêu đề '# Entity Model — <Context>' của template"
   if grep -q 'stateDiagram' "$EF"; then
+    # CỐ Ý quét cả file chứ không xét từng mũi tên: chỉ cần MỘT mũi tên gắn UC
+    # có thật là qua. Đừng siết thành "mọi mũi tên phải gắn UC" — có trạng thái
+    # do THẾ GIỚI BÊN NGOÀI đổi chứ không do UC nào kéo. Ca thật ở runxops:
+    # `đangSống --> đãSuspend` là do sàn khoá tài khoản, không UC nào gây ra.
+    # Siết per-arrow sẽ ép người ta dán một UC-### giả lên đó — tức bịa, đúng
+    # thứ cả quy trình này sinh ra để chặn.
     grep -qE '\-\->.*UC-[0-9]+' "$EF" && ok "state diagram có mũi tên gắn UC có thật" \
-      || bad "state diagram còn '<UC-### ...>' của template — mỗi mũi tên phải ghi UC nào kéo trạng thái đó"
+      || bad "state diagram còn '<UC-### ...>' của template — cần ít nhất một mũi tên ghi UC có thật kéo trạng thái đó"
   else
     warn "entities.md chưa có state diagram nào"
   fi

@@ -1,5 +1,29 @@
 # Changelog
 
+## 3.3.1 — 2026-09-09
+
+### Làm rõ
+
+- **Không phải mũi tên nào trên state diagram cũng do một UC kéo.** Luật cũ viết tuyệt đối —
+  *"mỗi mũi tên ghi UC nào được kéo nó"* — nhưng có ca thật ngược lại: `đangSống --> đãSuspend`
+  xảy ra vì sàn khoá tài khoản, không UC nào gây ra. Trạng thái đổi vì thế giới bên ngoài (hệ
+  thống khác đẩy sang, hết hạn theo đồng hồ) là chuyện bình thường, và ép nó mang một `UC-###`
+  cho đủ hình thức chính là **bịa** — đúng thứ cả quy trình này sinh ra để chặn.
+
+  Luật nay viết đúng: mỗi mũi tên ghi **nguyên nhân**, thường là `UC-###` nhưng không bắt buộc.
+  Template context có sẵn một mũi tên dạng đó để thấy nó hợp lệ.
+
+- `gate-check` §6 **cố ý** quét cả file thay vì xét từng mũi tên — chỉ cần một mũi tên gắn UC có
+  thật là qua. Hành vi này không đổi ở 3.3.0; cái đổi là **lý do của nó nay nằm trong code**, kèm
+  ca thật, để lần sau không ai "sửa" nó thành per-arrow rồi bắt oan. Cùng bài học #21: luật không
+  để lại dấu vết ở chỗ người ta sẽ đọc thì sẽ trôi — lần này chỗ đó là comment cạnh phép kiểm.
+
+### Đính chính
+
+- Ghi chú nâng cấp ở 3.3.0 nói repo đang chạy sẽ đỏ *bốn* dòng ở §6. Đo trên `runxops` sau khi
+  `entities.md` v2 đã viết xong: **đỏ một dòng** (`glossary.md` còn template). Ba phép kiểm còn
+  lại xanh trên file viết tử tế — phép kiểm mũi tên bắt đúng thứ nó định bắt và không bắt oan.
+
 ## 3.3.0 — 2026-09-09
 
 **Đọc trước khi nâng:** repo nào có `entities.md` hoặc `glossary.md` còn là template sẽ bắt đầu
