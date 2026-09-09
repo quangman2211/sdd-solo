@@ -1,5 +1,48 @@
 # Changelog
 
+## 3.4.1 — 2026-09-09
+
+### Đính chính — `allowed-tools` KHÔNG phải whitelist
+
+3.4.0 viết: *"không skill nào khai `AskUserQuestion` … không khai thì không gọi được … chưa bao
+giờ dùng được ở đâu cả."* **Sai.** Tài liệu chính thức của Claude Code, nguyên văn:
+
+> *"The `allowed-tools` field grants permission for the listed tools during the turn that invokes
+> the skill … **It does not restrict which tools are available: every tool remains callable**, and
+> your permission settings still govern tools that are not listed."*
+
+Nó là **cấp quyền trước** cho một lượt, không phải hàng rào. Phiên `runxops` đo trên transcript
+của chính nó: `AskUserQuestion` được gọi **14 lần**, trong đó có lệnh gọi nằm gọn trong khoảng
+`/sdd-solo:intake` với nội dung *"BR-001 viết lại quanh vết thương nào?"* — tức intake đã hỏi
+bằng cơ chế đó, chạy thật, người thật trả lời. Tiền đề gốc của #25 đúng ngay từ đầu.
+
+**Hệ quả cho ai đọc sau:** bản vá thật của #25 là **sửa văn bản bước 5**, không phải sửa
+frontmatter. Dòng `allowed-tools` giữ lại vì nó bớt được một lần hỏi quyền giữa buổi phỏng vấn,
+nhưng ghi sai nguyên nhân thì lần sau gặp lại triệu chứng này sẽ có người đi sửa frontmatter thay
+vì sửa câu chữ — và sửa xong sẽ không có gì đổi.
+
+Cách tự kiểm sau này: `allowed-tools` mà thiếu một tool thì triệu chứng là **một lời hỏi quyền**,
+không phải một lỗi *"tool không tồn tại"*. Thấy skill vẫn gọi được tool không khai → đó là hành vi
+đúng, không phải lỗ hổng.
+
+### Sửa — nhãn nguồn có ba nơi để tra, không phải một (#25 nối tiếp)
+
+`runxops` duyệt cả 24 câu adversarial của `UC-009`, tách từng nhãn rồi truy ngược vào file thật:
+**50 nhãn · deref được 49** (Main 19 · E 10 · AC 9 · Section 5 · SCR 3 · RULE 1 · Alt 1 · OpenQ 1).
+Không nhãn nào trỏ vào chỗ rỗng — nguyên liệu để dereference có thật.
+
+Cái trượt duy nhất là **`CON-011`**, và nó tồn tại thật ở `specs/br.md`. Script chỉ tra hai chỗ:
+file UC và `rules.md`. Bước 5 của `skills/adversarial` cũng vậy — nên ai cài phần "dán nguyên
+văn" theo đúng chữ của 3.4.0 sẽ **im lặng bỏ sót mọi nhãn `CON-`**: không lỗi, không cảnh báo,
+chỉ là câu hỏi đó mất đúng phần ngữ cảnh đắt nhất, vì `CON-` là nhãn mang ràng buộc.
+
+- Bước 5a nay có **bảng ba nguồn tường minh**: file `UC-###.md` (`Main N` · `Alt Na` · `E#` ·
+  `AC-#` · `SCR-###-#`) · `specs/rules.md` (`RULE-###`) · **`specs/br.md`** (`CON-###` ·
+  `Background` · `Success Metrics` · `Out of Scope` · `Impact Map`).
+- Tra không thấy → **nói thẳng trong câu hỏi** (*"nhãn `[CON-011]` không tìm thấy trong
+  `br.md`"*), không lặng lẽ bỏ nhãn đi. Cùng một luật với `→ spec:` trống ở #12: lời khai không
+  kiểm được thì phải hiện ra, không được biến mất.
+
 ## 3.4.0 — 2026-09-09
 
 ### Thêm — câu hỏi phải trả lời được, không chỉ phải trả lời (#25)
@@ -19,8 +62,9 @@ adversarial của `UC-009` còn `→ đầu ra: ___`.
   nói *"trình cho user từng câu"* — không đọc `Main 7` và `RULE-003` ra. Nay bắt buộc
   **dereference**: dán **nguyên văn** chỗ spec đang nói gì.
 - **`AskUserQuestion` nay nằm trong `allowed-tools`** của `adversarial`, `intake`, `start`.
-  Trước bản này **không skill nào** khai nó — kể cả `intake`, vốn được mô tả là "hỏi bằng
-  AskUserQuestion". Cơ chế tưởng đã có sẵn thật ra chưa skill nào gọi được.
+  ~~Trước bản này không skill nào khai nó, nên cơ chế tưởng đã có sẵn thật ra chưa skill nào gọi
+  được.~~ → **Câu gạch trên SAI. Xem Đính chính ở 3.4.1.** Việc thêm vào `allowed-tools` vẫn giữ,
+  nhưng nó chỉ bớt một lần hỏi quyền, không phải nguyên nhân gốc.
 - **Mỗi câu kèm ba thứ**, thiếu một là câu hỏi không trả lời được: ngữ cảnh **trích dẫn nguyên
   văn** (tóm tắt là chỗ lén thêm giả định) · mỗi lựa chọn kèm **cái mất** · `Chưa quyết` **luôn
   hiện sẵn** như một lựa chọn, không phải thứ phải tự gõ ra để thoát.

@@ -43,8 +43,25 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
    **Mỗi câu phải kèm ba thứ. Thiếu một là câu hỏi không trả lời được:**
 
    a. **Ngữ cảnh = TRÍCH DẪN NGUYÊN VĂN**, không phải tóm tắt. Nhãn `[Main 7, RULE-003]` là con
-      trỏ — đọc `Main 7` trong UC và `RULE-003` trong `rules.md` rồi **dán nguyên văn** vào. Tóm
-      tắt là chỗ mình lén thêm giả định vào mà không ai thấy.
+      trỏ — đọc chỗ nó trỏ tới rồi **dán nguyên văn** vào. Tóm tắt là chỗ mình lén thêm giả định
+      vào mà không ai thấy.
+
+      **Từ vựng nhãn có BA nguồn, không phải một.** Tra thiếu một nguồn thì nhãn đó im lặng mất
+      ngữ cảnh — không có lỗi nào bật lên, chỉ là câu hỏi trở lại thành một dòng trơ:
+
+      | Nhãn | Tra ở đâu |
+      |---|---|
+      | `Main N` · `Alt Na` · `E#` · `AC-#` · `SCR-###-#` · `Open Q` | file `UC-###.md` — bước đánh số, mục `## Exceptions`, heading `### AC-#`, bảng Screens |
+      | `RULE-###` | `specs/rules.md` |
+      | **`CON-###`** | **`specs/br.md`** — trong `## Constraints` của BR liên quan, KHÔNG nằm trong UC |
+      | `Background` · `Success Metrics` · `Out of Scope` · `Impact Map` | `specs/br.md` |
+
+      Đo trên `runxops`: 50 nhãn trong 24 câu của một UC, deref được 49; cái trượt duy nhất là
+      `CON-011` — vì nó nằm ở `br.md` chứ không ở hai file kia. Nhãn `CON-` thường là nhãn mang
+      ràng buộc đắt nhất, nên bỏ sót đúng nó là bỏ sót ngữ cảnh quan trọng nhất.
+
+      Tra không thấy → **nói thẳng trong câu hỏi**: *"nhãn `[CON-011]` không tìm thấy trong
+      `br.md`"*. Đừng lặng lẽ bỏ nhãn đi.
    b. **Mỗi lựa chọn kèm cái mất.** Không phải "chọn A hay B" mà "chọn A thì E4 phải viết lại,
       chọn B thì mất khả năng đối soát ngược".
    c. **`Chưa quyết — ghi Open Question` LUÔN là một lựa chọn hiện sẵn**, không phải thứ user
