@@ -73,10 +73,38 @@ chỗ mục nhanh nhất trong cả spec**: nó đúng lúc viết, không ai s�
 số đã mục **trông y hệt** một con số đúng. Không phép kiểm cấu trúc nào phân biệt được.
 
 Ca thật (`runxops`, 2026-09-09): `entities.md` ghi *"427 dòng đang có trục nằm kẹt trong
-`Product Name`"*. Câu đó **qua adversarial pass và ba lượt cổng**. Đo lại: **982** ô có nội dung
-ngoài tên+link — trong đó **545** ô mang định danh và **601** ô mang trục biến thể (*một ô mang
-được cả hai, nên hai số này KHÔNG cộng lại thành 982*). Thứ bắt được nó không phải script nào, mà
-là một câu của người biết dữ liệu: *"dữ liệu chưa chuẩn"*.
+`Product Name`"*. Câu đó **qua adversarial pass và ba lượt cổng**. Thứ bắt được nó không phải
+script nào, mà là một câu của người biết dữ liệu: *"dữ liệu chưa chuẩn"*. Đo lại — và chú ý ca mẫu
+này cố ý trưng **hai tầng**, vì mỗi tầng dạy một thứ:
+
+```
+ĐƠN VỊ = Ô          (phân rã, các nhóm rời nhau, cộng lại phải đúng)
+  ô có nội dung ngoài tên + link      982
+    chỉ mang định danh                513
+    chỉ mang trục biến thể            454
+    mang CẢ HAI                        15
+    không rơi vào nhóm nào              0
+                              cộng →  982  ✓
+
+ĐƠN VỊ = MÃ / DÒNG  (KHÔNG phân rã — lớn hơn số ô, vì một ô chứa được nhiều)
+  mã định danh                        545
+  dòng trục biến thể                  601
+  giá trị biến thể                   1006
+```
+
+**Ba con số trong cùng một câu có thể mang ba đơn vị khác nhau, và không có gì trong văn bản nói
+ra điều đó.** Câu cũ *"982 ô — 545 định danh và 601 trục"* đọc như một phép chia đôi; ai thử cộng
+sẽ ra `545 + 601 − 982 = 164` ô mang cả hai, mà **số thật là 15**. Sai hơn mười lần, chỉ vì ba
+đơn vị đứng cạnh nhau không ai khai.
+
+Phân rã theo ô thì cộng đúng, nên nó **tự chứng minh đã phân hết** — và còn khớp chéo được:
+`454 + 15 = 469`, đúng bằng số ô *"có biến thể"* đo được ở một lần đếm khác.
+
+Ca mẫu này từng mang đúng cái lỗi nó dạy cách bắt. Bản 3.6.0–3.11.0 ghi `536 / 525`, hai con số ra
+từ **script khảo sát đầu tiên** — chạy trước khi bỏ ký tự vô hình `U+200E` và trước khi bắt được
+32 giá trị biến thể không mang tên trục. Sai **cùng một chiều, cùng một nguyên nhân**, đúng chữ ký
+mà đoạn này đang mô tả. `/sdd-solo:verify` tìm ra nó ở lần chạy thật đầu tiên — còn `536 + 525 ≠
+982` thì **đáng lẽ đã bắt được nó sáu bản trước, không cần verify.**
 
 Chính ca mẫu này từng mang đúng cái lỗi nó dạy cách bắt: bản 3.6.0–3.11.0 ghi `536 / 525`, hai con
 số ra từ **script khảo sát đầu tiên** — chạy trước khi bỏ ký tự vô hình `U+200E` và trước khi bắt
@@ -208,6 +236,11 @@ Cách làm:
    Ca thật (`runxops`): hai con số được gắn `python3 scripts/measure-catalog.py` làm lệnh đo, mà
    lệnh đó **không in ra con số nào trong hai**. Người dán nhãn chính là người vừa dành cả ngày
    thuyết phục rằng mọi số phải kèm lệnh đo.
+
+   **Vế thứ hai:** con số nào **tự nhận là phân rã** của một con số khác thì **phải cộng lại
+   đúng**, và chỗ trình bày nó phải **trưng ra phép cộng**. Cộng không ra → hoặc thiếu một nhóm,
+   hoặc các nhóm chồng nhau, hoặc — hay gặp nhất — **chúng không cùng đơn vị**. Kiểm được bằng máy,
+   và rẻ hơn mọi thứ khác trong danh sách này.
 
    Luật này đóng chỗ hở mà **ba tầng kia không với tới**: vân tay hỏi *dữ liệu nào* · luật 5b hỏi
    *lệnh nào* · chốt cấu trúc hỏi *lệnh còn đúng hình dạng không* — cả ba đều **giả định lệnh và

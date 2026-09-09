@@ -1,5 +1,50 @@
 # Changelog
 
+## 3.13.0 — 2026-09-09
+
+### Sửa — ca mẫu vẫn treo người đọc giữa chừng; và luật 11 có vế thứ hai
+
+3.12.0 sửa số và thêm câu *"hai số này KHÔNG cộng lại thành 982"*. Câu đó **đúng cả hai vế** nhưng
+vẫn để người đọc treo: gặp `545` và `601` cạnh `982` thì ai cũng hỏi *"vậy bao nhiêu ô mang cả
+hai?"*, và câu trả lời trực giác `545 + 601 − 982 = 164` **sai hơn mười lần** — số thật là **15**.
+
+Sai vì **ba con số đó mang ba đơn vị khác nhau**: `982` là số **ô**, `545` là số **mã**, `601` là
+số **dòng**. Không có gì trong văn bản nói ra điều đó.
+
+Ca mẫu nay trưng **hai tầng**, vì mỗi tầng dạy một thứ:
+
+```
+ĐƠN VỊ = Ô     982 = 513 (chỉ định danh) + 454 (chỉ trục) + 15 (cả hai) + 0   ✓
+ĐƠN VỊ = MÃ / DÒNG     545 mã · 601 dòng · 1006 giá trị   — KHÔNG cộng vào đâu cả
+```
+
+Phân rã theo ô **cộng đúng, nên tự chứng minh đã phân hết**, và còn khớp chéo: `454 + 15 = 469`,
+đúng bằng số ô *"có biến thể"* đo được ở một lần đếm khác.
+
+**Luật 11 vế 2:** con số nào **tự nhận là phân rã** của một con số khác thì **phải cộng lại đúng**,
+và chỗ trình bày phải **trưng ra phép cộng**. Cộng không ra → thiếu một nhóm, hoặc các nhóm chồng
+nhau, hoặc — hay gặp nhất — **không cùng đơn vị**. Kiểm được bằng máy, rẻ hơn mọi luật khác trong
+danh sách.
+
+Chỗ tự phê đáng ghi: **`536 + 525 ≠ 982` đáng lẽ đã bắt được bộ số cũ sáu bản trước, không cần
+verify.** Một phép cộng hai số. Nó nằm ngay trong câu, suốt sáu bản, và không ai cộng thử — kể cả
+sau khi verify đã bắt được hai con số ấy sai và cả hai phiên cùng ngồi sửa đúng dòng đó.
+
+### Ghi lại — `grep` không phải mẹo vặt
+
+Khi thêm luật 11 ở 3.12.0, bản nháp chèn nó **trước** luật 9 và 10 — lần thứ hai trong hai bản
+liên tiếp, cùng một tay, ba phút sau khi viết luật về chính lỗi đó. `runxops` mắc đúng chuỗi ấy
+**ba lần trong một ngày**, lần thứ ba ngay sau khi khai vào spec là đã sửa. **Bốn ca, hai tay, một
+ngày, không ca nào bắt được bằng đọc kỹ hơn.**
+
+Nhận xét từ `runxops`, giữ nguyên vì nó là cách phát biểu đúng nhất của cả loạt bản này:
+
+> `grep -nE '^[0-9]+\. '` không phải mẹo vặt — nó là **hình thức tối giản của chính luận điểm mà
+> `verify` được dựng lên để chứng minh: một phép đếm đứng ngoài mắt mình.**
+
+Đó cũng là lý do bốn ca trên **không phải mẫu về sự bất cẩn**, mà là mẫu về **thứ mà chú ý không
+mua được**: biết luật, vừa viết xong luật, biết mình dễ mắc, và vẫn mắc.
+
 ## 3.12.0 — 2026-09-09
 
 ### Sửa — ca mẫu của loại #7 mang đúng cái lỗi nó dạy cách bắt
