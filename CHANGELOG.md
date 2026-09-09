@@ -1,5 +1,60 @@
 # Changelog
 
+## 3.14.0 — 2026-09-09
+
+### Sửa — phép khớp chéo thêm ở 3.13.0 chỉ đúng MỘT phía
+
+3.13.0 khoe `454 + 15 = 469` khớp số ô có biến thể, và kết luận bộ số *"tự chứng minh đã phân
+hết"*. `runxops` đo nốt phía kia:
+
+```
+phía biến thể   454 + 15 = 469  ✓
+phía định danh  513 + 15 = 528  ✗  số ô có Identifiers là 555 — hụt 27
+```
+
+Ai đọc ca mẫu rồi **thử phép đối xứng** — việc hoàn toàn tự nhiên ngay sau khi được dạy rằng phân
+rã phải cộng đúng — sẽ ra `528 ≠ 555` và kết luận bộ số hỏng.
+
+Nó không hỏng; nó **thiếu hai số hạng mà `982` theo định nghĩa không thể chứa**: `10` từ cột
+`Product ID` gốc, và — chỗ đắt — **`17` ô MỘT dòng**, định danh dính sau dấu `|` ngay trên dòng
+tên. Mười bảy ô đó nằm ngoài `982` **theo đúng định nghĩa của 982** (*ô có nội dung ngoài
+tên+link*). `513 + 15 + 10 + 17 = 555` ✓.
+
+**Phát biểu đúng: `982` KHÔNG phải tập cha của định danh.** Nó là tập cha của trục biến thể (469
+nằm trọn trong đó) nhưng chỉ chứa 528/555 ô mang định danh. Bộ số cũ đọc như thể `982` bao cả hai —
+**đúng ảo giác mà `536 + 525` tạo ra từ đầu, sống nguyên qua BA lần sửa liên tiếp**, mỗi lần đều
+do một bên tưởng mình vừa sửa xong nó.
+
+### Thêm — luật 11 vế 3: thử phân rã ở CẢ HAI phía
+
+> Một phía cộng đúng **chưa chứng minh được gì** — nó chỉ chứng minh phía ấy đúng. **Phía gãy mới
+> là phía chỉ ra tập cha thật sự bao cái gì.**
+
+Rẻ hơn cả hai vế trước, và 3.13.0 là bằng chứng: bản đó **dừng lại ngay sau phía khớp**, rồi dùng
+phía khớp ấy làm bảo chứng cho cả bộ. Một phép khớp thành công là chỗ dễ dừng nhất.
+
+Ca này mạnh hơn `13/13` một bậc: `13/13` là mẫu số đã lọc mà không nói đã lọc gì — **giấu thông
+tin**. `982` bị tưởng là bao cả hai trong khi chỉ bao một — **tạo ra một quan hệ không tồn tại**,
+và quan hệ sai kéo theo **mọi suy luận dựng trên nó**, không chỉ một con số.
+
+### Ghi lại — vì sao `536 + 525 ≠ 982` sống được sáu bản
+
+3.13.0 quy cho *"không ai buồn cộng"*. `runxops` đưa lý do đúng hơn, và nó có hệ quả thiết kế:
+
+> Không ai coi ba con số ấy là **một hệ**. Chúng nằm cạnh nhau trong một câu văn, không nằm trong
+> một bảng, nên không ai thấy chúng phải khớp với nhau. Cái làm chúng thành một hệ — và làm phép
+> cộng thành bắt buộc — chính là việc xếp chúng thành bảng ở 3.12.0.
+
+**Phép kiểm rẻ nhất chỉ xuất hiện sau khi trình bày đúng.** Đó là lý do luật 11 đòi *trưng ra phép
+cộng* chứ không chỉ đòi *cộng đúng*: bảng không phải cách trình bày đẹp hơn, nó là **thứ làm phép
+kiểm trở nên khả thi**.
+
+### Chỗ chưa đo, nêu ra thay vì lặng lẽ hoà giải
+
+`555` là số **ô** mang định danh; `545` ở tầng kia là số **mã** định danh. Quan hệ giữa hai số đó
+**chưa có phép đo nào**. Ca mẫu nói thẳng điều này thay vì suy ra một quan hệ nghe hợp lý — vì tự
+bịa một quan hệ ở đúng chỗ này là **đúng cái lỗi cả mục đó đang dạy cách bắt**.
+
 ## 3.13.0 — 2026-09-09
 
 ### Sửa — ca mẫu vẫn treo người đọc giữa chừng; và luật 11 có vế thứ hai

@@ -97,8 +97,42 @@ ra điều đó.** Câu cũ *"982 ô — 545 định danh và 601 trục"* đọ
 sẽ ra `545 + 601 − 982 = 164` ô mang cả hai, mà **số thật là 15**. Sai hơn mười lần, chỉ vì ba
 đơn vị đứng cạnh nhau không ai khai.
 
-Phân rã theo ô thì cộng đúng, nên nó **tự chứng minh đã phân hết** — và còn khớp chéo được:
-`454 + 15 = 469`, đúng bằng số ô *"có biến thể"* đo được ở một lần đếm khác.
+**Thử phép phân rã ở CẢ HAI phía — và đây là chỗ ca mẫu dạy nhiều nhất, vì một phía gãy:**
+
+```
+phía biến thể   454 + 15 = 469  ✓ khớp số ô có Variant đo độc lập
+phía định danh  513 + 15 = 528  ✗ số ô có Identifiers là 555 — hụt 27
+```
+
+Không phải bộ số hỏng. Là **thiếu hai số hạng mà `982` theo định nghĩa không thể chứa**:
+
+```
+513  chỉ định danh, trong 982
+ 15  cả hai, trong 982
+ 10  từ cột `Product ID` gốc của file — không nằm trong ô tên
+ 17  ô MỘT dòng, định danh dính sau dấu `|` ngay trên dòng tên
+     ("The Early Church Was the Catholic Church | 9781683572466")
+───
+555  ✓
+```
+
+Con số **17** là chỗ đắt: nó nằm ngoài `982` **theo đúng định nghĩa của 982** — `982` đếm ô *có nội
+dung ngoài tên+link*, mà 17 ô này chỉ có **một** dòng; định danh nằm cùng dòng với tên, sau một dấu
+`|`.
+
+Nên phát biểu đúng là: **`982` KHÔNG phải tập cha của định danh.** Nó là tập cha của *trục biến
+thể* (469 nằm trọn trong đó), nhưng chỉ chứa 528/555 ô mang định danh. Bộ số cũ đọc như thể `982`
+bao cả hai — **đó chính là ảo giác mà `536 + 525` tạo ra từ đầu, và nó sống nguyên qua ba lần
+sửa.**
+
+Ca này mạnh hơn ca `13/13` một bậc: `13/13` là mẫu số đã lọc mà **không nói đã lọc gì** — nó *giấu
+thông tin*. `982` là mẫu số **bị tưởng là bao cả hai thứ trong khi chỉ bao một** — nó *tạo ra một
+quan hệ không tồn tại*, và một quan hệ sai kéo theo **mọi suy luận dựng trên nó**, chứ không chỉ
+một con số.
+
+*(Còn một chỗ chưa đo: `555` là số **ô** mang định danh, `545` ở bảng trên là số **mã** định danh.
+Quan hệ giữa hai số đó chưa có phép đo nào — nêu ra thay vì lặng lẽ hoà giải, vì tự bịa một quan
+hệ ở đây là đúng cái lỗi cả mục này đang dạy cách bắt.)*
 
 Ca mẫu này từng mang đúng cái lỗi nó dạy cách bắt. Bản 3.6.0–3.11.0 ghi `536 / 525`, hai con số ra
 từ **script khảo sát đầu tiên** — chạy trước khi bỏ ký tự vô hình `U+200E` và trước khi bắt được
@@ -236,6 +270,11 @@ Cách làm:
    Ca thật (`runxops`): hai con số được gắn `python3 scripts/measure-catalog.py` làm lệnh đo, mà
    lệnh đó **không in ra con số nào trong hai**. Người dán nhãn chính là người vừa dành cả ngày
    thuyết phục rằng mọi số phải kèm lệnh đo.
+
+   **Vế thứ ba — rẻ hơn cả hai vế kia: thử phép phân rã ở CẢ HAI phía.** Một phía cộng đúng
+   **chưa chứng minh được gì** — nó chỉ chứng minh phía ấy đúng. **Phía gãy mới là phía chỉ ra tập
+   cha thật sự bao cái gì.** Xem ca mẫu ở trên: một phía khớp đẹp, phía kia hụt 27, và chính chỗ
+   hụt đó lộ ra rằng con số tưởng là tập cha thì không phải.
 
    **Vế thứ hai:** con số nào **tự nhận là phân rã** của một con số khác thì **phải cộng lại
    đúng**, và chỗ trình bày nó phải **trưng ra phép cộng**. Cộng không ra → hoặc thiếu một nhóm,
