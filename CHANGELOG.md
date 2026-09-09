@@ -1,5 +1,61 @@
 # Changelog
 
+## 3.17.0 — 2026-09-09
+
+### Đo được — `/sdd-solo:verify` lần chạy thật đầu tiên: 30 phát hiện, 30 phải sửa, **0 dương tính giả**
+
+Con số chờ suốt bảy bản, từ `runxops-54` — phiên thật sự chạy lệnh trên repo thật. Chủ dự án bác
+**0** cái.
+
+Cách chạy, để biết con số đo cái gì: **hai** subagent riêng, không cái nào có context buổi viết
+spec. Một vai đọc *tài liệu ↔ tài liệu* (loại #1–#6), một vai đối chiếu *con số ↔ dữ liệu thật*
+(loại #7), chạy **đúng lệnh đo có sẵn trong spec, không bịa lệnh**. `22 + 10 = 32` thô → gộp trùng
+còn `29` → cộng 1 bắt được sau = **30**.
+
+**Tỷ lệ 0 đến từ chỗ nhiễu bị lọc TRONG vai, không đẩy lên người:** hai vai tự bác 4 mục kèm lý do
+*trước* khi trình, và ~25 con số chạy lại khớp thì **im**. Đó đúng là hình mà luật *"khớp → im"*
+và *"bác phải rẻ"* nhắm tới.
+
+Quan sát về chia vai, đáng giữ: **vai đo số một mình đóng góp 10 phát hiện, 8/10 là loại #7** —
+thứ vai đọc tài liệu **không thể** tìm ra vì phải chạy lệnh. Gộp hai vai làm một thì phần đọc sẽ
+ăn hết ngân sách chú ý.
+
+Loại #7 nổ **8** lần; loại #8 nổ **2** lần — `glossary.md` để tiêu đề *"Năm entity"* trên danh sách
+**sáu**, và `entities.md` viết *"Bảy nhóm lệch cờ tồn"* **bằng chữ** cách bảng ghi `10` đúng 13
+dòng, sống sót một commit vừa khai là *"đã quét mọi câu khai số lượng"* — **vì phép quét tìm chữ
+số.** Luật *hit lịch sử hợp lệ* (3.11.0): đối chiếu cả 30, **không cái nào** rơi vào diện phải hạ
+xuống dòng đếm — nên nó không tốn gì trên lượt này, và cũng **chưa được thử**.
+
+### Thêm — `gate-check` kiểm ID khai trong `## Đọc lại`, y hệt §7 cho adversarial
+
+**Bước sửa tự sinh lỗi mới, và trước bản này không có gì chạy sau nó.** Ca thật: sửa
+`RULE-006 → RULE-007` để tránh trùng mã; `RULE-007` chưa có heading trong `rules.md` → **vừa tạo
+đúng loại ID rỗng mà luật repo cấm**. Sửa lại xong, cổng **vẫn** đỏ: dòng `F27` trong chính mục
+`## Đọc lại` vẫn ghi `RULE-007`.
+
+**Sửa thân mà quên sửa chỗ ghi lại việc sửa** — loại #8, do chính lượt đọc-lại sinh ra, trong chính
+cái mục ghi kết quả đọc lại. Cả hai lỗi **cổng bắt, verify không**, vì verify đã chạy xong từ
+trước. Cái thiếu là **một vòng kiểm sau bước sửa**, không phải một vai đọc thứ ba.
+
+- `gate-check` §9: mọi `RULE-###` / `AC-#` / `E#` khai trong `## Đọc lại` phải **có thật** — cùng
+  luật #12 đã áp cho adversarial. Không kiểm thì **cửa 2 mở bằng một lời khai trỏ vào chỗ không
+  tồn tại**. Đầu ra không mang ID (*"không phải lỗi vì …"*) vẫn hợp lệ, không bị đòi ID.
+- Bước 6 của skill: quét **cả giá trị MỚI**, không chỉ giá trị cũ — lỗi do bước sửa sinh ra là
+  giá trị *mới nằm sai chỗ*, quét giá trị cũ không thấy. Và **mục `## Đọc lại` không được miễn**:
+  nó ghi lại việc sửa nên nó trôi như mọi chỗ khác. **Chỗ ghi lại việc sửa cũng là một chỗ phải
+  sửa.**
+
+Năm ca đo: khai `RULE-007` không có → ✗ · sửa thành `RULE-006` có thật → ✓ · khai `AC-9` không có →
+✗ · `AC-1` có thật → ✓ · đầu ra không mang ID → ✓ (không đòi).
+
+### Hai mục còn lại trong báo cáo — đã vá trước khi báo cáo tới
+
+`runxops-54` nêu ba việc; hai việc đầu đã xong ở bản trước, nên ghi lại đây cho khớp mốc thời
+gian: ca mẫu `536 / 525` đã sửa (3.12.0 → 3.16.0, nay là `545` / `601` kèm nhãn đơn vị), và lỗ cấu
+tạo *luật quét nằm trong cơ chế không chạy được nó* đã chuyển về bước 6 ở **3.15.0** — đề nghị của
+họ trùng khít với thứ đã ship, kể cả điều kiện *"chỉ commit khi kết quả rỗng hoặc mọi hit còn lại
+là hit lịch sử hợp lệ"*.
+
 ## 3.16.0 — 2026-09-09
 
 ### Thêm — loại sai #9: số đúng, chủ ngữ sai

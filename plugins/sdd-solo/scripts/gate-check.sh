@@ -197,6 +197,23 @@ if [ -n "$RR" ]; then
       if (o != "") n++
     } END { print n + 0 }')"
 fi
+# Lời khai trong ## Đọc lại phải kèm ID CÓ THẬT — y hệt luật của §7 cho
+# adversarial (#12). Ca thật (runxops): một dòng F# khai '→ sửa RULE-007' sau khi
+# người sửa đã đổi lại mã; thân sửa xong, còn CHỖ GHI LẠI VIỆC SỬA thì không —
+# tức mục ## Đọc lại tự nó là một chỗ trôi được, và nó trôi ngay trong lượt đọc
+# lại. Không kiểm thì cửa 2 mở bằng một lời khai trỏ vào chỗ không tồn tại.
+if [ -n "$RR" ]; then
+  while IFS= read -r ln; do
+    [ -z "$ln" ] && continue
+    for id in $(printf '%s' "$ln" | sed 's/.*→//' | grep -oE '(RULE-[0-9]+|AC-[0-9]+|E[0-9]+)' | sort -u); do
+      case "$id" in
+        RULE-*) grep -qE "^## $id\b" "$RF" 2>/dev/null || bad "đọc lại khai → $id nhưng rules.md không có";;
+        AC-*)   grep -qE "^### $id\b" "$F" || bad "đọc lại khai → $id nhưng UC không có";;
+        E*)     grep -qE "^- +(\*\*)?$id[.:]" "$F" || bad "đọc lại khai → $id nhưng UC không có";;
+      esac
+    done
+  done <<< "$RR"
+fi
 LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" 2>/dev/null)"
 LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" 2>/dev/null)"
 # Phải dùng `case`, KHÔNG dùng ${LASTS#docs($ID): ...}: dấu ngoặc đơn trong

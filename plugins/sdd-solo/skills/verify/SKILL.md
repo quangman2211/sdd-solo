@@ -57,6 +57,17 @@ grep -rn '<giá trị cũ>' specs/ scripts/ *.md
 ```
    Còn hit nào **ngoài** `## History` và **ngoài** câu dạng `<cũ> → <mới>` thì **chưa xong**.
 
+   **Quét cả giá trị MỚI, không chỉ giá trị cũ.** Bước sửa **tự sinh lỗi mới**: đổi sang một
+   `RULE-###` chưa có heading, đổi rồi đổi lại, gõ nhầm một `AC-#`. Quét giá trị cũ không thấy
+   những cái đó — chúng là giá trị *mới* nằm sai chỗ.
+
+   **Và mục `## Đọc lại` KHÔNG được miễn.** Nó ghi lại việc sửa, nên nó **trôi như mọi chỗ khác**,
+   và trôi ngay trong chính lượt đang sửa. Ca thật (`runxops`): sửa `RULE-006 → RULE-007`, thấy
+   `RULE-007` chưa có heading nên đổi lại — **thân sửa xong, dòng `F#` ghi lại việc sửa thì
+   không**. Cổng bắt, verify không, vì verify đã chạy xong từ trước. **Chỗ ghi lại việc sửa cũng
+   là một chỗ phải sửa.** (`gate-check` nay kiểm mọi ID khai trong `## Đọc lại` có thật — cùng
+   luật §7 dành cho adversarial, #12.)
+
    **Vì sao phép quét này nằm ở đây chứ không ở `verify-pass.md`:** luật quét chỉ có nghĩa **sau**
    khi sửa — trước khi sửa thì chưa có "giá trị cũ" nào để quét theo. Mà hai vai verify chạy
    **trước** khi sửa. Đặt luật ấy trong prompt của họ là đặt nó vào một cơ chế **cấu tạo không
