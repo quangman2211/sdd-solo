@@ -83,5 +83,12 @@ if [ "$CP_OK" = 1 ] || [ "$UT_SAY" = 1 ]; then
     warn "uc_test_dir=$UCT_ — có UC implemented mà thư mục chưa tồn tại, ac-coverage đang mù. Sửa cho khớp quy ước của repo."
   fi
 fi
+# UC đang làm đi qua những bước nào — LIỆT KÊ, không chặn (#29). Mọi phép kiểm
+# khác đo SẢN PHẨM; không cái nào đo BƯỚC, nên một bước bị bỏ hẳn vẫn đi trọn
+# vòng mà không ai biết. Lấy ID từ dòng "Đang làm:" của STATE.md.
+UCNOW="$(grep -oE 'UC-[0-9]+' "$ROOT/STATE.md" 2>/dev/null | head -1)"
+# Bản .sdd/scripts/ cũ chưa có uc-steps.sh — im, đừng gãy cả status vì một mục thêm.
+if [ -n "$UCNOW" ] && [ -f "$HERE/uc-steps.sh" ]; then echo; bash "$HERE/uc-steps.sh" "$UCNOW"; fi
+
 # version: hỏi GitHub tối đa 3s, nhớ 24h. Chỉ nói khi lệch.
 V="$("$HERE/version-check.sh" --remote 2>&1)" || { echo; echo "$V"; }

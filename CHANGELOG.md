@@ -1,5 +1,81 @@
 # Changelog
 
+## 3.18.0 — 2026-09-10
+
+### Sửa — bước ② trỏ vào một lệnh không nên chạy, và không ai biết nó chưa chạy (#29)
+
+**Cách nó lộ ra đáng kể hơn nội dung.** `UC-009` vừa qua cổng — 30 phát hiện verify, 30 phải sửa,
+dương tính giả 0. Phiên viết spec soi lại 14 bước và báo *"② → ⑥ đều xong"*. Chủ dự án trả lời:
+*"anh nhớ hình như anh chưa chạy `use-case-spec` bao giờ."*
+
+Đúng. **Bước ② chưa từng chạy, suốt cả một UC đi trọn vòng**, và không phép kiểm nào hỏi tới. Lời
+khai *"② xong"* dựa trên việc **kết quả tồn tại** — mà kết quả tồn tại vì nó được **viết tay**. Mọi
+phép kiểm trong plugin đo **sản phẩm**; không cái nào đo **bước**. Người duy nhất biết sự thật là
+người duy nhất gõ được lệnh.
+
+**Rồi đọc `SKILL.md` của `aiup-core` thì hoá ra không nên chạy.** Đo trên bản cài, 4/4 lệnh:
+
+| Lệnh AIUP | Ghi ra | Ta cần |
+|---|---|---|
+| `use-case-spec` | `docs/use_cases/UC-XXX-<kebab>.md` | `specs/contexts/<ctx>/use-cases/` |
+| `entity-model` | `docs/entity_model.md` | `specs/contexts/<ctx>/entities.md` (cổng đọc đúng đường này) |
+| `use-case-diagram` | `docs/use_cases.puml` | mermaid, ta đếm nhãn `\|E# …\|` |
+| `requirements` | đọc `docs/vision.md` | không skill nào tạo file đó |
+
+**4/4 ghi sai cây, 3/4 sai định dạng.** Và `use-case-spec` còn **đụng hệ ID** — nguyên văn:
+*"`BR-XXX` business-rule IDs are unique within their own file only and **restart at `BR-001` in
+every file**"*. `BR-###` của nó là business **rule**; `BR-###` của ta là business **requirement**
+trong `specs/br.md`.
+
+**Githook sẽ CHO QUA.** Luật *"`BR-` phải có heading trong `specs/br.md`"* thấy `BR-002` có heading
+thật và cho đi — trong khi commit đang nói về một business rule của `UC-005`. **Báo xanh sai ở
+tầng hệ ID**, đúng #24, và là ca đầu tiên của lớp đó ở tầng *quy ước đặt tên* chứ không ở tầng dữ
+liệu.
+
+Kết luận này plugin **đã tự rút ra một lần rồi**: `skills/init` viết *"đừng đề xuất `/requirements`
+— AIUP đọc `docs/vision.md` mà không skill nào tạo ra file đó"*. Đúng, nhưng **không lan sang ba
+lệnh còn lại**. Một kết luận đúng nằm đúng một chỗ thì không bảo vệ được ba chỗ kia.
+
+- `sdd-process` bước ② đổi **chủ ngữ từ LỆNH sang VIỆC PHẢI XONG**: *điền nội dung UC cùng user
+  (Actor · Trigger · Preconditions · Main Flow — bước hiển thị nêu SCR-ID · Alternative ·
+  Exceptions · Postconditions)*, kèm khối lý do đầy đủ ở trên.
+- `CLAUDE.md.tmpl` bỏ `(AIUP /use-case-spec)` khỏi chuỗi lệnh — nằm trong khối scaffold nên **mọi
+  repo nhận sau `init --update`**.
+- `deps-check.sh` hạ AIUP từ **dòng đỏ** xuống ghi chú. Nó đang bắt người ta cài một thứ để **không
+  bao giờ gọi** — và một dòng đỏ đòi việc vô ích chỉ dạy người ta phớt lờ dòng đỏ.
+
+### Thêm — `uc-steps.sh`: UC này đi qua những bước nào
+
+Phép **liệt kê**, không phải phép kiểm: **luôn `exit 0`, không chặn gì**. Cổng DoR vẫn là
+`gate-check.sh`; thêm một cổng thứ hai đo cùng thứ chỉ tạo nhiễu. `/sdd-solo:status` gọi nó cho UC
+trong dòng `Đang làm:` của `STATE.md`.
+
+Ba trạng thái, và **ranh giới giữa hai cái sau mới là chỗ đáng giá**:
+
+```
+✓  có dấu vết trong file
+–  cố ý bỏ, CÓ ghi lý do   (dòng `**Bỏ bước <ký hiệu>:** <lý do>` trong file UC)
+?  không có dấu vết nào — có thể đã làm, có thể chưa, KHÔNG AI BIẾT
+```
+
+Đối chứng sạch ngay trong `UC-009`: bước ⑤ (Claude Design) **cũng bị bỏ** — `screens/` chỉ có
+`README`. Nhưng nó bỏ **có ghi lý do** trong mục Screens (*"cả hai màn hình là text thuần, không có
+giao diện đồ hoạ ở v1"*). **Bỏ có ghi lý do và bỏ mà không ai biết là bỏ cho cùng một kết quả trên
+đĩa** — sáu tháng sau chỉ cái đầu còn đọc lại được.
+
+Script nói thẳng giới hạn của nó: `⑥` không có artifact riêng (cổng kiểm), `⑬` self-review **không
+để lại dấu vết nên không đo được**. Và `?` được ghi rõ là *"không có dấu vết"*, **không phải "chưa
+làm"** — hai câu đó khác nhau, và gộp chúng lại là đúng loại lỗi bản này đang sửa.
+
+`uc-steps.sh` thêm vào danh sách `scaffold` copy sang `.sdd/scripts/`; `status.sh` **im nếu không
+thấy file** để bản `.sdd/` cũ không gãy cả lượt vì một mục mới. Đo cả hai chiều trên repo tạm.
+
+### Cùng họ #27, khác một chữ
+
+#27 là **luật đúng đặt sai bước** — không bao giờ có cơ hội chạy. #29 là **bước chạy được nhưng
+chạy thì hỏng**. Cả hai đều không phải lỗi nội dung, và cả hai chỉ lộ ra khi có người đi hết một
+vòng thật rồi hỏi *"khoan, tôi có gõ lệnh đó bao giờ chưa?"*
+
 ## 3.17.0 — 2026-09-09
 
 ### Đo được — `/sdd-solo:verify` lần chạy thật đầu tiên: 30 phát hiện, 30 phải sửa, **0 dương tính giả**

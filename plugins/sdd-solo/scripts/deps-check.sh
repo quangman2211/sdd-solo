@@ -57,7 +57,16 @@ fi
 if find "$HOME/.claude/plugins/cache" -maxdepth 2 -type d -name 'aiup-core' 2>/dev/null | grep -q .; then
   ok "AIUP — aiup-core đã cài"
 else
-  bad "AIUP — chưa có aiup-core (cho /requirements /entity-model /use-case-diagram /use-case-spec)"
+  # KHÔNG phải dòng đỏ (#29). Đọc SKILL.md của cả bốn lệnh aiup-core: 4/4 ghi ra
+  # cây `docs/` chứ không phải `specs/`, 3/4 sinh định dạng SDD-Solo không đọc
+  # (.puml), và `use-case-spec` còn ĐỤNG HỆ ID — `BR-XXX` của nó là business
+  # RULE "restart at BR-001 in every file", trong khi `BR-###` của ta là business
+  # REQUIREMENT trong specs/br.md. Githook sẽ CHO QUA một commit ghi `BR-002`
+  # theo nghĩa AIUP, vì `BR-002` có heading thật — báo xanh sai ở tầng hệ ID.
+  # Bắt cài một thứ để không bao giờ gọi thì dòng đỏ đó chỉ dạy người ta phớt lờ.
+  info "AIUP — chưa cài. KHÔNG cần cho vòng 14 bước: bốn lệnh của nó ghi ra cây docs/,"
+  info "  và /use-case-spec đụng hệ ID (BR-### của nó là business rule, đánh lại mỗi file)."
+  info "  Chỉ cài nếu bạn dùng AIUP cho việc khác:"
   info "→ /plugin marketplace add $AIUP_URL"
   info "→ /plugin install aiup-core@$AIUP_MKT"
   info "  dùng URL https đầy đủ; dạng owner/repo rơi sang SSH → Permission denied (publickey)"

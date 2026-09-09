@@ -20,4 +20,4 @@ Bắt đầu dự án (Phase 1): `/sdd-solo:intake` → điền `specs/br.md` �
 
 Đổi hành vi đã giao: `/sdd-solo:change CHG-###` → test AC mới → code → archive.
 
-Lệnh của quy trình: `/sdd-solo:start` → (AIUP `/use-case-spec`) → tay: RULE, AC, flow (mermaid), Claude Design → `/sdd-solo:adversarial` → đóng máy → `/sdd-solo:gate` → `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → `/sdd-solo:close` → `/sdd-solo:state`.
+Lệnh của quy trình: `/sdd-solo:start` → viết nội dung UC cùng user (KHÔNG dùng `aiup-core:use-case-spec` — nó ghi ra `docs/`, và `BR-###` của nó là business *rule* đánh lại mỗi file, đụng `BR-###` business *requirement* của ta) → tay: RULE, AC, flow (mermaid), Claude Design → `/sdd-solo:adversarial` → đóng máy → `/sdd-solo:gate` → `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → `/sdd-solo:close` → `/sdd-solo:state`.

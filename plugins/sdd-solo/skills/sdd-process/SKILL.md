@@ -30,9 +30,26 @@ Ranh giới spec/doc: **khách cảm nhận được → spec** (`specs/`). Ch�
 Ở tầng này `___` là câu trả lời hợp lệ và số bịa thì không. `br-check` chỉ **cảnh báo** khi còn `___`, nhưng **đỏ** khi mục còn nguyên placeholder `<...>`.
 
 ## 14 bước cho một UC (Phase 3)
-① `/sdd-solo:start UC-###` → ② `/use-case-spec` (AIUP) điền nội dung → ③ user viết RULE (rules.md, DMN nếu cần), **`entities.md` + `glossary.md` của context**, và AC → ④ vẽ flow mermaid trong `UC-###.flow.md` → ⑤ Claude Design theo `.sdd/prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đọc lại bằng đầu chưa neo**: `/sdd-solo:verify UC-###` (subagent) hoặc đóng máy đọc lại buổi sau → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
+① `/sdd-solo:start UC-###` → ② **điền nội dung UC cùng user** (Actor · Trigger · Preconditions · Main Flow — bước hiển thị nêu SCR-ID · Alternative · Exceptions · Postconditions) → ③ user viết RULE (rules.md, DMN nếu cần), **`entities.md` + `glossary.md` của context**, và AC → ④ vẽ flow mermaid trong `UC-###.flow.md` → ⑤ Claude Design theo `.sdd/prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đọc lại bằng đầu chưa neo**: `/sdd-solo:verify UC-###` (subagent) hoặc đóng máy đọc lại buổi sau → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
+
+**Không dùng `aiup-core` cho bước ② ③ ④** (#29). Đọc `SKILL.md` của cả bốn lệnh AIUP: **4/4 ghi ra
+cây `docs/`** chứ không phải `specs/` — `use-case-spec` → `docs/use_cases/`, `entity-model` →
+`docs/entity_model.md` (cổng DoR đọc `specs/contexts/<ctx>/entities.md`), `use-case-diagram` →
+`.puml` (ta đếm nhãn mermaid). Và `use-case-spec` **đụng hệ ID**: `BR-XXX` của nó là business
+**rule**, nguyên văn *"restart at `BR-001` in every file"*; `BR-###` của ta là business
+**requirement** trong `specs/br.md`. **Githook sẽ cho qua** một commit ghi `BR-002` theo nghĩa AIUP
+vì `BR-002` có heading thật — báo xanh sai ở tầng hệ ID.
+
+Kết luận này `skills/init` đã rút ra cho `/requirements` từ lâu (*"AIUP đọc `docs/vision.md` mà
+không skill nào tạo ra file đó"*) nhưng **không lan sang ba lệnh còn lại** — một kết luận đúng nằm
+đúng một chỗ thì không bảo vệ được ba chỗ kia.
+
+**Bước nào cố ý bỏ thì ghi vào file UC một dòng `**Bỏ bước <ký hiệu>:** <lý do>`.** Bỏ có ghi lý do
+và bỏ mà không ai biết là bỏ cho **cùng một kết quả trên đĩa**, nhưng sáu tháng sau chỉ cái đầu còn
+đọc lại được. `/sdd-solo:status` liệt kê ba trạng thái: `✓` có dấu vết · `–` bỏ có lý do · `?`
+không có dấu vết nào.
 
 ## Câu hỏi nào phải chốt trước bước ②, câu nào treo được
 

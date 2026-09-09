@@ -126,7 +126,7 @@ fi
 # plugin (CI, người clone repo). Đổi lại: bản sao có thể trôi version — .sdd/version
 # so với version plugin, lệch thì session-start và status cảnh báo.
 mkdir -p "$ROOT/.sdd/scripts"
-for f in lib.sh br-check.sh gate-check.sh gate-pass.sh change-check.sh change-pass.sh close-check.sh close-pass.sh status.sh trace-ratio.sh ac-coverage.sh version-check.sh deps-check.sh migrate-1to2.sh uc-ready.sh; do
+for f in lib.sh br-check.sh gate-check.sh gate-pass.sh change-check.sh change-pass.sh close-check.sh close-pass.sh status.sh trace-ratio.sh ac-coverage.sh version-check.sh deps-check.sh migrate-1to2.sh uc-ready.sh uc-steps.sh; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done
 chmod +x "$ROOT/.sdd/scripts/"*.sh 2>/dev/null
