@@ -101,8 +101,13 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
    - Open Question → thêm `- [ ] <câu> (quyết định tạm: <user nói>)`. User chưa có gì để nói thì `___`, và giữ nhãn nguồn `[Main 7]` trong câu để sáu tháng sau còn truy được.
    - Out of Scope → thêm vào BR liên quan trong `specs/br.md`.
    Không được để câu nào không có đầu ra.
-6. Kết thúc: `git add specs/ && git commit -m "docs($1): spec vN — sau adversarial pass"`. Commit này là điều kiện để `/sdd-solo:gate` kiểm "ngủ qua đêm" — gate sẽ đỏ nếu chạy cùng ngày.
-7. STATE.md: `Đang làm: $1 · bước ⑧ — chờ đọc lại buổi sau`. Nói với user: **đóng máy, không code hôm nay**; buổi sau đọc lại với vai người trả lời ticket rồi `/sdd-solo:gate $1`.
+6. Kết thúc: `git add specs/ && git commit -m "docs($1): spec vN — sau adversarial pass"`. Commit này là mốc để `/sdd-solo:gate` biết spec vừa đổi hôm nay.
+7. STATE.md: `Đang làm: $1 · bước ⑧ — chờ đọc lại bằng đầu chưa neo`. Nói với user **hai cách, để user chọn**:
+   - `/sdd-solo:verify $1` — subagent đọc lại ngay, xong là qua cổng được trong ngày. Chọn cái này khi đang có đà.
+   - Đóng máy, buổi sau tự đọc lại với vai người trả lời ticket rồi `/sdd-solo:gate $1`.
+
+   Không nói "đóng máy" như thể chỉ có một đường. Thứ bước ⑧ cần là **đầu chưa bị neo**, không phải
+   thời gian trôi qua — một đêm chỉ là một cách mua thứ đó, và là cách duy nhất trước 3.5.0 (#27).
 
 ---
 

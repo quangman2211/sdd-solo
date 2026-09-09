@@ -9,7 +9,7 @@ UC được coi là ready khi **tất cả** đúng:
 - [ ] Mọi entity UC chạm tới có trong `entities.md`; chuyển trạng thái chỉ theo mũi tên có trên state diagram.
 - [ ] Mọi E# có ≥ 1 trạng thái màn hình SCR; mọi SCR trỏ về một bước hoặc E#.
 - [ ] Adversarial pass đã chạy trong session mới; mọi câu hỏi có đầu ra (spec / Open Question / Out of Scope).
-- [ ] Spec đã được đọc lại ở một buổi khác buổi viết.
+- [ ] Spec đã được đọc lại bằng một cái đầu chưa bị neo — `/sdd-solo:verify UC-###` (subagent, xong là qua cổng ngay) **hoặc** để sang buổi khác buổi viết. `/sdd-solo:gate` kiểm bằng máy: cửa 2 đòi ≥ 1 dòng `F#` có `[neo: ...]` và có đầu ra.
 - [ ] Đã commit `docs(UC-###): spec vN — reviewed`.
 
 Thiếu một dòng → không mở Claude Code. UC nhỏ thì checklist chạy nhanh, không phải bỏ.

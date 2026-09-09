@@ -31,7 +31,7 @@ Trong repo dự án:
 | **Bắt đầu dự án — chưa biết viết gì** | `/sdd-solo:intake` (phỏng vấn 7 câu) hoặc `/sdd-solo:intake brief.md` (chuyển brief của agent khác) |
 | BR viết xong | `/sdd-solo:adversarial BR-###` — ba vai người trả tiền / vận hành mãi / hoài nghi |
 | Bắt đầu một use case | `/sdd-solo:start UC-### [ctx] [slug]` rồi `/use-case-spec UC-###` (AIUP) |
-| Sau khi viết RULE, AC, vẽ flow, vẽ màn hình | `/sdd-solo:adversarial UC-###` → **đóng máy** |
+| Sau khi viết RULE, AC, vẽ flow, vẽ màn hình | `/sdd-solo:adversarial UC-###` → `/sdd-solo:verify UC-###` (hoặc **đóng máy**, đọc lại buổi sau) |
 | Buổi sau, đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` |
 | Code xong | `/sdd-solo:close UC-###` |
 | Cuối buổi | `/sdd-solo:state` |

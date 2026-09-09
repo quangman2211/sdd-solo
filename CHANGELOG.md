@@ -1,5 +1,77 @@
 # Changelog
 
+## 3.5.0 — 2026-09-09
+
+### Thêm — bước ⑧ có cửa thứ hai, và `/sdd-solo:verify` (#27, #28)
+
+Nguyên văn chủ dự án: *"Tạo issue cần ngủ 1 đêm là không đúng. Tìm giải pháp khác."*
+
+**Bằng chứng nặng nhất nằm trong chính plugin này.** `.sdd/prompts/adversarial-pass.md` dòng 1:
+*"chạy trong một session MỚI, không phải session đang viết spec"*. Bước ⑦ và bước ⑧ cần **đúng
+một thứ**: người đọc không bị neo bởi giả định của người viết. Bước ⑦ mua nó bằng session mới;
+bước ⑧ mua nó bằng một đêm lịch. Không dòng tài liệu nào nói vì sao cùng một nhu cầu lại có hai
+giá — và ô `Session mới: [x]` của bước ⑦ **chưa từng được script nào kiểm**, tức chỗ nhẹ hơn thì
+tin lời khai, chỗ nặng hơn thì bắt đợi.
+
+**Một đêm đo thời gian trôi qua, không đo việc đọc có xảy ra không.** Ca thật đo được hôm nay trên
+`runxops`: commit lúc 21:18 · cổng đỏ đúng một lỗi là dòng ngủ-một-đêm lúc 21:28 · đọc lại ngay
+lúc 21:30 tìm ra **7 chỗ, 3 chỗ phải sửa trước cổng** — một trong đó là một Open Question vẫn đang
+dạy phương án mà chính `Q18` đã bác vài giờ trước. Thứ luật một-đêm muốn mua **đã xảy ra**, cách
+commit 10 phút, và cổng vẫn đỏ. Còn đợi tới mai thì không bảo đảm gì: cùng người, cùng cái neo.
+
+- **Cửa 1 giữ nguyên** — commit `docs(UC-###)` đã qua một đêm. Repo đang chạy không phải sửa gì.
+- **Cửa 2 mới:** mục `## Đọc lại` có **ít nhất một** dòng `F#` mang **cả `[neo: ...]` lẫn đầu ra
+  khác `___`**, và commit mới nhất là `docs(UC-###): đọc lại …`. Ba điều kiện cùng đúng thì qua
+  cổng **trong ngày**.
+- **Chốt chống khai gian nằm ở chữ "ít nhất một".** Đọc mà không thấy gì thì cửa 2 không mở, rơi
+  về cửa 1 — nên nói dối ở đây tốn **đúng bằng** làm thật: phải bịa ra một phát hiện có neo trỏ
+  vào chỗ có thật và có một đầu ra mang ID.
+- **`/sdd-solo:verify`** — skill mới. `verify UC-###` chạy **subagent** đọc lại (không có context
+  của buổi viết → không bị neo **do cấu tạo**, chứ không do ai khai), trình từng `F#` bằng
+  `AskUserQuestion`, ghi `## Đọc lại`, commit riêng. `verify` không tham số thì quét cả cây.
+
+### Vì sao là skill, không phải thêm một phép kiểm vào cổng (#28)
+
+Nguyên văn chủ dự án: *"cần có 1 skill để chạy kiểm tra tính xác thực của tài liệu. Bởi vì đang
+trong giai đoạn plan plan có lệch rất nguy hiểm"*. Mười ca thật trên `runxops` trong **đúng một
+ngày**, không ca nào bị script bắt — `br.md` kết luận một bảng *"chưa tồn tại"* trong khi commit
+trước đó đã tạo nó · commit khai một khối nội dung chưa hề vào file · `RULE-001` đổi sang UUID mà
+`br.md` còn ba đoạn nói ngược · `AC-6` hứa hệ thống *biết* một thứ mà không bước nào đi lấy · và
+cả con số `26/40` sai trong issue #25.
+
+Đây **không** cùng họ với #11/#13/#17/#24/#26. Bốn cái đó là *"đếm đúng nhưng đếm nhầm chỗ"* —
+sửa được bằng cách sửa phép đếm. Loại này là *"không có phép đếm nào cho nó"*: cả sáu loại sai đều
+đòi **đọc và so nghĩa**. Viết bằng `grep` sẽ ra đúng cái bẫy đã ghi ở 3.4.2 — một phép kiểm báo đỏ
+oan rồi bị học cách phớt lờ. Nên nó là **skill có người quyết từng dòng**, không phải cổng.
+
+Bốn ràng buộc, cả bốn có tiền lệ trong plugin: chỉ báo không sửa (như ba vai) · mỗi phát hiện
+**trích nguyên văn hai chỗ đang cãi nhau** (#25 — và đó là thứ làm phát hiện kiểm lại được) · mỗi
+phát hiện có đầu ra mang ID (#12) · phạm vi là **cả cây**, vì 6/10 ca là lệch **giữa** các file,
+đọc từng file riêng không thấy cái nào.
+
+Ba giới hạn ghi thẳng vào skill, không giấu: nó **sinh dương tính giả** nên bác phải rẻ và lý do
+bác phải được ghi lại · **"không thấy gì" là bằng chứng yếu**, cấm in ra câu nào nghe như bảo
+chứng, chỉ được nói *"không tìm ra gì trong phạm vi đã đọc"* kèm liệt kê phạm vi · chi phí đọc cả
+cây phải thu về theo `git diff` khi cây lớn.
+
+### Sửa kèm
+
+- `uc-ready.sh` bỏ qua mục `## Đọc lại`. Không bỏ thì mục của bước ⑧ còn nguyên template sẽ làm
+  uc-ready đỏ ở bước ⑦, `adversarial` từ chối chạy, và không có đường ra: muốn qua ⑦ phải điền
+  trước một mục chỉ tồn tại sau ⑦.
+
+### Hai bẫy shell gặp khi viết bản này — cùng họ với những bẫy đã ghi
+
+1. **`${VAR#docs($ID): ...}` không khớp gì cả** vì dấu ngoặc đơn trong pattern bóc tiền tố. Nó trả
+   về **y nguyên** chuỗi vào, nên điều kiện luôn sai và cửa 2 **không bao giờ mở** — không lỗi,
+   không cảnh báo. Dùng `case ... in "docs($ID): đọc lại"*)`. Cùng họ `ls a b` (#16).
+2. **Dấu nháy đơn trong comment tiếng Việt bên trong khối `awk '...'`** đóng chuỗi của shell sớm
+   và giết cả chương trình awk. Triệu chứng giống hệt bẫy trên: biến rỗng, không thông báo.
+
+Cả hai đều bị bắt vì test đo **từng ca một** thay vì chạy một ca rồi kết luận. Bốn ca khai gian
+(F# không neo · đầu ra còn `___` · `→ đầu ra: ___` có nhãn · commit sai tiêu đề) đều phải đỏ, ba
+ca thật phải xanh — bảy ca, đo đủ bảy.
+
 ## 3.4.3 — 2026-09-09
 
 ### Sửa — `status.sh` tố `code_paths` sai trong khi `code_paths` đang đúng (#26)

@@ -21,9 +21,15 @@ grep -qE 'SCR-[0-9]+-[0-9]+' "$F" && ok "bảng Screens có SCR-###-#" || bad "b
 # để chặn. gate-check §8 cho qua, br-check chỉ cảnh báo; chỉ script này chặn.
 # '<...>' thì vẫn đỏ ở mọi chỗ, kể cả trong Open Questions. Xem #23.
 PHALL="$(awk '
-  /^## Open Questions/ { oq=1; next }
-  /^## / { oq=0 }
+  /^## Open Questions/ { oq=1; dl=0; next }
+  # ## Đọc lại là mục của bước ⑧, mà script này chạy ở bước ⑦ — nó CÒN NGUYÊN
+  # template là đúng lịch, không phải chưa điền. Không bỏ qua thì uc-ready đỏ,
+  # adversarial từ chối chạy, và không có đường nào ra: muốn qua bước ⑦ phải
+  # điền trước một mục chỉ tồn tại sau bước ⑦.
+  /^## Đọc lại/ { dl=1; oq=0; next }
+  /^## / { oq=0; dl=0 }
   {
+    if (dl) next
     ang = ($0 ~ /<[^>]+>/); us = ($0 ~ /___/)
     if (!ang && !us) next
     if ($0 ~ /^[[:space:]]*<!--/) next
