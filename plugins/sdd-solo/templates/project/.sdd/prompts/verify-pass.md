@@ -29,6 +29,40 @@ Cùng nhu cầu với ba vai ở bước ⑦. Khác chỗ: ba vai hỏi *"spec c
 | 4 | **Đã bác nhưng còn dạy** | Một phương án bị loại ở Q#/CON-###/History mà chỗ khác vẫn hướng dẫn làm theo nó. Ai đọc chỗ đó sẽ dựng lại đúng cái vừa bị loại. |
 | 5 | **Thứ tự nói ngược nội dung** | Bước đánh số 1→N đọc xuôi có ra đúng trình tự không? Đổi nội dung mà giữ số thì mọi phép kiểm cơ học đều xanh. |
 | 6 | **Hứa mà không có đường** | AC/Postcondition hứa hệ thống *biết* hoặc *không đổi* một thứ — có bước nào thật sự đi lấy hoặc thật sự không ghi không? |
+| 7 | **Con số đã mục** | Số mô tả **dữ liệu thật** (đếm dòng, tỉ lệ, "427 dòng", "10/1986") — đo lại hôm nay có ra đúng thế không? |
+
+## Vai thứ hai: đối chiếu tài liệu với DỮ LIỆU THẬT
+
+Sáu loại đầu đọc tài liệu so với tài liệu. Loại 7 khác hẳn và cần một vai riêng, vì **con số là
+chỗ mục nhanh nhất trong cả spec**: nó đúng lúc viết, không ai sửa nó khi dữ liệu đổi, và một con
+số đã mục **trông y hệt** một con số đúng. Không phép kiểm cấu trúc nào phân biệt được.
+
+Ca thật (`runxops`, 2026-09-09): `entities.md` ghi *"427 dòng đang có trục nằm kẹt trong
+`Product Name`"*. Câu đó **qua adversarial pass và ba lượt cổng**. Đo lại: **982** ô nhiều dòng —
+536 trục biến thể **và 525 định danh**. Thứ bắt được nó không phải script nào, mà là một câu của
+người biết dữ liệu: *"dữ liệu chưa chuẩn"*.
+
+Cách làm:
+
+1. **Tìm mọi con số mô tả dữ liệu thật** trong phạm vi đọc. Số nghiệp vụ đã chốt (ngưỡng, thời
+   hạn trong `RULE-###`) **không** thuộc loại này — đó là quyết định, không phải phép đo.
+2. **Mỗi con số đó phải có một lệnh đo lại được.** Không có → **đó đã là một phát hiện**:
+   `F# con số <X> không có cách đo lại → sửa <file> ghi kèm lệnh đo`. Đừng tự bịa lệnh rồi coi
+   như xong; lệnh do mình nghĩ ra không phải lệnh tác giả đã dùng.
+3. **Chạy lệnh, so kết quả.** Khớp → im. Lệch → `F#` với hai phía: **A** là nguyên văn dòng trong
+   spec kèm `đường dẫn:dòng`, **B** là **lệnh vừa chạy và đầu ra của nó hôm nay**. Đây đúng là
+   luật "trích nguyên văn hai phía", chỉ khác chỗ phía B là một lệnh chứ không phải một dòng file.
+4. **Lệch không có nghĩa là spec sai.** Có thể dữ liệu đã đổi, có thể lệnh cũ đếm hụt. Báo cả hai
+   số, **đừng kết luận bên nào đúng** — người biết dữ liệu quyết.
+5. **Soi kỹ chỗ phép đếm không thấy được.** Đây là chỗ ca thật ở trên trượt: phép đếm cũ **không
+   sai công thức**, nó grep `Color:`/`Size:` và đếm đúng thứ nó grep. Nó trượt vì hai thứ nằm
+   ngoài tầm với của mọi phép grep:
+   - **ký tự vô hình** (`U+200E`, `U+FEFF`, khoảng trắng không ngắt) dính vào giá trị — một ISBN
+     có `U+200E` ở đầu **nhìn y hệt** một dãy số bình thường;
+   - **giá trị không có nhãn** — `Paperback`, `M | L | XL` là giá trị biến thể mà không mang tên
+     trục nào, nên mọi phép đếm theo `<tên trục>:` đều không thấy.
+
+   Khi số đo lại khác số trong spec, hỏi trước hết: *phép đếm này không nhìn thấy cái gì?*
 
 ## Đầu ra
 

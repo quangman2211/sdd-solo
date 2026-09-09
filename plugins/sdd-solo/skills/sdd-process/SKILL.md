@@ -72,4 +72,9 @@ UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn �
 3. Không chạy `/speckit-specify` `/speckit-plan` `/speckit-tasks` `/speckit-implement` khi `.sdd/gate/UC-###.ok` chưa có.
 4. Dùng đúng tên trong `specs/glossary.md`.
 5. Không bịa số liệu để điền chỗ trống; để `___`.
+5b. **Số mô tả dữ liệu thật phải ghi kèm lệnh đo ra nó.** Số nghiệp vụ đã chốt (ngưỡng, thời hạn)
+   là quyết định nên không cần; nhưng *"427 dòng đang hỏng"* là một **phép đo**, và một phép đo
+   không kèm lệnh thì sáu tháng sau không ai kiểm lại được. Con số là chỗ mục nhanh nhất trong
+   spec: nó đúng lúc viết, không ai sửa khi dữ liệu đổi, và số đã mục trông y hệt số đúng.
+   `/sdd-solo:verify` đo lại được chính vì lệnh đó nằm trong file.
 6. Khi được nhờ viết AC/UC/RULE: viết theo đúng template, tiếng Việt cho văn, tên entity/UC slug tiếng Anh.

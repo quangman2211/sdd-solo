@@ -1,5 +1,39 @@
 # Changelog
 
+## 3.6.0 — 2026-09-09
+
+### Thêm — `verify` đối chiếu tài liệu với DỮ LIỆU THẬT, không chỉ với tài liệu
+
+Ca thật ở `runxops`, xảy ra vài giờ sau khi 3.5.0 ra. `entities.md` ghi *"427 dòng đang có trục
+nằm kẹt trong `Product Name`"*. Câu đó **qua adversarial pass và ba lượt cổng**. Đo lại: **982**
+ô nhiều dòng — 536 trục biến thể **và 525 định danh**. Thứ bắt được nó không phải script nào, mà
+là một câu của người biết dữ liệu: *"dữ liệu chưa chuẩn"*.
+
+Sáu loại sai của 3.5.0 đều đọc **tài liệu so với tài liệu**. Loại này khác hẳn, và nó là chỗ mục
+nhanh nhất trong cả spec: **con số đúng lúc viết, không ai sửa nó khi dữ liệu đổi, và một con số
+đã mục trông y hệt một con số đúng.** Không phép kiểm cấu trúc nào phân biệt được — cổng DoR chỉ
+hỏi *"mục này có nội dung chưa"*, và `427` là nội dung hợp lệ y như `982`.
+
+- **Loại sai #7 — con số đã mục**, cùng một vai riêng trong `.sdd/prompts/verify-pass.md`. Số
+  nghiệp vụ đã chốt (ngưỡng, thời hạn trong `RULE-###`) **không** thuộc loại này: đó là quyết
+  định, không phải phép đo.
+- **Mỗi con số mô tả dữ liệu phải có một lệnh đo lại được.** Không có → **bản thân việc thiếu đó
+  đã là một phát hiện**. Cấm tự bịa lệnh rồi coi như đã đối chiếu: lệnh mình nghĩ ra không phải
+  lệnh tác giả đã dùng, nên hai số lệch nhau chẳng chứng minh được gì.
+- **Luật "trích nguyên văn hai phía" áp thẳng vào đây**, chỉ khác chỗ phía B là **một lệnh và đầu
+  ra của nó hôm nay** thay vì một dòng file. Người quyết chạy lại lệnh đó là biết ngay.
+- **Lệch KHÔNG có nghĩa spec sai.** Có thể dữ liệu đã đổi, có thể lệnh cũ đếm hụt. Báo cả hai số,
+  **không kết luận bên nào đúng** — người biết dữ liệu quyết.
+- **Soi chỗ phép đếm không nhìn thấy được.** Đây là chỗ ca thật trượt, và nó đáng ghi vì phép đếm
+  cũ **không sai công thức**: nó grep `Color:`/`Size:` và đếm đúng thứ nó grep. Nó trượt vì hai
+  thứ nằm ngoài tầm với của mọi phép grep — **ký tự vô hình** (`U+200E` dính đầu một ISBN, nhìn y
+  hệt dãy số thường) và **giá trị không có nhãn trục** (`Paperback`, `M | L | XL`). Khi số đo lại
+  khác số trong spec, câu hỏi đầu tiên là: *phép đếm này không nhìn thấy cái gì?*
+
+`sdd-process` thêm luật 5b: **số mô tả dữ liệu thật phải ghi kèm lệnh đo ra nó.** Một phép đo
+không kèm lệnh thì sáu tháng sau không ai kiểm lại được — và `/sdd-solo:verify` đo lại được chính
+vì lệnh đó nằm trong file.
+
 ## 3.5.0 — 2026-09-09
 
 ### Thêm — bước ⑧ có cửa thứ hai, và `/sdd-solo:verify` (#27, #28)

@@ -28,6 +28,11 @@ xảy ra không** — cùng người, cùng cái neo, sáng mai lướt 30 giây
    - file UC `$1.md`, `$1.flow.md`, `$1.sequence.md` nếu có
    - `entities.md` + `glossary.md` của context, `specs/rules.md`, mục BR mà UC trỏ tới trong `specs/br.md`
    - `git log --oneline -20 -- <thư mục UC>` để soi được loại sai #2 (commit khai một đằng, file một nẻo)
+
+   **Nếu spec có con số mô tả dữ liệu thật** (đếm dòng, tỉ lệ) thì subagent phải được phép **chạy
+   lệnh đo lại** — đó là loại sai #7, và nó là loại duy nhất không thể phát hiện bằng cách đọc.
+   Không có lệnh đo trong spec thì bản thân việc thiếu đó **đã là một phát hiện**; đừng tự bịa
+   lệnh rồi coi như đã đối chiếu.
 4. Trình từng `F#` bằng `AskUserQuestion`, **một phát hiện một lượt**, kèm **nguyên văn cả hai chỗ
    đang cãi nhau** như subagent đã trích. Bốn đầu ra hợp lệ:
    - → sửa spec (kèm ID chỗ sửa: `UC-009 Main 7` · `RULE-001` · `AC-6`)
