@@ -52,17 +52,36 @@ echo; "$HERE/trace-ratio.sh"; "$HERE/ac-coverage.sh"
 D="$("$HERE/deps-check.sh" 2>&1)" || { echo; echo "$D"; }
 # đường dẫn code/test: sai là githook chặn hụt trong im lặng
 UCT_="$(uc_test_dir "$ROOT")"
-if ! has_code_path "$ROOT" || [ ! -d "$ROOT/$UCT_" ]; then
+# Hai mối lo KHÁC NHAU, phải hỏi riêng. Tới 3.4.2 đây là một `if` HOẶC mà thân
+# không kiểm lại vế nào đã đúng, nên `code_paths` bị tố "không thư mục nào tồn
+# tại" kể cả khi has_code_path TRUE — chỉ vì vế uc_test_dir hỏng (#26). Đó là
+# trạng thái MẶC ĐỊNH của mọi repo vừa scaffold: `src/README.md` có sẵn nên
+# has_code_path true từ ngày đầu, còn `tests/use-cases/` chỉ sinh ra ở UC đầu
+# tiên được implement. Dòng đỏ oan đó bảo người ta đi sửa một file đang đúng —
+# sửa xong thì githook mới thật sự chặn hụt, tức nó tự tạo ra cái nó cảnh báo.
+CP_OK=0; has_code_path "$ROOT" || CP_OK=1
+UT_OK=0; [ -d "$ROOT/$UCT_" ] || UT_OK=1
+# uc_test_dir chưa có ở Phase 1–2 là BÌNH THƯỜNG: chưa AC nào implement thì chưa
+# có test nào để đặt vào. Chỉ nhắc khi đã có UC implemented mà thư mục vẫn vắng.
+UT_SAY=0
+if [ "$UT_OK" = 1 ] && grep -rlE '\*\*Status:\*\* *implemented' "$ROOT/specs/contexts" >/dev/null 2>&1; then
+  UT_SAY=1
+fi
+if [ "$CP_OK" = 1 ] || [ "$UT_SAY" = 1 ]; then
   echo; echo "=== .sdd/config ==="
-  if repo_has_code "$ROOT"; then
-    bad "code_paths=$(code_paths "$ROOT") — không thư mục nào tồn tại, mà repo đã có file nguồn."
-    info "githook đang chặn hụt. Sửa .sdd/config cho khớp bố cục thật."
-  else
-    warn "code_paths=$(code_paths "$ROOT") — chưa thư mục nào tồn tại (repo chưa có code)."
+  if [ "$CP_OK" = 1 ]; then
+    if repo_has_code "$ROOT"; then
+      bad "code_paths=$(code_paths "$ROOT") — không thư mục nào tồn tại, mà repo đã có file nguồn."
+      info "githook đang chặn hụt. Sửa .sdd/config cho khớp bố cục thật."
+    else
+      warn "code_paths=$(code_paths "$ROOT") — chưa thư mục nào tồn tại (repo chưa có code)."
+    fi
   fi
   # Nhắc lại chừng nào chưa khớp: `!` lúc init dễ trôi từ lần --update thứ hai
   # trở đi, khi người ta lướt qua output.
-  [ -d "$ROOT/$UCT_" ] || warn "uc_test_dir=$UCT_ — thư mục chưa tồn tại, ac-coverage đang mù. Sửa cho khớp quy ước của repo."
+  if [ "$UT_SAY" = 1 ]; then
+    warn "uc_test_dir=$UCT_ — có UC implemented mà thư mục chưa tồn tại, ac-coverage đang mù. Sửa cho khớp quy ước của repo."
+  fi
 fi
 # version: hỏi GitHub tối đa 3s, nhớ 24h. Chỉ nói khi lệch.
 V="$("$HERE/version-check.sh" --remote 2>&1)" || { echo; echo "$V"; }

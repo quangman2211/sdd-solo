@@ -1,5 +1,51 @@
 # Changelog
 
+## 3.4.3 — 2026-09-09
+
+### Sửa — `status.sh` tố `code_paths` sai trong khi `code_paths` đang đúng (#26)
+
+Ca đầu tiên của luật vừa ghi ở 3.4.2 — *báo đỏ oan thì bị học cách phớt lờ* — và lần này là đỏ
+oan **thật**, đo trên `runxops`, không phải giả định.
+
+`status.sh` gộp hai mối lo khác nhau vào **một `if` HOẶC** rồi thân `if` không kiểm lại vế nào đã
+đúng:
+
+```bash
+if ! has_code_path "$ROOT" || [ ! -d "$ROOT/$UCT_" ]; then
+  ...  bad "code_paths=… — không thư mục nào tồn tại"      # in cả khi has_code_path TRUE
+```
+
+Nên chỉ cần `tests/use-cases/` chưa có là `code_paths` bị tố oan. Đo bằng chính hàm của plugin:
+`has_code_path` **TRUE**, `[ -d tests/use-cases ]` **không** → vẫn in *"không thư mục nào tồn
+tại"*.
+
+**Vì sao nó tệ hơn một dòng đỏ oan bình thường:**
+
+1. **Nó bảo người ta đi sửa một file đang đúng.** `.sdd/config` có comment *"Sửa tay thoải mái"*,
+   nên người tin dòng ✗ sẽ đổi `code_paths` sang thứ khác — và **lúc đó githook mới thật sự chặn
+   hụt**. Dòng cảnh báo tự tạo ra chính cái nó cảnh báo.
+2. Nó đứng ngay cạnh một dòng `!` **đúng** về `uc_test_dir`, nên người đọc học cách bỏ qua cả cụm.
+
+Và nó không hiếm: đúng với mọi repo đã có thư mục code mà chưa implement UC nào — tức khoảng thời
+gian `sdd-solo` ở lâu nhất, từ `scaffold` tới `/speckit-implement` đầu tiên. Ở `runxops` thứ làm
+`repo_has_code` TRUE chỉ là một script chuyển dữ liệu một lần, không phải code sản phẩm.
+
+- **Tách hai mối lo, hỏi riêng.** `code_paths` chỉ nói khi `has_code_path` sai; `uc_test_dir` chỉ
+  nói khi thư mục thiếu.
+- **`uc_test_dir` vắng ở Phase 1–2 là BÌNH THƯỜNG** — chưa AC nào implement thì chưa có test nào
+  để đặt vào. Dòng `!` nay chỉ hiện khi đã có UC `Status: implemented` mà thư mục vẫn vắng.
+
+Bốn ca đo trên repo thật, `src/` có · `tests/use-cases/` chưa có:
+
+| Ca | Trước | Sau |
+|---|---|---|
+| `has_code_path` TRUE, chưa UC implemented | ✗ oan | **im** |
+| Có UC implemented, chưa có `tests/use-cases/` | ✗ oan + ! đúng | **chỉ ! đúng** |
+| Đã có `tests/use-cases/` | ✗ oan | **im** |
+| `code_paths` trỏ sai thật, repo có file nguồn | ✗ đúng | **✗ đúng** — giữ nguyên |
+
+`status.sh` vẫn `exit 0`; lỗi này chưa bao giờ chặn cổng hay CI, chỉ dạy người ta ngờ output.
+
 ## 3.4.2 — 2026-09-09
 
 ### Sửa — bản vá đảo thứ tự bước mà giữ nguyên số thì không cổng nào bắt được
