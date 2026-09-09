@@ -141,11 +141,23 @@ printf '%s' "$(sec '## Adversarial pass')" | grep -qE 'Ngày chạy: *[0-9]{4}-[
   && ok "adversarial pass đã chạy" \
   || warn "chưa chạy /sdd-solo:adversarial $ID — ba vai tầng BR hay bắt ra 'đây là giải pháp viết ngược thành lý do'"
 
-# 11. History
+# 11. Bao nhiêu câu treo là treo THẬT, bao nhiêu là chỗ trống.
+# '___' là đầu ra hợp lệ và không được biến mất. Nhưng khi nó chiếm đa số áp đảo
+# thì đó không còn là "đã cân nhắc và chưa quyết được" — đó là "không có gì để
+# cân". Đo được thì nói ra, đừng im lặng. Xem #25.
+OQL="$(sec '## Open Questions' | grep -cE '^[[:space:]]*- \[ \]')"; [ -z "$OQL" ] && OQL=0
+OQE="$(sec '## Open Questions' | grep -cE 'quyết định tạm: *_{2,}')"; [ -z "$OQE" ] && OQE=0
+if [ "$OQL" -ge 3 ] && [ "$OQE" -gt $((OQL/2)) ]; then
+  warn "$OQE/$OQL câu treo có 'quyết định tạm' rỗng — quá nửa. Câu nào chưa có gì để cân thì nó chưa phải câu hỏi đã chín; /sdd-solo:adversarial $ID sẽ trình từng câu kèm ngữ cảnh."
+elif [ "$OQL" -gt 0 ]; then
+  ok "$OQL câu treo, $OQE câu chưa có quyết định tạm"
+fi
+
+# 12. History
 printf '%s' "$(sec '## History')" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}' \
   && ok "History có dòng ghi ngày" || bad "## History chưa có dòng 'v1 (YYYY-MM-DD)'"
 
-# 12. ___ là hợp lệ ở Phase 1 — cảnh báo, không đỏ. Ép điền sớm đẻ ra đúng loại
+# 13. ___ là hợp lệ ở Phase 1 — cảnh báo, không đỏ. Ép điền sớm đẻ ra đúng loại
 # số bịa mà cả bước intake đang cố chặn.
 U="$(printf '%s' "$B" | grep -o '___' | wc -l | tr -d ' ')"
 [ "$U" -gt 0 ] && warn "còn $U chỗ ___ — hợp lệ ở Phase 1, nhưng là nợ: mỗi chỗ nên có một dòng Open Question"

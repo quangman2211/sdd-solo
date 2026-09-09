@@ -3,7 +3,7 @@ name: start
 description: Bước ① của vòng lặp UC — tạo folder use case từ template, gán ID, kiểm ID chưa trùng và BR tồn tại, ghi STATE.md. Dùng khi user bắt đầu một use case mới.
 disable-model-invocation: true
 argument-hint: "UC-### [<ctx>] [<slug-tieng-anh>]"
-allowed-tools: Bash Read Write Edit Glob Grep
+allowed-tools: Bash Read Write Edit Glob Grep AskUserQuestion
 ---
 
 Tạo khung cho use case `$1`.

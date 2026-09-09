@@ -158,6 +158,14 @@ if [ -n "$SO" ]; then
   done <<< "$SO"
 fi
 
+# 7b. Ba vai chạy rồi mà đa số câu chưa có đầu ra thì adversarial pass mới xong
+# một nửa: đã HỎI nhưng chưa QUYẾT. Đo được (#25 đo 21/24 trên ca thật), nên nói.
+AQ="$(printf '%s' "$AP" | grep -cE '^[[:space:]]*- Q[0-9]+')"; [ -z "$AQ" ] && AQ=0
+AE="$(printf '%s' "$AP" | grep -cE 'đầu ra: *_{2,}')"; [ -z "$AE" ] && AE=0
+if [ "$AQ" -ge 3 ] && [ "$AE" -gt $((AQ/2)) ]; then
+  warn "$AE/$AQ câu adversarial còn 'đầu ra: ___' — đã hỏi nhưng chưa quyết. Chạy lại /sdd-solo:adversarial $ID để nó trình từng câu kèm ngữ cảnh và lựa chọn."
+fi
+
 # 8. open questions phải có quyết định tạm
 OQ="$(sed -n '/^## Open Questions/,/^## /p' "$F" | grep -E '^- \[ \]')"
 if [ -n "$OQ" ]; then echo "$OQ" | grep -vqi 'quyết định tạm' && bad "Open Question chưa có (quyết định tạm: ...)" || ok "Open Questions có quyết định tạm"; fi

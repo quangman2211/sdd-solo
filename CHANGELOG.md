@@ -1,5 +1,53 @@
 # Changelog
 
+## 3.4.0 — 2026-09-09
+
+### Thêm — câu hỏi phải trả lời được, không chỉ phải trả lời (#25)
+
+Nguyên văn chủ dự án: *"các câu hỏi hiện tại chỉ là 1 dòng. Anh không biết được có nên trả lời
+nó hay không. Và ngữ cảnh của câu hỏi là gì, giải pháp nào anh nên chọn."*
+
+3.3.0 trả lời *"câu nào buộc chốt trước bước ②"*. Bản này trả lời câu tiếp theo: **đã biết phải
+chốt rồi thì lấy gì mà chốt.** Phân loại xong mà vẫn đưa một dòng thì người dùng biết mình *phải*
+trả lời nhưng vẫn không trả lời được — tệ hơn trước, vì giờ không bỏ qua được nữa.
+
+Đo trên `runxops`: **26/40** câu treo ở `br.md` có `(quyết định tạm: ___)` rỗng · **21/24** câu
+adversarial của `UC-009` còn `→ đầu ra: ___`.
+
+- **Nguyên liệu đã thu rồi, chỉ là không ai giải nén.** Prompt đã bắt mỗi câu kèm nhãn nguồn
+  `[Main 7, RULE-003]`, và ba vai làm đúng **24/24**. Nhưng bước 5 của `skills/adversarial` chỉ
+  nói *"trình cho user từng câu"* — không đọc `Main 7` và `RULE-003` ra. Nay bắt buộc
+  **dereference**: dán **nguyên văn** chỗ spec đang nói gì.
+- **`AskUserQuestion` nay nằm trong `allowed-tools`** của `adversarial`, `intake`, `start`.
+  Trước bản này **không skill nào** khai nó — kể cả `intake`, vốn được mô tả là "hỏi bằng
+  AskUserQuestion". Cơ chế tưởng đã có sẵn thật ra chưa skill nào gọi được.
+- **Mỗi câu kèm ba thứ**, thiếu một là câu hỏi không trả lời được: ngữ cảnh **trích dẫn nguyên
+  văn** (tóm tắt là chỗ lén thêm giả định) · mỗi lựa chọn kèm **cái mất** · `Chưa quyết` **luôn
+  hiện sẵn** như một lựa chọn, không phải thứ phải tự gõ ra để thoát.
+- **Áp bài kiểm hình dạng/giá trị của 3.3.0 vào từng câu**: câu đổi hình dạng thì hỏi, câu đổi giá
+  trị thì ghi thẳng Open Question. Hỏi hết 24 câu là cách nhanh nhất để user bấm bừa cho xong.
+- **Vai BR nay cũng phải kèm nhãn nguồn** (`[Background]` · `[CON-002]` · `[Success Metrics]`) như
+  vai UC. Sửa 36/40 câu treo ở `br.md` không truy được về đâu.
+- **Cảnh báo khi `___` chiếm quá nửa** — `br-check` trên `## Open Questions`, `gate-check` trên
+  `## Adversarial pass`. `___` là đầu ra hợp lệ và không được biến mất; nhưng khi nó chiếm đa số
+  áp đảo thì đó không còn là *"đã cân nhắc và chưa quyết được"*, mà là *"không có gì để cân"*.
+
+### Ranh giới — vì sao đề xuất được phép, và phép tới đâu
+
+Đưa phương án cho người dùng đụng thẳng vào thứ cả tầng BR sinh ra để chặn: AI nêu một con số
+nghe hợp lý rồi nó thành sự thật trong spec. Bốn ràng buộc, ba cái đầu từ issue và cái thứ tư là
+cái duy nhất **để lại dấu vết trong file**:
+
+1. **Căn cứ phải truy được trong repo, hoặc là một lệnh chạy lại được.** Kiến thức chung của model
+   không phải căn cứ — cái đó gọi là *hướng có thể đi*, không được gọi là *khuyến nghị*.
+2. **Không xếp hạng, không đánh dấu "nên chọn"** cho câu đổi giá trị nghiệp vụ. Bày ra không gian
+   lựa chọn là đưa thông tin; chọn hộ là ra quyết định.
+3. **Giá trị do AI nêu mà user chỉ gật thì chưa phải của user** → ghi `___ (AI gợi ý X, chưa ai
+   duyệt)`. Chỉ khi user tự nói ra bằng lời của họ mới thành quyết định. Đây đúng là bẫy gật đầu
+   `/sdd-solo:intake` đã vá ở 3.2.3 — cùng cái bẫy, chỗ khác.
+4. Ba ràng buộc trên sống trong **hội thoại**; ràng buộc này sống trong **file**. Đóng terminal thì
+   chỉ còn file — nên provenance của mọi con số phải nằm trong spec, không nằm trong lời nói.
+
 ## 3.3.2 — 2026-09-09
 
 ### Sửa

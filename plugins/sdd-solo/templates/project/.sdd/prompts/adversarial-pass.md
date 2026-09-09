@@ -41,7 +41,11 @@ giải pháp thay vì một vấn đề.
 
 Ràng buộc:
 - Không đề xuất giải pháp. Không đề xuất tính năng. Không sửa spec.
-- Mỗi câu hỏi một dòng.
+- Mỗi câu hỏi một dòng, **kèm nhãn nguồn trong ngoặc vuông**: mục nào của BR sinh ra câu hỏi này
+  — `[Background]` · `[Success Metrics]` · `[Out of Scope]` · `[CON-002]` · `[Impact Map]`.
+  Vai UC đã bắt kèm nhãn từ đầu và làm được 24/24; vai BR không bắt nên 36/40 câu treo ở `br.md`
+  không truy được về đâu. Nhãn này là thứ để lúc trình cho người quyết còn dán được nguyên văn
+  chỗ spec đang nói gì.
 - Không lặp lại thứ BR đã nói. Không khen.
 - Tối đa 8 câu mỗi vai, xếp theo mức hậu quả nếu bỏ qua.
 

@@ -3,7 +3,7 @@ name: intake
 description: Bước đầu của Phase 1 — cửa vào của cả quy trình. Không tham số thì phỏng vấn từng câu để moi ý tưởng ra thành BR-###; có đường dẫn brief thì chuyển brief của agent khác thành BR chuẩn theo bộ luật không-bịa-số. Đầu ra là specs/br.md qua được br-check.sh.
 disable-model-invocation: true
 argument-hint: "[đường-dẫn-brief]"
-allowed-tools: Bash Read Write Edit Grep
+allowed-tools: Bash Read Write Edit Grep AskUserQuestion
 ---
 
 Cửa vào Phase 1. `/sdd-solo:start` là bước ① của một UC; đây là bước ① của cả dự án.
