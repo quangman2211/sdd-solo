@@ -64,6 +64,31 @@ Cách làm:
 
    Khi số đo lại khác số trong spec, hỏi trước hết: *phép đếm này không nhìn thấy cái gì?*
 
+6. **Nhiều số cùng một nguồn thiếu lệnh đo → gộp thành MỘT `F#`, không tách thành năm.** Năm dòng
+   đỏ giống hệt nhau là thứ người ta học cách phớt lờ nhanh nhất, và phớt lờ xong thì phớt lờ luôn
+   dòng thứ sáu khác hẳn. Dạng đúng: *"5 con số trong `entities.md` (1459 tên · 281 nhóm · 7 lệch
+   cờ · 427 biến thể · 1559 thoái hoá) đều dẫn từ `itemsell-flat.csv` và không số nào có lệnh đo"*.
+   Cụm khoanh đúng vùng, và **khoanh đúng vùng đã đủ để người biết dữ liệu đi kiểm** — vai này
+   không cần tự tìm ra con số đúng.
+
+7. **Xem HƯỚNG lệch, không chỉ xem có lệch không.** Nhiều số cùng lệch **một chiều** là chữ ký của
+   một nguồn chung đã mục, không phải của nhiều sai sót rời rạc. Ca thật (`runxops`): cả năm số
+   đều đếm **thiếu**, và đều thiếu theo hướng làm vấn đề trông **nhẹ hơn** thực tế — `7 nhóm lệch
+   cờ tồn` là con số dùng để lập luận phải tách một entity, và nó nhỏ hơn sự thật 43%. Nói rõ
+   chiều lệch trong `F#`: một lập luận đứng trên số đếm thiếu vẫn có thể đúng, nhưng người quyết
+   phải biết nó đang đứng trên cái gì.
+
+8. **Một con số trông vô lý là một phát hiện, kể cả khi nó CÓ lệnh đo.** Lệnh sai vẫn chạy trơn.
+   Ca thật: ghép mọi dòng biến thể bằng ` | ` trong khi ` | ` đã mang nghĩa *"nhiều giá trị cùng
+   một trục"* — `Color: Brown | Dark Grey` (một trục) đọc ra thành hai, và phép đếm ra `437 dòng
+   không tên trục` thay vì `32`. Thứ bắt được nó là **con số trông vô lý**, không phải phép kiểm
+   nào. Nên: thấy số lệch một bậc độ lớn so với chỗ khác trong cùng tài liệu thì hỏi, đừng chép.
+
+9. **Sửa số thì GIỮ số cũ kèm lý do lệch, đừng xoá.** *"1459 → 1388 (số cũ nhóm theo `Product
+   Name` khi cột đó còn dính trục biến thể, nên một sản phẩm hai màu đếm thành hai tên)"* dạy được
+   nhiều hơn `1388` trơ trọi: nó nói phép đo cũ hỏng ở đâu, nên lần sau khỏi hỏng lại. Đây cũng là
+   thứ duy nhất còn lại sau khi đóng terminal.
+
 ## Đầu ra
 
 Một danh sách `F#`, xếp theo hậu quả (tiền · quyền · dữ liệu khách trước). Mỗi dòng:

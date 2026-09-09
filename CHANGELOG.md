@@ -1,5 +1,56 @@
 # Changelog
 
+## 3.7.0 — 2026-09-09
+
+### Sửa — loại sai #7 không rơi lẻ, và cách báo nó phải theo cụm
+
+Áp luật 5b vào `entities.md` của `runxops` ra kết quả không ai đoán: **không phải một con số mục,
+mà năm.** Cả năm đều đo trên cùng một bản `itemsell-flat.csv` cũ, nhóm theo `Product Name` lúc cột
+đó còn dính `Color: Brown` — nên hai dòng cùng sản phẩm khác màu đếm thành hai tên.
+
+| | cũ | đo lại |
+|---|---|---|
+| tên sản phẩm | 1459 | **1388** |
+| nhóm > 1 dòng | 281 | **320** |
+| lệch Stock Flag | 7 | **10** |
+| lệch Stock Checked | 138 | **158** |
+| có biến thể | 427 | **469** |
+| thoái hoá | 1559 | **1517** |
+
+**Một phép đo mục thì mọi số dẫn xuất từ cùng nguồn mục theo, và tài liệu vẫn tự nhất quán hoàn
+hảo.** Đó là lý do không phép kiểm nội-tại nào bắt được: không có gì mâu thuẫn để mà thấy.
+
+- **Gộp cụm, đừng tách lẻ.** Nhiều số cùng một nguồn thiếu lệnh đo → **một** `F#` nêu cả cụm. Năm
+  dòng đỏ giống hệt nhau là thứ người ta học cách phớt lờ nhanh nhất, rồi phớt lờ luôn dòng thứ
+  sáu khác hẳn — đúng bẫy đã ghi ở 3.4.2. Cụm **khoanh đúng vùng**, và khoanh đúng vùng đã đủ để
+  người biết dữ liệu đi kiểm; vai này không cần tự tìm ra con số đúng.
+- **Xem HƯỚNG lệch, không chỉ xem có lệch.** Nhiều số cùng lệch **một chiều** là chữ ký của một
+  nguồn chung đã mục, không phải của nhiều sai sót rời rạc. Ở ca này cả năm đều đếm **thiếu**, và
+  đều thiếu theo hướng làm vấn đề trông **nhẹ hơn** thực tế: `7 nhóm lệch cờ tồn` là con số dùng
+  để lập luận phải tách một entity, và nó nhỏ hơn sự thật **43%**. Lập luận vẫn đúng — nhưng người
+  quyết phải biết nó đang đứng trên cái gì.
+- **Một con số trông vô lý là một phát hiện, kể cả khi nó CÓ lệnh đo.** Lệnh sai vẫn chạy trơn. Ca
+  thật: ghép dòng biến thể bằng ` | ` trong khi ` | ` đã mang nghĩa *"nhiều giá trị cùng một
+  trục"*, nên `Color: Brown | Dark Grey` đọc ra thành hai trục và phép đếm ra `437` thay vì `32`.
+  Thứ bắt được nó là **con số trông vô lý**, không phải phép kiểm nào.
+- **Sửa số thì giữ số cũ kèm lý do lệch, đừng xoá.** *"1459 → 1388 (số cũ nhóm theo `Product Name`
+  khi cột đó còn dính trục biến thể)"* dạy được nhiều hơn `1388` trơ trọi — nó nói phép đo cũ hỏng
+  ở đâu, nên lần sau khỏi hỏng lại.
+
+### Giới hạn thật của loại #7, đo được chứ không đoán
+
+Vai #7 **không** tự tìm ra `427 → 469`; nó chỉ báo *"những số này không có cách đo lại"*. Nhưng khi
+báo theo cụm thì kết quả đó mạnh hơn tưởng: **năm dòng cùng thiếu cách đo, cùng dẫn từ một file,
+là một hình đủ rõ để người đọc đi kiểm.** Nó không tìm ra con số đúng — nó khoanh đúng vùng.
+
+Nên phát biểu chính xác của giới hạn là: **loại #7 bắt được số mục chỉ khi ai đó đã từng ghi lại
+cách đo; không có lệnh đo thì nó chỉ khoanh được vùng cần người vào xem.** Ghi ra để đừng ai
+trông đợi nhiều hơn thế.
+
+Và một điều đúng mãi: **loại #7 phát sinh ngay trong lúc sửa loại #7.** Mọi con số vừa đo lại sẽ
+mục lần nữa khi dữ liệu đổi. Khác biệt duy nhất — và là toàn bộ giá trị của luật 5b — là lần này
+có lệnh chạy lại.
+
 ## 3.6.0 — 2026-09-09
 
 ### Thêm — `verify` đối chiếu tài liệu với DỮ LIỆU THẬT, không chỉ với tài liệu
