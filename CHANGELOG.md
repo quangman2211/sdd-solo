@@ -1,5 +1,40 @@
 # Changelog
 
+## 3.3.2 — 2026-09-09
+
+### Sửa
+
+- **Dòng ✗ của glossary nói đúng cái gì sai, nhưng không nói bắt đầu từ đâu.** Đo trên lần chạy
+  thật ở `runxops`: trong cùng một lần `gate-check`, dòng cảnh báo ngay phía trên nói luôn phải
+  gõ gì (*"dùng `P#` cho node kết thường, `X#` cho node kết của ngoại lệ"*), còn dòng glossary chỉ
+  nói nó sai. Mà glossary là file **khó bắt đầu hơn nhiều**: *"đổi E1 thành X1"* là một phép thay,
+  còn *"viết glossary đi"* là một trang giấy trắng.
+
+  Nay nó chỉ nguồn có sẵn. Người ở bước ⑨ gần như luôn đã viết xong `entities.md`, và tên entity
+  chính là mẻ thuật ngữ đầu tiên — nên script đọc thẳng tên entity ra và in kèm:
+
+  ```
+  ✗ specs/glossary.md còn nguyên template — CLAUDE.md bảo dùng đúng tên trong đó, mà trong đó chưa có tên nào
+    – mẻ đầu có sẵn — tên entity anh đã viết: Account Listing
+    – mỗi dòng một từ, dưới heading '## catalog':  - **Tên** — nghĩa một câu. Không nhầm với **từ gần nghĩa**.
+  ```
+
+  Biến một trang trắng thành việc chép. `entities.md` chưa có thì nó nói lấy từ đâu.
+
+### Không phải lỗi — đã kiểm
+
+- Báo cáo *"`gate-check.sh` thoát với EXIT rỗng qua pipe"* không phải lỗi của script. Đo lại:
+  chạy trực tiếp → `exit 1` đúng; qua pipe thì `$?` là của lệnh cuối trong pipe, đúng chuẩn shell.
+  `${PIPESTATUS[0]}` rỗng là vì **zsh** dùng `$pipestatus[1]` (chữ thường, đánh số từ 1), còn
+  `PIPESTATUS` viết hoa là của bash. Đo hai chiều:
+
+  ```
+  bash:  PIPESTATUS[0] = 1
+  zsh:   PIPESTATUS[0] = ''   ·  pipestatus[1] = 1
+  ```
+
+  Ai đọc exit code của script trong CI dưới zsh thì nhớ chỗ này; script không cần sửa.
+
 ## 3.3.1 — 2026-09-09
 
 ### Làm rõ

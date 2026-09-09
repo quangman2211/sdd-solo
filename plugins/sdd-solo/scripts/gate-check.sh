@@ -115,6 +115,19 @@ GF="$ROOT/specs/glossary.md"
 if [ ! -f "$GF" ]; then warn "chưa có specs/glossary.md"
 elif grep -qE '<Thuật ngữ>|<Context A>' "$GF"; then
   bad "specs/glossary.md còn nguyên template — CLAUDE.md bảo dùng đúng tên trong đó, mà trong đó chưa có tên nào"
+  # Nói cái gì sai và vì sao là chưa đủ: "viết glossary đi" là một trang giấy
+  # trắng. Người ở bước này gần như luôn đã viết xong entities.md, và tên entity
+  # chính là mẻ thuật ngữ đầu tiên — biến trang trắng thành việc chép. So với
+  # dòng cảnh báo P#/X# ở §5, vốn nói luôn phải gõ gì. Xem #24.
+  ENTN="$(grep -oE '^[[:space:]]*class [A-Za-z][A-Za-z0-9_]*' "$EF" 2>/dev/null | awk '{print $2}' | sort -u | tr '\n' ' ')"
+  [ -z "$ENTN" ] && ENTN="$(grep -oE '^## [A-Z][A-Za-z0-9_]*' "$EF" 2>/dev/null | awk '{print $2}' \
+      | grep -vxE 'Domain|History|Entity' | sort -u | tr '\n' ' ')"
+  if [ -n "$ENTN" ]; then
+    info "mẻ đầu có sẵn — tên entity anh đã viết: $ENTN"
+  else
+    info "mẻ đầu lấy từ tên entity trong specs/contexts/$CTX/entities.md"
+  fi
+  info "mỗi dòng một từ, dưới heading '## $CTX':  - **Tên** — nghĩa một câu. Không nhầm với **từ gần nghĩa**."
 else
   GN="$(grep -cE '^- \*\*[^<]' "$GF")"; [ -z "$GN" ] && GN=0
   [ "$GN" -ge 1 ] && ok "glossary có $GN thuật ngữ" || bad "specs/glossary.md chưa có dòng '- **từ** — nghĩa' nào"
