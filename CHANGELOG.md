@@ -1,5 +1,46 @@
 # Changelog
 
+## 3.4.2 — 2026-09-09
+
+### Sửa — bản vá đảo thứ tự bước mà giữ nguyên số thì không cổng nào bắt được
+
+Ca thật ở `runxops`, tìm ra khi sửa nhãn `E#` của `UC-009`: câu adversarial Q1 bảo *duyệt trước,
+ghi sau*. Bản vá **đảo nội dung hai bước nhưng giữ nguyên số**, nên đọc `Main Flow` từ 1 xuống vẫn
+ra thứ tự cũ — ghi trước, duyệt sau. `UC-009.flow.md` vẽ theo đó nên cũng vẽ ngược.
+
+Nửa sai đó sống sót qua **một lượt adversarial và ba lần chạy cổng**. Không phép kiểm nào bắt
+được, và không phép kiểm nào *đáng lẽ* bắt được: mỗi bước đều tồn tại, đánh số đủ, mọi nhãn đều
+deref được. **Cái sai nằm ở thứ tự — thứ chỉ đọc mới thấy.** Đây đúng là loại lỗi bước ⑧ *"đóng
+máy, đọc lại buổi sau"* sinh ra để bắt, và nó thuộc về người đọc chứ không thuộc về script.
+
+Bước 5 của `skills/adversarial` nay bắt buộc, khi bản sửa làm đổi thứ tự bước:
+
+1. **Đánh số lại** theo thứ tự đúng, sửa luôn `UC-###.flow.md` cho khớp.
+2. **Remap mọi nhãn theo NGHĨA, không theo số** — `Main 5` sau khi đánh số lại có thể trỏ vào bước
+   khác hẳn. **Số không phải danh tính**; nó là vị trí, và vị trí thì đổi.
+3. `## History` ghi **vì sao số đổi**, không chỉ ghi "đã sửa".
+
+### Không thêm cổng cho lớp lỗi này — và ghi rõ vì sao
+
+Phép kiểm gần nhất là đối chiếu thứ tự node trong `flow.md` với thứ tự bước trong `## Main Flow`.
+Flow có nhánh nên "thứ tự" không tuyến tính → sẽ **báo oan**. Theo đúng luật của repo này, *một
+phép kiểm báo xanh sai tệ hơn không có phép kiểm* — và một phép kiểm báo đỏ oan thì bị người ta
+học cách phớt lờ, rồi kéo theo cả những dòng đỏ thật. Ghi lại đây để lần sau không ai đi làm nó.
+
+### Đo được — cổng KHÔNG quá chặt
+
+Phân loại 9 dấu ✗ của `UC-009` trên repo thật, sau khi `glossary.md` được viết (19 thuật ngữ,
+`UC-009` còn **2 ✗**):
+
+| Loại | Số dòng |
+|---|---|
+| Spec thiếu thật | **7/9** — 5 nhãn `E#` vắng trong flow · `E3` không có dòng Screens · glossary còn template |
+| Thủ tục, tan khi `/sdd-solo:adversarial` chạy xong | 2/9 |
+| **Cổng quá chặt / bắt oan** | **0/9** |
+
+Không dòng nào bắt oan. 9 dòng nhiều là vì spec thiếu thật 7 chỗ, không phải vì cổng khó tính.
+Đây là lần đầu có số liệu từ repo sản xuất trả lời câu hỏi đó.
+
 ## 3.4.1 — 2026-09-09
 
 ### Đính chính — `allowed-tools` KHÔNG phải whitelist

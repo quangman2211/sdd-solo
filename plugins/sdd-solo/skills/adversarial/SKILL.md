@@ -84,6 +84,20 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
 
    Với mỗi lựa chọn user chọn:
    - spec → sửa đúng chỗ (thêm E#, AC, sửa RULE trong `rules.md`, thêm dòng Screens), rồi `## History` v+1 ghi "sau adversarial pass vai ___".
+
+     **Nếu bản sửa làm đổi THỨ TỰ các bước — sửa nửa vời ở đây không phép kiểm nào bắt được.**
+     Đổi nội dung hai bước cho nhau mà giữ nguyên số thì mọi bước vẫn tồn tại, vẫn đánh số đủ, mọi
+     nhãn vẫn deref được — nhưng đọc `Main Flow` từ 1 xuống vẫn ra thứ tự cũ, tức thứ tự sai. Ca
+     thật ở `runxops`: câu Q1 bảo *duyệt trước, ghi sau*; bản vá đảo nội dung, giữ số; nửa sai sống
+     sót qua cả một lượt adversarial lẫn **ba lần chạy cổng**. Cái sai nằm ở thứ tự — thứ chỉ đọc
+     mới thấy, và đó là lý do bước ⑧ *"đọc lại buổi sau"* tồn tại.
+
+     Ba việc, làm đủ cả ba:
+     1. **Đánh số lại** theo thứ tự đúng, sửa luôn `UC-###.flow.md` cho khớp.
+     2. **Remap mọi nhãn theo NGHĨA, không theo số.** `Main 5` sau khi đánh số lại có thể đang trỏ
+        vào bước khác hẳn. **Số không phải danh tính** — nó là vị trí, và vị trí thì đổi.
+     3. `## History` ghi **vì sao số đổi**, không chỉ ghi "đã sửa". Sáu tháng sau, một số nhảy chỗ
+        mà không có lý do trong file thì không ai dám tin nhãn nào nữa.
    - Open Question → thêm `- [ ] <câu> (quyết định tạm: <user nói>)`. User chưa có gì để nói thì `___`, và giữ nhãn nguồn `[Main 7]` trong câu để sáu tháng sau còn truy được.
    - Out of Scope → thêm vào BR liên quan trong `specs/br.md`.
    Không được để câu nào không có đầu ra.
