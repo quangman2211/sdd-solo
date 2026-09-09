@@ -19,7 +19,7 @@ Cùng nhu cầu với ba vai ở bước ⑦. Khác chỗ: ba vai hỏi *"spec c
 4. **Phạm vi là cả cây, không phải một file.** Phần lớn loại sai này nằm **giữa** các file — một
    file đọc riêng thì hoàn toàn hợp lý. Kiểm từng file riêng sẽ không thấy gì.
 
-## Sáu loại sai phải soi
+## Bảy loại sai phải soi
 
 | # | Loại | Câu hỏi |
 |---|---|---|
@@ -54,6 +54,22 @@ Cách làm:
    luật "trích nguyên văn hai phía", chỉ khác chỗ phía B là một lệnh chứ không phải một dòng file.
 4. **Lệch không có nghĩa là spec sai.** Có thể dữ liệu đã đổi, có thể lệnh cũ đếm hụt. Báo cả hai
    số, **đừng kết luận bên nào đúng** — người biết dữ liệu quyết.
+
+   **Lệnh đo nên in dấu vân tay của chính dữ liệu nó đọc**, và spec ghi lại vân tay đó cạnh bảng số:
+
+   ```
+   Nguồn: itemsell-flat.csv · 1986 dòng · sha256 70daf43f · sửa lần cuối 2026-09-09 22:22
+   Đo lúc: 2026-09-09 22:26
+   ```
+
+   Có vân tay thì câu *"lệch không có nghĩa spec sai"* thôi là một luật người phải nhớ và trở
+   thành **một dòng máy in ra**: vân tay khác → dữ liệu đã đổi; vân tay khớp mà số khác → spec
+   sai hoặc lệnh sai. Không có vân tay thì mọi lần lệch đều phải đoán lại từ đầu.
+
+   Chỗ vân tay **không** bịt được, nói thẳng ra trong `F#` nếu gặp: nó bắt được **dữ liệu** đổi,
+   **không** bắt được **lệnh** đổi. Sửa chính lệnh đo cho nó đếm sai đi thì vân tay vẫn khớp và cả
+   bảng số vẫn mục cùng một chiều — lần này còn khó thấy hơn, vì tài liệu trông như *đã được kiểm*.
+   **Có lệnh đo làm số kiểm lại được, không làm số đúng.**
 5. **Soi kỹ chỗ phép đếm không thấy được.** Đây là chỗ ca thật ở trên trượt: phép đếm cũ **không
    sai công thức**, nó grep `Color:`/`Size:` và đếm đúng thứ nó grep. Nó trượt vì hai thứ nằm
    ngoài tầm với của mọi phép grep:

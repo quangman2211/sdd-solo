@@ -1,5 +1,46 @@
 # Changelog
 
+## 3.8.0 — 2026-09-09
+
+### Thêm — lệnh đo in dấu vân tay của dữ liệu nó đọc
+
+3.7.0 kết bằng câu *"có lệnh đo làm số kiểm lại được, không làm số đúng"*, và nói thẳng là **không
+có cách chữa**. `runxops` tìm ra **nửa** cách chữa, và nó rẻ: lệnh đo in dấu vân tay của chính dữ
+liệu nó vừa đọc, spec ghi lại vân tay đó cạnh bảng số.
+
+```
+Nguồn: itemsell-flat.csv · 1986 dòng · sha256 70daf43f · sửa lần cuối 2026-09-09 22:22
+Đo lúc: 2026-09-09 22:26
+```
+
+Giá trị của nó không nằm ở chỗ bắt thêm lỗi, mà ở chỗ **chuyển một luật người phải nhớ thành một
+dòng máy in ra**. Bước 4 của prompt viết *"lệch không có nghĩa spec sai — có thể dữ liệu đã đổi"*;
+đó là một câu đúng mà mỗi lần gặp lệch vẫn phải ngồi đoán lại. Có vân tay thì hết đoán: vân tay
+khác → dữ liệu đã đổi · vân tay khớp mà số khác → spec sai hoặc lệnh sai.
+
+**Chỗ nó không bịt được, ghi thẳng vào prompt:** vân tay bắt được **dữ liệu** đổi, **không** bắt
+được **lệnh** đổi. Sửa chính lệnh đo cho nó đếm sai đi thì vân tay vẫn khớp và cả bảng số vẫn mục
+cùng một chiều — lần này còn khó thấy hơn, vì tài liệu trông như *đã được kiểm*. Câu của 3.7.0
+đứng nguyên, chỉ hẹp lại đúng một nửa.
+
+`sdd-process` luật 5b mở rộng theo.
+
+### Sửa — tiêu đề `verify-pass.md` nói "Sáu loại sai" trong khi bảng có bảy
+
+3.6.0 thêm loại #7 vào bảng mà quên sửa tiêu đề ngay trên nó. Đúng loại sai #3 của chính tài liệu
+này — *hai chỗ nói ngược nhau* — trong file dạy cách tìm loại sai đó, và không phép kiểm nào bắt
+được vì cả hai chỗ đều là văn xuôi hợp lệ.
+
+### Đo được — cổng 3.7.0 chạy trên repo thật
+
+`UC-009` ở `runxops`: **32 dòng xanh, 1 dòng đỏ**, và dòng đỏ đúng là cửa 2 như thiết kế. Dòng
+`– hai cách qua: …` in ngay dưới dòng ✗ — nhận xét từ `runxops` đáng giữ lại: *"nó biến một dòng
+chặn thành một dòng chỉ đường; đó là khác biệt giữa cổng và tường."*
+
+`/sdd-solo:verify` chưa chạy được ở đó: phiên đang mở vẫn nạp 3.4.3 trong khi bản cài đã là 3.7.0.
+Đúng cảnh báo ④ của `version-check` — **không lệnh nào sửa được, phải mở session mới.** Hai con số
+còn chờ (tỉ lệ dương tính giả của verify, và `UC-009` có qua cửa 2 trong ngày không) vẫn chưa có.
+
 ## 3.7.0 — 2026-09-09
 
 ### Sửa — loại sai #7 không rơi lẻ, và cách báo nó phải theo cụm

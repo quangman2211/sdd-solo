@@ -76,5 +76,8 @@ UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn �
    là quyết định nên không cần; nhưng *"427 dòng đang hỏng"* là một **phép đo**, và một phép đo
    không kèm lệnh thì sáu tháng sau không ai kiểm lại được. Con số là chỗ mục nhanh nhất trong
    spec: nó đúng lúc viết, không ai sửa khi dữ liệu đổi, và số đã mục trông y hệt số đúng.
-   `/sdd-solo:verify` đo lại được chính vì lệnh đó nằm trong file.
+   `/sdd-solo:verify` đo lại được chính vì lệnh đó nằm trong file. Lệnh nên in kèm **dấu vân tay
+   của dữ liệu** (nguồn · số dòng · `sha256` ngắn · sửa lần cuối), và spec ghi lại vân tay đó — để
+   lần chạy sau phân biệt được *dữ liệu đã đổi* với *spec sai* mà không phải đoán. Vân tay không
+   bắt được lệnh đo tự nó đổi: **có lệnh đo làm số kiểm lại được, không làm số đúng.**
 6. Khi được nhờ viết AC/UC/RULE: viết theo đúng template, tiếng Việt cho văn, tên entity/UC slug tiếng Anh.
