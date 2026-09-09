@@ -1,5 +1,56 @@
 # Changelog
 
+## 3.10.0 — 2026-09-09
+
+### Sửa — luật 9 và luật quét kéo ngược nhau; phân loại hit thay vì chỉ tìm hit
+
+`runxops` chạy thử luật quét-cả-cây trên 13 con số đã đổi trong ngày và bắt thêm một chỗ mà **hai
+lượt sửa trước đều trượt**: `entities.md` còn ghi *"132 dòng có nhiều giá trị biến thể"* trong khi
+số thật là **249**. Phép đếm cũ ra `132` vì nó chỉ thấy dấu `|` **nằm cùng dòng với `Color:`** —
+không phải regex sai, mà là **cấu trúc nó đang đếm chưa tồn tại lúc ấy**. Gần gấp đôi.
+
+Nhưng phát hiện đáng giá hơn là một **mâu thuẫn giữa hai luật của chính bản 3.9.0**:
+
+- **Luật 9** (loại #7): sửa số thì **giữ số cũ kèm lý do lệch**.
+- **Luật quét** (loại #8): số vừa đổi thì **quét cả cây tìm mọi chỗ nhắc tới nó**.
+
+Càng tuân thủ luật 9 thì cây càng đầy số cũ **hợp lệ**, nên luật quét ra càng nhiều hit đúng-mà-
+phải-bác. Hôm nay tỷ lệ còn tốt vì mới một ngày; sau vài tháng mỗi số đổi kéo theo hàng chục hit
+lịch sử. Lúc đó *"bác một phát hiện phải rẻ"* (giới hạn 1) **không còn đủ — cái rẻ phải là không
+phải bác.**
+
+**Cách giải: phân loại hit ngay khi tìm ra, máy tự dán nhãn, và không bỏ qua chỗ nào.** Hit ở
+`## History` hoặc trong câu dạng `<số cũ> → <số mới>` là **hit lịch sử hợp lệ** → gộp thành **một
+dòng đếm**, không thành `F#`. Mọi chỗ khác → `F#`.
+
+Chỗ này em cố ý làm **khác** đề nghị gốc (*"chỉ soi hit ngoài `## History` và ngoài câu có dấu
+`→`"*): không **loại bỏ** nhóm một khỏi phép quét, chỉ **hạ nó xuống một dòng đếm**. Loại bỏ hẳn
+thì một câu văn xuôi sống vô tình mang dấu `→` sẽ **tàng hình vĩnh viễn** — và đó đúng là loại lỗi
+cả tài liệu này sinh ra để bắt. Rẻ phải đến từ *đã bác sẵn kèm lý do*, không từ *không nhìn*.
+
+### Thêm — câu định tính đứng thay một con số cũng là hit
+
+*"sẽ nhiều hơn 1986 dòng"* không sai. Số thật là **2523** — **+27%**, và *"nhiều hơn"* che mất đúng
+cái phần khiến người ta phải quyết khác đi. Cùng hình với `13/13` ở luật 10: **câu không sai, chỉ
+là không đủ để ai quyết được gì.**
+
+### Đo được — luật quét chịu được chạy tự động
+
+`runxops` viết vòng lặp grep 13 con số, **mất một phút**, và phân loại đúng: mọi hit ở History và
+ở các câu *"số cũ 1459 → 1388 vì …"* đều hợp lệ; **chỉ một hit** là văn xuôi sống mang số chết.
+Tỷ lệ nhiễu thấp hơn dự đoán, nên luật này không cần người lọc trước.
+
+### Ghi lại — thứ chữa được loại #8 không phải cẩn thận hơn
+
+Nhận xét từ `runxops`, giữ nguyên vì nó đúng và đo được: hôm đó `runxops` trượt loại #8 **ba lần
+liền** vì sửa theo trí nhớ; bản nháp 3.9.0 của plugin trượt **một lần** và bắt được — không phải
+nhờ đọc kỹ hơn, mà nhờ chạy `grep -nE '^[0-9]+\. '`. **Thứ chữa được lớp lỗi này là có một phép
+đếm đứng ngoài mắt mình**, không phải quyết tâm cẩn thận.
+
+Và một khái quát đáng giữ, cũng từ `runxops`: **một cái nhãn mang số là một bản sao của thứ nó dán
+lên, mà mọi bản sao đều trôi.** Cùng luật với việc tách một entity ra khi một trường bị chép ở
+nhiều dòng — hai tầng khác hẳn nhau, một luật.
+
 ## 3.9.0 — 2026-09-09
 
 ### Thêm — một con số ĐÚNG vẫn có thể là phát hiện

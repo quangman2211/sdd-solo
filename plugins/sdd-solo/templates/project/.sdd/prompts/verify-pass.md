@@ -45,6 +45,27 @@ Cách soi: với mỗi lần một con số hoặc một quyết định vừa �
 tới nó** — đừng sửa theo chỗ mình nhớ là có. Trí nhớ của người vừa sửa là thứ dở nhất để dựa vào,
 vì nó nhớ **ý định** chứ không nhớ **chữ**.
 
+**PHÂN LOẠI hit, đừng chỉ tìm hit** — và đừng bỏ qua chỗ nào. Luật này kéo ngược luật 9 của loại
+#7 (*giữ số cũ kèm lý do lệch*): càng tuân thủ luật 9 thì cây càng đầy số cũ **hợp lệ**, nên quét
+số cũ sẽ ra càng nhiều hit đúng-mà-phải-bác. Sau vài tháng, mỗi số đổi kéo theo hàng chục hit lịch
+sử, và lúc đó *"bác một phát hiện phải rẻ"* không còn đủ — **cái rẻ phải là không phải bác.**
+
+Cách giải: chia hit làm hai loại ngay khi tìm ra, **máy tự dán nhãn**, và chỉ loại thứ hai mới
+thành `F#`:
+
+| Hit nằm ở | Xử lý |
+|---|---|
+| Mục `## History`, hoặc một câu có dạng `<số cũ> → <số mới>` / *"số cũ … vì …"* | **hit lịch sử hợp lệ** — liệt kê gọn thành một dòng đếm, không thành `F#` |
+| Bất kỳ chỗ nào khác — văn xuôi sống, bảng, tiêu đề, `RULE`, `AC` | **`F#`** — đây là số chết nằm trong câu sống |
+
+Không **loại bỏ** loại một khỏi phép quét, chỉ **hạ nó xuống một dòng đếm**: *"12 hit ở History và
+các câu `cũ → mới` — hợp lệ theo luật 9"*. Loại bỏ hẳn thì một câu văn xuôi sống vô tình mang dấu
+`→` sẽ tàng hình vĩnh viễn, và đó lại đúng là loại lỗi cả tài liệu này sinh ra để bắt.
+
+**Câu định tính đứng thay một con số cũng là hit.** *"sẽ nhiều hơn 1986 dòng"* không sai — nhưng
+số thật là **2523**, tức **+27%**, và *"nhiều hơn"* che mất đúng cái phần khiến người ta phải quyết
+khác đi. Cùng hình với `13/13` ở luật 10: câu không sai, chỉ là không đủ để ai quyết được gì.
+
 ## Vai thứ hai: đối chiếu tài liệu với DỮ LIỆU THẬT
 
 Sáu loại đầu đọc tài liệu so với tài liệu. Loại 7 khác hẳn và cần một vai riêng, vì **con số là
