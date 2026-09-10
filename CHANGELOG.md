@@ -1,5 +1,57 @@
 # Changelog
 
+## 4.0.2 — 2026-09-10
+
+Hai lỗi của chính 4.0.0, cùng bắt được ở lượt chạy thật đầu tiên trên `runxops`.
+
+### Sửa — `migrate.sh` viết lại một câu ví dụ trong tài liệu vendor của Spec Kit
+
+`sed 's#specs/\([0-9][0-9][0-9]-\)#…#g'` quét **mọi** `*.md` dưới root, nên nó không phân biệt
+*đường dẫn trỏ tới thư mục vừa dời* với *chuỗi trông giống thế trong văn bản*. Ca thật,
+`.claude/skills/speckit-specify/SKILL.md`:
+
+```diff
+-  …path value (for example, `specs/003-user-auth`), not the literal string…
++  …path value (for example, `.speckit/work/003-user-auth`), not the literal string…
+```
+
+`003-user-auth` **không tồn tại trong repo**. Và sau lượt sed, file vendor nói sai về chính công cụ
+nó mô tả — Spec Kit thật sự ghi vào `specs/` theo mặc định, đó là toàn bộ lý do 4.0.0 phải tách cây.
+Một script dọn nhà mà sửa lời khai của người khác.
+
+Sửa: dời và tìm theo **tên thư mục thật sự vừa dời** (`$NAMES` gom trong chính vòng lặp `git mv`),
+`grep -rnF "specs/$b"` rồi `sed "s#specs/$b#…#g"` cho từng tên. Cùng luật đã dùng cho `strip_markup()`
+ở 4.0.1: liệt kê đích danh thì **không thể** đụng nhầm, chứ không phải *ít khả năng* đụng nhầm; hụt
+thì hụt về phía an toàn.
+
+Lợi thứ hai, và nó không nhỏ: mục *"Đường dẫn trỏ tới chỗ cũ"* giờ in ra **đúng những chỗ sắp bị sửa
+thật**. Một danh sách trộn lẫn dương tính giả thì người đọc học cách lướt qua nó — cùng cơ chế với
+dòng đỏ oan, chỉ khác chỗ đứng.
+
+### Sửa — `init --update` chép script mới mà không dọn script cũ, nên repo có HAI đường
+
+Sau khi nâng lên 4.0.0, bảy script đã gộp vẫn nằm nguyên trong `.sdd/scripts/` của dự án:
+`ac-coverage` · `trace-ratio` · `gate-pass` · `close-pass` · `change-pass` · `uc-ready` · `migrate-1to2`.
+
+Đáng lo nhất là `gate-pass.sh`: **nó vẫn chạy được, vẫn đóng dấu cổng được**, đứng song song với
+`pass.sh gate`. Và `uc-ready.sh` vẫn đo bốn thứ mà `gate-check.sh --pre` đang đo — tức đúng **hai
+bản đo cùng một thứ trên cùng một file**, thứ mà mục 4.0.0 nói là gộp lại để chúng khỏi trôi khỏi
+nhau. Gộp trong plugin rồi để lại cả hai bản trong dự án là **không gộp gì cả**.
+
+Sửa: `scaffold.sh` xoá những script bản cũ và in ra tên từng cái. `.sdd/scripts/` là thư mục
+plugin **sở hữu** — `cp` ở đó vốn đã vô điều kiện, không hỏi han gì — nên rác ở đó là rác của
+plugin, không phải nội dung của user.
+
+Danh sách xoá là **đích danh những tên plugin TỪNG phát hành**, không phải luật *"mọi `.sh` không
+nằm trong danh sách chép"*. Người dùng có thể để script của họ ở đó; một phép dọn theo luật chung
+thì có thể xoá nhầm, một danh sách đích danh thì không thể. Kèm một chốt: không bao giờ xoá tên mà
+bản **này** đang phát hành — `migrate-1to2.sh` bị bỏ trong khi `migrate.sh` được giữ, hai tên gần
+nhau đủ để một lần sửa cẩu thả biến phép dọn thành phép tự xoá.
+
+**Đo:** repo giả có đủ bảy script cũ **cộng một script riêng của user** (`my-own.sh`) → 21 file còn
+14; bảy cái cũ mất sạch, `my-own.sh` **còn nguyên**, `migrate.sh` còn nguyên. Repo trắng thì không
+in dòng "dọn bản cũ" nào — nói khi không có gì để dọn là dạy người ta lướt qua dòng đó.
+
 ## 4.0.1 — 2026-09-10
 
 ### Sửa — `filled()` báo đỏ oan trên ba loại cú pháp markdown hợp lệ

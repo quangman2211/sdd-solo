@@ -129,11 +129,31 @@ fi
 # plugin (CI, người clone repo). Đổi lại: bản sao có thể trôi version — .sdd/version
 # so với version plugin, lệch thì session-start và status cảnh báo.
 mkdir -p "$ROOT/.sdd/scripts"
-for f in lib.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh; do
+KEEP="lib.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
+for f in $KEEP; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done
 chmod +x "$ROOT/.sdd/scripts/"*.sh 2>/dev/null
 ok ".sdd/scripts/ — bản sao $VER, chạy được không cần plugin (CI dùng .sdd/scripts/gate-check.sh)"
+
+# Dọn script bản cũ đã gộp/bỏ. Chép file mới mà KHÔNG dọn file cũ thì repo nâng
+# cấp xong vẫn còn nguyên ĐƯỜNG CŨ chạy được: `gate-pass.sh` vẫn đóng dấu cổng
+# được, đứng song song `pass.sh gate`; `uc-ready.sh` vẫn đo bốn thứ mà
+# `gate-check.sh --pre` đang đo. Gộp trong plugin để hai phép đo khỏi trôi khỏi
+# nhau, rồi để lại cả hai bản trong dự án, là không gộp gì cả.
+#
+# LIỆT KÊ ĐÍCH DANH những tên plugin TỪNG phát hành — không xoá theo luật "mọi
+# .sh không nằm trong danh sách chép". Người dùng có thể đã để script của họ ở
+# đây; một phép dọn theo luật chung thì có thể xoá nhầm, một danh sách đích danh
+# thì không thể.
+RETIRED="ac-coverage.sh trace-ratio.sh gate-pass.sh close-pass.sh change-pass.sh uc-ready.sh migrate-1to2.sh"
+RM=""
+for f in $RETIRED; do
+  # chốt an toàn: không bao giờ xoá thứ bản NÀY đang phát hành
+  case " $KEEP " in *" $f "*) continue;; esac
+  [ -f "$ROOT/.sdd/scripts/$f" ] && { rm -f "$ROOT/.sdd/scripts/$f"; RM="$RM $f"; }
+done
+[ -n "$RM" ] && ok ".sdd/scripts/ — dọn bản cũ đã gộp:$RM"
 echo "$VER" > "$ROOT/.sdd/version"
 echo; echo "Xong. Commit: git add -A && git commit -m \"chore(sdd): init sdd-solo $VER\""
 # Dòng này là câu chỉ đường ĐẦU TIÊN user đọc, trước khi biết bất cứ thứ gì khác.

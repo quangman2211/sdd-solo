@@ -23,9 +23,9 @@ echo "=== Tách cây Spec Kit ra khỏi specs/ ==="
 [ "$DRY" = "1" ] && info "--dry-run: KHÔNG đụng đĩa, chỉ in ra sẽ làm gì"
 
 DEST="$ROOT/.speckit/work"
-N=0
+N=0; NAMES=""
 for d in $DIRS; do
-  b="$(basename "$d")"
+  b="$(basename "$d")"; NAMES="$NAMES $b"
   CNT="$(find "$d" -type f 2>/dev/null | wc -l | tr -d ' ')"
   printf '  specs/%s  →  .speckit/work/%s   (%s file)\n' "$b" "$b" "$CNT"
   if [ "$DRY" = "0" ]; then
@@ -41,23 +41,36 @@ for d in $DIRS; do
 done
 
 # Đường dẫn trong file: nếu không sửa, plan.md tự trỏ về một chỗ không còn gì.
-# Chỉ sửa tiền tố `specs/00N-` — không đụng những dòng trỏ vào specs/contexts/,
-# vì đó là cây của sdd-solo và nó KHÔNG dời đi đâu cả.
+#
+# Tìm và sửa theo TÊN THƯ MỤC THẬT SỰ VỪA DỜI, không theo dạng `specs/00N-`.
+# Bản 4.0.0 dùng regex chung nên nó viết lại cả một CÂU VÍ DỤ trong tài liệu
+# vendor của Spec Kit (`.claude/skills/speckit-specify/SKILL.md`: *"for example,
+# `specs/003-user-auth`"*) — `003-user-auth` không hề tồn tại trong repo, và sau
+# lượt sed thì file vendor nói sai về chính công cụ nó tả. Cùng luật đã dùng cho
+# `strip_markup()`: liệt kê đích danh thì KHÔNG THỂ đụng nhầm, chứ không phải
+# ít khả năng đụng nhầm. Hụt thì hụt về phía an toàn.
 echo
 echo "=== Đường dẫn trỏ tới chỗ cũ ==="
-HITS="$(grep -rn 'specs/[0-9][0-9][0-9]-' "$ROOT" \
-        --include='*.md' --include='*.json' --include='*.yml' --include='*.yaml' \
-        --exclude-dir=.git --exclude-dir=node_modules 2>/dev/null | head -40)"
+HITS=""
+for b in $NAMES; do
+  H="$(grep -rnF "specs/$b" "$ROOT" \
+       --include='*.md' --include='*.json' --include='*.yml' --include='*.yaml' \
+       --exclude-dir=.git --exclude-dir=node_modules 2>/dev/null)"
+  [ -n "$H" ] && HITS="$(printf '%s\n%s' "$HITS" "$H")"
+done
+HITS="$(printf '%s' "$HITS" | grep -v '^$' | head -40)"
 if [ -z "$HITS" ]; then
-  ok "không file nào trỏ tới specs/00N-*"
+  ok "không file nào trỏ tới thư mục vừa dời"
 else
   printf '%s\n' "$HITS" | sed 's/^/  /'
   if [ "$DRY" = "0" ]; then
     printf '%s\n' "$HITS" | cut -d: -f1 | sort -u | while IFS= read -r f; do
       [ -f "$f" ] || continue
-      sed -i.bak 's#specs/\([0-9][0-9][0-9]-\)#.speckit/work/\1#g' "$f" && rm -f "$f.bak"
+      for b in $NAMES; do
+        sed -i.bak "s#specs/$b#.speckit/work/$b#g" "$f" && rm -f "$f.bak"
+      done
     done
-    ok "đã sửa tiền tố specs/00N- → .speckit/work/00N- trong những file trên"
+    ok "đã sửa đường dẫn tới thư mục vừa dời trong những file trên"
   else
     info "--dry-run: chưa sửa file nào"
   fi
