@@ -166,6 +166,20 @@ if [ "$AQ" -ge 3 ] && [ "$AE" -gt $((AQ/2)) ]; then
   warn "$AE/$AQ câu adversarial còn 'đầu ra: ___' — đã hỏi nhưng chưa quyết. Chạy lại /sdd-solo:adversarial $ID để nó trình từng câu kèm ngữ cảnh và lựa chọn."
 fi
 
+# 7c. Giả định triển khai — CẢNH BÁO, không chặn (#35).
+# Bốn tầng yêu cầu (BR/UC/Entity/AC) không có ngăn nào cho "dựng bằng gì, chạy ở
+# đâu, ai gọi". Nên thiết kế rơi vào /speckit-plan, mà nó nằm SAU cổng này. Ca
+# thật: UC qua cổng với Main Flow giả định một CLI chạy trên máy; hôm sau plan
+# mới lộ ra sản phẩm là server remote, ba câu trong Main Flow không thi hành
+# được, phải mở cổng ra sửa. Cổng không quyết hộ được kiến trúc — nhưng bắt NÓI
+# RA giả định thì rẻ, và đúng ca đó đã bị bắt.
+if grep -qE '^\*\*Giả định triển khai:\*\* *[^ <]' "$F"; then
+  ok "có **Giả định triển khai:** — ghi rõ ngăn xếp/nơi chạy/ai gọi"
+else
+  warn "UC chưa ghi '**Giả định triển khai:** <chạy ở đâu · ai gọi · ngăn xếp>' — Main Flow đang đứng trên một giả định chưa ai viết ra"
+  info "một dòng là đủ. Không có nó thì thiết kế chỉ lộ ra ở /speckit-plan, tức SAU cổng này."
+fi
+
 # 8. open questions phải có quyết định tạm
 OQ="$(sed -n '/^## Open Questions/,/^## /p' "$F" | grep -E '^- \[ \]')"
 if [ -n "$OQ" ]; then echo "$OQ" | grep -vqi 'quyết định tạm' && bad "Open Question chưa có (quyết định tạm: ...)" || ok "Open Questions có quyết định tạm"; fi

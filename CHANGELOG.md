@@ -1,5 +1,70 @@
 # Changelog
 
+## 3.21.0 — 2026-09-10
+
+### Sửa — brief thành file chỉ-ghi ngay sau intake, và không phép kiểm nào có nhiệm vụ nhìn tới nó (#34)
+
+Ca thật ở `runxops`. Ngày 1: `/sdd-solo:intake` nạp một brief 259 dòng, sinh `specs/br.md` đúng
+luật — kể cả mục `## Đã loại khỏi brief` dài 13 dòng, trong đó có:
+
+> *"Mục 3 toàn bộ kiến trúc ba lớp — là thiết kế, thuộc `/speckit-plan` và ADR, không thuộc tầng BR"*
+
+Ngày 3: `plan.md` được viết với kiến trúc **ngược hẳn brief**. Brief: một MCP server từ xa giữ token
+của hàng trăm shop. Plan: plugin chạy trên máy khách, *"thông tin đăng nhập không bao giờ rời khỏi
+máy"* — viết như một điểm mạnh. Hai tài liệu nói ngược nhau hai ngày, không ai thấy, vì **mỗi bên
+tự nó nhất quán**.
+
+`intake` không có lỗi. Nó làm đúng cả sáu luật. Chỗ hỏng nằm ở chữ *"thuộc `/speckit-plan`"*:
+`/speckit-plan` đọc `spec.md` + `constitution.md`, nó **không đọc brief** và chưa bao giờ đọc.
+Đó là **một địa chỉ chuyển tiếp mà không ai giao hàng** — và nó trông y hệt một việc đã bàn giao xong.
+
+Loại hỏng này khác mọi loại đã ghi ở đây. Trước nay là *phép kiểm đo sai thứ* hoặc *phép kiểm báo
+xanh sai*. Lần này **không phép kiểm nào sai cả** — chỉ là không phép kiểm nào được giao nhìn vào
+vùng đó. `gate-check` đo trong `specs/`, `verify` đọc trong `specs/`, ba vai adversarial **cố ý** mù
+với brief (để không mượn kết luận của người viết brief). Ba lớp phòng thủ, cùng một điểm mù.
+
+**Sửa — và không chỗ nào trong số dưới đây một mình đủ:**
+
+- `.sdd/config` có `brief_path=`; `lib.sh` có `brief_path()` · `brief_sha()` · `brief_rec_sha()`.
+- **SessionStart nạp brief vào ngữ cảnh bắt buộc.** Đây là chỗ duy nhất trong cả bộ nhìn ra ngoài
+  `specs/`. Kèm cảnh báo khi sha brief lệch bản đã nạp.
+- `br-check.sh`: brief khai mà không có file → **đỏ**; `br.md` chưa ghi `**Nguồn brief:** <đường dẫn>
+  · sha256 <12 hex> · nạp <ngày>` → cảnh báo; sha lệch → **đỏ** (brief sửa sau intake nghĩa là hai
+  tài liệu có thể đang cãi nhau).
+- `br-check.sh`: dòng trong `## Đã loại khỏi brief` mà lý do là **hoãn** (`thuộc tầng thiết kế`,
+  `/speckit-plan`, `ADR`, `Phase 5`, `sau này`) thì phải ghi `→ chuyển: <đích>`. Hoãn không đích là
+  hoãn vào hư không.
+- `intake/SKILL.md` luật 7: sau khi chuyển brief, **bắt buộc** khai `brief_path=` và dán dòng
+  `**Nguồn brief:**`. Không có bước này thì cả bốn chỗ trên nằm im — một luật không có ai sản xuất
+  dấu vết cho nó thì không kiểm được gì.
+- `CLAUDE.md.tmpl`: brief vào **thứ tự đọc bắt buộc**, mục 6.
+
+### Thêm — cổng ⑨ hỏi giả định triển khai (#35, phương án nhẹ)
+
+Bốn tầng yêu cầu (BR → UC → Entity → AC) **không có ngăn nào** cho *"dựng bằng gì · chạy ở đâu · ai
+gọi"*. Nên thiết kế rơi hết vào `/speckit-plan`, mà `/speckit-plan` nằm **sau** cổng ⑨. Hệ quả: UC
+qua cổng với Main Flow đứng trên một giả định chưa ai viết ra; hôm sau plan lộ ra giả định khác, ba
+câu trong Main Flow không thi hành được, phải mở cổng ra sửa.
+
+`gate-check.sh` §7c: thiếu dòng `**Giả định triển khai:** <chạy ở đâu · ai gọi · ngăn xếp>` →
+**cảnh báo, không chặn**. Cổng không quyết hộ được kiến trúc; nhưng bắt *nói ra* thì rẻ, và nó bắt
+đúng ca `runxops` vừa dính. Thêm vào `UC-000.md` và checklist DoR.
+
+Đề xuất **nặng** của #35 — bỏ `/speckit-specify` khỏi chuỗi và kéo `/speckit-plan` lên trước cổng ⑨,
+14 bước còn 13 — **chưa làm**: nó đổi thứ tự quy trình đã ghi trong tài liệu, thuộc quyền quyết của
+anh, không phải của em hay của một phiên khác.
+
+### Sửa — cảnh báo lệch sha ở SessionStart chưa bao giờ chạy được (bắt trong lúc test)
+
+Bản đầu của khối này viết `grep -oE '\*\*Nguồn brief:\*\*[^\n]*sha256 ...'`. Trong ERE của `grep`,
+`[^\n]` là *"mọi ký tự trừ `\` và `n`"* — không phải "trừ xuống dòng", vì `grep` vốn đã làm việc theo
+dòng. Đường dẫn brief nào có chữ `n` (`runxops-brief.md` chẳng hạn) là hụt, và **hụt thì im**: khối
+vẫn in dòng brief, chỉ thiếu đúng câu cảnh báo. Y hệt loại đang chữa — một vùng không ai nhìn tới.
+
+Bắt được vì test hỏi *"câu cảnh báo có ra không"*, không hỏi *"khối có chạy không"*. Rút cả phép đo
+về một chỗ (`brief_rec_sha()` trong `lib.sh`) để hai nơi dùng không thể lệch nhau nữa — `br-check`
+viết đúng, `session-start` viết sai, cùng một con số, khác nhau ở một ký tự.
+
 ## 3.20.0 — 2026-09-10
 
 ### Sửa — `uc-steps` báo xanh sai: hai script của plugin, cùng một commit, hai kết luận ngược nhau (#32)

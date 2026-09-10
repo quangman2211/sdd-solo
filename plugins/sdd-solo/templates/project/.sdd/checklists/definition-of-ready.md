@@ -8,6 +8,9 @@ UC được coi là ready khi **tất cả** đúng:
 - [ ] Flow đã vẽ (`UC-###.flow.md`, mermaid); mỗi E# có một nhánh dẫn tới node kết đặt tên; mỗi Postcondition có một node kết. Hai vế đầu `/sdd-solo:gate` kiểm bằng máy.
 - [ ] Mọi entity UC chạm tới có trong `entities.md`; chuyển trạng thái chỉ theo mũi tên có trên state diagram.
 - [ ] Mọi E# có ≥ 1 trạng thái màn hình SCR; mọi SCR trỏ về một bước hoặc E#.
+- [ ] Đã ghi `**Giả định triển khai:** <chạy ở đâu · ai gọi · ngăn xếp>`. Bốn tầng BR/UC/Entity/AC
+      không có ngăn nào cho câu này, nên nếu không nói ra thì nó chỉ lộ ra ở `/speckit-plan` — **sau**
+      cổng này, tức phải mở cổng ra sửa. `/sdd-solo:gate` nhắc, không chặn.
 - [ ] Adversarial pass đã chạy trong session mới; mọi câu hỏi có đầu ra (spec / Open Question / Out of Scope).
 - [ ] Spec đã được đọc lại bằng một cái đầu chưa bị neo — `/sdd-solo:verify UC-###` (subagent, xong là qua cổng ngay) **hoặc** để sang buổi khác buổi viết. `/sdd-solo:gate` kiểm bằng máy: cửa 2 đòi ≥ 1 dòng `F#` có `[neo: ...]` và có đầu ra.
 - [ ] Đã commit `docs(UC-###): spec vN — reviewed`.

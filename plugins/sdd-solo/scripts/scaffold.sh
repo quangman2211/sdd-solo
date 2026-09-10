@@ -110,6 +110,10 @@ if [ ! -f "$ROOT/.sdd/config" ]; then
     echo "# dữ liệu, script chuyển đổi một lần, tiện ích của repo. Được miễn ID ở"
     echo "# githook và không tính vào mẫu số trace-ratio. Để trống là hành xử như cũ."
     echo "tool_paths="
+    echo "# brief_path: file brief nguồn mà specs/br.md được chuyển ra từ đó."
+    echo "# /sdd-solo:intake ghi dòng này. Nó đưa brief vào THỨ TỰ ĐỌC BẮT BUỘC —"
+    echo "# không có nó thì brief thành file chỉ-ghi ngay sau intake (#34)."
+    echo "brief_path="
   } > "$ROOT/.sdd/config"
   ok ".sdd/config — code_paths=$DC · test_paths=$DT (dò từ repo; sửa nếu sai)"
   # tests/ · __tests__/ · spec/ là ba quy ước khác hẳn nhau. Đoán trượt thì

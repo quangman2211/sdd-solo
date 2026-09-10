@@ -110,6 +110,20 @@ code_paths()  { cfg_get code_paths  "$1" "$CFG_DEFAULT_CODE"; }
 test_paths()  { cfg_get test_paths  "$1" "$CFG_DEFAULT_TEST"; }
 uc_test_dir() { cfg_get uc_test_dir "$1" "$CFG_DEFAULT_UCTEST"; }
 tool_paths()  { cfg_get tool_paths  "$1" "$CFG_DEFAULT_TOOL"; }
+# brief_path: file nguồn mà BR được chuyển ra từ đó (#34). Ghi vào config để nó
+# nằm trong THỨ TỰ ĐỌC BẮT BUỘC — không có dòng này thì brief thành file chỉ-ghi
+# ngay sau intake: `gate-check` đo trong specs/, `verify` đọc trong specs/, ba
+# vai adversarial cố ý mù với nó. Ba lớp kiểm, không lớp nào nhìn ra ngoài specs/.
+brief_path()  { cfg_get brief_path  "$1" ""; }
+# brief_sha <root> → sha ngắn của brief hiện tại, rỗng nếu không có file
+brief_sha() { _b="$(brief_path "$1")"; [ -n "$_b" ] && [ -f "$1/$_b" ] || return 1
+              sha "$1/$_b" 2>/dev/null | cut -c1-12; }
+# brief_rec_sha <root> → sha mà br.md KHAI ở dòng '**Nguồn brief:**', rỗng nếu chưa khai.
+# Ở chung một chỗ vì hai nơi dùng nó (br-check, session-start) phải rút cùng một
+# con số; bản đầu của session-start viết '[^\n]*' — trong ERE của grep đó là
+# "mọi ký tự trừ \ và n", nên đường dẫn nào có chữ 'n' là hụt, và hụt thì im.
+brief_rec_sha() { grep -oE '\*\*Nguồn brief:\*\*.*sha256 [0-9a-f]{12}' "$1/specs/br.md" 2>/dev/null \
+                  | grep -oE '[0-9a-f]{12}$' | head -1; }
 # paths_re "src app" → ^(src|app)/  — dùng cho grep -E trên đường dẫn git
 paths_re() { printf '^(%s)/' "$(printf '%s' "$1" | tr -s ' ' '|' | sed 's/|$//')"; }
 # detect_paths <root> → đoán code_paths từ thư mục đang có. KHÔNG nhận specs/

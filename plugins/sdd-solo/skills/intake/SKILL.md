@@ -110,9 +110,40 @@ chưa rõ (Open Questions).
    này sống trong lời nói: đóng terminal là mất, và sáu tháng sau không ai biết brief từng có
    những gì và vì sao chúng biến mất. Ba luật trên đều để lại `___` hoặc Open Question trong file;
    luật này cũng phải để lại dấu vết. Xem #21.
+
+   **Bỏ hẳn và hoãn lại là hai việc khác nhau.** Lý do dạng *"thuộc tầng thiết kế"*, *"thuộc
+   `/speckit-plan`"*, *"thuộc ADR"*, *"thuộc Phase 5"*, *"để sau"* là **hoãn**, và hoãn thì phải
+   ghi ĐÍCH: `→ chuyển: ADR-### · CHG-### · Open Question · một dòng trong plan.md`. Không có
+   đích thì không cơ chế nào mang nó đi — `/speckit-plan` đọc `spec.md` + `constitution.md`, nó
+   **không đọc brief**. Ca thật (`runxops`, #34): dòng *"toàn bộ kiến trúc ba lớp — thuộc tầng
+   thiết kế"* nằm yên hai ngày trong khi `plan.md` được viết với kiến trúc **ngược lại brief**,
+   và không ai thấy vì cả hai bên đều tự nhất quán. Một địa chỉ chuyển tiếp mà không ai giao hàng
+   trông y hệt một việc đã bàn giao xong. `br-check` cảnh báo dòng hoãn thiếu `→ chuyển:`.
+
 5. **Không tự viết UC.** Chỉ sinh ID + tên UC ứng viên.
 6. **Ghi nguồn vào Metadata của BR:** dòng `- **Nguồn:** brief <đường/dẫn>`. Đó là thứ cho
    `br-check.sh` biết BR này phải có mục `## Đã loại khỏi brief`.
+7. **Neo brief lại — hai việc, cả hai bắt buộc.** Sau intake, brief thành file **chỉ-ghi**: cả ba
+   lớp kiểm của plugin (`gate-check`, `verify`, ba vai adversarial) đều chỉ nhìn trong `specs/`.
+   Nên phải tự tay đưa nó vào tầm nhìn:
+
+```bash
+# a) khai vào .sdd/config — đưa brief vào THỨ TỰ ĐỌC BẮT BUỘC của mọi session sau.
+#    Repo init trước 3.21.0 KHÔNG có sẵn dòng brief_path=, và `sed` trên một dòng
+#    không tồn tại im lặng không làm gì — nên phải hỏi trước rồi mới chọn nhánh.
+if grep -q '^brief_path=' .sdd/config; then
+  sed -i.bak "s|^brief_path=.*|brief_path=$1|" .sdd/config && rm -f .sdd/config.bak
+else
+  printf 'brief_path=%s\n' "$1" >> .sdd/config
+fi
+grep '^brief_path=' .sdd/config        # in ra để thấy nó đã vào thật
+# b) neo phiên bản brief vào br.md — brief đổi sau intake thì br-check báo đỏ
+printf '**Nguồn brief:** %s · sha256 %s · nạp %s\n' \
+  "$1" "$(shasum -a 256 "$1" | cut -c1-12)" "$(date +%F)"
+```
+   Dán dòng `**Nguồn brief:**` vào Metadata của BR, ngay dưới `- **Nguồn:**`. Thiếu (a) thì
+   session sau không biết brief tồn tại; thiếu (b) thì brief sửa lúc nào cũng không ai biết, và
+   hai tài liệu nói ngược nhau trong im lặng.
 
 **Ranh giới số — số nào cấm, số nào không.** Luật 1 cấm số ở chỗ **quyết định nghiệp vụ**: ngưỡng,
 thời hạn, quota, quyền. Nó **không** cấm số ở chỗ **cách đo**: "bấm giờ 20 lượt đặt bàn liên tiếp"

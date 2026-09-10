@@ -15,6 +15,29 @@ fi
 B="$(br_body "$ID" "$ROOT")"
 [ -z "$B" ] && { bad "không tìm thấy '# $ID: ...' trong specs/br.md"; exit 1; }
 
+# ── Brief nguồn (#34) ─────────────────────────────────────────────────────
+# Ba lớp kiểm của plugin đều đo TRONG specs/: gate-check đo trong specs/, verify
+# đọc trong specs/, ba vai adversarial cố ý mù với brief. Nên sau intake, brief
+# thành file CHỈ-GHI — hai tài liệu cãi nhau nhiều ngày mà không phép kiểm nào
+# có nhiệm vụ nhìn tới. Đây là chỗ duy nhất trong cả bộ nhìn ra ngoài specs/.
+BP="$(brief_path "$ROOT")"
+if [ -n "$BP" ]; then
+  if [ ! -f "$ROOT/$BP" ]; then
+    bad "brief_path=$BP nhưng file không tồn tại — config khai một nguồn không có thật"
+  else
+    BS="$(sha "$ROOT/$BP" | cut -c1-12)"
+    BREC="$(brief_rec_sha "$ROOT")"
+    if [ -z "$BREC" ]; then
+      warn "br.md chưa ghi '**Nguồn brief:** $BP · sha256 <12 hex> · nạp <ngày>' — không truy được BR chuyển ra từ bản brief nào"
+    elif [ "$BREC" != "$BS" ]; then
+      bad "brief đã đổi kể từ lần intake (sha $BREC → $BS) — br.md và brief có thể đang nói ngược nhau"
+      info "đối chiếu rồi cập nhật dòng '**Nguồn brief:**', hoặc chạy lại /sdd-solo:intake $BP"
+    else
+      ok "brief nguồn khớp sha đã ghi ($BS)"
+    fi
+  fi
+fi
+
 sec() { printf '%s' "$B" | awk -v h="$1" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}'; }
 nonempty() { printf '%s' "$1" | grep -qvE '^[[:space:]]*$'; }
 # filled — có nội dung THẬT: không rỗng, không còn <...>, không phải toàn dòng "..."
@@ -130,6 +153,22 @@ if printf '%s' "$B" | grep -qiE '\*\*Nguồn:\*\*.*brief'; then
   DR="$(sec '## Đã loại khỏi brief')"
   if filled "$DR" && printf '%s' "$DR" | grep -qE '^[[:space:]]*[-*] .*—'; then
     ok "có ## Đã loại khỏi brief"
+    # ĐỊA CHỈ CHUYỂN TIẾP MÀ KHÔNG CÓ GÌ ĐI GIAO (#34). Một dòng ghi "thuộc
+    # /speckit-plan và ADR" đọc như đã xử lý xong, nhưng /speckit-plan đọc
+    # spec.md + constitution.md, KHÔNG đọc brief — nên thứ bị hoãn không bao giờ
+    # tới nơi. Ca thật: 'toàn bộ kiến trúc ba lớp' hoãn sang tầng thiết kế, hai
+    # ngày sau plan.md viết ra kiến trúc NGƯỢC HẲN brief mà không ai đối chiếu.
+    FWD="$(printf '%s' "$DR" | grep -iE 'speckit-plan|/plan|ADR|Phase 5|sau này|để sau|tầng thiết kế')"
+    if [ -n "$FWD" ]; then
+      NOD="$(printf '%s\n' "$FWD" | grep -vE '→ *(chuyển|đích)' | grep -c .)"
+      if [ "$NOD" -gt 0 ]; then
+        warn "$NOD mục hoãn sang bước sau mà không ghi ĐÍCH — không cơ chế nào tự chuyển chúng đi"
+        info "mỗi dòng như vậy thêm '→ chuyển: <đích có thật>' (ADR-###, CHG-###, Open Question, hoặc một dòng trong plan.md)"
+        printf '%s\n' "$FWD" | grep -vE '→ *(chuyển|đích)' | head -3 | sed 's/^/      /'
+      else
+        ok "mọi mục hoãn đều ghi đích chuyển tiếp"
+      fi
+    fi
   else
     warn "Nguồn là brief mà không có ## Đã loại khỏi brief (mỗi dòng '- <mục> — <lý do>') — thứ bị bỏ đang không có chỗ nào ghi lại"
   fi

@@ -123,6 +123,10 @@ chỉ là đường thẳng từ Goal xuống danh sách việc đã định là
 ## Metadata
 - **Status:** draft | approved | in-progress | done
 - **Nguồn:** phỏng vấn (/sdd-solo:intake) | brief `<đường/dẫn>` | tự viết
+<!-- Chuyển từ brief thì thêm dòng dưới (ngoài lề, không phải gạch đầu dòng) và
+     khai `brief_path=` trong .sdd/config. Nó đưa brief vào thứ tự đọc bắt buộc
+     của session sau, và cho br-check biết brief đã đổi kể từ lần nạp hay chưa. -->
+**Nguồn brief:** <đường/dẫn> · sha256 <12 hex đầu> · nạp <YYYY-MM-DD>
 - **Target release:** v___
 - **Last updated:** YYYY-MM-DD
 
@@ -150,6 +154,13 @@ thẳng "chưa có lý do" — đó là câu trả lời trung thực, và vai h
      không loại cái gì khỏi brief thì không có gì để ghi. -->
 ## Đã loại khỏi brief
 - <mục trong brief> — <lý do không đưa vào spec>
+- <mục hoãn sang bước sau> — <lý do> → chuyển: <ADR-### · CHG-### · Open Question · một dòng trong plan.md>
+
+<!-- Hoãn mà không ghi ĐÍCH là hoãn vào hư không: không cơ chế nào tự mang mục đó
+     sang /speckit-plan, vì /speckit-plan đọc spec.md + constitution.md chứ không
+     đọc brief. Ca thật: "toàn bộ kiến trúc — thuộc tầng thiết kế" nằm ở đây hai
+     ngày trong khi plan.md được viết với kiến trúc NGƯỢC LẠI brief. br-check
+     cảnh báo khi dòng hoãn thiếu '→ chuyển:'. -->
 
 ## Related Use Cases
 - UC-###: ...

@@ -20,7 +20,20 @@ BRW=""
 if grep -q '<Tên business requirement>' "$ROOT/specs/br.md" 2>/dev/null; then
   BRW=" TRẠNG THÁI: CHƯA CÓ BR — specs/br.md còn nguyên template, nên repo này đang ở Phase 1 chứ không ở UC nào cả. Câu đầu tiên nói với user: gõ /sdd-solo:intake (hỏi 7 câu rồi viết BR giúp). ĐỪNG nói về UC, đừng đề xuất viết code, và đừng đề xuất /requirements của AIUP vì nó bỏ qua tầng BR. Bỏ qua câu 'nói lại đang ở UC nào' bên dưới."
 fi
-CTX="[sdd-solo v$VER] Repo này chạy quy trình SDD-Solo.${BRW} Việc đầu tiên trong session: nói lại cho user đang ở UC nào, bước nào (theo STATE.md dưới đây) và lệnh gợi ý tiếp theo. Quy tắc cứng: không chạy /speckit-specify, /speckit-plan, /speckit-tasks, /speckit-implement cho UC chưa có marker .sdd/gate/UC-###.ok — bảo user chạy /sdd-solo:gate trước. Gặp quyết định nghiệp vụ spec chưa nói thì DỪNG và hỏi, không chọn mặc định. UC đã qua cổng: ${GATES:-chưa có}.${VC:+ CẢNH BÁO lệch version — nói cho user ngay ở câu đầu: $VC}
+# Brief nguồn: nếu có, nó PHẢI vào context — đây là chỗ duy nhất trong cả quy
+# trình nhìn ra ngoài specs/. Kèm cảnh báo lệch sha: brief đổi sau khi nạp nghĩa
+# là hai tài liệu có thể đang nói ngược nhau mà không ai đối chiếu (#34).
+BFW=""
+BP="$(brief_path "$ROOT")"
+if [ -n "$BP" ] && [ -f "$ROOT/$BP" ]; then
+  BSHA="$(sha "$ROOT/$BP" | cut -c1-12)"
+  BREC="$(brief_rec_sha "$ROOT")"
+  BFW=" BRIEF NGUỒN: $BP — specs/br.md được chuyển ra từ file này. ĐỌC NÓ trước khi viết plan, chọn kiến trúc, hay quyết bất cứ gì về ngăn xếp/nơi chạy/ai gọi; những mục bị loại khỏi BR vì 'thuộc tầng thiết kế' nằm trong đó và KHÔNG có cơ chế nào tự chuyển chúng sang /speckit-plan."
+  if [ -n "$BREC" ] && [ "$BREC" != "$BSHA" ]; then
+    BFW="$BFW CẢNH BÁO: brief đã đổi kể từ lần intake (sha $BREC → $BSHA) — br.md và brief có thể đang nói ngược nhau; đối chiếu trước khi tin bên nào."
+  fi
+fi
+CTX="[sdd-solo v$VER] Repo này chạy quy trình SDD-Solo.${BRW}${BFW} Việc đầu tiên trong session: nói lại cho user đang ở UC nào, bước nào (theo STATE.md dưới đây) và lệnh gợi ý tiếp theo. Quy tắc cứng: không chạy /speckit-specify, /speckit-plan, /speckit-tasks, /speckit-implement cho UC chưa có marker .sdd/gate/UC-###.ok — bảo user chạy /sdd-solo:gate trước. Gặp quyết định nghiệp vụ spec chưa nói thì DỪNG và hỏi, không chọn mặc định. UC đã qua cổng: ${GATES:-chưa có}.${VC:+ CẢNH BÁO lệch version — nói cho user ngay ở câu đầu: $VC}
 
 === STATE.md ===
 $STATE"
