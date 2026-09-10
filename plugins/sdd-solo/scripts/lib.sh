@@ -231,6 +231,10 @@ id_exists() {
     RULE-*) grep -qE "^## $1\b" "$2/specs/rules.md" 2>/dev/null;;
     BR-*)   grep -qE "^#{1,2} $1\b" "$2/specs/br.md" 2>/dev/null;;
     ADR-*)  ls "$2/specs/internal/adr/$1"* >/dev/null 2>&1 || ls "$2/docs/adr/$1"* >/dev/null 2>&1;;
+    # CON-### nằm trong ## Constraints của một BR: `- **CON-001 Technical:** …`.
+    # Tới 4.0.3 không nhánh nào cho nó, nên id_exists trả false cho MỌI CON —
+    # tức một phép kiểm ID chạy trên văn bản có CON sẽ tố oan tất cả (4.1.0).
+    CON-*)  grep -qE "^-? *\*\*$1\b" "$2/specs/br.md" 2>/dev/null;;
     *) return 1;;
   esac
 }

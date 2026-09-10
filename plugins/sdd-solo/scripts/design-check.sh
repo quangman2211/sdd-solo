@@ -56,6 +56,44 @@ else
   else
     ok "architecture.md không còn placeholder"
   fi
+
+  # Mọi ID architecture.md trích phải có thật. Tới 4.0.3 luật này chỉ áp cho
+  # design.md (§2) — cùng một script, hai văn bản, một cái được kiểm một cái
+  # không. `architecture.md` mới là chỗ hay trích CON/ADR/BR nhất, vì nó là chỗ
+  # duy nhất buộc phải nêu nguồn cho một điều cấm.
+  #
+  # NÓI RÕ NÓ ĐO GÌ: đây là phép kiểm ID CÓ TỒN TẠI, không phải ID CÓ NÓI ĐÚNG
+  # THỨ ĐANG GẮN NÓ. Một dòng trích `BR-001` có thật mà chép ngược nghĩa của
+  # BR-001 vẫn đi qua đây. Chỗ đó chỉ người đọc bắt được — và mục ## Cấm đòi
+  # trích NGUYÊN VĂN chính là để việc đọc đó rẻ đi.
+  # strip_markup TRƯỚC: khối <!-- … --> của template chính nó có nhắc CON-002,
+  # ADR-001, BR-001 làm ví dụ. Quét cả chú thích là tự tố oan một repo vừa
+  # scaffold — đúng loại đỏ oan mà 4.0.1 vừa đi chữa ở chỗ khác.
+  for x in $(printf '%s\n' "$(cat "$AR")" | strip_markup /dev/stdin \
+             | grep -oE '(RULE|ADR|BR|CHG|CON)-[0-9]+' | sort -u); do
+    id_exists "$x" "$ROOT" && ok "$x có thật (architecture.md)" \
+      || bad "architecture.md trích $x nhưng không có heading/thư mục nào cho nó"
+  done
+
+  # ## Cấm: dòng nào NÊU NGUỒN thì phải kèm nguyên văn. Chỉ CẢNH BÁO — thiếu
+  # trích dẫn là một thói quen chưa có, không phải một artifact hỏng; cho nó đỏ
+  # là báo đỏ trên một file đang đúng.
+  #
+  # Vì sao đáng nhắc (ca thật, runxops): một dòng trong ## Cấm viết "không tự
+  # động hoá chạy TRONG phiên Multilogin — BR-001 Out of Scope", trong khi
+  # BR-001 cấm chạy NGOÀI phiên và In Scope thì CHO PHÉP chạy trong. Vừa đảo
+  # nghĩa một điều cấm, vừa dán nguồn cho câu mà nguồn không nói — và nó đọc
+  # trôi chảy. Không phép kiểm nào bắt được vì không phép kiểm nào đọc hai
+  # nguồn cùng lúc. Thứ làm nó lộ ra là động tác CHÉP NGUYÊN VĂN.
+  CAM="$(printf '%s\n' "$(cat "$AR")" | strip_markup /dev/stdin \
+         | awk 'index($0,"## Cấm")==1{f=1;next} f&&/^## /{exit} f{print}')"
+  NOQ="$(printf '%s\n' "$CAM" | grep -nE '(RULE|ADR|BR|CHG|CON)-[0-9]+' \
+         | grep -vE 'nguyên văn' | head -5)"
+  if [ -n "$NOQ" ]; then
+    warn "## Cấm: có dòng nêu nguồn mà không trích nguyên văn — không đối chiếu ngược lên nguồn được:"
+    printf '%s\n' "$NOQ" | sed 's/^/      /'
+    info "thêm 'nguyên văn: \"<trích đúng chữ>\"'. Một điều cấm chép sai nghĩa vẫn đọc rất trôi chảy."
+  fi
 fi
 
 # ── 2. design.md của UC ───────────────────────────────────────────────────

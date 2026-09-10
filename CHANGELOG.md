@@ -1,5 +1,72 @@
 # Changelog
 
+## 4.1.0 — 2026-09-10
+
+Ba thứ, đều đến từ lượt dùng thật đầu tiên của tầng `architecture.md` ở `runxops`.
+
+### Thêm — `design-check` kiểm ID trích trong `architecture.md`, và `id_exists` biết `CON-###`
+
+Tới 4.0.3 luật *"mọi ID trích phải có thật"* chỉ áp cho `design.md`. Cùng một script, hai văn bản,
+một cái được kiểm một cái không — **luật đúng, phạm vi sai**, đúng loại đã ghi nhiều lần. Mà
+`architecture.md` mới là chỗ hay trích `CON`/`ADR`/`BR` nhất, vì nó là chỗ **duy nhất buộc phải nêu
+nguồn cho một điều cấm**.
+
+Kéo theo một lỗ nữa: `id_exists()` **không có nhánh `CON-*`**, nên nó trả `false` cho **mọi** `CON`.
+Bật phép kiểm ID lên mà không vá chỗ này thì nó tố oan sạch — một phép kiểm mới sinh ra để bắt nhãn
+bịa lại tự bịa ra nhãn sai. Thêm nhánh: `CON-###` sống trong `## Constraints` của một BR
+(`- **CON-001 Technical:** …`). Hai chỗ gọi `id_exists` hiện có đều không truyền `CON` nên nhánh này
+thuần cộng thêm.
+
+**Và phép kiểm phải `strip_markup` trước khi quét.** Khối `<!-- … -->` của chính template có nhắc
+`CON-002`, `ADR-001` làm ví dụ; quét cả chú thích là tự tố oan một repo vừa `scaffold`. Bắt được
+trước khi phát hành, bằng cách chạy thử trên repo trắng chứ không bằng cách đọc lại.
+
+### Thêm — `## Cấm` phải trích **nguyên văn** khi nêu nguồn (cảnh báo, không chặn)
+
+Ca thật, `runxops`. Một dòng trong `## Cấm`:
+
+> *"Không tự động hoá chạy **trong** phiên Multilogin. `BR-001` Out of Scope: đã thử, rủi ro chết acc"*
+
+`BR-001` cấm chạy **ngoài** phiên; còn `In Scope` của nó thì **cho phép** chạy trong. Dòng đó vừa
+**đảo nghĩa** một điều cấm, vừa **dán nguồn cho câu mà nguồn không nói** — và nó đọc rất trôi chảy.
+
+Nó ngồi trong `br.md` từ đầu, qua `br-check` xanh, qua adversarial ba vai, qua cổng DoR. Không phép
+kiểm nào bắt được, vì **không phép kiểm nào đọc brief và BR cùng lúc**. `design-check` cũng **không**
+bắt được: nó kiểm ID **có tồn tại**, không kiểm ID **có nói đúng thứ đang gắn nó** — và `BR-001` thì
+có thật. Đây là lần thứ tư khoảng trống ấy được ghi vào đây.
+
+Thứ làm nó lộ ra là **động tác chép nguyên văn**: đi lấy đúng câu về dán vào thì thấy ngay nó nói
+*"ngoài"* chứ không nói *"trong"*. Nên template đòi dạng
+`— nguồn: BR-001 · nguyên văn: "…" — vì …`, và `design-check` **cảnh báo** khi một dòng nêu ID mà
+không có `nguyên văn:`.
+
+**Cảnh báo chứ không đỏ, và đây là chỗ cân nhắc ngược với thói quen của repo này.** Thiếu trích dẫn
+là một *thói quen chưa có*, không phải một *artifact hỏng*; cho nó đỏ là báo đỏ trên một file đang
+đúng, và dòng đỏ oan thì kéo theo cả những dòng đỏ thật. Khác hẳn ca `gate-pass.sh` ở 4.0.2 — ở đó
+thứ để lại là một **cánh cửa mở được cổng**, nên mới phải xoá chứ không nhắc.
+
+Ca đó còn dạy thêm một điều mà bản vá không dạy được: sửa xong mới lộ ra nó **không phải lỗi chép**
+— đó là **hai điều cấm từ hai thời điểm**, cái sau ngặt hơn và nuốt luôn thứ `In Scope` đang cho
+phép. Nên hướng dẫn kết bằng: hai nguồn đá nhau thì **đừng chọn hộ** — ghi cả hai, thêm một
+`## Open Questions`, để chủ dự án quyết.
+
+### Sửa — hướng dẫn `## Nơi chạy` nói sai giá trị của chính nó
+
+Bản 4.0.0 kể mục này để *"bắt mâu thuẫn"*. Sai, và sai theo hướng làm người đọc đi tìm nhầm thứ.
+Giá trị là **buộc phải viết chỗ nối ra**: mâu thuẫn giả **tan** ngay khi viết, mâu thuẫn thật thì
+không tan — cả hai kết cục đều là thu hoạch, và không ai biết trước sẽ ra cái nào.
+
+Ca thật kèm theo: `CON-002` *"phần chạm eBay bắt buộc chạy ở máy có Multilogin"* và `ADR-001`
+*"server không bao giờ chạm ổ đĩa khách"* đọc rời thì như chọi nhau; viết vào cùng một mục mới thấy
+chúng nói về **hai chủ thể khác nhau** — một câu nói việc thủ công của NGƯỜI làm ở đâu, câu kia nói
+CODE chạy ở đâu. Không có mục này thì mâu thuẫn giả đó sống tới lúc ai đó ở bước ⑪ tự giải theo
+cách của họ, trong im lặng.
+
+**Đo:** repo trắng vừa `scaffold` → chỉ đỏ vì placeholder, **không** tố oan `CON-002`/`ADR-001` nằm
+trong chú thích · dòng `## Cấm` nêu nguồn không trích → cảnh báo · thêm `nguyên văn:` → im · trích
+`CON-099` không có thật → đỏ · `CON-001`/`CON-002` thật → xanh, `CON-099`/`BR-099` → đỏ · đường
+xanh trọn vẹn vẫn `exit 0`.
+
 ## 4.0.3 — 2026-09-10
 
 ### Sửa — `migrate.sh` bỏ phụ thuộc vào ngữ nghĩa đệ quy của `grep`
