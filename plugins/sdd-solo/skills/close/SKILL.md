@@ -17,7 +17,7 @@ allowed-tools: Bash Read Edit
 4. Có cảnh báo "số literal cần soi" → đi qua từng dòng với user: mỗi số phải trích RULE/CON hoặc user giải thích; số nào là rule nghiệp vụ mà spec chưa có → dừng, thêm RULE, commit `docs(...)`, rồi mới đóng.
 5. Exit 0 → chạy:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/close-pass.sh" $1
+"${CLAUDE_PLUGIN_ROOT}/scripts/pass.sh" close $1
 ```
 6. Nếu spec có đổi trong lúc code mà `## History` chưa ghi → thêm dòng v+1 trước khi pass.
 7. Gợi ý UC tiếp theo từ `specs/contexts/<ctx>/use-cases.md` (status draft đầu tiên) và nhắc `/sdd-solo:state`.

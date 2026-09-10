@@ -1,12 +1,81 @@
 #!/usr/bin/env bash
-# gate-check.sh UC-### — Definition of Ready, kiểm cơ học. exit 0 = qua cổng.
-ID="$1"; [ -z "$ID" ] && { echo "dùng: gate-check.sh UC-###"; exit 2; }
+# gate-check.sh [--pre] UC-### — Definition of Ready, kiểm cơ học. exit 0 = qua cổng.
+#
+# --pre là cổng NHỎ trước bước ⑦ (gộp từ uc-ready.sh ở 4.0.0): đủ nội dung để ba
+# vai adversarial có gì mà đọc chưa. Cùng file, cùng bộ hàm, khác thời điểm và
+# khác ngưỡng — tách hai script là để hai phép đo cùng một thứ trôi khỏi nhau.
+PRE=0; ID=""
+for a in "$@"; do
+  case "$a" in --pre) PRE=1;; UC-[0-9]*) ID="$a";; esac
+done
+[ -z "$ID" ] && { echo "dùng: gate-check.sh [--pre] UC-###"; exit 2; }
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"; F="$(find_uc "$ID" "$ROOT")"
-echo "Definition of Ready — $ID"
+[ "$PRE" = "1" ] && echo "Sẵn sàng adversarial — $ID" || echo "Definition of Ready — $ID"
 [ -z "$F" ] && { bad "không tìm thấy specs/contexts/*/use-cases/${ID}-*/${ID}.md"; exit 1; }
 CTX="$(ctx_of "$F")"; DIR="$(dirname "$F")"
-info "file: ${F#$ROOT/}"
+[ "$PRE" = "0" ] && info "file: ${F#$ROOT/}"
+
+# ── --pre: cổng trước bước ⑦ ──────────────────────────────────────────────
+# Bốn tiền điều kiện cũ ở skills/adversarial đo CẤU TRÚC nên template rỗng qua
+# hết: 4 dòng Main Flow đánh số, 2 AC, 2 E#, 3 dòng Screens — mà cả file còn 23
+# placeholder. Và /sdd-solo:start copy chính template đó. Xem #11.
+if [ "$PRE" = "1" ]; then
+  grep -qE '^[0-9]+\.' "$F" && ok "Main Flow có bước đánh số" || bad "Main Flow chưa có bước nào"
+  A="$(grep -cE '^### AC-[0-9]+' "$F")"; [ "$A" -ge 1 ] && ok "$A AC" || bad "chưa có AC nào"
+  E="$(grep -cE '^- +(\*\*)?E[0-9]+[.:]' "$F")"; [ "$E" -ge 1 ] && ok "$E exception" || bad "chưa có E# nào"
+  grep -qE 'SCR-[0-9]+-[0-9]+' "$F" && ok "bảng Screens có SCR-###-#" || bad "bảng Screens chưa có SCR nào"
+
+  # Đây mới là chốt thật: còn placeholder nghĩa là chưa ai viết nội dung.
+  # NGOẠI LỆ: '___' nằm trong ## Open Questions là hợp lệ. Bản trước tính nó là
+  # placeholder, nên người viết trung thực '- [ ] <câu hỏi> (quyết định tạm: ___)'
+  # bị chặn, và lối thoát duy nhất là BỊA một giá trị — đúng thứ cả tầng BR sinh ra
+  # để chặn. §8 dưới cho qua, br-check chỉ cảnh báo; chỉ nhánh này chặn.
+  # '<...>' thì vẫn đỏ ở mọi chỗ, kể cả trong Open Questions. Xem #23.
+  PHALL="$(awk '
+    /^## Open Questions/ { oq=1; dl=0; next }
+    # ## Đọc lại là mục của bước ⑧, mà nhánh này chạy ở bước ⑦ — nó CÒN NGUYÊN
+    # template là đúng lịch, không phải chưa điền. Không bỏ qua thì --pre đỏ,
+    # adversarial từ chối chạy, và không có đường nào ra: muốn qua bước ⑦ phải
+    # điền trước một mục chỉ tồn tại sau bước ⑦.
+    /^## Đọc lại/ { dl=1; oq=0; next }
+    /^## / { oq=0; dl=0 }
+    {
+      if (dl) next
+      ang = ($0 ~ /<[^>]+>/); us = ($0 ~ /___/)
+      if (!ang && !us) next
+      if ($0 ~ /^[[:space:]]*<!--/) next
+      if ($0 ~ /Ngày chạy|đầu ra/) next
+      if (oq && !ang) next
+      printf "%d:%s\n", NR, $0
+    }' "$F")"
+  PN="$(printf '%s\n' "$PHALL" | awk 'NF' | wc -l | tr -d ' ')"
+  if [ "$PN" -gt 0 ]; then
+    bad "còn $PN chỗ chưa điền — adversarial pass trên spec rỗng là vô ích:"
+    printf '%s\n' "$PHALL" | head -8 | sed 's/^/      /'
+  else
+    ok "không còn placeholder"
+  fi
+  OQU="$(sed -n '/^## Open Questions/,/^## /p' "$F" | grep -c '___')"; [ -z "$OQU" ] && OQU=0
+  [ "$OQU" -gt 0 ] && info "$OQU chỗ ___ trong Open Questions — hợp lệ, không tính là chưa điền"
+
+  # entities.md và glossary.md của context: CẢNH BÁO, không chặn.
+  # Ba vai đọc hai file này làm đầu vào. Chạy khi chúng còn là template thì mô hình
+  # đổi sau đó và AC phải sửa lời — chi phí thật, nhưng không đủ lớn để khoá người
+  # dùng ra khỏi bước ⑦. Chặn ở đây là lặp lại đúng hình lỗi của #23. Xem #24.
+  EF="$ROOT/specs/contexts/$CTX/entities.md"
+  if [ ! -f "$EF" ]; then
+    warn "context $CTX chưa có entities.md — ba vai sẽ hỏi mà không có mô hình để đối chiếu"
+  elif grep -qE '(class|## )Entity[AB]([^A-Za-z0-9]|$)' "$EF" 2>/dev/null; then
+    warn "entities.md của $CTX còn EntityA/EntityB của template — mô hình đổi sau adversarial thì AC phải sửa lời"
+  fi
+  grep -qE '<Thuật ngữ>|<Context A>' "$ROOT/specs/glossary.md" 2>/dev/null && \
+    warn "specs/glossary.md còn là template — ba vai và code sẽ gọi cùng một thứ bằng những tên khác nhau"
+
+  echo
+  if [ "$FAIL" -eq 0 ]; then echo "ĐỦ ĐIỀU KIỆN — chạy ba vai được ($WARN cảnh báo)."; exit 0; fi
+  echo "CHƯA ĐỦ — $FAIL lỗi, $WARN cảnh báo. Viết xong nội dung rồi chạy lại."; exit 1
+fi
 
 # 0. status
 STL="$(grep -E '\*\*Status:\*\*' "$F" | head -1)"; echo "$STL" | grep -q '|' && bad "Status còn là danh sách lựa chọn — chọn một giá trị"
@@ -81,7 +150,7 @@ if [ -f "$FL" ]; then
 elif [ -f "$BP" ]; then
   ok "$ID.bpmn (đường cũ — .flow.md mermaid đếm được E#, cân nhắc chuyển)"
   [ -f "$BP.svg" ] || warn "chưa export $ID.bpmn.svg"
-elif [ -f "$OLD" ]; then bad "$ID.bpmn còn ở chỗ cũ specs/contexts/$CTX/diagrams/ — chạy .sdd/scripts/migrate-1to2.sh"
+elif [ -f "$OLD" ]; then bad "$ID.bpmn còn ở chỗ cũ specs/contexts/$CTX/diagrams/ — dời vào thư mục UC (xem README mục 'Bố cục 1.x')"
 else bad "thiếu ${DIR#$ROOT/}/$ID.flow.md (mermaid) — hoặc $ID.bpmn nếu vẫn dùng BPMN"; fi
 
 # 6. entities + glossary — đo NỘI DUNG, không đo hình dạng.
@@ -177,7 +246,7 @@ if grep -qE '^\*\*Giả định triển khai:\*\* *[^ <]' "$F"; then
   ok "có **Giả định triển khai:** — ghi rõ ngăn xếp/nơi chạy/ai gọi"
 else
   warn "UC chưa ghi '**Giả định triển khai:** <chạy ở đâu · ai gọi · ngăn xếp>' — Main Flow đang đứng trên một giả định chưa ai viết ra"
-  info "một dòng là đủ. Không có nó thì thiết kế chỉ lộ ra ở /speckit-plan, tức SAU cổng này."
+  info "một dòng là đủ. Không có nó thì bước ⑩ /sdd-solo:design không có gì để đối chiếu với specs/internal/architecture.md."
 fi
 
 # 8. open questions phải có quyết định tạm

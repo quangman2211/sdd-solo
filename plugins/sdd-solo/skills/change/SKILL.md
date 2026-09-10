@@ -23,7 +23,7 @@ Phase 5 chỉ dành cho thay đổi làm **một AC cũ không còn đúng** tr�
    Không tự sửa spec thay user (trừ khi user bảo). Không viết code. Dừng ở đây.
 4. Exit 0 → chạy:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/change-pass.sh" $1
+"${CLAUDE_PLUGIN_ROOT}/scripts/pass.sh" change $1
 ```
 Script đặt `Status: applying`, ghi `.sdd/gate/$1.ok`, commit `docs($1): change reviewed — qua cổng Phase 5`. Không có marker này thì githook chặn mọi commit code gắn `($1)`.
 5. STATE.md: `Đang làm: $1 · qua cổng Phase 5 — đang applying`. `Việc tiếp theo: test cho AC mới (đỏ trước) → sửa domain → test AC cũ được giữ vẫn xanh`.

@@ -154,11 +154,11 @@ thẳng "chưa có lý do" — đó là câu trả lời trung thực, và vai h
      không loại cái gì khỏi brief thì không có gì để ghi. -->
 ## Đã loại khỏi brief
 - <mục trong brief> — <lý do không đưa vào spec>
-- <mục hoãn sang bước sau> — <lý do> → chuyển: <ADR-### · CHG-### · Open Question · một dòng trong plan.md>
+- <mục hoãn sang bước sau> — <lý do> → chuyển: <architecture.md · ADR-### · CHG-### · Open Question>
 
 <!-- Hoãn mà không ghi ĐÍCH là hoãn vào hư không: không cơ chế nào tự mang mục đó
-     sang /speckit-plan, vì /speckit-plan đọc spec.md + constitution.md chứ không
-     đọc brief. Ca thật: "toàn bộ kiến trúc — thuộc tầng thiết kế" nằm ở đây hai
+     tới đó. Đích của một mục kiến trúc bị hoãn là specs/internal/architecture.md,
+     mục ## Đã chốt từ brief. Ca thật: "toàn bộ kiến trúc — thuộc tầng thiết kế" nằm ở đây hai
      ngày trong khi plan.md được viết với kiến trúc NGƯỢC LẠI brief. br-check
      cảnh báo khi dòng hoãn thiếu '→ chuyển:'. -->
 

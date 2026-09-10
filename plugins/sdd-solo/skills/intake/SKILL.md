@@ -112,10 +112,11 @@ chưa rõ (Open Questions).
    luật này cũng phải để lại dấu vết. Xem #21.
 
    **Bỏ hẳn và hoãn lại là hai việc khác nhau.** Lý do dạng *"thuộc tầng thiết kế"*, *"thuộc
-   `/speckit-plan`"*, *"thuộc ADR"*, *"thuộc Phase 5"*, *"để sau"* là **hoãn**, và hoãn thì phải
-   ghi ĐÍCH: `→ chuyển: ADR-### · CHG-### · Open Question · một dòng trong plan.md`. Không có
-   đích thì không cơ chế nào mang nó đi — `/speckit-plan` đọc `spec.md` + `constitution.md`, nó
-   **không đọc brief**. Ca thật (`runxops`, #34): dòng *"toàn bộ kiến trúc ba lớp — thuộc tầng
+   tầng thiết kế"*, *"thuộc ADR"*, *"thuộc Phase 5"*, *"để sau"* là **hoãn**, và hoãn thì phải
+   ghi ĐÍCH: `→ chuyển: architecture.md · ADR-### · CHG-### · Open Question`. Không có
+   đích thì không cơ chế nào mang nó đi: `design.md` của mỗi UC do `/sdd-solo:design` sinh ra, và
+   nó đọc brief **chỉ khi** `brief_path` đã khai. Đích thường gặp nhất của một mục kiến trúc bị
+   hoãn là `specs/internal/architecture.md`, mục `## Đã chốt từ brief`. Ca thật (`runxops`, #34): dòng *"toàn bộ kiến trúc ba lớp — thuộc tầng
    thiết kế"* nằm yên hai ngày trong khi `plan.md` được viết với kiến trúc **ngược lại brief**,
    và không ai thấy vì cả hai bên đều tự nhất quán. Một địa chỉ chuyển tiếp mà không ai giao hàng
    trông y hệt một việc đã bàn giao xong. `br-check` cảnh báo dòng hoãn thiếu `→ chuyển:`.
@@ -177,4 +178,4 @@ Còn ✗ thì sửa cùng user rồi chạy lại. Cảnh báo `___` là **bình
    `/sdd-solo:adversarial BR-###` sẽ hỏi ngược lại chính BR này bằng ba vai, đặc biệt là vai
    hoài nghi — *"BR này có thật là BR, hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do?"*
 
-Không viết code. Không chạy Spec Kit. Không tạo thư mục UC — đó là việc của `/sdd-solo:start`.
+Không viết code. Không thiết kế kỹ thuật. Không tạo thư mục UC — đó là việc của `/sdd-solo:start`.

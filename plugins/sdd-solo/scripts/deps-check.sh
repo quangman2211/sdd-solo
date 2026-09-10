@@ -1,122 +1,53 @@
 #!/usr/bin/env bash
-# deps-check.sh [--fix]
-# Kiểm phụ thuộc ngoài của SDD-Solo (Spec Kit, AIUP; Camunda là tuỳ chọn).
-# Mặc định chỉ kiểm và in lệnh copy-paste. --fix thì cài luôn theo đúng thứ tự.
+# deps-check.sh — phụ thuộc ngoài của SDD-Solo.
+#
+# Từ 4.0.0 danh sách này gần như rỗng, và đó là chủ đích: quy trình chạy trọn
+# vòng bằng chính nó. Phụ thuộc BẮT BUỘC chỉ còn `git` và `bash`.
+#
+# Vì sao Spec Kit rời khỏi cột bắt buộc — ba phép đo, không phải sở thích:
+#   ① `.specify/scripts/bash/create-new-feature.sh` hardcode SPECS_DIR=$REPO_ROOT/specs
+#      và `get_highest_from_specs` quét `specs/*` để lấy số kế tiếp. Nó và ta dùng
+#      chung một thư mục với hai hệ ID (`001-` vs `UC-###`), không bên nào biết bên kia.
+#   ② `/speckit-plan` đọc đúng hai thứ: FEATURE_SPEC + `.specify/memory/constitution.md`.
+#      Ở repo thật, FEATURE_SPEC là bản mỏng chỉ có ID còn constitution.md vẫn nguyên
+#      placeholder. Bước quyết kiến trúc chạy trên hai đầu vào rỗng — đó là #34.
+#   ③ Bốn repo trên cùng một máy có 10 / 24 / 25 / 35 lệnh speckit-*. Đặt tên lệnh
+#      của người khác vào quy tắc cứng là để quy tắc hỏng theo lịch release của họ.
+#
+# Spec Kit VẪN đáng cài và đáng đọc — nó là nguồn tham khảo thiết kế tốt, update
+# thường xuyên. Chỉ là không repo nào được gãy khi nó đổi.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
-PLUGIN="$(dirname "$HERE")"; ROOT="$(project_root)"
-FIX=0; [ "$1" = "--fix" ] && FIX=1
-DID_FIX=0
-
-SPECIFY_INIT="specify init --here --force --non-interactive --integration claude"
-SPECIFY_TOOL="uv tool install specify-cli --from git+https://github.com/github/spec-kit.git"
-AIUP_URL="https://github.com/AI-Unified-Process/marketplace.git"
-AIUP_MKT="ai-unified-process-marketplace"
+ROOT="$(project_root)"
 
 echo "=== Phụ thuộc ==="
 
-# ── Spec Kit ────────────────────────────────────────────────────────────
-NEED_SCAFFOLD=0
-if ! command -v specify >/dev/null 2>&1; then
-  bad "Spec Kit — chưa có lệnh 'specify'"
-  info "→ $SPECIFY_TOOL"
-  info "  (cần uv: https://docs.astral.sh/uv/ — không tự cài hộ)"
-elif [ ! -d "$ROOT/.specify" ]; then
-  bad "Spec Kit — có lệnh 'specify' nhưng repo chưa init"
-  info "→ $SPECIFY_INIT"
-  info "  rồi /sdd-solo:init --update   (thứ tự này bắt buộc)"
-  if [ "$FIX" = "1" ]; then
-    echo; info "--fix: đang chạy specify init…"
-    DID_FIX=1
-    if (cd "$ROOT" && $SPECIFY_INIT); then ok "đã init Spec Kit"; NEED_SCAFFOLD=1
-    else bad "specify init lỗi — làm tay theo lệnh trên"; fi
+# ── bắt buộc ────────────────────────────────────────────────────────────
+command -v git >/dev/null 2>&1 && ok "git" || bad "git — chưa có; githook và mọi phép đếm đều cần"
+[ -d "$ROOT/.git" ] && ok "repo đã git init" || bad "chưa git init — githook không gắn được"
+
+# ── tuỳ chọn: nói một dòng, không bao giờ đỏ ────────────────────────────
+if [ -d "$ROOT/.specify" ]; then
+  info "Spec Kit — có .specify/. Tuỳ chọn, KHÔNG nằm trong 14 bước từ 4.0.0."
+  # Chỉ nhắc khi hai cây thật sự đang chung thư mục — nói khi không có gì để dọn
+  # là dạy người ta phớt lờ dòng này.
+  if find "$ROOT/specs" -maxdepth 1 -type d -name '[0-9][0-9][0-9]-*' 2>/dev/null | grep -q .; then
+    warn "specs/ đang chứa cả cây của Spec Kit (thư mục 00N-*) lẫn cây của sdd-solo"
+    info "→ bash .sdd/scripts/migrate.sh --dry-run   (dời sang .speckit/work/, giữ git history)"
   fi
 else
-  ok "Spec Kit — .specify/ có"
-  if [ -f "$ROOT/.specify/templates/spec-template.md" ] && \
-     grep -q 'sdd-solo' "$ROOT/.specify/templates/spec-template.md" 2>/dev/null; then
-    ok "spec-template — đã là bản mỏng trích ID"
-  else
-    bad "spec-template — vẫn là bản gốc Spec Kit, chưa thay"
-    info "→ /sdd-solo:init --update"
-    info "  (dấu hiệu đã chạy specify init SAU /sdd-solo:init — init không nhắc lại nữa)"
-    [ "$FIX" = "1" ] && NEED_SCAFFOLD=1
-  fi
+  info "Spec Kit — chưa cài. Không cần cho 14 bước; cài nếu muốn đọc nó làm tham khảo thiết kế."
 fi
 
-# lệnh /speckit-* có thật trong repo chưa
-if [ -d "$ROOT/.claude/skills" ]; then
-  MISS=""
-  for c in specify plan tasks implement; do
-    [ -d "$ROOT/.claude/skills/speckit-$c" ] || MISS="$MISS /speckit-$c"
-  done
-  [ -z "$MISS" ] && ok "lệnh /speckit-specify /speckit-plan /speckit-tasks /speckit-implement" \
-                 || warn "thiếu lệnh:$MISS — chạy lại '$SPECIFY_INIT'"
-fi
+find "$HOME/.claude/plugins/cache" -maxdepth 2 -type d -name 'aiup-core' 2>/dev/null | grep -q . \
+  && info "AIUP — đã cài. Không dùng cho bước ② ③ ④: bốn lệnh của nó ghi ra cây docs/, và /use-case-spec đụng hệ ID (#29)." \
+  || info "AIUP — chưa cài, và không cần."
 
-# ── AIUP ────────────────────────────────────────────────────────────────
-if find "$HOME/.claude/plugins/cache" -maxdepth 2 -type d -name 'aiup-core' 2>/dev/null | grep -q .; then
-  ok "AIUP — aiup-core đã cài"
-else
-  # KHÔNG phải dòng đỏ (#29). Đọc SKILL.md của cả bốn lệnh aiup-core: 4/4 ghi ra
-  # cây `docs/` chứ không phải `specs/`, 3/4 sinh định dạng SDD-Solo không đọc
-  # (.puml), và `use-case-spec` còn ĐỤNG HỆ ID — `BR-XXX` của nó là business
-  # RULE "restart at BR-001 in every file", trong khi `BR-###` của ta là business
-  # REQUIREMENT trong specs/br.md. Githook sẽ CHO QUA một commit ghi `BR-002`
-  # theo nghĩa AIUP, vì `BR-002` có heading thật — báo xanh sai ở tầng hệ ID.
-  # Bắt cài một thứ để không bao giờ gọi thì dòng đỏ đó chỉ dạy người ta phớt lờ.
-  info "AIUP — chưa cài. KHÔNG cần cho vòng 14 bước: bốn lệnh của nó ghi ra cây docs/,"
-  info "  và /use-case-spec đụng hệ ID (BR-### của nó là business rule, đánh lại mỗi file)."
-  info "  Chỉ cài nếu bạn dùng AIUP cho việc khác:"
-  info "→ /plugin marketplace add $AIUP_URL"
-  info "→ /plugin install aiup-core@$AIUP_MKT"
-  info "  dùng URL https đầy đủ; dạng owner/repo rơi sang SSH → Permission denied (publickey)"
-  if [ "$FIX" = "1" ]; then
-    echo; info "--fix: đang cài AIUP…"; DID_FIX=1
-    claude plugin marketplace add "$AIUP_URL" 2>&1 | sed 's/^/      /'
-    claude plugin install "aiup-core@$AIUP_MKT" -y 2>&1 | sed 's/^/      /'
-    find "$HOME/.claude/plugins/cache" -maxdepth 2 -type d -name 'aiup-core' 2>/dev/null | grep -q . \
-      && ok "đã cài aiup-core — mở session mới để thấy lệnh" \
-      || bad "cài AIUP không xong — làm tay bằng hai lệnh trên"
-  fi
-fi
+[ -d "/Applications/Camunda Modeler.app" ] \
+  && info "Camunda Modeler — có (tuỳ chọn: DMN engine, mở .bpmn cũ)" \
+  || info "Camunda Modeler — không có, và không cần: bước ④ vẽ mermaid trong UC-###.flow.md"
 
-# ── Camunda — TUỲ CHỌN từ 3.1.0 ─────────────────────────────────────────
-# Bước ④ giờ vẽ bằng mermaid trong UC-###.flow.md: là text, không cần app,
-# và cổng DoR đếm được E# — thứ .bpmn không cho đếm. Camunda chỉ còn cần khi
-# muốn chạy RULE bằng DMN engine, hoặc mở .bpmn cũ.
-if [ -d "/Applications/Camunda Modeler.app" ]; then
-  ok "Camunda Modeler — có (tuỳ chọn: DMN engine, mở .bpmn cũ)"
-else
-  info "Camunda Modeler — không có, và không cần: bước ④ vẽ mermaid trong UC-###.flow.md"
-  info "  cần mở .bpmn cũ mà không muốn cài gì → https://demo.bpmn.io (trình duyệt)"
-fi
 info "Claude Design — không kiểm được bằng script; cần cho Phase 0 và bước ⑤"
 
-# ── cài lại spec-template nếu vừa init Spec Kit ──────────────────────────
-if [ "$NEED_SCAFFOLD" = "1" ]; then
-  echo; info "--fix: chạy lại scaffold --update để thay spec-template…"
-  SC="$(plugin_script scaffold.sh "$PLUGIN")"
-  if [ -n "$SC" ]; then
-    "$SC" "$(dirname "$(dirname "$SC")")" "$ROOT" --update 2>&1 | sed 's/^/      /'
-  else
-    # Bản sao .sdd/scripts/ cố ý không có scaffold.sh. Thoái lui tử tế thay vì
-    # để lỗi shell "No such file or directory" lòi ra. Xem #10.
-    bad "không tìm thấy scaffold.sh — bản sao .sdd/scripts/ không chứa nó và máy này chưa cài plugin"
-    info "→ chạy /sdd-solo:init --update trong Claude Code, hoặc gọi scaffold.sh từ thư mục plugin"
-  fi
-fi
-
-# đã đụng tay vào máy thì kiểm lại từ đầu, đừng tin sổ sách
-if [ "$FIX" = "1" ] && [ "$DID_FIX" = "1" ]; then
-  echo; echo "=== Kiểm lại sau khi cài ==="
-  exec "$0"
-fi
-
 echo
-if [ "$FAIL" -gt 0 ]; then
-  echo "Thiếu $FAIL phụ thuộc."
-  [ "$FIX" = "1" ] && echo "--fix không cài được hết — làm tay theo lệnh ở trên." \
-                   || echo "Chạy lệnh ở trên, hoặc /sdd-solo:init --with-deps để cài giúp."
-  exit 1
-fi
+if [ "$FAIL" -gt 0 ]; then echo "Thiếu $FAIL phụ thuộc bắt buộc."; exit 1; fi
 echo "Đủ phụ thuộc."

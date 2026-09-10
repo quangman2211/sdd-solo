@@ -28,12 +28,12 @@ BP="$(brief_path "$ROOT")"
 if [ -n "$BP" ] && [ -f "$ROOT/$BP" ]; then
   BSHA="$(sha "$ROOT/$BP" | cut -c1-12)"
   BREC="$(brief_rec_sha "$ROOT")"
-  BFW=" BRIEF NGUỒN: $BP — specs/br.md được chuyển ra từ file này. ĐỌC NÓ trước khi viết plan, chọn kiến trúc, hay quyết bất cứ gì về ngăn xếp/nơi chạy/ai gọi; những mục bị loại khỏi BR vì 'thuộc tầng thiết kế' nằm trong đó và KHÔNG có cơ chế nào tự chuyển chúng sang /speckit-plan."
+  BFW=" BRIEF NGUỒN: $BP — specs/br.md được chuyển ra từ file này. ĐỌC NÓ trước khi viết plan, chọn kiến trúc, hay quyết bất cứ gì về ngăn xếp/nơi chạy/ai gọi; những mục bị loại khỏi BR vì 'thuộc tầng thiết kế' nằm trong đó, và đích của chúng là specs/internal/architecture.md — không cơ chế nào tự mang chúng tới đó."
   if [ -n "$BREC" ] && [ "$BREC" != "$BSHA" ]; then
     BFW="$BFW CẢNH BÁO: brief đã đổi kể từ lần intake (sha $BREC → $BSHA) — br.md và brief có thể đang nói ngược nhau; đối chiếu trước khi tin bên nào."
   fi
 fi
-CTX="[sdd-solo v$VER] Repo này chạy quy trình SDD-Solo.${BRW}${BFW} Việc đầu tiên trong session: nói lại cho user đang ở UC nào, bước nào (theo STATE.md dưới đây) và lệnh gợi ý tiếp theo. Quy tắc cứng: không chạy /speckit-specify, /speckit-plan, /speckit-tasks, /speckit-implement cho UC chưa có marker .sdd/gate/UC-###.ok — bảo user chạy /sdd-solo:gate trước. Gặp quyết định nghiệp vụ spec chưa nói thì DỪNG và hỏi, không chọn mặc định. UC đã qua cổng: ${GATES:-chưa có}.${VC:+ CẢNH BÁO lệch version — nói cho user ngay ở câu đầu: $VC}
+CTX="[sdd-solo v$VER] Repo này chạy quy trình SDD-Solo.${BRW}${BFW} Việc đầu tiên trong session: nói lại cho user đang ở UC nào, bước nào (theo STATE.md dưới đây) và lệnh gợi ý tiếp theo. Quy tắc cứng: không viết code cho UC chưa có marker .sdd/gate/UC-###.ok, và không viết code cho UC chưa có design.md trong thư mục của nó — bảo user chạy /sdd-solo:gate rồi /sdd-solo:design trước. Chọn ngăn xếp/nơi chạy/thư viện mà specs/internal/architecture.md chưa nói thì DỪNG và hỏi. Gặp quyết định nghiệp vụ spec chưa nói thì DỪNG và hỏi, không chọn mặc định. UC đã qua cổng: ${GATES:-chưa có}.${VC:+ CẢNH BÁO lệch version — nói cho user ngay ở câu đầu: $VC}
 
 === STATE.md ===
 $STATE"

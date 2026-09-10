@@ -47,7 +47,7 @@ if [ -n "$CD" ]; then
     printf '  %-9s %-12s%s\n' "$id" "${st:-?}" "$g"
   done
 fi
-echo; "$HERE/trace-ratio.sh"; "$HERE/ac-coverage.sh"
+echo; "$HERE/metrics.sh"
 # phụ thuộc: chỉ nói khi thiếu, đủ thì im
 D="$("$HERE/deps-check.sh" 2>&1)" || { echo; echo "$D"; }
 # đường dẫn code/test: sai là githook chặn hụt trong im lặng

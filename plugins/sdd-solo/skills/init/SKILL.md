@@ -1,28 +1,60 @@
 ---
 name: init
-description: Cài quy trình SDD-Solo vào repo hiện tại (scaffold specs/ .sdd/ STATE.md, khối CLAUDE.md, spec-template mỏng cho Spec Kit, git hooks) hoặc cập nhật lên bản plugin mới mà không ghi đè file đã sửa tay. --with-deps cài luôn Spec Kit và AIUP.
+description: Cài quy trình SDD-Solo vào repo hiện tại (scaffold specs/ .sdd/ STATE.md, khối CLAUDE.md, git hooks), hoặc cập nhật lên bản plugin mới mà không ghi đè file đã sửa tay. --update chỉ làm mới .sdd/ và template; --plugin làm trọn chuỗi marketplace → plugin đã cài → .sdd/ trong một lệnh.
 disable-model-invocation: true
-argument-hint: "[--update] [--with-deps]"
+argument-hint: "[--update] [--plugin]"
 allowed-tools: Bash Read
 ---
 
-Chạy scaffold của plugin vào repo hiện tại.
+Cài hoặc cập nhật sdd-solo trong repo hiện tại.
 
-1. Xác định root repo: `git rev-parse --show-toplevel` (nếu không phải git repo, hỏi user có muốn `git init` không — hook cần git).
-2. Chạy scaffold. **Bỏ `--with-deps` ra khỏi tham số truyền cho scaffold** — nó chỉ hiểu `--update`:
+`$ARGUMENTS` có `--plugin` → **chế độ B** (trọn chuỗi). Còn lại → **chế độ A** (scaffold).
+
+---
+
+## A. `/sdd-solo:init` · `/sdd-solo:init --update`
+
+1. Xác định root repo: `git rev-parse --show-toplevel` (không phải git repo → hỏi user có muốn
+   `git init` không; hook cần git).
+2. Chạy scaffold — nó chỉ hiểu `--update`, đừng truyền cờ nào khác vào:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/scaffold.sh" "${CLAUDE_PLUGIN_ROOT}" "$(git rev-parse --show-toplevel)" $ARGUMENTS
+"${CLAUDE_PLUGIN_ROOT}/scripts/scaffold.sh" "${CLAUDE_PLUGIN_ROOT}" "$(git rev-parse --show-toplevel)" --update
 ```
-Nếu biến `${CLAUDE_PLUGIN_ROOT}` không được thay, tìm plugin: `find ~/.claude/plugins -type f -name scaffold.sh -path '*sdd-solo*' | head -1` và dùng thư mục cha của `scripts/`.
-3. In nguyên output của script cho user (các dòng ✓ / ! ).
-4. Kiểm phụ thuộc — **không tự cài trừ khi user gõ `--with-deps`**:
+   (bỏ `--update` nếu đây là lần cài đầu). Nếu `${CLAUDE_PLUGIN_ROOT}` không được thay, tìm plugin:
+   `find ~/.claude/plugins -type f -name scaffold.sh -path '*sdd-solo*' | head -1`, rồi dùng thư
+   mục cha của `scripts/`.
+3. In nguyên output cho user (các dòng ✓ / !).
+4. Kiểm phụ thuộc, in nguyên output:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/deps-check.sh"            # mặc định: chỉ kiểm, in lệnh
-"${CLAUDE_PLUGIN_ROOT}/scripts/deps-check.sh" --fix      # chỉ khi $ARGUMENTS có --with-deps
+"${CLAUDE_PLUGIN_ROOT}/scripts/deps-check.sh"
 ```
-In nguyên output. Script tự lo thứ tự bắt buộc (`specify init` trước, rồi scaffold `--update` để thay spec-template) và tự kiểm lại sau khi cài, nên đừng đoán hộ nó.
-   - Exit ≠ 0 và user **không** gõ `--with-deps`: đọc lại các dòng ✗ cho user, nói rõ họ có thể chạy `/sdd-solo:init --with-deps` để cài giúp. Không tự chạy.
-   - `--fix` không cài được lệnh `specify` (cần `uv`) — chỗ đó vẫn là việc của user.
-   - AIUP vừa cài xong thì lệnh `/requirements` chưa có trong session hiện tại; nhắc user mở session mới.
-5. Nếu `specs/br.md` còn nguyên template (có chuỗi `<Tên business requirement>`): nói bước tiếp là **`/sdd-solo:intake`** — nó hỏi bảy câu rồi tự viết BR. Đừng đề xuất `/requirements` ở đây: AIUP đọc `docs/vision.md` mà không skill nào tạo ra file đó, và nó nhảy thẳng vào "hệ thống làm gì", bỏ qua tầng "vì sao làm". Đừng đề xuất viết code.
-6. Nếu có file `.new` trong output: liệt kê và nói user tự merge; không tự ghi đè.
+   Từ 4.0.0 danh sách này gần như rỗng — bắt buộc chỉ còn `git` và repo đã `git init`. Spec Kit,
+   AIUP, Camunda đều là **tuỳ chọn** và script chỉ nói một dòng về chúng. Exit ≠ 0 nghĩa là thiếu
+   một thứ thật sự bắt buộc; đọc lại dòng ✗ cho user.
+5. Output có cảnh báo *"specs/ đang chứa cả cây của Spec Kit"* → nói user chạy
+   `bash .sdd/scripts/migrate.sh --dry-run` xem trước, rồi chạy thật. **Đừng tự chạy** — nó dời file.
+6. `specs/br.md` còn nguyên template (có chuỗi `<Tên business requirement>`) → nói bước tiếp là
+   **`/sdd-solo:intake`**. Đừng đề xuất viết code, đừng đề xuất công cụ ngoài.
+7. Có file `.new` trong output → liệt kê và nói user tự merge; không tự ghi đè.
+
+---
+
+## B. `/sdd-solo:init --plugin`
+
+Dùng khi hook SessionStart hoặc `/sdd-solo:status` báo lệch version. Chạy:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/update.sh"
+```
+(không thay được biến: `find ~/.claude/plugins -type f -name update.sh -path '*sdd-solo*' | head -1`).
+
+In nguyên output. Script tự bỏ qua khe nào đã đúng, nên đừng chạy lại từng lệnh con.
+
+Sau đó:
+- Mục `=== Sau khi update ===` mà dòng *"phiên NÀY vẫn đang chạy"* thấp hơn *"bản đã cài"* →
+  **nói user mở session mới**. Bản mới không áp vào phiên đang mở, y như Claude Code tự update
+  chính nó. Đừng hứa là đã có hiệu lực.
+- Có file `.new` trong phần ③ → liệt kê, nói user tự merge. Không tự ghi đè.
+- Lên **major** (3.x → 4.x) thì scaffold không di chuyển được file đã có: đọc CHANGELOG của bản đó,
+  và với 4.0.0 thì nói user chạy `bash .sdd/scripts/migrate.sh --dry-run`.
+- Script không sửa spec và không commit gì. Thay đổi trong `.sdd/` và template là việc của user
+  commit — nhắc `chore(sdd): update sdd-solo <ver>`.

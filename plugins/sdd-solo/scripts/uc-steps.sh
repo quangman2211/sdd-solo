@@ -80,9 +80,12 @@ st "⑧" $R8 "đọc lại bằng đầu chưa neo"
 
 [ -f "$ROOT/.sdd/gate/$ID.ok" ]; st "⑨" $? "qua cổng DoR"
 
-# ⑩ Spec Kit: có plan.md / tasks.md nào của Spec Kit chưa
-R10=1; find "$ROOT/specs" -maxdepth 3 \( -name 'plan.md' -o -name 'tasks.md' \) 2>/dev/null | grep -q . && R10=0
-st "⑩" $R10 "Spec Kit (/speckit-plan · /speckit-tasks)" "chưa có plan.md/tasks.md nào trong specs/"
+# ⑩ thiết kế: design.md + tasks.md trong CHÍNH thư mục UC (4.0.0).
+# Trước 4.0.0 dòng này quét plan.md/tasks.md ở BẤT KỲ đâu dưới specs/ — nên một
+# plan.md của UC khác làm UC này báo "đã thiết kế". Hỏi theo thư mục của chính
+# nó thì không mượn được dấu vết của hàng xóm.
+R10=1; [ -f "$DIR/design.md" ] && [ -f "$DIR/tasks.md" ] && R10=0
+st "⑩" $R10 "thiết kế (/sdd-solo:design)" "chưa có design.md + tasks.md trong thư mục UC"
 
 # ⑪ code sản phẩm — hỏi theo PHẠM VI FILE, không theo câu chữ trong message (#32).
 # Trước 3.20.0 dòng này chỉ `--grep "($ID)"` trên MỌI đường dẫn, nên một commit

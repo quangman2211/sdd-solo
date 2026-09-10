@@ -1,8 +1,8 @@
 # sdd-solo — Spec-Driven Development cho một dev + AI
 
-Plugin Claude Code đóng gói quy trình SDD-Solo: giữ nguyên bốn tầng yêu cầu của Spec-Driven Development (BR → Use Case → Entity → Acceptance Criteria), thêm biểu đồ chuẩn ở mỗi tầng (flow và state bằng Mermaid, DMN, UML, Impact Map, Story Map), chèn Claude Design thành một bước chính thức, và thay mọi cơ chế cần người thứ hai bằng cơ chế một người làm được: adversarial pass ba vai, cổng Definition of Ready trước khi mở Spec Kit, `STATE.md` thay standup, git hook thay reviewer.
+Plugin Claude Code đóng gói quy trình SDD-Solo: giữ nguyên bốn tầng yêu cầu của Spec-Driven Development (BR → Use Case → Entity → Acceptance Criteria), thêm biểu đồ chuẩn ở mỗi tầng (flow và state bằng Mermaid, DMN, UML, Impact Map, Story Map), chèn Claude Design thành một bước chính thức, và thay mọi cơ chế cần người thứ hai bằng cơ chế một người làm được: adversarial pass ba vai, cổng Definition of Ready trước khi viết code, tầng thiết kế hai mức, `STATE.md` thay standup, git hook thay reviewer.
 
-Nền: ebook *Spec Driven Development* (Nguyễn Thế Huy) · AI Unified Process · GitHub Spec Kit · OpenSpec.
+Nền: ebook *Spec Driven Development* (Nguyễn Thế Huy) · AI Unified Process · GitHub Spec Kit · OpenSpec — đọc để học **hình dạng artifact**; từ 4.0.0 plugin không phụ thuộc lệnh của cái nào.
 
 ## Cài
 
@@ -11,14 +11,14 @@ Nền: ebook *Spec Driven Development* (Nguyễn Thế Huy) · AI Unified Proces
 /plugin install sdd-solo@sdd-solo
 ```
 
-Rồi trong repo dự án: `/sdd-solo:init` — hoặc `/sdd-solo:init --with-deps` để nó cài giúp Spec Kit và AIUP theo đúng thứ tự. Không có cờ thì nó chỉ kiểm và in lệnh, không đụng vào máy.
+Rồi trong repo dự án: `/sdd-solo:init`. Phụ thuộc bắt buộc chỉ có `git` — không cần cài thêm plugin nào.
 
 Rồi **`/sdd-solo:intake`** — nó hỏi bảy câu (khổ gì · ai khổ · tốn gì · không làm thì sao · có cách nào không xây phần mềm · cố ý không làm gì · đo bằng gì) và viết `specs/br.md` giúp bạn. Đang cầm brief do một AI khác viết thì `/sdd-solo:intake brief.md`.
 
-Đi kèm (cài riêng, plugin không tự cài thay bạn):
-- **GitHub Spec Kit** — `specify init --here` trong repo → cho `/speckit-specify /speckit-plan /speckit-tasks /speckit-implement`
-- **AIUP** — `/plugin marketplace add ai-unified-process/marketplace` · `/plugin install aiup-core` → cho `/requirements /entity-model /use-case-diagram /use-case-spec`
-- **Claude Design** (Design System, màn hình SCR) · Camunda Modeler chỉ khi muốn chạy RULE bằng DMN engine — sơ đồ luồng vẽ bằng Mermaid, không cần app
+Tuỳ chọn, **không cái nào nằm trong 14 bước** (từ 4.0.0):
+- **Claude Design** — cần cho Phase 0 và bước ⑤ (Design System, màn hình SCR). Đây là thứ tuỳ chọn đáng cài nhất.
+- **GitHub Spec Kit** — nguồn tham khảo thiết kế tốt và update thường xuyên; cứ cài và cứ đọc. Chỉ một luật: nó ghi vào `.speckit/`, không ghi vào `specs/`. Xem [Vì sao Spec Kit ra khỏi chuỗi](#vì-sao-spec-kit-ra-khỏi-chuỗi).
+- **AIUP** · **Camunda Modeler** — không cần. AIUP ghi ra cây `docs/` và đụng hệ ID; sơ đồ luồng vẽ bằng Mermaid nên không cần app nào.
 
 ## Dùng
 
@@ -26,17 +26,17 @@ Trong repo dự án:
 
 | Lúc nào | Lệnh |
 |---|---|
-| Lần đầu / sau khi update plugin | `/sdd-solo:init` · `/sdd-solo:init --update` · `--with-deps` để cài luôn Spec Kit + AIUP |
+| Lần đầu / sau khi update plugin | `/sdd-solo:init` · `/sdd-solo:init --update` |
 | Mở session | hook tự đọc `STATE.md`, nói đang ở bước nào |
 | **Bắt đầu dự án — chưa biết viết gì** | `/sdd-solo:intake` (phỏng vấn 7 câu) hoặc `/sdd-solo:intake brief.md` (chuyển brief của agent khác) |
 | BR viết xong | `/sdd-solo:adversarial BR-###` — ba vai người trả tiền / vận hành mãi / hoài nghi |
-| Bắt đầu một use case | `/sdd-solo:start UC-### [ctx] [slug]` rồi `/use-case-spec UC-###` (AIUP) |
+| Bắt đầu một use case | `/sdd-solo:start UC-### [ctx] [slug]` rồi viết nội dung UC cùng AI |
 | Sau khi viết RULE, AC, vẽ flow, vẽ màn hình | `/sdd-solo:adversarial UC-###` → `/sdd-solo:verify UC-###` (hoặc **đóng máy**, đọc lại buổi sau) |
-| Buổi sau, đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` |
+| Đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/sdd-solo:design UC-###` → viết code theo `tasks.md` |
 | Code xong | `/sdd-solo:close UC-###` |
 | Cuối buổi | `/sdd-solo:state` |
 | Đang tới đâu · có đang chạy bản cũ không | `/sdd-solo:status` |
-| Có bản mới | `/sdd-solo:update` — chạy trọn ba khe, rồi mở session mới |
+| Có bản mới | `/sdd-solo:init --plugin` — chạy trọn ba khe, rồi mở session mới |
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
 
@@ -52,8 +52,34 @@ STATE.md  CLAUDE.md  <code>/  <tests>/
 
 - **`.sdd/`** giữ bộ máy, kể cả **một bản sao script kiểm** — nên `bash .sdd/scripts/gate-check.sh UC-###` chạy được ở CI và trên máy người clone repo, không cần cài plugin. Lệch version so với plugin thì hook và `status` cảnh báo.
 - **`specs/`** giữ mọi thứ mô tả hệ thống. Ranh giới spec↔doc không mất, nó tụt một tầng: khách cảm nhận được → `contexts/`, chỉ người xây quan tâm → `internal/`. Đang sửa dở → `changes/`.
-- Artifact của một UC nằm **trọn trong thư mục UC**, kể cả sơ đồ luồng `UC-###.flow.md`.
+- Artifact của một UC nằm **trọn trong thư mục UC**: `UC-###.md` · `UC-###.flow.md` · `screens/` · và từ 4.0.0 là `design.md` + `tasks.md` (bước ⑩).
+- Thiết kế kỹ thuật có **hai mức**: `specs/internal/architecture.md` cho cả dự án (ngăn xếp · nơi chạy · ai gọi · ranh giới · cái gì cấm), và `design.md` mỗi UC đối chiếu ngược lên nó.
 - Plugin không bao giờ ghi đè file bạn đã sửa — `init --update` để bản mới cạnh dưới tên `.new`.
+
+## Vì sao Spec Kit ra khỏi chuỗi
+
+Tới 3.x, bước ⑩ của vòng 14 bước là `/speckit-plan`. Từ **4.0.0** nó là `/sdd-solo:design`. Đổi vì
+ba thứ đo được, không phải vì sở thích:
+
+**① Hai hệ tranh nhau một thư mục.** `.specify/scripts/bash/create-new-feature.sh` hardcode
+`SPECS_DIR="$REPO_ROOT/specs"`, và `get_highest_from_specs` quét `specs/*` để lấy số kế tiếp — tức
+nó đang đếm cả `br.md`, `contexts/`, `changes/` của sdd-solo. Kết quả ở một repo thật: `specs/` chứa
+cả `specs/001-assign-product-key/` lẫn `specs/contexts/`, hai hệ ID (`001-` và `UC-###`), không bên
+nào biết bên kia tồn tại.
+
+**② Bước quyết kiến trúc chạy trên hai đầu vào rỗng.** `speckit-plan` đọc đúng hai thứ: `FEATURE_SPEC`
+và `.specify/memory/constitution.md`. `FEATURE_SPEC` là bản mỏng sdd-solo sinh ra, **chỉ chứa ID**.
+Còn `constitution.md` ở repo thật vẫn nguyên placeholder `[PROJECT_NAME]`. **Brief không nằm trong
+hai đầu vào đó và chưa bao giờ nằm** — nên bản thiết kế nói ngược lại brief suốt hai ngày mà không
+ai thấy, vì mỗi tài liệu tự nó nhất quán.
+
+**③ "Spec Kit" không phải một thứ.** Bốn repo trên cùng một máy: 10 · 24 · 25 · 35 lệnh `speckit-*`.
+Đặt tên lệnh của người khác vào **quy tắc cứng** là để quy tắc hỏng theo lịch release của người khác.
+
+Nên: quy tắc cứng của sdd-solo giờ nói về **trạng thái repo** (`.sdd/gate/UC-###.ok` có chưa,
+`design.md` có chưa), không nói về tên lệnh nào cả. Spec Kit vẫn đáng cài và đáng đọc — chỉ cần nó
+ghi vào `.speckit/`. Repo đang trộn hai cây thì `bash .sdd/scripts/migrate.sh --dry-run` tách ra,
+giữ nguyên git history.
 
 ## Repo của bạn đặt code ở đâu
 
@@ -73,8 +99,8 @@ Githook và mọi script kiểm đều đọc file này. Trước 1.5.0 hai đư
 
 ```bash
 /plugin marketplace update sdd-solo && /plugin update sdd-solo   # lấy 2.0.x
-bash <plugin>/scripts/migrate-1to2.sh --dry-run                  # xem trước
-bash <plugin>/scripts/migrate-1to2.sh                            # git mv, giữ history
+bash <plugin>/scripts/migrate.sh --dry-run                       # xem trước
+bash <plugin>/scripts/migrate.sh                                 # git mv, giữ history
 /sdd-solo:init --update                                          # rồi mới tới bước này
 git add -A && git commit -m "chore(sdd): migrate bố cục 2.0.0"
 ```
@@ -99,12 +125,12 @@ GitHub ─①─▶ marketplace đã tải ─②─▶ bản đã cài ─③�
 
 Khe ④ là khe nguy hiểm nhất: vừa `/plugin update` xong, `.sdd/` đã mới, mọi thứ trên đĩa đều đúng, nhưng phiên đang mở vẫn chạy code cũ nạp lúc mở — gõ `/sdd-solo:gate` là nhận logic cũ. Chỉ hook SessionStart biết được phiên nạp bản nào, nên nó ghi lại để `version-check` đọc.
 
-`/sdd-solo:status` tự kiểm cả ba (hỏi GitHub tối đa 3 giây, nhớ 24 tiếng) và chỉ nói khi lệch. `/sdd-solo:update` chạy đúng những khe đang lệch trong một lệnh — nhưng **bản mới chỉ có hiệu lực ở session sau**, giống hệt cách Claude Code tự update chính nó. Hook mở session cũng cảnh báo, nhưng **chỉ so cục bộ, không gọi mạng** — nên khe ① chỉ lộ ra khi chạy `status`.
+`/sdd-solo:status` tự kiểm cả ba (hỏi GitHub tối đa 3 giây, nhớ 24 tiếng) và chỉ nói khi lệch. `/sdd-solo:init --plugin` chạy đúng những khe đang lệch trong một lệnh — nhưng **bản mới chỉ có hiệu lực ở session sau**, giống hệt cách Claude Code tự update chính nó. Hook mở session cũng cảnh báo, nhưng **chỉ so cục bộ, không gọi mạng** — nên khe ① chỉ lộ ra khi chạy `status`.
 
 ## Mức chặn — nói thật
 
 - **Chặn cứng**: git hook `commit-msg` từ chối commit code không có ID hoặc UC chưa qua cổng; `pre-commit` từ chối trộn spec và code. Không có cờ bỏ qua.
-- **Chặn mềm**: `/speckit-specify` `/speckit-plan` là lệnh của Spec Kit, plugin không đứng giữa được. Khối `CLAUDE.md` và hook SessionStart dạy session từ chối khi chưa có marker `.sdd/gate/UC-###.ok`; AI tuân, người thì có thể ép.
+- **Chặn mềm**: không lệnh nào của công cụ ngoài bị gọi tên nữa (từ 4.0.0). Khối `CLAUDE.md` và hook SessionStart dạy session từ chối **viết code** khi chưa có marker `.sdd/gate/UC-###.ok` hoặc chưa có `design.md`; AI tuân, người thì có thể ép.
 
 ## Báo lỗi · yêu cầu sửa
 
@@ -113,7 +139,7 @@ Mở issue tại [github.com/quangman2211/sdd-solo/issues/new/choose](https://gi
 - **Báo lỗi** — plugin cài không được, lệnh chạy sai, script hoặc git hook chặn nhầm. Cần: lệnh đã chạy, output nguyên văn, cách tái hiện, môi trường.
 - **Yêu cầu sửa / thêm** — đổi một quy tắc, thêm kiểm tra, thêm lệnh. Mô tả *vấn đề đang gặp* trước, giải pháp sau.
 
-Ba loại yêu cầu bị từ chối theo thiết kế, đọc phần Ranh giới trong [CLAUDE.md](CLAUDE.md) trước khi mở issue: thêm cờ bỏ qua cho gate/hook, cho plugin ghi đè file dự án đã sửa tay, hook vào lệnh của Spec Kit.
+Ba loại yêu cầu bị từ chối theo thiết kế, đọc phần Ranh giới trong [CLAUDE.md](CLAUDE.md) trước khi mở issue: thêm cờ bỏ qua cho gate/hook, cho plugin ghi đè file dự án đã sửa tay, hook vào lệnh của công cụ ngoài.
 
 ## Tài liệu
 
@@ -127,13 +153,12 @@ sdd-solo/
 ├── .claude-plugin/marketplace.json
 └── plugins/sdd-solo/
     ├── .claude-plugin/plugin.json
-    ├── skills/  sdd-process · init · intake · start · adversarial · gate · change · close · state · status · update
+    ├── skills/  sdd-process · init · intake · start · adversarial · verify · gate · design · change · close · state · status
     ├── hooks/hooks.json            SessionStart → scripts/session-start.sh
-    ├── scripts/                    scaffold · br-check · gate-check/pass · change-check/pass · close-check/pass · status · trace-ratio · ac-coverage
+    ├── scripts/                    scaffold · br-check · gate-check · design-check · change-check · close-check · pass · status · metrics · migrate
     ├── templates/
     │   ├── project/                specs/ docs/ changes/ checklists/ prompts/ STATE.md .gitmessage
     │   ├── CLAUDE.md.tmpl          khối quy tắc, ghép vào CLAUDE.md của repo
-    │   ├── speckit/spec-template.md   bản mỏng chỉ trích ID
     │   └── githooks/               commit-msg · pre-commit
     └── docs/
 ```

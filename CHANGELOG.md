@@ -1,5 +1,110 @@
 # Changelog
 
+## 4.0.0 — 2026-09-10
+
+**Đổi lớn: sdd-solo chạy trọn vòng bằng chính nó.** Phụ thuộc bắt buộc từ ba xuống **không** —
+chỉ còn `git`. Bước ⑩ đổi chủ: `/speckit-plan` → `/sdd-solo:design`. Và tầng thiết kế — thứ bốn
+tầng BR/UC/Entity/AC chưa bao giờ có chỗ cho — giờ có nhà, ở **hai mức**.
+
+Repo đang chạy **phải sửa tay**: xem mục *Nâng cấp* ở cuối.
+
+### Vì sao Spec Kit ra khỏi chuỗi — ba phép đo, không phải sở thích
+
+**① Hai hệ tranh nhau một thư mục.** `.specify/scripts/bash/create-new-feature.sh` hardcode
+`SPECS_DIR="$REPO_ROOT/specs"`, và `get_highest_from_specs` quét `specs/*` để lấy số kế tiếp — tức
+nó đang đếm cả `br.md`, `contexts/`, `changes/` của sdd-solo. Ở `runxops`: `specs/001-assign-product-key/`
+nằm cạnh `specs/contexts/`. Hai hệ ID (`001-` và `UC-###`), một thư mục, không bên nào biết bên kia.
+
+**② Bước quyết kiến trúc chạy trên hai đầu vào rỗng.** `speckit-plan/SKILL.md` bước 2, nguyên văn:
+*"Read FEATURE_SPEC and `.specify/memory/constitution.md`"* — đúng hai thứ. FEATURE_SPEC là bản mỏng
+21 dòng **chính sdd-solo sinh ra**, chỉ chứa ID. Còn `runxops/.specify/memory/constitution.md` vẫn
+nguyên placeholder `[PROJECT_NAME]`, 50 dòng chưa ai điền. **Brief không nằm trong hai đầu vào đó và
+chưa bao giờ nằm.** Sự lệch ở #34 — plan viết ra kiến trúc ngược hẳn brief suốt hai ngày — không
+phải tai nạn. Nó là hệ quả số học của hai đầu vào rỗng.
+
+**③ "Spec Kit" không phải một thứ.** Bốn repo trên cùng một máy: 10 · 24 · 25 · 35 lệnh `speckit-*`.
+Tài liệu của mình gọi đích danh 4 lệnh. Đặt tên lệnh của người khác vào **quy tắc cứng** nghĩa là
+quy tắc đó hỏng theo lịch release của người khác.
+
+Nên luật mới: **quy tắc cứng nói về TRẠNG THÁI REPO, không nói tên lệnh.** `CLAUDE.md.tmpl` và
+`session-start.sh` giờ chặn *"viết code khi chưa có `.sdd/gate/UC-###.ok` hoặc chưa có `design.md`"*
+thay vì chặn *"chạy `/speckit-*`"*. Spec Kit vẫn đáng cài và đáng đọc — nó update thường xuyên và là
+nguồn tham khảo thiết kế tốt; hình dạng `design.md` học thẳng từ `plan.md` của nó. Chỉ một luật: nó
+ghi vào `.speckit/`, không ghi vào `specs/`.
+
+### Thêm — tầng thiết kế hai mức
+
+**Mức dự án: `specs/internal/architecture.md`.** File này đã nằm trong template từ 1.x, **không
+script nào kiểm và không bước nào sinh ra** — một cái ngăn có sẵn mà chưa ai được giao bỏ gì vào.
+Giờ nó có sáu mục bắt buộc: `## Ngăn xếp` · `## Nơi chạy` · `## Ai gọi` · `## Ranh giới` · `## Cấm` ·
+`## Đã chốt từ brief`. Mục cuối là **chỗ nhận hàng** của cơ chế `→ chuyển:` mà 3.21.0 vừa dựng: trước
+4.0.0 đó là một địa chỉ có thật nhưng chưa có nhà.
+
+`___` hợp lệ (chưa quyết được, nhưng biết là mình chưa quyết); `<...>` thì **đỏ** — cùng ranh giới
+tầng BR đã dùng.
+
+**Mức UC: `/sdd-solo:design UC-###` (bước ⑩)** sinh `design.md` + `tasks.md` **trong chính thư mục
+UC**. Nó đọc **sáu nguồn** thay vì hai nguồn rỗng: UC + flow + AC · các RULE được trích · entities +
+glossary · mục BR · **brief nguồn** · architecture.md + ADR. `design.md` bắt buộc có
+`## Đối chiếu architecture.md` và `## Đối chiếu brief` — mỗi chỗ đi khác phải **nói ra** kèm ADR.
+
+**`scripts/design-check.sh`** kiểm cả hai mức trong một script. Cố ý gộp: thứ kiểm `design.md` bắt
+buộc phải đọc `architecture.md` để biết nó đối chiếu với cái gì; tách đôi là tạo hai script đọc cùng
+một bộ file rồi trôi khỏi nhau. Đỏ khi: chưa qua cổng DoR · `architecture.md` thiếu mục hoặc còn
+`<...>` · thiếu `design.md`/`tasks.md` · hai mục đối chiếu **rỗng** · ID trích không có thật · AC nào
+của UC thiếu việc trong `tasks.md`, **và chiều ngược** — `tasks.md` nhắc một `AC-#` UC không có.
+
+`close-check.sh` (bước ⑭) nay đỏ khi UC không có `design.md`: đóng một UC mà không có nó nghĩa là
+code đã viết ra từ một quyết định kỹ thuật không nằm ở đâu cả, và *"chưa bàn"* trông y hệt *"đã bàn
+rồi quên ghi"*.
+
+### Sửa — gộp lại cho gọn: 19 script còn 16, 12 skill vẫn 12 nhưng một cái đổi việc
+
+| Gộp | Từ | Thành |
+|---|---|---|
+| ba script "pass" | `gate-pass` · `close-pass` · `change-pass` | `pass.sh <gate\|close\|change> <ID>` |
+| hai chỉ số | `trace-ratio` · `ac-coverage` | `metrics.sh` |
+| cổng nhỏ trước ⑦ | `uc-ready.sh` | `gate-check.sh --pre` |
+| chuyển bố cục | `migrate-1to2.sh` (bố cục 1.x, đã chết) | `migrate.sh` (tách cây Spec Kit) |
+| skill | `/sdd-solo:update` | `/sdd-solo:init --plugin` |
+| mới | — | `design-check.sh` · `skills/design/` |
+
+`pass.sh` nhận **mode tường minh**, không đoán theo tiền tố ID: `UC-###` đi qua **hai** pass khác
+nhau (⑨ gate và ⑭ close), tiền tố không phân biệt được, và một script tự đoán sai giữa `reviewed`
+với `implemented` thì hỏng im lặng. Từng câu commit message giữ nguyên **đúng ký tự** — `gate-check`
+§9 và githook nhận diện commit bằng tiêu đề.
+
+`uc-ready` và `gate-check` đo cùng bốn thứ trên cùng một file ở hai thời điểm. Để tách là để hai phép
+đo cùng một thứ trôi khỏi nhau — mà đó là loại hỏng repo này đã ghi nhiều lần.
+
+`deps-check.sh` 122 dòng còn 53, và **không bao giờ đỏ vì một thứ tuỳ chọn** nữa. Nó chỉ còn kiểm
+`git` + repo đã `git init`. Spec Kit · AIUP · Camunda mỗi thứ một dòng `–`. Thêm một cảnh báo có
+điều kiện: `specs/` đang chứa thư mục `00N-*` thì chỉ đúng lệnh `migrate.sh --dry-run` — và **chỉ
+nói khi thật sự có gì để dọn**, vì nói khi không có gì là dạy người ta phớt lờ dòng đó.
+
+### Sửa — hai lỗi bắt được trong lúc test, cùng loại đang chữa
+
+**`uc-steps` ⑩ mượn được dấu vết của UC khác.** Bản đầu quét `plan.md`/`tasks.md` ở **bất kỳ đâu**
+dưới `specs/` — nên một `plan.md` của UC khác làm UC này báo *"đã thiết kế"*. Cùng hình lỗi với #32.
+Sửa: hỏi đúng thư mục của chính nó. Đo: `UC-002` có `design.md` copy từ `UC-001` vẫn ra `?`.
+
+**`design-check` báo đỏ oan trên `<br/>`.** Phép tìm placeholder `<...>` bắt luôn `<br/>` trong khối
+mermaid của `architecture.md` — tức một file **đã điền xong** vẫn đỏ. Dòng đỏ oan thì bị học cách
+phớt lờ, rồi kéo theo cả những dòng đỏ thật. Sửa bằng `strip_tags()` liệt kê **đích danh** những thẻ
+HTML có thật trong template, không nới regex thành "bỏ mọi `<...>` ngắn". Lượt sửa đó đồng thời gỡ
+một bộ lọc sai khác (`grep -v '"<'`) vốn đang **giấu** placeholder thật trong node mermaid.
+
+### Nâng cấp — repo đang chạy phải làm tay
+
+```
+/plugin marketplace update sdd-solo   →   /plugin update sdd-solo
+/sdd-solo:init --update
+bash .sdd/scripts/migrate.sh --dry-run     # xem trước
+bash .sdd/scripts/migrate.sh               # git mv, giữ history; KHÔNG tự commit
+```
+rồi **mở session mới**. Sau đó điền `specs/internal/architecture.md` — mọi UC chưa `implemented` sẽ
+cần nó ở bước ⑩. `/sdd-solo:update` không còn; dùng `/sdd-solo:init --plugin`.
+
 ## 3.21.0 — 2026-09-10
 
 ### Sửa — brief thành file chỉ-ghi ngay sau intake, và không phép kiểm nào có nhiệm vụ nhìn tới nó (#34)

@@ -10,6 +10,6 @@ Chạy và diễn giải ngắn (không lặp lại nguyên văn):
 ```
 Có mục `=== Version ===` thì nói ngay: mỗi dòng lệch đã kèm sẵn lệnh đúng cho **đúng khe** đó — ③ `/sdd-solo:init --update`, ② `/plugin update`, ① `/plugin marketplace update`. Đừng bảo user chạy cả ba.
 
-Cuối output có mục `=== Phụ thuộc ===` thì nghĩa là đang thiếu Spec Kit hoặc AIUP — nói ngắn thiếu gì và gợi ý `/sdd-solo:init --with-deps`. Đủ thì script im, đừng nhắc tới.
+Cuối output có mục `=== Phụ thuộc ===` thì nghĩa là thiếu một phụ thuộc **bắt buộc** (chỉ còn `git` và repo đã init) — nói ngắn thiếu gì. Đủ thì script im, đừng nhắc tới.
 
 Nói: đang ở UC nào bước nào; UC nào đã qua cổng nhưng chưa implemented (đang code); UC draft còn lại; hai con số cuối và chúng có đang xấu đi so với lần user hỏi trước không (nếu biết). Không đề xuất viết code.

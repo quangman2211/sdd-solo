@@ -154,11 +154,12 @@ if printf '%s' "$B" | grep -qiE '\*\*Nguồn:\*\*.*brief'; then
   if filled "$DR" && printf '%s' "$DR" | grep -qE '^[[:space:]]*[-*] .*—'; then
     ok "có ## Đã loại khỏi brief"
     # ĐỊA CHỈ CHUYỂN TIẾP MÀ KHÔNG CÓ GÌ ĐI GIAO (#34). Một dòng ghi "thuộc
-    # /speckit-plan và ADR" đọc như đã xử lý xong, nhưng /speckit-plan đọc
-    # spec.md + constitution.md, KHÔNG đọc brief — nên thứ bị hoãn không bao giờ
-    # tới nơi. Ca thật: 'toàn bộ kiến trúc ba lớp' hoãn sang tầng thiết kế, hai
-    # ngày sau plan.md viết ra kiến trúc NGƯỢC HẲN brief mà không ai đối chiếu.
-    FWD="$(printf '%s' "$DR" | grep -iE 'speckit-plan|/plan|ADR|Phase 5|sau này|để sau|tầng thiết kế')"
+    # tầng thiết kế" đọc như đã xử lý xong, nhưng không cơ chế nào mang nó đi.
+    # Ca thật: 'toàn bộ kiến trúc ba lớp' hoãn sang tầng thiết kế, hai ngày sau
+    # bản thiết kế viết ra kiến trúc NGƯỢC HẲN brief mà không ai đối chiếu.
+    # Từ 4.0.0 đích của loại dòng này là specs/internal/architecture.md, mục
+    # ## Đã chốt từ brief — một chỗ CÓ THẬT và design-check đọc tới.
+    FWD="$(printf '%s' "$DR" | grep -iE 'speckit-plan|/plan|design\.md|architecture|kiến trúc|ADR|Phase 5|sau này|để sau|tầng thiết kế')"
     if [ -n "$FWD" ]; then
       NOD="$(printf '%s\n' "$FWD" | grep -vE '→ *(chuyển|đích)' | grep -c .)"
       if [ "$NOD" -gt 0 ]; then

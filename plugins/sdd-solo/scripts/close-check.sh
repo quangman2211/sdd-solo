@@ -7,6 +7,16 @@ echo "Definition of Done — $ID"
 [ -z "$F" ] && { bad "không tìm thấy file UC"; exit 1; }
 CTX="$(ctx_of "$F")"; SLUG="$(slug_of "$F")"
 [ -f "$ROOT/.sdd/gate/$ID.ok" ] && ok "đã qua cổng DoR" || bad "chưa có marker .sdd/gate/$ID.ok — chạy /sdd-solo:gate"
+# Tầng thiết kế (4.0.0). Đóng một UC mà không có design.md nghĩa là code đã viết
+# ra từ một quyết định kỹ thuật không nằm ở đâu cả — sáu tháng sau không ai đọc
+# lại được VÌ SAO nó dựng như thế, và "chưa bàn" trông y hệt "đã bàn rồi quên ghi".
+DDIR="$(dirname "$F")"
+if [ -f "$DDIR/design.md" ]; then
+  ok "có design.md"
+  [ -f "$DDIR/tasks.md" ] && ok "có tasks.md" || warn "thiếu tasks.md — mỗi AC lẽ ra có một việc và một test"
+else
+  bad "thiếu design.md trong thư mục UC — chạy /sdd-solo:design $ID (bước ⑩)"
+fi
 # test theo AC
 UCT="$(uc_test_dir "$ROOT")"
 TD="$ROOT/$UCT/$CTX/$ID"

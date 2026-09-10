@@ -31,8 +31,7 @@ if [ -f "$ROOT/.sdd/version" ]; then
   if [ -n "$OLD1X" ]; then
     bad "repo còn bố cục 1.x:$OLD1X"
     info "chạy MIGRATE TRƯỚC, init sau — ngược lại là nội dung thật kẹt ở chỗ cũ:"
-    info "  bash \"$PLUGIN/scripts/migrate-1to2.sh\" --dry-run   # xem trước"
-    info "  bash \"$PLUGIN/scripts/migrate-1to2.sh\"             # làm thật"
+    info "  bố cục 1.x không còn script chuyển đổi từ 4.0.0 — xem README mục 'Bố cục 1.x'"
     info "  rồi mới /sdd-solo:init --update"
     exit 1
   fi
@@ -75,14 +74,10 @@ PY
 else
   { [ -f "$CL" ] && printf '\n'; printf '%s\n%s\n%s\n' "$B" "$BLOCK" "$E"; } >> "$CL"; ok "CLAUDE.md — thêm khối sdd-solo"
 fi
-# Spec Kit template mỏng
-if [ -d "$ROOT/.specify/templates" ]; then
-  T="$ROOT/.specify/templates/spec-template.md"
-  [ -f "$T" ] && ! grep -q 'sdd-solo' "$T" && cp "$T" "$T.bak"
-  cp "$PLUGIN/templates/speckit/spec-template.md" "$T"; ok ".specify/templates/spec-template.md — bản mỏng trích ID (bản cũ .bak)"
-else
-  warn "chưa có .specify/ — chạy 'specify init --here --force --non-interactive --integration claude' TRƯỚC, rồi /sdd-solo:init --update để thay spec-template"
-fi
+# 4.0.0: KHÔNG còn vá .specify/templates/spec-template.md. Bản mỏng ấy tồn tại
+# chỉ để /speckit-plan có chỗ đọc — một miếng đệm không sinh thông tin mới (#35).
+# Và nó buộc một thứ tự init mà đảo lại là hỏng im lặng: `specify init --force`
+# chạy SAU thì ghi đè bản mỏng, không báo gì. Bước ⑩ giờ là /sdd-solo:design.
 # git hooks
 if [ -d "$ROOT/.git" ]; then
   mkdir -p "$ROOT/.sdd/hooks"; cp "$PLUGIN/templates/githooks/"* "$ROOT/.sdd/hooks/"; chmod +x "$ROOT/.sdd/hooks/"*
@@ -134,7 +129,7 @@ fi
 # plugin (CI, người clone repo). Đổi lại: bản sao có thể trôi version — .sdd/version
 # so với version plugin, lệch thì session-start và status cảnh báo.
 mkdir -p "$ROOT/.sdd/scripts"
-for f in lib.sh br-check.sh gate-check.sh gate-pass.sh change-check.sh change-pass.sh close-check.sh close-pass.sh status.sh trace-ratio.sh ac-coverage.sh version-check.sh deps-check.sh migrate-1to2.sh uc-ready.sh uc-steps.sh; do
+for f in lib.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done
 chmod +x "$ROOT/.sdd/scripts/"*.sh 2>/dev/null

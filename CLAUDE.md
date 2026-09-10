@@ -7,13 +7,12 @@ Repo này là **plugin Claude Code** (đồng thời là marketplace một plugi
 .claude-plugin/marketplace.json      version phải khớp plugin.json
 plugins/sdd-solo/
   .claude-plugin/plugin.json         version
-  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · change · close · state · status · update
+  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · state · status
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
-  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check/-pass · change-check/-pass · close-check/-pass · status · trace-ratio · ac-coverage · version-check · update · migrate-1to2 · uc-ready · deps-check
+  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · uc-steps · version-check · update · migrate · deps-check · session-start
   templates/project/                 được copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
-  templates/speckit/spec-template.md bản mỏng thay spec-template của Spec Kit
   templates/githooks/                commit-msg · pre-commit — chặn cứng
   docs/playbook-example-khoskill.html
 CHANGELOG.md                         mỗi bản một mục — đây là ## History của plugin
@@ -23,7 +22,7 @@ CHANGELOG.md                         mỗi bản một mục — đây là ## Hi
 - **Plugin giữ NGUỒN của hành vi; dự án giữ một bản sao có đánh version của phần hành vi cần chạy được khi không có plugin** (githook, script kiểm ở `.sdd/scripts/`). Bản sao do `init --update` phát; lệch version thì hook SessionStart và `/sdd-solo:status` cảnh báo. Đổi từ 2.0.0 — giá phải trả là bản sao có thể trôi, đổi lại cổng DoR chạy được ở CI và trên máy người clone repo, chứ không dừng ở máy tác giả.
 - **Dự án giữ nội dung.** `scaffold.sh` chỉ ghi đè file có sha khớp manifest (user chưa sửa tay); file đã sửa → tạo `.new`, không ghi đè. Không đổi quy tắc này.
 - **Không có cờ bỏ qua** cho `gate-check.sh`, `commit-msg`, `pre-commit`. Đây là tính năng. Nếu một quy tắc sai thật, sửa quy tắc và ghi CHANGELOG — không thêm `--skip`.
-- **`/specify` `/plan` là của Spec Kit**, plugin không chặn cứng được; chặn mềm qua `CLAUDE.md.tmpl` + hook SessionStart. Không tìm cách "hook" vào lệnh của Spec Kit.
+- **Không gọi tên lệnh của plugin khác trong quy tắc cứng** (từ 4.0.0). Quy tắc nói về *trạng thái repo* — `.sdd/gate/UC-###.ok` có chưa, `design.md` có chưa — chứ không nói `/speckit-*`. Lý do đo được: bốn repo trên cùng máy có 10 / 24 / 25 / 35 lệnh `speckit-*`; một quy tắc gọi tên lệnh người khác thì hỏng theo lịch release của người khác. Spec Kit vẫn là nguồn tham khảo tốt — chỉ cần nó ghi vào `.speckit/`, không ghi vào `specs/`.
 - **`speckit-decompose` để ngoài** plugin này (quyết định 09/2026).
 - Không bịa số liệu trong template hay skill: chỗ chưa có dữ liệu để `___`.
 

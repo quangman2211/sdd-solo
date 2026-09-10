@@ -1,6 +1,6 @@
 ---
 name: gate
-description: Bước ⑨ — cổng Definition of Ready cho một UC, kiểm cơ học (AC vs E#, Screens, RULE tồn tại, flow mermaid đối chiếu E# hai chiều, adversarial pass, và đọc lại bằng đầu chưa neo — verify pass trong ngày HOẶC commit docs đã qua một đêm). Đỏ thì không được chạy Spec Kit; xanh thì đặt status reviewed, ghi marker .sdd/gate/UC-###.ok và commit.
+description: Bước ⑨ — cổng Definition of Ready cho một UC, kiểm cơ học (AC vs E#, Screens, RULE tồn tại, flow mermaid đối chiếu E# hai chiều, adversarial pass, và đọc lại bằng đầu chưa neo — verify pass trong ngày HOẶC commit docs đã qua một đêm). Đỏ thì không được thiết kế hay viết code; xanh thì đặt status reviewed, ghi marker .sdd/gate/UC-###.ok và commit.
 disable-model-invocation: true
 argument-hint: "UC-###"
 allowed-tools: Bash Read
@@ -13,13 +13,13 @@ Cổng DoR cho `$1`.
 "${CLAUDE_PLUGIN_ROOT}/scripts/gate-check.sh" $1
 ```
 (nếu `${CLAUDE_PLUGIN_ROOT}` không được thay: `find ~/.claude/plugins -type f -name gate-check.sh -path '*sdd-solo*' | head -1`).
-2. Exit ≠ 0 → **KHÔNG QUA CỔNG**. Với mỗi dòng ✗, nói user cần sửa gì và ở file nào. Không tự sửa spec thay user (trừ khi user bảo). Không chạy `/speckit-specify`, `/speckit-plan`. Dừng ở đây.
+2. Exit ≠ 0 → **KHÔNG QUA CỔNG**. Với mỗi dòng ✗, nói user cần sửa gì và ở file nào. Không tự sửa spec thay user (trừ khi user bảo). Không chạy `/sdd-solo:design`, không viết code. Dừng ở đây.
 3. Exit 0 → chạy:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/gate-pass.sh" $1
+"${CLAUDE_PLUGIN_ROOT}/scripts/pass.sh" gate $1
 ```
 Script đặt `Status: reviewed`, ghi `.sdd/gate/$1.ok`, commit `docs($1): spec reviewed — qua cổng DoR`.
-4. STATE.md: `Đang làm: $1 · bước ⑨ xong — sẵn sàng /speckit-specify`. `Việc tiếp theo: /speckit-specify (file mỏng trích ID) → /speckit-plan, đọc plan trước khi /speckit-tasks`.
-5. Nhắc user ba chỗ cần soi khi đọc plan: RULE được kiểm trước khi tạo record chưa; logic RULE nằm ở domain hay adapter; chuyển trạng thái có đúng state diagram.
+4. STATE.md: `Đang làm: $1 · bước ⑨ xong — sẵn sàng /sdd-solo:design`. `Việc tiếp theo: /sdd-solo:design $1, đọc design.md trước khi viết dòng code đầu tiên`.
+5. Nhắc user ba chỗ cần soi khi đọc `design.md`: RULE được kiểm trước khi tạo record chưa; logic RULE nằm ở domain hay adapter; chuyển trạng thái có đúng state diagram.
 
 Không có cờ bỏ qua. Muốn vượt cổng thì phải sửa spec cho đủ.

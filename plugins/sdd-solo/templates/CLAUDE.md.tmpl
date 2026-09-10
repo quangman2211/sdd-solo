@@ -9,16 +9,17 @@ Repo này viết spec trước, code sau. Đọc theo thứ tự trước khi l�
 6. **Brief nguồn** (`brief_path` trong `.sdd/config`), nếu có — `specs/br.md` được chuyển ra từ nó, và mục `## Đã loại khỏi brief` liệt kê những thứ **bị hoãn sang tầng thiết kế mà không có cơ chế nào tự chuyển tiếp**. Bắt buộc đọc trước khi viết `plan.md`, chọn kiến trúc, hay quyết bất cứ gì về ngăn xếp / nơi chạy / ai gọi.
 
 Quy tắc cứng:
-- KHÔNG chạy `/speckit-specify`, `/speckit-plan`, `/speckit-tasks`, `/speckit-implement` cho UC chưa có `.sdd/gate/UC-###.ok`. Bảo user chạy `/sdd-solo:gate UC-###` trước.
+- KHÔNG viết code cho UC chưa có `.sdd/gate/UC-###.ok`, và KHÔNG viết code cho UC chưa có `design.md` trong thư mục của nó. Bảo user chạy `/sdd-solo:gate UC-###` rồi `/sdd-solo:design UC-###` trước. Quy tắc này nói về **trạng thái repo**, không nói về tên lệnh của công cụ nào — tên lệnh của người khác đổi theo lịch của người khác.
 - Gặp quyết định nghiệp vụ mà spec chưa nói (số, ngưỡng, enum, ai được làm gì) → DỪNG và hỏi. Không chọn giá trị mặc định. Khi user trả lời, nhắc user ghi vào spec và commit `docs(UC-###)` trước khi code tiếp.
 - Test đặt ở `tests/use-cases/<ctx>/UC-###/AC-#.test.*`, describe có `"UC-### / AC-#"`. Test hành vi ở tầng domain, không chỉ mock HTTP.
 - Logic nghiệp vụ ở `src/domain` + `src/use-cases`; DB/HTTP/provider ở `src/adapters`.
 - Commit message `<type>(UC-###): <mô tả>`. Không trộn thay đổi spec và code trong một commit. Mọi ID trong ngoặc phải có thật: `CHG-` cần `specs/changes/CHG-###-*/`, `ADR-` cần file trong `specs/internal/adr/`, `RULE-`/`BR-` cần heading trong `specs/rules.md` / `specs/br.md`.
 - Đổi hành vi của UC đã `implemented` (một AC cũ không còn đúng) → KHÔNG sửa thẳng UC. Mở `CHG-###` trong `specs/changes/`, chạy `/sdd-solo:change CHG-###`; chưa có `.sdd/gate/CHG-###.ok` thì githook chặn mọi commit code gắn `(CHG-###)`. Thêm AC mới mà không phá AC cũ thì vẫn là Phase 3, `## History` v+1.
-- Khi `/speckit-specify`: file trong `.specify/` CHỈ trích ID và link tới file UC trong `specs/`. Không chép nội dung.
+- Thiết kế kỹ thuật nằm ở hai mức: `specs/internal/architecture.md` (cả dự án — ngăn xếp, nơi chạy, ai gọi, ranh giới, cái gì cấm) và `design.md` trong thư mục mỗi UC. Chọn ngăn xếp / nơi chạy / thư viện mà hai file đó chưa nói → DỪNG và hỏi, y như với quyết định nghiệp vụ.
+- Dùng Spec Kit hay công cụ ngoài nào khác thì cứ dùng, nhưng nó ghi vào thư mục của nó (`.speckit/`), KHÔNG ghi vào `specs/`. `specs/` là cây của sdd-solo.
 
 Bắt đầu dự án (Phase 1): `/sdd-solo:intake` → điền `specs/br.md` → `/sdd-solo:adversarial BR-###` → `/sdd-solo:start UC-###`. Chưa có BR thì đừng mở UC: `specs/br.md` còn là template nghĩa là đang xây trên nền chưa viết.
 
 Đổi hành vi đã giao: `/sdd-solo:change CHG-###` → test AC mới → code → archive.
 
-Lệnh của quy trình: `/sdd-solo:start` → viết nội dung UC cùng user (KHÔNG dùng `aiup-core:use-case-spec` — nó ghi ra `docs/`, và `BR-###` của nó là business *rule* đánh lại mỗi file, đụng `BR-###` business *requirement* của ta) → tay: RULE, AC, flow (mermaid), Claude Design → `/sdd-solo:adversarial` → đóng máy → `/sdd-solo:gate` → `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → `/sdd-solo:close` → `/sdd-solo:state`.
+Lệnh của quy trình: `/sdd-solo:start` → viết nội dung UC cùng user (KHÔNG dùng `aiup-core:use-case-spec` — nó ghi ra `docs/`, và `BR-###` của nó là business *rule* đánh lại mỗi file, đụng `BR-###` business *requirement* của ta) → tay: RULE, AC, flow (mermaid), Claude Design → `/sdd-solo:adversarial` → `/sdd-solo:verify` → `/sdd-solo:gate` → `/sdd-solo:design` → viết code → test theo AC → `/sdd-solo:close` → `/sdd-solo:state`.

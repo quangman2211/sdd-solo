@@ -5,7 +5,7 @@ description: Kiến thức nền của quy trình SDD-Solo — 4 tầng yêu c�
 
 # SDD-Solo — cách hệ thống này viết spec
 
-Nguồn: ebook *Spec Driven Development* (Nguyễn Thế Huy), AIUP, GitHub Spec Kit, OpenSpec; ký hiệu Mermaid (flowchart, stateDiagram, sequenceDiagram), DMN, UML, Impact Mapping, User Story Mapping. Bản này dành cho **một dev + AI**: giữ nguyên artifact của sách, thay mọi cơ chế cần người thứ hai.
+Nguồn: ebook *Spec Driven Development* (Nguyễn Thế Huy), AIUP, GitHub Spec Kit, OpenSpec — **đọc để học hình dạng artifact, không phụ thuộc lệnh của cái nào**; ký hiệu Mermaid (flowchart, stateDiagram, sequenceDiagram), DMN, UML, Impact Mapping, User Story Mapping. Bản này dành cho **một dev + AI**: giữ nguyên artifact của sách, thay mọi cơ chế cần người thứ hai.
 
 ## Luận điểm
 Spec là giao diện giữa ba người đọc: user hôm nay, user ba tháng sau, và mỗi session AI mới. Mục tiêu duy nhất: **không để quyết định nghiệp vụ nào được đưa ra mà không ai biết nó đã được đưa ra**. Khi prompt thiếu rule, model lấp bằng xác suất → đó là quyết định ngầm. Việc của bạn khi làm việc trong repo này: **phát hiện và hỏi**, không lấp.
@@ -30,7 +30,7 @@ Ranh giới spec/doc: **khách cảm nhận được → spec** (`specs/`). Ch�
 Ở tầng này `___` là câu trả lời hợp lệ và số bịa thì không. `br-check` chỉ **cảnh báo** khi còn `___`, nhưng **đỏ** khi mục còn nguyên placeholder `<...>`.
 
 ## 14 bước cho một UC (Phase 3)
-① `/sdd-solo:start UC-###` → ② **điền nội dung UC cùng user** (Actor · Trigger · Preconditions · Main Flow — bước hiển thị nêu SCR-ID · Alternative · Exceptions · Postconditions) → ③ user viết RULE (rules.md, DMN nếu cần), **`entities.md` + `glossary.md` của context**, và AC → ④ vẽ flow mermaid trong `UC-###.flow.md` → ⑤ Claude Design theo `.sdd/prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đọc lại bằng đầu chưa neo**: `/sdd-solo:verify UC-###` (subagent) hoặc đóng máy đọc lại buổi sau → ⑨ `/sdd-solo:gate` (đỏ/xanh) → `/speckit-specify` (mỏng, trích ID) → ⑩ `/speckit-plan` — user đọc, bắt lệch → ⑪ `/speckit-tasks` `/speckit-implement` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
+① `/sdd-solo:start UC-###` → ② **điền nội dung UC cùng user** (Actor · Trigger · Preconditions · Main Flow — bước hiển thị nêu SCR-ID · Alternative · Exceptions · Postconditions) → ③ user viết RULE (rules.md, DMN nếu cần), **`entities.md` + `glossary.md` của context**, và AC → ④ vẽ flow mermaid trong `UC-###.flow.md` → ⑤ Claude Design theo `.sdd/prompts/design-brief.md` → ⑥ đối chiếu SCR ↔ E# ↔ state → ⑦ `/sdd-solo:adversarial` (3 vai, session mới) → ⑧ **đọc lại bằng đầu chưa neo**: `/sdd-solo:verify UC-###` (subagent) hoặc đóng máy đọc lại buổi sau → ⑨ `/sdd-solo:gate` (đỏ/xanh) → ⑩ `/sdd-solo:design` — sinh `design.md` + `tasks.md` trong thư mục UC, user đọc, bắt lệch → ⑪ viết code theo `tasks.md` → ⑫ test theo AC → ⑬ self-review 5 câu → ⑭ `/sdd-solo:close` → `/sdd-solo:state`.
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
 
@@ -58,7 +58,7 @@ Tình huống thật, nguyên văn chủ dự án: *"anh bị phân vân là nê
 | Câu hỏi đổi cái gì | Ví dụ | Làm gì |
 |---|---|---|
 | **Hình dạng** của UC — actor là ai, dữ liệu đến từ đâu, ai được làm | *"đọc từ file Excel đang có hay kéo từ sàn về?"* · *"nối lần đầu bằng tay hay máy đoán rồi người duyệt?"* | **Chốt trước bước ②.** Main Flow viết ra theo giả định sai sẽ phải vứt, không phải sửa lời. |
-| **Giá trị** bên trong một bước — ngưỡng, thời hạn, enum, khoá | *"khoá nối là SKU nhà cung cấp hay mã tự sinh?"* · *"giữ tối đa bao nhiêu dòng?"* | **Treo được.** Ghi `- [ ] <câu> (quyết định tạm: ___)`, thành `RULE-###` sau. `uc-ready.sh` không tính `___` trong Open Questions là chưa điền (#23). |
+| **Giá trị** bên trong một bước — ngưỡng, thời hạn, enum, khoá | *"khoá nối là SKU nhà cung cấp hay mã tự sinh?"* · *"giữ tối đa bao nhiêu dòng?"* | **Treo được.** Ghi `- [ ] <câu> (quyết định tạm: ___)`, thành `RULE-###` sau. `gate-check.sh --pre` không tính `___` trong Open Questions là chưa điền (#23). |
 
 Bài kiểm một câu: *nếu câu trả lời ngược lại với giả định của mình, Main Flow có phải viết lại không?* Có → chốt trước. Không → treo.
 
@@ -86,7 +86,7 @@ UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn �
 ## Quy tắc cho bạn (AI) trong repo này
 1. Gặp số, ngưỡng, enum, quyền mà spec chưa nói → dừng, hỏi. Không chọn mặc định.
 2. Khi user trả lời → nhắc ghi vào spec + commit `docs(UC-###)` trước khi code tiếp.
-3. Không chạy `/speckit-specify` `/speckit-plan` `/speckit-tasks` `/speckit-implement` khi `.sdd/gate/UC-###.ok` chưa có.
+3. Không viết code cho UC khi `.sdd/gate/UC-###.ok` chưa có, hoặc khi thư mục UC chưa có `design.md`.
 4. Dùng đúng tên trong `specs/glossary.md`.
 5. Không bịa số liệu để điền chỗ trống; để `___`.
 5b. **Số mô tả dữ liệu thật phải ghi kèm lệnh đo ra nó.** Số nghiệp vụ đã chốt (ngưỡng, thời hạn)
