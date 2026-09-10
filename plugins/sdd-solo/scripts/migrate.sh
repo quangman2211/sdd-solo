@@ -51,11 +51,21 @@ done
 # ít khả năng đụng nhầm. Hụt thì hụt về phía an toàn.
 echo
 echo "=== Đường dẫn trỏ tới chỗ cũ ==="
+# KHÔNG dùng `grep -r`. Đệ quy của grep là thứ máy người dùng quyết, không phải
+# ta: trên máy này `grep` tương tác là ugrep, và ugrep TÔN TRỌNG .gitignore.
+# Ca sát sườn: `.specify/feature.json` — file migrate BẮT BUỘC phải sửa — nằm
+# trong `.specify/.gitignore`. Một grep biết đọc .gitignore (ripgrep, ugrep,
+# git grep) trả rỗng ở đó, và migrate im lặng để lại một con trỏ chết. Hụt kiểu
+# này không có dòng đỏ nào: danh sách ngắn đi trông y hệt "không có gì để sửa".
+# `find | xargs` bỏ hẳn phụ thuộc vào ngữ nghĩa đệ quy của grep.
+# `/dev/null` là toán hạng luôn có: nó ép grep in tên file kể cả khi chỉ còn một
+# file, và chặn grep quay ra đọc stdin khi find không ra gì.
+FILES="$(find "$ROOT" -type f \( -name '*.md' -o -name '*.json' -o -name '*.yml' -o -name '*.yaml' \) \
+         -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null)"
 HITS=""
 for b in $NAMES; do
-  H="$(grep -rnF "specs/$b" "$ROOT" \
-       --include='*.md' --include='*.json' --include='*.yml' --include='*.yaml' \
-       --exclude-dir=.git --exclude-dir=node_modules 2>/dev/null)"
+  H="$(printf '%s\n' "$FILES" | grep -v '^$' | tr '\n' '\0' \
+       | xargs -0 grep -nF "specs/$b" /dev/null 2>/dev/null)"
   [ -n "$H" ] && HITS="$(printf '%s\n%s' "$HITS" "$H")"
 done
 HITS="$(printf '%s' "$HITS" | grep -v '^$' | head -40)"

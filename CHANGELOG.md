@@ -1,5 +1,41 @@
 # Changelog
 
+## 4.0.3 — 2026-09-10
+
+### Sửa — `migrate.sh` bỏ phụ thuộc vào ngữ nghĩa đệ quy của `grep`
+
+Phiên `runxops` báo `grep -r` im lặng bỏ sót cả một cây, và lo `migrate.sh` cũng hụt theo. Đo lại
+thì **kết luận ngược ở chỗ họ lo, nhưng đúng ở chỗ sâu hơn.**
+
+**Nguyên nhân, đo được:** trên máy này `grep` trong shell tương tác là một **shell function bọc
+ugrep 7.8.4**, và ugrep **tôn trọng `.gitignore`**. `.specify/.gitignore` liệt kê `feature.json`,
+nên `grep -rn` ở đó trả rỗng trong khi `cat` nhìn thấy chuỗi. Nó cũng giải thích luôn ca `2 hit`
+so với `3 hit` mà phiên kia từng cho là repro không ổn định.
+
+**Nhưng `migrate.sh` không dính ca đó.** Script chạy bằng `bash`, và shell function của zsh không
+truyền sang bash subshell — đo trực tiếp: trong script, `command -v grep` ra `/usr/bin/grep`, và nó
+tìm thấy `feature.json` bình thường. Ba hit của `migrate.sh` mới là con số đủ; hai hit của shell
+tương tác mới là con số hụt.
+
+**Vẫn sửa, vì ca thật nằm chỗ khác và nó sát sườn:** `.specify/feature.json` — file `migrate.sh`
+**bắt buộc phải sửa** — chính là một file bị `.gitignore`. Plugin không kiểm soát được `grep` nào
+đứng đầu `PATH` trong bash không tương tác trên máy người dùng. Ở máy nào `grep` là ripgrep hoặc
+ugrep cấu hình sẵn, `migrate.sh` sẽ **im lặng để lại một con trỏ chết**: danh sách ngắn đi trông y
+hệt *"không có gì để sửa"*.
+
+Thay `grep -rnF` bằng `find … -type f … | tr '\n' '\0' | xargs -0 grep -nF "…" /dev/null`. Bỏ hẳn
+phụ thuộc vào đệ quy của grep. `/dev/null` là toán hạng luôn có: nó ép grep in tên file kể cả khi
+chỉ còn một file, **và** chặn grep quay ra đọc stdin khi `find` không ra gì — hai bẫy nằm ở hai
+đầu ngược nhau của cùng một lệnh.
+
+**Đo bốn ca:** file **bị gitignore** phải sửa → sửa · file tracked phải sửa → sửa · tài liệu vendor
+không được đụng → nguyên vẹn · đầu vào rỗng → không treo, không nổ · chỉ một file → vẫn in tên file.
+
+**Hai chỗ `grep -r` còn lại cố ý giữ nguyên** (`status.sh` quét `specs/contexts`, `close-check.sh`
+quét thư mục nguồn): cả hai chỉ quét cây **đã tracked**, nơi một grep biết `.gitignore` hành xử y
+hệt, và hụt ở đó chỉ làm mất một dòng cảnh báo chứ không làm sai một phép ghi đĩa. Sửa cả loạt cho
+"đồng bộ" là đổi ba chỗ đang đúng để lấy cảm giác gọn.
+
 ## 4.0.2 — 2026-09-10
 
 Hai lỗi của chính 4.0.0, cùng bắt được ở lượt chạy thật đầu tiên trên `runxops`.
