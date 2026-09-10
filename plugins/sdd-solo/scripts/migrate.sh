@@ -3,10 +3,13 @@
 #
 #   specs/00N-<slug>/  →  .speckit/work/00N-<slug>/
 #
-# Vì sao: `.specify/scripts/bash/create-new-feature.sh` hardcode
-# SPECS_DIR="$REPO_ROOT/specs" và `get_highest_from_specs` quét `specs/*` để lấy
-# số kế tiếp — nó đang đếm cả br.md, contexts/, changes/ của sdd-solo. Hai hệ ID
-# (`001-` và `UC-###`), hai cây spec, một thư mục, không bên nào biết bên kia.
+# Vì sao: `speckit-specify/SKILL.md` dặn agent BẰNG LỜI VĂN rằng specs nằm dưới
+# `specs/`, và số tiếp theo lấy bằng cách quét các thư mục đang có trong `specs/`
+# — tức phép đếm đó đang đếm cả br.md, contexts/, changes/ của sdd-solo. Hai hệ
+# ID (`001-` và `UC-###`), hai cây spec, một thư mục, không bên nào biết bên kia.
+# (Có một `create-new-feature.sh` làm đúng việc đó, nhưng KHÔNG skill nào gọi nó
+#  — đo trên 1.0.6.dev0 và trên bản cũ ở runxops. Lời văn trong skill mới là thứ
+#  chạy thật, và lời văn thì không cấu hình lại được.)
 #
 # KHÔNG tự commit. Dời file rồi in ra những gì đã đổi; người đọc rồi commit.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"

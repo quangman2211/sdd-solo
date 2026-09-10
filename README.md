@@ -61,11 +61,11 @@ STATE.md  CLAUDE.md  <code>/  <tests>/
 Tới 3.x, bước ⑩ của vòng 14 bước là `/speckit-plan`. Từ **4.0.0** nó là `/sdd-solo:design`. Đổi vì
 ba thứ đo được, không phải vì sở thích:
 
-**① Hai hệ tranh nhau một thư mục.** `.specify/scripts/bash/create-new-feature.sh` hardcode
-`SPECS_DIR="$REPO_ROOT/specs"`, và `get_highest_from_specs` quét `specs/*` để lấy số kế tiếp — tức
-nó đang đếm cả `br.md`, `contexts/`, `changes/` của sdd-solo. Kết quả ở một repo thật: `specs/` chứa
-cả `specs/001-assign-product-key/` lẫn `specs/contexts/`, hai hệ ID (`001-` và `UC-###`), không bên
-nào biết bên kia tồn tại.
+**① Hai hệ tranh nhau một thư mục.** `speckit-specify/SKILL.md:84,88,91,93` dặn agent **bằng lời văn**:
+specs nằm dưới `specs/`, số tiếp theo lấy bằng cách *"scanning existing directories in `specs/`"*, rồi
+`mkdir -p specs/<NNN>-<slug>`. Ở `runxops`: `specs/001-assign-product-key/` nằm cạnh `specs/contexts/`.
+Hai hệ ID (`001-` và `UC-###`), một thư mục, không bên nào biết bên kia — và phép đếm số của họ đang
+quét cả `br.md`, `contexts/`, `changes/` của mình.
 
 **② Bước quyết kiến trúc chạy trên hai đầu vào rỗng.** `speckit-plan` đọc đúng hai thứ: `FEATURE_SPEC`
 và `.specify/memory/constitution.md`. `FEATURE_SPEC` là bản mỏng sdd-solo sinh ra, **chỉ chứa ID**.

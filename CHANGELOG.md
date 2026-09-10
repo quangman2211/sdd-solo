@@ -1,5 +1,67 @@
 # Changelog
 
+## 4.1.1 — 2026-09-10
+
+### Đính chính — cơ chế nêu ở 4.0.0 ① là sai; kết luận thì không đổi
+
+Cài `specify` bản mới nhất (`1.0.5.dev0` → **`1.0.6.dev0`**), dựng một bản `specify init` sạch, rồi
+cho subagent soi. Kết quả chạm thẳng vào câu chính bản này đã viết ở 4.0.0.
+
+**Đã viết (sai):** *"`create-new-feature.sh` hardcode `SPECS_DIR="$REPO_ROOT/specs"`, và
+`get_highest_from_specs` quét `specs/*` để lấy số kế tiếp."*
+
+**Đo lại:** script đó **có tồn tại và làm đúng như mô tả**, nhưng **không skill nào gọi nó** —
+`grep -rl 'create-new-feature' .claude/skills/` ra rỗng, cả trên `1.0.6.dev0` lẫn trên bản cũ hơn đã
+cài ở `runxops`. Nó chỉ với tới được qua một hook đọc `.specify/extensions.yml`, mà file đó **không
+tồn tại** trong bản init sạch. Tức là một **script ngủ**.
+
+**Bản đúng:** thứ chạy thật là **lời văn trong `speckit-specify/SKILL.md`** (dòng 84, 88, 91, 93):
+specs nằm dưới `specs/`, số tiếp theo lấy bằng cách *"scanning existing directories in `specs/`"*,
+rồi `mkdir -p specs/<NNN>-<slug>`.
+
+**Kết luận ① không đổi, và thật ra mạnh hơn.** Một script thì cấu hình lại được, đọc biến môi trường
+được, thay được. **Một câu dặn nằm trong skill của agent thì không** — nó là hành vi mặc định của
+model khi chạy lệnh đó. Hai cây spec vẫn chung một thư mục, và phép đếm số của họ vẫn quét cả
+`br.md`, `contexts/`, `changes/` của mình.
+
+**Vì sao em viết sai:** đọc script, thấy nó khớp hoàn hảo với hiện tượng, dừng lại ở đó. **Không hỏi
+câu tiếp theo: có ai gọi nó không.** Đúng hình lỗi đã ghi ở 3.4.1 — *suy ra cơ chế từ tên (ở đây là
+tên và nội dung file) rồi đi tìm bằng chứng khớp*, thay vì đi tìm bằng chứng nó thật sự chạy.
+
+**Câu sai nằm ở NĂM chỗ** — `CHANGELOG` · `README.md` gốc · `plugins/sdd-solo/README.md` ·
+`migrate.sh` · `deps-check.sh`. Bốn chỗ sửa tại chỗ; mục 4.0.0 trong CHANGELOG **giữ nguyên văn**
+kèm một dòng đính chính trỏ sang đây — lịch sử không viết đè, đó là luật đã dùng từ 3.4.1.
+
+### Ghi nhận — hai chỗ Spec Kit đo được, đáng đối chiếu với chính mình
+
+Không đổi code, chỉ ghi lại để lần sau khỏi đo lại:
+
+- **`## Constitution Check` của `plan-template.md:39-43` là văn xuôi tự do** — không ID, không
+  checkbox, không bảng; không script nào trong `.specify/scripts/bash/` kiểm nó; kết quả pass/fail
+  **không được lưu ở đâu** cho công cụ khác đọc lại. Cổng quan trọng nhất của họ dựa hoàn toàn vào
+  việc model tự đọc tự quyết. Đó là lý do `.specify/memory/constitution.md` trong bản init **sạch
+  mới nhất** vẫn nguyên `[PROJECT_NAME]`: không phải ai quên điền, mà **không gì bắt điền**.
+- **`setup-plan.sh` không kiểm `spec.md` có tồn tại không** (grep toàn file: không có dòng nào), và
+  `/speckit-implement` không truyền `--require-spec`. Chuỗi của họ chặn cứng quanh `plan.md`, không
+  quanh `spec.md`.
+
+Hai điều đó xác nhận quyết định 4.0.0 từ một góc chưa lường: `design-check.sh` kiểm `architecture.md`
+**bằng máy** — chỗ này sdd-solo đã đi xa hơn bản gốc nó học theo, nên đừng "đồng bộ ngược" về sau.
+
+Ngược lại, **hai chỗ Spec Kit làm chặt hơn hoặc gọn hơn**, ghi lại để cân nhắc chứ chưa làm:
+
+- **`speckit-claude-design` là extension do chính chủ dự án viết** (`author: quangman`, cài bằng
+  `specify extension add … --dev` ở `IOS-Hoi-Thoai`) — sáu động từ `import · pull · inventory ·
+  ensure · verify · drift`. Trong đó `drift` giữ `context-snapshot.json` băm từng artboard rồi so
+  lại — **đúng hình cơ chế `brief_sha` mà #34 dựng cho brief**, chỉ khác đối tượng. Và `verify` với
+  `strict_verify: true` thì **exit non-zero** — tức nó có cái cổng bằng máy mà `Constitution Check`
+  không có. Bước ⑤ của sdd-solo (Claude Design) hiện **không có artifact nào kiểm được**; đây là
+  bản thiết kế sẵn để học.
+- **`shared_infra.py:432-475` gần trùng `scaffold.sh` của mình**: so hash với manifest lần cài
+  trước, khớp thì ghi đè, lệch thì giữ và cảnh báo. Khác một chỗ và khác về phía nguy hiểm:
+  `specify init --force` **ghi đè thẳng file người ta đã sửa tay, không hỏi**. `scaffold.sh` không
+  bao giờ làm thế — nó đẻ file `.new`. Giữ nguyên ranh giới đó.
+
 ## 4.1.0 — 2026-09-10
 
 Ba thứ, đều đến từ lượt dùng thật đầu tiên của tầng `architecture.md` ở `runxops`.
@@ -218,6 +280,9 @@ tầng BR/UC/Entity/AC chưa bao giờ có chỗ cho — giờ có nhà, ở **h
 Repo đang chạy **phải sửa tay**: xem mục *Nâng cấp* ở cuối.
 
 ### Vì sao Spec Kit ra khỏi chuỗi — ba phép đo, không phải sở thích
+
+> ⚠️ **Đã đính chính ở 4.1.1** — kết luận của ① vẫn đúng, nhưng cơ chế nêu dưới đây là **sai**:
+> không skill nào gọi `create-new-feature.sh`. Giữ nguyên văn để đối chiếu, đọc bản đúng ở 4.1.1.
 
 **① Hai hệ tranh nhau một thư mục.** `.specify/scripts/bash/create-new-feature.sh` hardcode
 `SPECS_DIR="$REPO_ROOT/specs"`, và `get_highest_from_specs` quét `specs/*` để lấy số kế tiếp — tức

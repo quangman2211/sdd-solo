@@ -5,9 +5,10 @@
 # vòng bằng chính nó. Phụ thuộc BẮT BUỘC chỉ còn `git` và `bash`.
 #
 # Vì sao Spec Kit rời khỏi cột bắt buộc — ba phép đo, không phải sở thích:
-#   ① `.specify/scripts/bash/create-new-feature.sh` hardcode SPECS_DIR=$REPO_ROOT/specs
-#      và `get_highest_from_specs` quét `specs/*` để lấy số kế tiếp. Nó và ta dùng
-#      chung một thư mục với hai hệ ID (`001-` vs `UC-###`), không bên nào biết bên kia.
+#   ① `speckit-specify/SKILL.md` dặn agent BẰNG LỜI VĂN: specs nằm dưới `specs/`,
+#      số tiếp theo lấy bằng cách quét các thư mục đang có trong `specs/`, rồi
+#      `mkdir -p specs/<NNN>-<slug>`. Nó và ta dùng chung một thư mục với hai hệ
+#      ID (`001-` vs `UC-###`), không bên nào biết bên kia.
 #   ② `/speckit-plan` đọc đúng hai thứ: FEATURE_SPEC + `.specify/memory/constitution.md`.
 #      Ở repo thật, FEATURE_SPEC là bản mỏng chỉ có ID còn constitution.md vẫn nguyên
 #      placeholder. Bước quyết kiến trúc chạy trên hai đầu vào rỗng — đó là #34.
