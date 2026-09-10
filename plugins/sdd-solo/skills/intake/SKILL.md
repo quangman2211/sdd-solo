@@ -162,7 +162,18 @@ cả bộ 24 kiểm ở cổng DoR sẽ bảo vệ những con số ngầm ấy 
 ## C. Kết thúc (cả hai chế độ)
 
 1. Ghi vào `specs/br.md`: thêm mục `BR-###` mới **trước** khung `BR-001` trống, hoặc thay khung
-   đó nếu nó chưa được đụng tới. Giữ nguyên `BR-000` mẫu.
+   đó nếu nó chưa được đụng tới. **Xoá cả mục `BR-000`** khi đây là BR thật đầu tiên — xoá từ dòng `# BR-000:` tới ngay
+   trước `# BR-001:`, kể cả khối trích dẫn "ĐÂY LÀ MẪU" của nó.
+
+   BR mẫu có ích đúng lúc chưa có gì để đọc. Sau đó nó thành một dãy ID GIẢ đứng TRƯỚC mọi ID
+   thật trong cùng một file — `BR-000` mang `CON-001/002/003` của riêng nó, và `id_exists()`
+   tra CON bằng grep *dòng đầu tiên khớp*. Ca thật ở runxops: `UC-009` trích `CON-002` và cổng
+   DoR khớp vào *"bản ghi thanh toán giữ 10 năm theo quy định kế toán"*; `architecture.md`
+   viết *"Không gọi API eBay. `CON-001` — tài khoản cá nhân…"* và `design-check` báo xanh bằng
+   cách trỏ vào *"hosting chia sẻ"*. UC đó đã qua cổng với những trích dẫn trỏ nhầm mục.
+
+   Cần đọc lại BR mẫu thì nó vẫn nằm trong `templates/project/specs/br.md` của plugin.
+   `br-check.sh` báo đỏ nếu br.md đã có BR thật mà `BR-000` còn đó.
 2. Vẽ Impact Map: `WHY → WHO → HOW → WHAT`, và **ít nhất một nhánh `-.->`** cho Out of Scope.
    Không có nhánh đứt nào nghĩa là chưa map gì — chỉ là đường thẳng từ Goal xuống việc đã định sẵn.
 3. Chạy kiểm và in nguyên output:

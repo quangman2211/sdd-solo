@@ -1,5 +1,171 @@
 # Changelog
 
+## 4.2.0 — 2026-09-10
+
+### Bộ tài liệu này chứa những quyết định gì — trả lời được bằng một lệnh
+
+Câu hỏi mở màn không phải "thiếu phép kiểm nào" mà là *"anh cần nắm bắt chính xác bộ tài liệu
+này chứa những quyết định gì. Nó có thể đi theo anh 5–10 năm."* Phép đo trả lời: **7 loại quyết
+định, ở 6 chỗ, 4 khuôn khác nhau.**
+
+| Loại | Ở đâu | Ngày | Vì sao | Thay được? | Script kiểm |
+|---|---|:--:|:--:|:--:|:--:|
+| `RULE-###` | `specs/rules.md` | ✓ | ✗ | ✓ | **không** |
+| `ADR-###` | `specs/internal/adr/` | ✓ | ✓ | ✓ | **không** |
+| `BR-###` | `specs/br.md` | ✗ | ✓ | ✗ | có (status vòng đời) |
+| `CON-###` | `br.md`, một gạch đầu dòng | ✗ | ✗ | ✗ | **không** |
+| `Cấm` | `internal/architecture.md` | ✗ | ✓ | ✗ | cảnh báo `nguyên văn` |
+| `CHG-###` | `specs/changes/` | ✓ | ✓ | — | có |
+
+Hai dòng đầu có đủ giải phẫu của một quyết định. Nhưng `grep 'Status' scripts/*.sh` cho thấy
+**mọi** chỗ đó đều là status vòng đời của UC/BR/CHG; `deprecated` xuất hiện đúng **một lần**,
+ở `change-check.sh:134`, cho AC bị gỡ. Tức khuôn có ô để điền mà không ai kiểm ô đó — hình
+dạng của `constitution.md` bên Spec Kit vẫn còn `[PROJECT_NAME]` sau nhiều tháng.
+
+### Chỗ 5–10 năm đánh gãy: một quyết định mất ngày thì mất vĩnh viễn
+
+Ca runxops đã ghi ở `architecture.md`: *"đó là HAI điều cấm từ hai thời điểm, cái sau ngặt hơn
+và nuốt luôn thứ In Scope đang cho phép"*. Câu đó **chỉ nói được khi có ngày**. Không ngày thì
+hai dòng nằm cạnh nhau, đọc đều trôi chảy, và không ai — kể cả chủ dự án — dựng lại được cái
+nào ra trước. Ca đó xảy ra sau vài tháng, không phải sau 5 năm.
+
+Đó là thứ duy nhất trong bộ tài liệu **không tái tạo được**. Bố cục file lúc nào cũng sắp lại
+được; ngày và lý do thì không.
+
+### `CON` không phải quyết định — nên nó có một trường riêng
+
+Ba ví dụ trong khuôn: hosting không chạy job quá 30 giây · bản ghi giữ 10 năm theo luật kế
+toán · người bán chỉ có buổi tối. **Không cái nào do ta chọn.** Đó là *sự thật về thế giới*
+đang ràng buộc quyết định, khác loại với RULE (ta đặt ra) và ADR (ta chọn phương án).
+
+Khác loại thì hỏng theo cách khác:
+- một **quyết định** hết đúng khi *lý do* của nó hết đúng — lý do nằm ngay trong file;
+- một **ràng buộc** hết đúng khi *thế giới* đổi — và thế giới đổi thì **không có gì trong repo
+  động đậy cả**.
+
+Đổi hosting năm 2028 thì `CON-001` lặng lẽ thành sai, mọi UC dựng quanh nó vẫn xanh. Cùng lớp
+"báo xanh sai", nhưng nguồn nằm ngoài repo. Nên khuôn CON có `Kiểm lại:` — trường biến chuyện
+đó thành một dòng **có thể quá hạn**, tức đo được. Nó không cần là ngày; *"khi đổi gói hosting"*
+là mốc hợp lệ và thường đúng hơn ngày.
+
+`CON` **ở lại `br.md`**: nó là đầu vào của một BR cụ thể, `## Constraints` đang lồng trong từng
+BR, và 19 chỗ trong plugin neo vào vị trí đó. Dời ra là cắt sự thật khỏi lập luận đã dùng nó.
+
+### Thêm
+
+- **`scripts/decisions.sh [--md]`** — sổ tra gom `CON` · `RULE` · `ADR` · `Cấm` · `CHG` · ghi chú
+  từ sáu chỗ về **một dòng thời gian**. Xếp theo thời gian là chủ ý, không phải cho đẹp: hai
+  quyết định cách nhau vài tháng, đọc rời từng file thì đều trôi chảy; nằm cạnh nhau thì cái sau
+  ngặt hơn tự lộ ra. Mắt người bắt được thứ không phép kiểm cơ học nào bắt được.
+  - **Không ghi file.** Sổ sinh ra rồi commit là một bản sao sẽ trôi khỏi nguồn — lại đúng cái
+    bẫy cả 3.x đi chữa. `--md` để xuất khi cần dán đi chỗ khác, người dùng tự hứng.
+  - **Luôn `exit 0`.** Nó là thứ để đọc, không phải cổng.
+- **Khuôn CON** (`br.md`) có dòng thứ hai: `Từ:` · `Biết qua:` · `Kiểm lại:` · `Trạng thái:`.
+- **Khuôn RULE** (`rules.md`) thêm `Từ:` và `Vì sao:`. `Vì sao` khác `Nguồn`: nguồn nói rule
+  này *từ đâu ra*, vì sao nói nó *tồn tại để làm gì*. Rule mất `Vì sao` thì năm năm sau không
+  ai dám bỏ — không phải vì nó còn đúng, mà vì không ai biết bỏ đi thì hỏng chuyện gì.
+- **Mục `## Cấm`** (`architecture.md`) thêm `Từ:` · `Trạng thái:`. Hết hiệu lực thì ghi
+  `thay bởi <ID> từ <ngày>`, **không xoá dòng** — xoá một điều cấm là xoá bằng chứng nó đã từng
+  được cân nhắc.
+
+### Sửa — `ADR-000-template.md` làm `id_exists ADR-000` báo XANH SAI
+
+`id_exists()` tra ADR bằng `ls specs/internal/adr/ADR-000*`, mà chính cái khuôn mang tên đó.
+Nên trong **mọi repo vừa scaffold**, một `design.md` trích `ADR-000` được `design-check` cho
+qua màu xanh — dù chưa ai viết một ADR nào. Thứ "tồn tại" mà phép kiểm nhìn thấy chỉ là cái
+khuôn của chính nó. Không cần ai viết sai gì cả; chỉ cần cài.
+
+→ đổi tên thành **`_adr-template.md`**, và `decisions.sh` bỏ qua mọi file `adr/_*`.
+
+`scaffold.sh` có thêm **`RETIRED_TPL`**: chép tên mới vào mà không dọn tên cũ thì repo nâng cấp
+xong vẫn còn nguyên đường cũ, lỗi sống tiếp. Khác `RETIRED` của scripts một điểm — file dưới
+`specs/` là *nội dung của dự án*, nên chỉ xoá khi sha khớp manifest (user chưa đụng). Đã sửa
+tay thì cảnh báo và để nguyên: thà để lỗi kêu to còn hơn tự tay xoá chữ của người khác.
+
+### Sửa — `BR-000` phải BIẾN MẤT khi đã có BR thật
+
+Tìm ra bằng cách chạy sổ tra mới lên `runxops`. Luật cũ của `/sdd-solo:intake` là *"Giữ nguyên
+`BR-000` mẫu"* — và đó chính là chỗ hỏng.
+
+`BR-000` mang `CON-001/002/003` **của riêng nó**, và `BR-001` thật ở `runxops` cũng mang
+`CON-001/002/003`. `id_exists()` tra CON bằng `grep` **dòng đầu tiên khớp**, nên nó luôn trúng
+bộ của `BR-000`. Hệ quả đo được, không phải giả định:
+
+- `UC-009.md:277` trích `CON-002` → cổng DoR khớp vào *"bản ghi thanh toán phải giữ 10 năm theo
+  quy định kế toán"*, trong khi `CON-002` thật là *"sáu gian, mỗi gian một profile Multilogin"*.
+- `architecture.md ## Cấm` viết *"Không gọi API eBay. `CON-001` — tài khoản cá nhân, không có tài
+  khoản dev"* → `design-check` báo **XANH** bằng cách trỏ vào *"hosting chia sẻ, không chạy được
+  job nền quá 30 giây"*.
+
+`UC-009` **đã qua cổng DoR** với những trích dẫn trỏ nhầm mục.
+
+Một BR mẫu có ích đúng lúc chưa có gì để đọc. Sau đó nó là một dãy **ID giả đứng trước mọi ID
+thật trong cùng một file** — và ID giả đứng trước thì mọi phép tra "dòng đầu tiên khớp" đều rơi
+vào nó. Chữa bằng cách đánh lại số CON của BR thật là chữa triệu chứng.
+
+- `skills/intake`: **xoá cả mục `BR-000`** khi viết BR thật đầu tiên (thay câu "giữ nguyên").
+- `br-check.sh`: **đỏ** khi br.md đã có BR thật mà `BR-000` còn đó.
+- `br-check.sh` §6b: **đỏ** khi hai BR mang cùng một số `CON` — quét cả file, không chỉ BR đang
+  kiểm. Không thừa sau khi `BR-000` đi: hai BR *thật* cũng đụng nhau y hệt, và mỗi BR viết ở một
+  thời điểm khác nhau thì không ai nhớ BR trước đã dùng số tới đâu.
+
+Bản đầu của chính hai phép kiểm này **báo đỏ oan trên repo vừa scaffold**: khuôn phát ra sẵn
+`# BR-001: <Tên business requirement>`, nên "có ID BR-001" là đúng ngay lần cài đầu. Đếm bằng
+*sự có mặt của một ID* là sai; "BR thật" phải là **tiêu đề không còn `<...>`**. Bắt được vì
+chạy trên repo trắng trước khi tin — cùng một luật đã cứu ba lần trong bản này.
+
+### Sửa — `design-check` tố oan dòng nằm GIỮA một khối chú thích
+
+Bộ lọc placeholder của §1 dùng `strip_tags` (chỉ bỏ **thẻ**) cộng một `grep -v` bỏ dòng **bắt
+đầu** bằng `<!--`. Nên một `<ID>` nằm ở dòng *giữa* khối `<!-- … -->` nhiều dòng vẫn bị tính là
+placeholder. Chính khuôn `architecture.md` của bản này dính: khối giải thích mục `## Cấm` có câu
+*"thay bởi `<ID>` từ YYYY-MM-DD"*, và `design-check` báo đỏ một repo **vừa scaffold**.
+
+Lần thứ ba cùng một bẫy (4.0.1, 4.0.x, giờ 4.2.0), và lần này là code của chính bản này tố oan
+template của chính bản này. → cả hai chỗ dùng `strip_markup` của `lib.sh`, thứ bỏ **cả khối**.
+Nó giữ nguyên số dòng (đo: 97→97) nên `grep -n` vẫn trỏ đúng dòng trong file gốc.
+
+`strip_tags()` cục bộ **xoá hẳn**, không để lại. Hai hàm chỉ khác nhau ở đúng điểm gây lỗi; giữ
+một hàm chỉ-bỏ-thẻ nằm cạnh là mời người sau dùng lại đúng cái vừa hỏng.
+
+### Bốn lỗi khác bắt được khi test, đều bằng cách chạy thật
+
+1. **Sổ tra liệt kê chính lời giảng trong khuôn.** Repo trắng ra 9 mục, trong đó `RULE-000
+   <Tên rule — ĐÂY LÀ MẪU>` và `không <việc bị cấm>`. → `ghost()` bỏ dòng còn `<...>` / `...`
+   / `___`. Dấu đóng `>` là bắt buộc nên `"response < 200ms"` không bị bắt oan.
+2. **`BR-000` là BR mẫu và nó Ở LẠI VĨNH VIỄN** — `/sdd-solo:intake` dặn thẳng *"Giữ nguyên
+   BR-000 mẫu"*, `br-check.sh:11` bỏ qua nó vì cùng lý do. Không bỏ ở `decisions.sh` thì ba
+   `CON` dạy-việc của nó (hosting, luật kế toán) nằm trong sổ tra của **mọi dự án, mãi mãi** —
+   và chúng không phải placeholder, chúng đọc y như quyết định thật. Đây là lỗi nặng nhất
+   trong bốn cái, và nó chỉ lộ ra vì đã chạy trên repo trắng trước khi tin.
+3. **Cột lệch vì đếm byte.** `awk length()` ở macOS đếm **byte**; `"ràng buộc"` 9 ký tự nhưng
+   12 byte, đủ lệch cả bảng. `${#v}` của bash đếm **ký tự**. → căn cột ở bash bằng `padc()`,
+   và ID của mục `## Cấm` dùng ASCII `CAM-N`.
+4. **`grep -c` in `0` rồi exit 1**, nên `$(grep -c . f || echo 0)` cho ra `"0
+0"`.
+
+Một điều đã tự sửa lúc viết: `CAM-N` đánh theo **thứ tự xuất hiện**, và điều đó có chủ ý —
+*"số không phải danh tính, nó là vị trí, và vị trí thì đổi"*. Chèn một điều cấm ở giữa là mọi
+số sau nó chạy. Nên đừng trích `CAM-N` từ đâu cả; cần trích được thì nâng nó thành `RULE-###`
+hoặc `ADR-###`, hai thứ có ID thật.
+
+### Chưa làm — cố ý
+
+**`decision-check.sh` (cổng cứng) để bản sau.** Bật cổng ngay lúc này thì runxops đỏ toàn tập
+với hàng chục dòng thiếu ngày, và cách duy nhất đi tiếp là học cách phớt lờ nó — đúng câu đã
+ghi từ 3.x: *"báo đỏ oan thì bị học cách phớt lờ, rồi kéo theo cả những dòng đỏ thật"*. Nhìn
+bảng, điền xong, rồi mới khoá.
+
+Phép kiểm muốn nhất ở bản đó: **`nguyên văn: "X"` → `grep -F "X"` vào đúng file của nguồn,
+không thấy thì đỏ.** Đó sẽ là phép kiểm đầu tiên trong cả plugin **đọc nội dung của nguồn**
+thay vì chỉ hỏi ID có tồn tại — món nợ đã ghi năm lần: *mọi luật kiểm ID có tồn tại, không luật
+nào kiểm ID có dính gì tới thứ đang gắn nó*.
+
+### Ở dự án
+
+`/plugin marketplace update sdd-solo` → `/plugin update sdd-solo` → `/sdd-solo:init --update`
+(đụng `templates/`) → `bash .sdd/scripts/decisions.sh`.
+
 ## 4.1.1 — 2026-09-10
 
 ### Đính chính — cơ chế nêu ở 4.0.0 ① là sai; kết luận thì không đổi

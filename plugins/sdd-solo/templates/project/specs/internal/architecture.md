@@ -57,6 +57,20 @@ nhất: một điều cấm không viết ra thì sáu tháng sau không ai phâ
 **Dòng nào nêu nguồn thì phải trích nguyên văn**, dạng:
 
 - không <việc bị cấm> — nguồn: `BR-001` · nguyên văn: "<chép đúng chữ trong nguồn>" — vì <lý do>
+  - Từ: YYYY-MM-DD · Trạng thái: active
+
+<!-- Dòng thứ hai (`Từ:` · `Trạng thái:`) thêm ở 4.2.0, và nó KHÔNG phải thủ tục cho đẹp.
+
+     Ca runxops ở khối dưới kết thúc bằng: "đó là HAI điều cấm từ hai thời điểm, cái sau
+     ngặt hơn và nuốt luôn thứ In Scope đang cho phép". Câu đó chỉ nói được KHI CÓ NGÀY.
+     Không ngày thì hai dòng nằm cạnh nhau, đọc đều trôi chảy, và không ai — kể cả chủ dự
+     án — dựng lại được cái nào ra trước. Đó là thứ duy nhất trong cả bộ tài liệu này KHÔNG
+     TÁI TẠO ĐƯỢC: bố cục file lúc nào cũng sắp lại được, một điều cấm mất ngày thì mất hẳn.
+
+     Hết hiệu lực thì `Trạng thái: thay bởi <ID> từ YYYY-MM-DD` — KHÔNG xoá dòng. Xoá một
+     điều cấm là xoá luôn bằng chứng rằng nó đã từng được cân nhắc, và sáu tháng sau không
+     ai phân biệt được "chưa làm" với "cố ý không làm" nữa. -->
+
 
 <!-- Vì sao bắt chép nguyên văn thay vì chỉ ghi ID (ca thật, runxops). Một dòng ở đây viết:
        "Không tự động hoá chạy TRONG phiên Multilogin. BR-001 Out of Scope: đã thử, rủi ro chết acc"

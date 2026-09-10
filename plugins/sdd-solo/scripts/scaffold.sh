@@ -60,6 +60,33 @@ find . -type f | sed 's#^\./##' | sort | while read -r rel; do
     fi
   fi
 done
+
+# Dọn TEMPLATE bản cũ đã đổi tên — cùng lý do như RETIRED của scripts ở cuối file:
+# chép tên mới vào mà không dọn tên cũ thì repo nâng cấp xong vẫn còn nguyên đường cũ.
+# Ca 4.2.0: `specs/internal/adr/ADR-000-template.md` khớp glob `ADR-000*` của
+# `id_exists()`, nên `design.md` trích `ADR-000` được `design-check` cho qua MÀU XANH
+# trong mọi repo vừa scaffold — không cần ai viết sai gì, chỉ cần cài. Đổi tên trong
+# plugin mà để lại file cũ trong dự án là không sửa gì cả.
+#
+# KHÁC một điểm so với RETIRED của scripts: file dưới `specs/` là NỘI DUNG của dự án,
+# không phải bản sao hành vi. Ranh giới "dự án giữ nội dung" đứng trên việc dọn dẹp,
+# nên chỉ xoá khi user CHƯA đụng vào (sha khớp manifest). Đã sửa tay thì cảnh báo và
+# để nguyên — thà để lỗi kêu to còn hơn tự tay xoá chữ của người khác.
+RETIRED_TPL="specs/internal/adr/ADR-000-template.md"
+for rel in $RETIRED_TPL; do
+  # chốt an toàn: không bao giờ xoá đường dẫn mà bản NÀY đang phát hành
+  [ -f "$TPL/$rel" ] && continue
+  dst="$ROOT/$rel"; [ -f "$dst" ] || continue
+  esc="$(printf '%s' "$rel" | sed 's/[.[\*^$/]/\\&/g')"
+  rec_inst="$(grep -E "^$esc " "$MAN" | tail -1 | awk '{print $2}')"
+  if [ -n "$rec_inst" ] && [ "$rec_inst" = "$(sha "$dst")" ]; then
+    rm -f "$dst"; ok "dọn  $rel — đã đổi tên thành _adr-template.md (CHANGELOG 4.2.0)"
+  else
+    warn "còn  $rel — anh đã sửa tay nên KHÔNG xoá. Tên này làm id_exists ADR-000 báo xanh sai:"
+    warn "     đổi tên nó (vd _adr-template.md) rồi chạy lại init --update"
+  fi
+done
+
 # CLAUDE.md: khối giữa marker
 CL="$ROOT/CLAUDE.md"; B='<!-- sdd-solo:begin -->'; E='<!-- sdd-solo:end -->'
 BLOCK="$(cat "$PLUGIN/templates/CLAUDE.md.tmpl")"
@@ -129,7 +156,7 @@ fi
 # plugin (CI, người clone repo). Đổi lại: bản sao có thể trôi version — .sdd/version
 # so với version plugin, lệch thì session-start và status cảnh báo.
 mkdir -p "$ROOT/.sdd/scripts"
-KEEP="lib.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
+KEEP="lib.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
 for f in $KEEP; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done

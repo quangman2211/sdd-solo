@@ -10,7 +10,7 @@ plugins/sdd-solo/
   skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · state · status
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
-  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · uc-steps · version-check · update · migrate · deps-check · session-start
+  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · uc-steps · version-check · update · migrate · deps-check · session-start
   templates/project/                 được copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
   templates/githooks/                commit-msg · pre-commit — chặn cứng

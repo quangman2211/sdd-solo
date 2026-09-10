@@ -12,6 +12,36 @@ if [ "$ID" = "BR-000" ]; then
   info "BR-000 là BR mẫu của template — không kiểm. Viết BR-001 rồi kiểm cái đó."
   exit 0
 fi
+
+# ── BR-000 phải BIẾN MẤT khi đã có BR thật ────────────────────────────────
+# Tới 4.2.0 luật là "giữ nguyên BR-000 mẫu" — và đó là chỗ hỏng, đo được ở
+# runxops: BR-000 mang CON-001/002/003, BR-001 thật cũng mang CON-001/002/003.
+# `id_exists()` tra CON bằng grep DÒNG ĐẦU TIÊN khớp, nên nó luôn trúng bộ của
+# BR-000. Hệ quả thật, không phải giả định:
+#   · UC-009 trích CON-002 → cổng DoR khớp vào "bản ghi thanh toán giữ 10 năm";
+#   · architecture.md ## Cấm viết "Không gọi API eBay. CON-001 — tài khoản cá
+#     nhân…" → design-check báo XANH bằng cách trỏ vào "hosting chia sẻ".
+# UC-009 đã qua cổng với những trích dẫn trỏ nhầm mục đó.
+#
+# Một BR mẫu có ích đúng lúc chưa có gì để đọc. Sau đó nó là một dãy ID giả
+# đứng trước mọi ID thật trong cùng một file — và ID giả đứng trước thì mọi phép
+# tra "dòng đầu tiên khớp" đều rơi vào nó. Chữa bằng cách đánh lại số CON của BR
+# thật là chữa triệu chứng; chữa đúng chỗ là BR mẫu phải đi khi hết việc.
+# "BR THẬT" = tiêu đề không còn `<...>`. Đếm bằng SỰ CÓ MẶT của một ID là sai:
+# khuôn phát ra sẵn `# BR-001: <Tên business requirement>`, nên repo vừa scaffold
+# cũng có "BR-001" và phép kiểm này báo đỏ ngay lần cài đầu — đỏ oan trên một repo
+# chưa ai đụng vào là cách nhanh nhất dạy người ta phớt lờ dòng đỏ.
+REAL=""
+for b in $(br_ids "$ROOT" | grep -v '^BR-000$'); do
+  grep -qE "^# $b:.*<[^>]+>" "$BF" && continue
+  REAL="$b"; break
+done
+if [ -n "$REAL" ] && grep -qE '^# BR-000\b' "$BF"; then
+  bad "br.md đã có $REAL thật mà BR-000 (BR mẫu) vẫn còn — xoá cả mục BR-000 đi"
+  info "  BR-000 mang CON-001/002/003 của riêng nó. Còn nó thì mọi phép tra CON-###"
+  info "  bằng 'dòng đầu tiên khớp' đều trúng ví dụ dạy việc, không trúng CON thật."
+  info "  Cần đọc lại BR mẫu: nó nằm trong template của plugin, không mất đi đâu."
+fi
 B="$(br_body "$ID" "$ROOT")"
 [ -z "$B" ] && { bad "không tìm thấy '# $ID: ...' trong specs/br.md"; exit 1; }
 
@@ -105,6 +135,31 @@ for c in $(printf '%s' "$CS" | grep -oE 'CON-[0-9]+' | sort -u); do
   T="$(printf '%s' "$L" | sed -n 's/.*:\*\* *//p' | tr -d ' .')"
   [ -z "$T" ] && bad "$c chưa có câu phát biểu" || ok "$c có phân loại và nội dung"
 done
+
+# 6b. CON trùng số giữa HAI BR — quét CẢ FILE, không chỉ BR đang kiểm.
+# Số CON đánh riêng trong từng BR, nhưng ID thì dùng chung cả repo: UC trích
+# `CON-002` trống trơn, không kèm BR nào. Hai BR cùng có CON-002 thì mọi phép
+# tra đều trúng cái đứng trước, và cái đứng sau trở thành vô hình — không dòng
+# đỏ nào, vì ID vẫn "có tồn tại".
+# Kiểm này KHÔNG thừa sau khi BR-000 đi: hai BR THẬT cũng đụng nhau y hệt, và
+# đó là ca sẽ tới, vì mỗi BR viết ở một thời điểm khác nhau và không ai nhớ số
+# BR trước đã dùng tới đâu.
+DUP="$(strip_markup < "$BF" | awk '
+  # Bỏ qua BR còn là khuôn (tiêu đề còn `<...>`) — CON của nó cũng là khuôn, và
+  # `CON-001 ...` của khuôn đụng `CON-001` của BR-000 ngay trên repo vừa scaffold.
+  /^# BR-/ { match($0, /BR-[0-9]+/); br = substr($0, RSTART, RLENGTH)
+             skip = ($0 ~ /<[^>]+>/) ? 1 : 0; next }
+  skip { next }
+  /^-? *\*\*CON-[0-9]+/ {
+    match($0, /CON-[0-9]+/); c = substr($0, RSTART, RLENGTH)
+    if (!(c in owner))      { owner[c] = br }
+    else if (owner[c] != br) { print c "  (" owner[c] " và " br ")" }
+  }' | sort -u)"
+if [ -n "$DUP" ]; then
+  bad "CON trùng số giữa hai BR — mọi phép tra chỉ thấy cái đứng trước:"
+  printf '%s\n' "$DUP" | sed 's/^/      /'
+  info "  đánh lại số cho bộ đứng sau, rồi sửa mọi chỗ trích nó."
+fi
 
 # 7. Impact Map — không có nhánh đứt nghĩa là chưa map gì, chỉ là đường thẳng từ
 # Goal xuống danh sách việc đã định làm sẵn.

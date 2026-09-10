@@ -21,10 +21,10 @@ echo "Tầng thiết kế — $ID"
 DIR="$(dirname "$F")"; CTX="$(ctx_of "$F")"
 DS="$DIR/design.md"; TK="$DIR/tasks.md"; AR="$ROOT/specs/internal/architecture.md"
 
-# strip_tags <file|-> — bỏ thẻ HTML hợp lệ trước khi đi tìm placeholder <...>.
-# Danh sách này là những thẻ CÓ THẬT trong template của plugin; thêm thẻ mới vào
-# template thì thêm vào đây, đừng nới regex thành "bỏ mọi <...> ngắn".
-strip_tags() { sed -E 's#</?(br|b|i|u|em|strong|code|sub|sup)[[:space:]]*/?>##g' "$1"; }
+# 4.2.0: `strip_tags()` cục bộ đã bỏ — mọi chỗ dùng `strip_markup()` của lib.sh.
+# Hai hàm chỉ khác nhau ở một điểm, và đúng điểm đó gây lỗi: strip_tags bỏ THẺ,
+# strip_markup bỏ cả KHỐI `<!-- … -->`. Giữ lại một hàm chỉ-bỏ-thẻ nằm cạnh là
+# mời người sau dùng lại đúng cái vừa hỏng.
 
 # ── 0. cổng DoR phải qua trước ────────────────────────────────────────────
 # Thiết kế cho một UC chưa qua cổng là thiết kế cho một spec còn đang đổi.
@@ -48,7 +48,14 @@ else
   # `<br/>` trong khối mermaid KHÔNG phải placeholder — nó là cú pháp. Bản đầu
   # tính nó là placeholder, nên một architecture.md đã điền xong vẫn đỏ, và dòng
   # đỏ oan thì bị học cách phớt lờ, rồi kéo theo cả những dòng đỏ thật.
-  PH="$(strip_tags "$AR" | grep -nE '<[^>]+>' | grep -vE '^[0-9]+:>' \
+  # strip_MARKUP, không strip_tags: bộ lọc cũ chỉ bỏ dòng BẮT ĐẦU bằng `<!--`, nên
+  # một `<ID>` nằm ở dòng GIỮA một khối chú thích nhiều dòng vẫn bị tính là
+  # placeholder. Chính khuôn architecture.md 4.2.0 dính: khối giải thích mục ## Cấm
+  # có câu "thay bởi <ID> từ YYYY-MM-DD", và design-check tố oan một repo vừa
+  # scaffold. Lần thứ ba cùng một bẫy (4.0.1, 4.0.x, giờ 4.2.0) — chú thích không
+  # bao giờ là placeholder, nên lọc phải bỏ CẢ KHỐI chứ không bỏ từng dòng mở.
+  # strip_markup giữ nguyên số dòng (97→97, đã đo) nên `grep -n` vẫn trỏ đúng file gốc.
+  PH="$(strip_markup < "$AR" | grep -nE '<[^>]+>' | grep -vE '^[0-9]+:>' \
         | grep -vE '^[0-9]+:[[:space:]]*(<!--|```)' | head -6)"
   if [ -n "$PH" ]; then
     bad "architecture.md còn placeholder <...> — chưa ai quyết, không phải đã quyết là không có:"
@@ -116,7 +123,7 @@ else
               | grep -vE '^[[:space:]]*$' | grep -vE '^[[:space:]]*<!--')"
       if [ -z "$BODY" ]; then
         bad "$sec rỗng — mục trống và 'đã đối chiếu, khớp' trông giống hệt nhau"
-      elif printf '%s\n' "$BODY" | strip_tags /dev/stdin | grep -qE '<[^>]+>'; then
+      elif printf '%s\n' "$BODY" | strip_markup | grep -qE '<[^>]+>'; then
         bad "$sec còn placeholder <...>"
       else
         ok "$sec có nội dung"

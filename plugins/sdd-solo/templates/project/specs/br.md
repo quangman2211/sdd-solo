@@ -64,8 +64,38 @@ metric này có thật hay chỉ là câu nói hay.
 
 ## Constraints
 - **CON-001 Technical:** hosting chia sẻ, không chạy được job nền quá 30 giây.
+  - Từ: 2026-03-14 · Biết qua: bảng giá gói Business, mục "Execution limits" · Kiểm lại: khi đổi gói hosting · Trạng thái: đúng
 - **CON-002 Regulatory:** bản ghi thanh toán phải giữ 10 năm theo quy định kế toán — khách huỷ cũng không xoá.
+  - Từ: 2026-03-14 · Biết qua: Luật Kế toán 2015, Điều 41 · Kiểm lại: khi luật kế toán sửa · Trạng thái: đúng
 - **CON-003 Timing:** người bán chỉ có buổi tối để xử lý, nên mọi việc cần tay người phải gộp một lần mỗi ngày.
+  - Từ: 2026-03-14 · Biết qua: chính người bán nói trong buổi intake · Kiểm lại: khi có người thứ hai phụ trách · Trạng thái: đúng
+
+<!-- Vì sao CON có `Kiểm lại` mà RULE/ADR không có.
+
+     CON-### KHÔNG phải một quyết định. Không cái nào ở trên do ta chọn, và không cái nào
+     chọn khác được. Đó là SỰ THẬT VỀ THẾ GIỚI đang ràng buộc quyết định — khác loại với
+     RULE (ta đặt ra) và ADR (ta chọn phương án).
+
+     Khác loại thì hỏng theo cách khác:
+       · Một QUYẾT ĐỊNH hết đúng khi LÝ DO của nó hết đúng — mà lý do nằm ngay trong file,
+         đọc lại là thấy.
+       · Một RÀNG BUỘC hết đúng khi THẾ GIỚI đổi — và thế giới đổi thì KHÔNG CÓ GÌ TRONG
+         REPO ĐỘNG ĐẬY CẢ.
+
+     Đổi hosting năm 2028: CON-001 lặng lẽ thành sai. Mọi UC dựng quanh nó vẫn đứng nguyên,
+     vẫn qua mọi phép kiểm, vẫn đọc trôi chảy. Không dòng đỏ nào, vì không phép kiểm nào
+     biết ngoài đời vừa xảy ra chuyện gì. Cùng lớp "báo xanh sai", nhưng nguồn nằm ngoài repo.
+
+     `Kiểm lại:` là thứ duy nhất biến chuyện đó thành một dòng CÓ THỂ QUÁ HẠN — tức đo được.
+     Nó không cần là ngày; "khi đổi gói hosting" là một mốc hợp lệ và thường tốt hơn ngày.
+     `Biết qua:` trả lời "làm sao ta biết điều này đúng" — năm năm sau đó là thứ cho phép
+     đi kiểm lại, thay vì phải tin. -->
+
+<!-- Định dạng dòng thứ hai là hợp đồng với `decisions.sh`: bốn nhãn `Từ:` `Biết qua:`
+     `Kiểm lại:` `Trạng thái:` ngăn bằng ` · `, nằm trên MỘT dòng, thụt vào dưới CON.
+     Đổi nhãn thì sổ tra không đọc được nữa. Hết hiệu lực thì viết
+     `Trạng thái: hết đúng từ YYYY-MM-DD` — đừng xoá dòng CON, xoá là mất dấu vết. -->
+
 
 ## Impact Map
 ```mermaid
@@ -167,8 +197,11 @@ thẳng "chưa có lý do" — đó là câu trả lời trung thực, và vai h
 
 ## Constraints
 - **CON-001 Technical:** ...
+  - Từ: YYYY-MM-DD · Biết qua: <ai nói · đo ở đâu · điều luật nào> · Kiểm lại: <mốc hoặc sự kiện> · Trạng thái: đúng
 - **CON-002 Regulatory:** ...
+  - Từ: YYYY-MM-DD · Biết qua: ... · Kiểm lại: ... · Trạng thái: đúng
 - **CON-003 Timing/SLA:** ...
+  - Từ: YYYY-MM-DD · Biết qua: ... · Kiểm lại: ... · Trạng thái: đúng
 
 ## Impact Map
 ```mermaid
