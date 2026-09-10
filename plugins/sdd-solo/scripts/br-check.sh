@@ -221,9 +221,59 @@ fi
 
 # 10. adversarial pass — CẢNH BÁO, không đỏ. Phase 1 mềm hơn Phase 3: BR viết xong
 # đã dùng được để mở UC; ba vai là bước làm nó chắc, không phải điều kiện tồn tại.
-printf '%s' "$(sec '## Adversarial pass')" | grep -qE 'Ngày chạy: *[0-9]{4}-[0-9]{2}-[0-9]{2}' \
+AP="$(sec '## Adversarial pass')"
+printf '%s' "$AP" | grep -qE 'Ngày chạy: *[0-9]{4}-[0-9]{2}-[0-9]{2}' \
   && ok "adversarial pass đã chạy" \
   || warn "chưa chạy /sdd-solo:adversarial $ID — ba vai tầng BR hay bắt ra 'đây là giải pháp viết ngược thành lý do'"
+
+# 10b (5.1.0). Tới 5.0.0 phép kiểm trên là toàn bộ: có chữ "Ngày chạy:" là xanh. Không đếm
+# `→ ___`, không kiểm "→ Open Question" có dòng `- [ ]` nào khớp. Cùng lỗi #12 ("lời khai
+# `→ spec` trống không kiểm được") đã sửa ở gate-check cho UC năm bản trước — chưa bao giờ
+# lan sang BR. Đo ở runxops (peer báo, đo lại đúng): 30 câu, 10 còn `___`, 4 "→ Open
+# Question", và luật "không có để đó" ở skills/adversarial dòng 149 không script nào đọc.
+# Phase 1 ĐƯỢC PHÉP còn `___` (quyết định 3.x, vẫn đúng) — nên ĐẾM RA, không chặn.
+# Sau migrate --evidence thân nằm ở br.evidence.md, mặt tiền là một dòng đếm; đọc cả hai.
+APB="$AP"
+if printf '%s' "$AP" | grep -q '→ specs/br.evidence.md' && [ -f "$ROOT/specs/br.evidence.md" ]; then
+  APB="$APB
+$(awk -v h="## $ID — ## Adversarial pass" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}' "$ROOT/specs/br.evidence.md")"
+fi
+NQ="$(printf '%s\n' "$APB" | grep -cE '^[[:space:]]*-[[:space:]]*Q[0-9]+\b')"
+NB="$(printf '%s\n' "$APB" | grep -E '^[[:space:]]*-[[:space:]]*Q[0-9]+\b' | grep -cE '→[[:space:]]*`?___|^[^→]*$')"
+if [ "$NQ" -gt 0 ] && [ "$NB" -gt 0 ]; then
+  warn "adversarial: $NB/$NQ câu chưa có đầu ra (→ ___) — treo được ở Phase 1, nhưng đây là số nợ, đừng để nó chìm"
+fi
+# "→ Open Question" là lời khai: phải có một dòng `- [ ]` cùng BR nói về nó. Khớp bằng từ
+# khoá (3 từ dài nhất của câu, cần ≥ 2 trùng) — thưa có chủ ý: chắc chắn mồ côi (không có
+# dòng `- [ ]` nào cả) thì ĐỎ; khớp không ra thì CẢNH BÁO kèm câu, vì diễn đạt lại thì máy
+# chịu và đỏ oan dạy người ta phớt lờ.
+OQB="$(sec '## Open Questions' | grep -E '^[[:space:]]*- \[ \]')"
+NOQC="$(printf '%s\n' "$APB" | grep -cE '→[[:space:]]*Open Question')"
+if [ "$NOQC" -gt 0 ]; then
+  if [ -z "$OQB" ]; then
+    bad "adversarial khai $NOQC lần '→ Open Question' mà ## Open Questions không có dòng '- [ ]' nào — lời khai trỏ vào chỗ trống"
+  else
+    printf '%s\n' "$APB" | grep -E '→[[:space:]]*Open Question' | while IFS= read -r q; do
+      KW="$(printf '%s' "$q" | sed 's/→.*//' | tr -c '[:alnum:]àáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđÀÁẢÃẠÂẦẤẨẪẬĂẰẮẲẴẶÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐ' '\n' \
+            | awk 'length($0)>=5' | awk '{print length($0), $0}' | sort -rn | head -3 | awk '{print $2}')"
+      HIT=0
+      for w in $KW; do printf '%s\n' "$OQB" | grep -qiF "$w" && HIT=$((HIT+1)); done
+      [ "$HIT" -lt 2 ] && warn "adversarial '→ Open Question' chưa thấy dòng '- [ ]' nào khớp: $(printf '%s' "$q" | cut -c1-70)…"
+    done
+  fi
+fi
+# 10c (5.1.0). Ba vai đọc BẢN NÀO? Adversarial ghi "trên vN" hoặc chỉ có ngày; History
+# ghi vN mới nhất. Ba vai chạy trên v1 mà BR đã sang v3 thì câu đắt nhất của tầng này
+# ("đây có thật là BR không") được hỏi trên một văn bản không còn tồn tại. Chỉ nói ra.
+HV="$(sec '## History' | grep -oE '^- v[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -1)"
+AV="$(printf '%s' "$AP" | grep -oE 'trên v[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -1)"
+if [ -n "$HV" ] && [ -n "$AV" ] && [ "$AV" -lt "$HV" ]; then
+  warn "ba vai chạy trên v$AV, BR đã là v$HV — hai vai kia chưa đọc bản hiện tại; chạy lại hay ghi rõ vì sao không"
+elif [ -n "$HV" ] && [ -z "$AV" ]; then
+  AD="$(printf '%s' "$AP" | grep -oE 'Ngày chạy: *[0-9-]+' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)"
+  HD="$(sec '## History' | grep -oE '\(20[0-9]{2}-[0-9]{2}-[0-9]{2}\)' | tr -d '()' | sort | tail -1)"
+  [ -n "$AD" ] && [ -n "$HD" ] && [ "$AD" \< "$HD" ] && warn "adversarial chạy $AD, History sửa tới $HD — ba vai chưa đọc bản sau; ghi 'trên vN' vào Ngày chạy để đo được"
+fi
 
 # 11. Bao nhiêu câu treo là treo THẬT, bao nhiêu là chỗ trống.
 # '___' là đầu ra hợp lệ và không được biến mất. Nhưng khi nó chiếm đa số áp đảo

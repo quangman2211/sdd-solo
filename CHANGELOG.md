@@ -1,5 +1,42 @@
 # Changelog
 
+## 5.1.0 — 2026-09-10
+
+### `## Adversarial pass` của BR — dấu vết chưa nén, lời khai chưa kiểm (issue từ runxops-c1)
+
+5.0.0 nén dấu vết cho **UC** (`trace.md`) và từ 3.x cổng UC đã kiểm lời khai `→ spec` trống (#12).
+Cả hai chưa bao giờ lan sang **BR**. Peer đo, em đo lại — số khớp:
+
+| | Peer | Đo lại |
+|---|---|---|
+| `## Adversarial pass` BR-001 | 6,5 KB | 6,5 KB |
+| Câu / chưa có đầu ra | 30 / 10 `→ ___` | 30 / 10 |
+| `br-check` chỉ grep `Ngày chạy:` | [br-check.sh:224] | đúng — có chữ đó là xanh |
+| Luật *"không có để đó"* có, phép kiểm không | `skills/adversarial:149` | đúng |
+| BR hiện v14 | v14 | **v14** — em từng nói v2, sai: awk của em dừng sớm; `sec()` của br-check đọc đúng |
+
+Câu đắt nhất của tầng BR — *"đây có thật là BR không"* — được hỏi một lần trên v1, đầu ra treo 10
+câu, BR đã sang v14, và không phép kiểm nào nhìn thấy. **Luật đúng, phạm vi sai.**
+
+### Thêm
+- **`migrate.sh --evidence BR-###`** dời thêm thân `## Adversarial pass` sang `br.evidence.md`, để lại
+  MỘT dòng đếm bằng máy — và **in số `___` ra mặt tiền**, vì Phase 1 được phép còn `___` (quyết định
+  3.x, vẫn đúng): nợ lộ ở chỗ ai cũng đọc, thay vì chôn ở dòng 300.
+  `- Ngày chạy: 2026-09-08 · 3 vai · trên v2 · 30 câu → 20 đã áp · 10 → ___ → specs/br.evidence.md`
+  Background và Adversarial tách **độc lập** — repo đã tách Background ở 5.0.0 (đúng trạng thái runxops
+  sau khi peer chạy) vẫn tách được Adversarial. Bản đầu không thế: "Background đã tách rồi" thoát sớm và
+  Adversarial không bao giờ được xét — bắt được vì test đúng trạng thái runxops thay vì bản gốc.
+- **`br-check` §10b**: cảnh báo kèm số `N/M câu chưa có đầu ra`. **Đỏ** khi có `→ Open Question` mà
+  `## Open Questions` cùng BR không có dòng `- [ ]` nào — lời khai trỏ vào chỗ trống. Khớp từng câu
+  bằng từ khoá (3 từ dài nhất, cần ≥ 2 trùng) → chỉ **cảnh báo** kèm câu: diễn đạt lại thì máy chịu,
+  và đỏ oan dạy người ta phớt lờ. Đọc được cả thân lẫn dòng đếm + `br.evidence.md` sau khi tách.
+- **`br-check` §10c**: *"ba vai đọc bản nào?"* — Adversarial ghi `trên vN` (hoặc chỉ ngày), History có
+  vM; N < M → cảnh báo. Không bắt chạy lại, chỉ nói ra. runxops: *"ba vai chạy trên v2, BR đã là v14"*.
+
+### Không làm
+`___` = đỏ ở Phase 1 — peer và em cùng ý, đó là quyết định có chủ ý. Cần **đếm ra**, không chặn.
+`## History` của BR (4,9 KB) để riêng: nó mang ngày, và 4.2.0 nói ngày là thứ duy nhất không tái tạo được.
+
 ## 5.0.0 — 2026-09-10
 
 ### Vừa với một người — bớt file · bớt dấu vết · một lệnh cho agent

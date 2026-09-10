@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # migrate.sh [--dry-run] — 3.x → 4.0.0: tách cây của Spec Kit ra khỏi specs/.
-# migrate.sh --evidence BR-### [--dry-run] — 5.0.0: tách thân ## Background ra br.evidence.md.
+# migrate.sh --evidence BR-### [--dry-run] — 5.0.0: tách thân ## Background ra br.evidence.md;
+#   5.1.0: tách thêm thân ## Adversarial pass, để lại dòng đếm có số ___ ở mặt tiền.
 #
 #   specs/00N-<slug>/  →  .speckit/work/00N-<slug>/
 #
@@ -43,9 +44,9 @@ sec = m.group(0)
 bg = re.search(r'(?ms)^## Background[ \t]*\n(.*?)(?=^## |\Z)', sec)
 if not bg: print(f"  ✗ {BR} không có ## Background"); sys.exit(1)
 body = bg.group(1)
-if '→ specs/br.evidence.md' in body:
-    print(f"  ✓ {BR} ## Background đã tách rồi — không làm lại"); sys.exit(0)
-paras = re.split(r'\n[ \t]*\n', body.strip('\n'))
+bg_done = '→ specs/br.evidence.md' in body
+if bg_done: print(f"  ✓ {BR} ## Background đã tách rồi — không làm lại")
+paras = [] if bg_done else re.split(r'\n[ \t]*\n', body.strip('\n'))
 keep, move, cur = [], [], '(mở đầu)'
 nmove = 0
 for pgh in paras:
@@ -61,9 +62,32 @@ for pgh in paras:
     else:
         move.append((None, pgh)); nmove += 1
 kb0 = len(body.encode()) / 1024
-newbody = '\n\n'.join(keep) + '\n\n'
+newbody = body if bg_done else ('\n\n'.join(keep) + '\n\n')
 kb1 = len(newbody.encode()) / 1024
-print(f"  {BR} ## Background: {kb0:.1f} KB → {kb1:.1f} KB · dời {nmove} đoạn, giữ {len(keep)} dòng heading/**")
+if not bg_done: print(f"  {BR} ## Background: {kb0:.1f} KB → {kb1:.1f} KB · dời {nmove} đoạn, giữ {len(keep)} dòng heading/**")
+# 5.1.0 — ## Adversarial pass của BR cùng loại dấu vết (cùng bảng đo 5.0.0: 6,5 KB ở
+# BR-001), nhưng khác UC một chỗ: Phase 1 ĐƯỢC PHÉP còn `___`. Nên dòng đếm phải in số
+# `___` ra mặt tiền — nợ lộ ở chỗ ai cũng đọc, thay vì chôn ở dòng 300 — chứ không
+# phải "đã áp hết". Giữ chữ "Ngày chạy:" vì br-check §10 grep đúng chuỗi đó.
+ap = re.search(r'(?ms)^## Adversarial pass[ \t]*\n(.*?)(?=^## |\Z)', sec)
+ap_move = None
+if ap and 'Ngày chạy' in ap.group(1) and '→ specs/br.evidence.md' not in ap.group(1) \
+      and not re.search(r'YYYY-MM-DD|<[^>\n]+>', ap.group(1)):
+    ab = ap.group(1)
+    d = re.search(r'Ngày chạy:\s*(\d{4}-\d{2}-\d{2})', ab).group(1)
+    qs = re.findall(r'(?m)^\s*-\s*Q\d+\b.*$', ab)
+    blank = sum(1 for q in qs if re.search(r'→\s*`?___', q))
+    noarrow = sum(1 for q in qs if '→' not in q)
+    applied = len(qs) - blank - noarrow
+    onv = re.search(r'trên v(\d+)', ab)
+    line = (f'- Ngày chạy: {d} · 3 vai' + (f' · trên v{onv.group(1)}' if onv else '') +
+            f' · {len(qs)} câu → {applied} đã áp · {blank + noarrow} → ___ → specs/br.evidence.md')
+    ap_move = (ab.rstrip('\n') + '\n', line)
+    print(f"  {BR} ## Adversarial pass: {len(ab.encode())/1024:.1f} KB → 1 dòng · {len(qs)} câu, {applied} đã áp, {blank + noarrow} còn ___")
+if ap and 'Ngày chạy' in ap.group(1) and '→ specs/br.evidence.md' in ap.group(1):
+    print(f"  ✓ {BR} ## Adversarial pass đã tách rồi — không làm lại")
+if bg_done and not ap_move:
+    sys.exit(0)
 if dry:
     print("  --dry-run: chưa đụng đĩa"); sys.exit(0)
 try: ev = io.open(evp, encoding='utf-8').read()
@@ -72,15 +96,21 @@ except FileNotFoundError:
           '<!-- Sinh bởi migrate.sh --evidence. Đây là CHỨNG CỨ lúc viết BR (số đo, trích dẫn dài),\n'
           '     không phải thứ đang hiệu lực. br.md giữ mục lục ### trỏ về đây. context.sh và\n'
           '     decisions.sh không đọc file này; cần tra "hồi đó đo ra sao" thì mở. -->\n')
-ev += f'\n## {BR} — ## Background — tách {today}\n'
-for h, t in move:
-    if h: ev += f'\n{h}\n'
-    else: ev += t + '\n'
+if not bg_done:
+    ev += f'\n## {BR} — ## Background — tách {today}\n'
+    for h, t in move:
+        if h: ev += f'\n{h}\n'
+        else: ev += t + '\n'
+sec2 = sec[:bg.start(1)] + newbody + sec[bg.end(1):]
+if ap_move:
+    ev += f'\n## {BR} — ## Adversarial pass — tách {today}\n' + ap_move[0]
+    ap2 = re.search(r'(?ms)^## Adversarial pass[ \t]*\n(.*?)(?=^## |\Z)', sec2)
+    sec2 = sec2[:ap2.start(1)] + ap_move[1] + '\n\n' + sec2[ap2.end(1):]
 io.open(evp, 'w', encoding='utf-8').write(ev)
-s2 = s[:m.start()] + sec[:bg.start(1)] + newbody + sec[bg.end(1):] + s[m.end():]
+s2 = s[:m.start()] + sec2 + s[m.end():]
 io.open(brp, 'w', encoding='utf-8').write(s2)
 print(f"  ✓ đã ghi specs/br.evidence.md và cập nhật specs/br.md — chưa commit")
-print(f"  git add specs/br.md specs/br.evidence.md && git commit -m 'docs({BR}): tách chứng cứ Background (5.0.0)'")
+print(f"  git add specs/br.md specs/br.evidence.md && git commit -m 'docs({BR}): dời dấu vết BR sang br.evidence.md'")
 PY
   exit $?
 fi
