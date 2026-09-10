@@ -124,6 +124,63 @@ brief_sha() { _b="$(brief_path "$1")"; [ -n "$_b" ] && [ -f "$1/$_b" ] || return
 # "mọi ký tự trừ \ và n", nên đường dẫn nào có chữ 'n' là hụt, và hụt thì im.
 brief_rec_sha() { grep -oE '\*\*Nguồn brief:\*\*.*sha256 [0-9a-f]{12}' "$1/specs/br.md" 2>/dev/null \
                   | grep -oE '[0-9a-f]{12}$' | head -1; }
+# ── nội dung THẬT hay còn là template ───────────────────────────────────
+# Một bản DUY NHẤT. Tới 4.0.0 hàm này được chép nguyên vào br-check.sh và
+# change-check.sh — hai bản y hệt nhau, nên một lượt vá chỉ trúng một nửa, và
+# phiên báo lỗi còn tưởng nó nằm ở lib.sh vì "chắc thứ dùng hai nơi thì ở chung".
+nonempty() { printf '%s' "$1" | grep -qvE '^[[:space:]]*$'; }
+
+# strip_markup — bỏ những thứ TRÔNG như placeholder nhưng là cú pháp hợp lệ,
+# trước khi đi tìm placeholder thật. Liệt kê ĐÍCH DANH, không nới regex thành
+# "bỏ mọi <...> ngắn": nới tay ở đây là đổi đỏ oan lấy hụt đỏ thật.
+#   ① khối <!-- ... --> (kể cả trải nhiều dòng)
+#   ② thẻ HTML có thật trong template: <b> <br/> ...
+#   ③ autolink markdown <https://...>
+strip_markup() {
+  awk '
+    BEGIN { incmt = 0 }
+    {
+      line = $0; out = ""
+      while (length(line) > 0) {
+        if (incmt) {
+          k = index(line, "-->")
+          if (k == 0) { line = ""; break }
+          line = substr(line, k + 3); incmt = 0
+        } else {
+          k = index(line, "<!--")
+          if (k == 0) { out = out line; line = ""; break }
+          out = out substr(line, 1, k - 1)
+          line = substr(line, k + 4); incmt = 1
+        }
+      }
+      print out
+    }' \
+  | sed -E 's#</?(br|b|i|u|em|strong|code|sub|sup|kbd|small)[[:space:]]*/?>##g; s#<[a-z]+://[^ >]*>##g'
+}
+
+# filled <text> — có nội dung THẬT: không rỗng, không còn placeholder, không
+# phải toàn dòng "..." của template.
+filled() {
+  nonempty "$1" || return 1
+  # Placeholder có thể TRẢI NHIỀU DÒNG: '<Vì sao ...' mở ở dòng này, '...>' đóng
+  # ở dòng sau. Regex một dòng '<[^>]+>' không khớp cái nào, nên mục rỗng đi qua
+  # như có nội dung. Phải bắt cả nửa mở lẫn nửa đóng.
+  #
+  # Nửa ĐÓNG phải có ký tự THẬT ngay trước '>'. Bản tới 4.0.0 dùng '>[[:space:]]*$'
+  # nên một dòng chỉ có '>' — tức DÒNG TRỐNG BÊN TRONG BLOCKQUOTE, cú pháp
+  # markdown hợp lệ và dùng thường xuyên — bị tính là nửa đóng của placeholder.
+  # Hệ quả đo được ở runxops: '## Background' dài 427 dòng, không một '<...>'
+  # nào, vẫn đỏ. Và nó gác đúng mục chứa toàn bộ SỐ ĐO của tầng BR — phép kiểm
+  # bảo vệ chỗ nhiều số nhất lại là phép kiểm bị vô hiệu hoá đầu tiên.
+  # Loại '-' và '=' trước '>' nữa: đó là mũi tên mermaid ('A -->'), không phải
+  # nửa đóng của placeholder.
+  printf '%s\n' "$1" | strip_markup \
+    | grep -qE '<[^>]+>|^[[:space:]]*<|[^[:space:]>=-]>[[:space:]]*$' && return 1
+  printf '%s' "$1" | grep -vE '^[[:space:]]*$' \
+    | grep -qvE '^[[:space:]]*([-*][[:space:]]*)?\.\.\.[[:space:]]*$' || return 1
+  return 0
+}
+
 # paths_re "src app" → ^(src|app)/  — dùng cho grep -E trên đường dẫn git
 paths_re() { printf '^(%s)/' "$(printf '%s' "$1" | tr -s ' ' '|' | sed 's/|$//')"; }
 # detect_paths <root> → đoán code_paths từ thư mục đang có. KHÔNG nhận specs/

@@ -1,5 +1,59 @@
 # Changelog
 
+## 4.0.1 — 2026-09-10
+
+### Sửa — `filled()` báo đỏ oan trên ba loại cú pháp markdown hợp lệ
+
+Ca gốc, đo trên `runxops`: `## Background` của `BR-001` dài **425 dòng**, mỗi khối số kèm lệnh đo,
+**không một `<...>` nào** — vẫn ra `✗ ## Background rỗng hoặc còn placeholder`. Thủ phạm là **đúng
+một dòng, dòng 238**: một dấu `>` đơn độc.
+
+`filled()` có nhánh `>[[:space:]]*$` để bắt nửa **đóng** của placeholder trải nhiều dòng
+(`<Vì sao ...` mở ở dòng này, `...>` đóng ở dòng sau). Nhưng trong markdown, một dòng chỉ có `>` là
+**dòng trống bên trong blockquote** — cú pháp hợp lệ và dùng thường xuyên.
+
+**Đo rồi mới sửa, và phép đo tìm ra ba chứ không phải một.** Phiên báo lỗi thấy ca blockquote; chạy
+đủ bộ ca thì hiện thêm hai:
+
+| Nội dung trong `## Background` | Tới 4.0.0 | Đúng ra |
+|---|---|---|
+| `>` đơn (dòng trống trong blockquote) | ✗ | ✓ |
+| `A["<b>x</b><br/>y"] --> B` (mermaid) | ✗ | ✓ |
+| `<!-- chú thích -->` | ✗ | ✓ |
+
+Ca thứ hai là **đúng cùng hình lỗi `<br/>`** vừa chữa cho `design-check` ở 4.0.0, chỉ nằm ở nhánh
+khác nên lượt vá đó không với tới. Một kết luận đúng nằm đúng một chỗ thì không bảo vệ được chỗ kia
+— luật này CHANGELOG đã ghi, và lần này chính nó tái diễn trong cùng một bản.
+
+**Thuốc là liệt kê đích danh, không phải nới regex.** `strip_markup()` mới bỏ ba thứ trước khi đi
+tìm placeholder: khối `<!-- ... -->` (kể cả trải nhiều dòng) · thẻ HTML **có tên trong danh sách**
+(`b` `br` `i` `em` `strong` `code` …) · autolink `<https://…>`. Nửa đóng đổi thành
+`[^[:space:]>=-]>[[:space:]]*$` — phải có ký tự thật ngay trước `>`, và `-`/`=` bị loại vì đó là
+mũi tên mermaid (`A -->`), không phải nửa đóng.
+
+**Đo 12 ca, hai chiều.** Tám ca phải xanh (văn xuôi · blockquote có dòng `>` rỗng · mermaid có
+`<b>`/`<br/>` · so sánh `a > b` · chú thích một dòng · chú thích nhiều dòng · mũi tên cuối dòng ·
+autolink) và bốn ca phải đỏ (placeholder một dòng · trải hai dòng · chỉ nửa mở · chỉ nửa đóng), cộng
+bốn ca cho hai nhánh cũ (rỗng · `...` · `- ...` · có chữ thật). **16/16.** Chiều thứ hai quan trọng
+ngang chiều thứ nhất: sửa đỏ oan mà làm hụt đỏ thật là đổi một lỗi lấy một lỗi tệ hơn.
+
+Trên `br.md` thật của `runxops`: `BR CHƯA DÙNG ĐƯỢC — 1 lỗi` → `BR DÙNG ĐƯỢC`.
+
+### Sửa — `filled()` và `nonempty()` có HAI bản sao y hệt nhau
+
+Chúng nằm trong `br-check.sh` **và** `change-check.sh`, không nằm ở `lib.sh`. Nên một lượt vá chỉ
+trúng một nửa — và phiên báo lỗi còn báo nhầm địa chỉ là `lib.sh:49`, vì ai cũng cho rằng thứ dùng ở
+hai nơi thì phải ở chỗ chung. Bản sao im lặng còn tốn thêm một lần nữa: nó làm chính người đi sửa
+tin rằng mình đã sửa xong.
+
+4.0.1 đưa cả hai về **một bản duy nhất** trong `lib.sh`; hai script gọi bản chung. Đây là cùng lý do
+`design-check.sh` cố ý kiểm cả hai mức trong một script thay vì tách đôi.
+
+**Vì sao vá ngay thay vì gộp vào bản sau.** `BR-001` là BR duy nhất của `runxops`, nên mỗi lần chạy
+`br-check` là thấy đúng **một** dấu ✗ — và nó sai. Đỏ oan thì bị học cách phớt lờ, rồi kéo theo cả
+những dòng đỏ thật. Chỗ nó đứng còn hiểm hơn: `filled()` gác `## Background`, nơi chứa **toàn bộ số
+đo** của tầng BR. Phép kiểm bảo vệ chỗ nhiều số nhất lại là phép kiểm bị vô hiệu hoá đầu tiên.
+
 ## 4.0.0 — 2026-09-10
 
 **Đổi lớn: sdd-solo chạy trọn vòng bằng chính nó.** Phụ thuộc bắt buộc từ ba xuống **không** —

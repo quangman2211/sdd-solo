@@ -39,18 +39,7 @@ if [ -n "$BP" ]; then
 fi
 
 sec() { printf '%s' "$B" | awk -v h="$1" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}'; }
-nonempty() { printf '%s' "$1" | grep -qvE '^[[:space:]]*$'; }
-# filled — có nội dung THẬT: không rỗng, không còn <...>, không phải toàn dòng "..."
-filled() {
-  nonempty "$1" || return 1
-  # Placeholder có thể TRẢI NHIỀU DÒNG: '<Vì sao ...' mở ở dòng này, '...>' đóng ở
-  # dòng sau. Regex một dòng '<[^>]+>' không khớp cái nào, nên mục rỗng đi qua như
-  # có nội dung. Phải bắt cả dòng chỉ mở và dòng chỉ đóng.
-  printf '%s' "$1" | grep -qE '<[^>]+>|^[[:space:]]*<|>[[:space:]]*$' && return 1
-  printf '%s' "$1" | grep -vE '^[[:space:]]*$' \
-    | grep -qvE '^[[:space:]]*([-*][[:space:]]*)?\.\.\.[[:space:]]*$' || return 1
-  return 0
-}
+# nonempty/filled dùng bản chung ở lib.sh (4.0.1)
 
 # 1. tiêu đề
 grep -qE "^# $ID: *[^ <]" "$BF" && ok "có tiêu đề" || bad "dòng '# $ID:' chưa có tên thật"

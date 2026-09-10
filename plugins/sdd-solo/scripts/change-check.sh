@@ -12,20 +12,7 @@ info "thư mục: ${D#$ROOT/}"
 
 # sect <file> <heading> — nội dung một mục, bỏ chính dòng heading
 sect() { awk -v h="$2" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}' "$1" 2>/dev/null; }
-nonempty() { printf '%s' "$1" | grep -qvE '^[[:space:]]*$'; }
-# filled — có nội dung THẬT: không rỗng, không còn <...>, và không phải toàn dòng
-# "..." của template. Bản đầu chỉ kiểm rỗng nên "- ..." trong ## Rủi ro và cách lùi
-# đi qua cổng như một câu trả lời hợp lệ.
-filled() {
-  nonempty "$1" || return 1
-  # Placeholder có thể TRẢI NHIỀU DÒNG: '<Vì sao ...' mở ở dòng này, '...>' đóng ở
-  # dòng sau. Regex một dòng '<[^>]+>' không khớp cái nào, nên mục rỗng đi qua như
-  # có nội dung. Phải bắt cả dòng chỉ mở và dòng chỉ đóng.
-  printf '%s' "$1" | grep -qE '<[^>]+>|^[[:space:]]*<|>[[:space:]]*$' && return 1
-  printf '%s' "$1" | grep -vE '^[[:space:]]*$' \
-    | grep -qvE '^[[:space:]]*([-*][[:space:]]*)?\.\.\.[[:space:]]*$' || return 1
-  return 0
-}
+# nonempty/filled dùng bản chung ở lib.sh (4.0.1)
 
 P="$D/proposal.md"; G="$D/design.md"; T="$D/tasks.md"
 for f in proposal.md design.md tasks.md; do
