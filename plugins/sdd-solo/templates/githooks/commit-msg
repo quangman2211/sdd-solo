@@ -24,7 +24,12 @@ notool() { if [ -n "$TRE" ]; then grep -vE "$TRE"; else cat; fi; }
 # Danh sách LOẠI TRỪ chứ không phải danh sách cho phép: sai sót nghiêng về
 # chặn nhầm, đỡ hơn nghiêng về bỏ lọt. File không có phần mở rộng (Makefile,
 # Dockerfile…) không tính, để repo chưa có code không bị chặn oan.
-SRCLIKE="$(echo "$STAGED" | grep -vE '^(specs|docs|changes|checklists|prompts|\.sdd|\.githooks)/' \
+# --diff-filter=d CHỈ ở đây: file đang bị xoá thì không có gì để kiểm "nằm ngoài
+# code_paths" — cảnh báo cho 6 file .specify/*.sh đang git rm (runxops, 5.1.0) là nhiễu
+# dạy người ta phớt lờ. KHÔNG lọc ở $STAGED toàn cục: dòng TOUCH_CODE bên dưới và
+# pre-commit cũng đọc $STAGED, và một commit XOÁ code domain gắn UC chưa qua cổng vẫn
+# là commit đụng code — phải bị chặn y như commit thêm.
+SRCLIKE="$(git diff --cached --name-only --diff-filter=d | grep -vE '^(specs|docs|changes|checklists|prompts|\.sdd|\.githooks)/' \
           | grep -vE '(^|/)\.[A-Za-z0-9_-]+$' \
           | grep -E '\.[A-Za-z0-9]+$' \
           | grep -viE '\.(md|markdown|txt|json|jsonc|lock|ya?ml|toml|ini|cfg|conf|env|csv|tsv|svg|png|jpe?g|gif|ico|webp|pdf|bpmn|dmn|drawio|mmd|html?|css|scss|less|gitignore|editorconfig|npmrc|nvmrc|bak|new)$')"

@@ -1,5 +1,18 @@
 # Changelog
 
+## 5.1.1 — 2026-09-10
+
+### Sửa (hai lệch runxops-ea báo sau khi chuẩn hoá theo 5.1.0)
+
+- **`specs/internal/decisions.md` khuôn** trỏ `.specify/###/design.md` và `changes/CHG-###/` — hai đường
+  không còn từ 4.0.0 và 2.0.0. → `<ADR-### | UC-###/design.md | specs/changes/CHG-###>`.
+- **`commit-msg`** cảnh báo *"file nguồn nằm ngoài code_paths"* cho file đang bị `git rm` — `git diff
+  --cached --name-only` liệt kê cả file xoá (đo: có; `--diff-filter=d` → rỗng). Lọc **chỉ ở `SRCLIKE`**,
+  không ở `$STAGED` toàn cục như peer đề xuất: `$STAGED` còn nuôi `TOUCH_CODE` và `pre-commit`, và một
+  commit *xoá* code domain gắn UC chưa qua cổng vẫn là commit đụng code — phải chặn y như thêm. Đo cả
+  hai chiều: `git rm` file ngoài code_paths → hết cảnh báo; `git rm` code domain gắn `UC-001` không marker
+  → vẫn bị chặn.
+
 ## 5.1.0 — 2026-09-10
 
 ### `## Adversarial pass` của BR — dấu vết chưa nén, lời khai chưa kiểm (issue từ runxops-c1)
