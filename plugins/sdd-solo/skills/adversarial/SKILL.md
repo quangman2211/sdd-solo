@@ -14,7 +14,13 @@ Adversarial pass cho `$1`.
 
 ## A. Tầng UC — bước ⑦
 
-1. Tìm file UC: `find specs/contexts -path "*use-cases/$1-*/$1.md"`. Đọc nó, `specs/glossary.md`, các `RULE-###` nó trích trong `specs/rules.md`, và `entities.md` của context.
+1. Gom đầu vào bằng **một lệnh**, không tự đi nhặt file:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/context.sh" $1
+```
+   Output đó (UC bỏ dấu vết · RULE/CON/ADR được trích · BR cha · architecture · entity/glossary) là **toàn
+   bộ** thứ ba vai được đọc — đưa nguyên văn cho mỗi subagent ở bước 3. Không có → `find ~/.claude/plugins
+   -type f -name context.sh -path '*sdd-solo*' | head -1`.
 2. Kiểm tiền điều kiện bằng **script**, không tự đánh giá — bốn điều kiện cũ đo cấu trúc nên template rỗng qua hết (#11):
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/gate-check.sh" --pre $1

@@ -10,8 +10,9 @@ plugins/sdd-solo/
   skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · state · status
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
-  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · uc-steps · version-check · update · migrate · deps-check · session-start
-  templates/project/                 được copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest
+  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start
+  templates/project/                 16 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16)
+  templates/skel/                    khuôn use-case/ · context/ · change/ — skill copy khi tạo, KHÔNG rơi vào dự án
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
   templates/githooks/                commit-msg · pre-commit — chặn cứng
   docs/playbook-example-khoskill.html
@@ -25,6 +26,12 @@ CHANGELOG.md                         mỗi bản một mục — đây là ## Hi
 - **Không gọi tên lệnh của plugin khác trong quy tắc cứng** (từ 4.0.0). Quy tắc nói về *trạng thái repo* — `.sdd/gate/UC-###.ok` có chưa, `design.md` có chưa — chứ không nói `/speckit-*`. Lý do đo được: bốn repo trên cùng máy có 10 / 24 / 25 / 35 lệnh `speckit-*`; một quy tắc gọi tên lệnh người khác thì hỏng theo lịch release của người khác. Spec Kit vẫn là nguồn tham khảo tốt — chỉ cần nó ghi vào `.speckit/`, không ghi vào `specs/`.
 - **`speckit-decompose` để ngoài** plugin này (quyết định 09/2026).
 - Không bịa số liệu trong template hay skill: chỗ chưa có dữ liệu để `___`.
+- **Một bước là công cụ để nghĩ thì để lại một quyết định, không để lại một tài liệu** (5.0.0). Adversarial · đọc lại ·
+  history là giấy nháp: khi UC đóng, `pass.sh close` dời thân sang `UC-###.trace.md`, để lại một dòng có số đếm bằng máy.
+  Đo ở runxops: 44.761 từ spec đổi lấy 0 UC implemented, `57 docs : 1 feat`; hơn 60% của 210 KB một agent phải đọc là
+  dấu vết. Không thêm mục mới vào file UC/BR mà không trả lời được *ai đọc lại nó sau khi UC đóng*.
+- Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
+  chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 
 ## Quy trình sửa
 1. Sửa file trong repo này.

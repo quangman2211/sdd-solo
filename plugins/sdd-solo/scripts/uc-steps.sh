@@ -71,7 +71,7 @@ st "⑦" $? "adversarial pass (3 vai)"
 
 # ⑧ đọc lại: mục ## Đọc lại có dòng F#, HOẶC commit docs đã qua một đêm
 R8=1
-sed -n '/^## Đọc lại/,/^## /p' "$F" 2>/dev/null | grep -qE '^- F[0-9]+ ' && R8=0
+sed -n '/^## Đọc lại/,/^## /p' "$F" 2>/dev/null | grep -qE '^- F[0-9]+ |^- Ngày chạy:.*phát hiện' && R8=0
 if [ "$R8" = 1 ]; then
   L="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" 2>/dev/null)"
   [ -n "$L" ] && [ "$L" != "$(today)" ] && R8=0

@@ -310,6 +310,10 @@ elif [ "$LAST" = "$(today)" ] && [ "$RRN" -gt 0 ] && [ "$RRC" = 1 ]; then
   # adversarial. Ba điều kiện phải cùng đúng — mục ## Đọc lại có dòng dùng được,
   # commit mới nhất là chính nó, nên không tự viết chung một hơi với spec được.
   printf '  \033[32m✓\033[0m %s\n' "đọc lại bằng đầu chưa neo: $RRN phát hiện có neo + đầu ra (cửa 2, #27)"
+elif [ "$LASTS" = "docs($ID): implemented — traceability" ]; then
+  # 5.0.0: UC đã đóng — pass.sh close nén ## Đọc lại còn một dòng và commit. Chạy lại
+  # gate-check sau đó không được đỏ: cửa đã qua rồi, và đỏ oan thì bị học cách phớt lờ.
+  ok "docs($ID) mới nhất là commit đóng UC — đã qua cổng và đã đóng"
 elif [ "$LAST" = "$(today)" ] && [ "$LASTS" = "docs($ID): spec reviewed — qua cổng DoR" ]; then
   # Commit docs mới nhất do chính gate-pass tạo, không phải người sửa spec.
   # Không có nhánh này thì hành động qua cổng tự phá điều kiện qua cổng và

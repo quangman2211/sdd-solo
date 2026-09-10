@@ -107,6 +107,31 @@ git add -A && git commit -m "chore(sdd): migrate bố cục 2.0.0"
 
 Script dừng ngay từ đầu nếu working tree bẩn hoặc nếu cây cũ và cây mới cùng tồn tại — trong cả hai ca nó chưa đụng file nào.
 
+## Nâng cấp 4.x → 5.0.0
+
+5.0.0 đổi **thứ mỗi bước để lại**, không đổi 14 bước. Đo trên một dự án thật (runxops): 44.761 từ spec,
+0 UC implemented, `57 docs : 1 feat`; 55 file thì 34 vẫn nguyên khuôn; hiểu một UC phải đọc 210 KB mà hơn
+60% là dấu vết. Ba việc:
+
+1. **Bớt file** — khuôn 43 → 16. Khuôn UC/context/change về plugin (`templates/skel/`), 13 ngăn kéo trống bỏ.
+2. **Dấu vết rời file hiệu lực** — `pass.sh close` dời `## Adversarial pass` · `## Đọc lại` · `## History` sang
+   `UC-###.trace.md`, để lại một dòng có số đếm. `migrate.sh --evidence BR-###` dời thân `## Background` sang
+   `br.evidence.md`, giữ mục lục `###`.
+3. **Một lệnh cho agent** — `context.sh UC-###` in đúng phần đang hiệu lực + đúng RULE/CON/ADR được trích;
+   `--why` trả lời *"tính năng này do cái gì quyết định"*.
+
+Ở dự án:
+
+```
+/plugin marketplace update sdd-solo → /plugin update sdd-solo → /sdd-solo:init --update → session mới
+bash .sdd/scripts/migrate.sh --evidence BR-001 --dry-run      # xem trước, rồi chạy thật
+bash .sdd/scripts/decisions.sh                                 # dự án đã quyết gì
+bash .sdd/scripts/context.sh UC-### --why                      # UC này do cái gì quyết định
+```
+
+`init --update` xoá file khuôn cũ **chỉ khi anh chưa sửa tay** (sha khớp manifest); đã sửa thì giữ và báo.
+`br.md` đã có BR thật mà còn `BR-000` mẫu → `br-check` đỏ: xoá mục `BR-000` đi (từ 4.2.0).
+
 ## Đang chạy bản nào
 
 Bốn chỗ giữ version, lệch chỗ nào thì lệnh sửa khác nhau:

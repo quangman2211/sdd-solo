@@ -34,17 +34,7 @@ Ranh giới spec/doc: **khách cảm nhận được → spec** (`specs/`). Ch�
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
 
-**Không dùng `aiup-core` cho bước ② ③ ④** (#29). Đọc `SKILL.md` của cả bốn lệnh AIUP: **4/4 ghi ra
-cây `docs/`** chứ không phải `specs/` — `use-case-spec` → `docs/use_cases/`, `entity-model` →
-`docs/entity_model.md` (cổng DoR đọc `specs/contexts/<ctx>/entities.md`), `use-case-diagram` →
-`.puml` (ta đếm nhãn mermaid). Và `use-case-spec` **đụng hệ ID**: `BR-XXX` của nó là business
-**rule**, nguyên văn *"restart at `BR-001` in every file"*; `BR-###` của ta là business
-**requirement** trong `specs/br.md`. **Githook sẽ cho qua** một commit ghi `BR-002` theo nghĩa AIUP
-vì `BR-002` có heading thật — báo xanh sai ở tầng hệ ID.
-
-Kết luận này `skills/init` đã rút ra cho `/requirements` từ lâu (*"AIUP đọc `docs/vision.md` mà
-không skill nào tạo ra file đó"*) nhưng **không lan sang ba lệnh còn lại** — một kết luận đúng nằm
-đúng một chỗ thì không bảo vệ được ba chỗ kia.
+**Không dùng lệnh sinh spec của plugin khác cho bước ② ③ ④.** Chúng ghi ra cây và hệ ID của họ (`docs/`, `BR-###` nghĩa là *rule*), cổng DoR đọc `specs/` và `BR-###` nghĩa là *requirement* — githook cho qua một commit gắn ID có heading thật mà sai nghĩa. Số đo và tên lệnh cụ thể ở CHANGELOG 3.x (#29); quy tắc cứng ở đây cố ý không gọi tên lệnh của ai (4.0.0).
 
 **Bước nào cố ý bỏ thì ghi vào file UC một dòng `**Bỏ bước <ký hiệu>:** <lý do>`.** Bỏ có ghi lý do
 và bỏ mà không ai biết là bỏ cho **cùng một kết quả trên đĩa**, nhưng sáu tháng sau chỉ cái đầu còn
@@ -64,7 +54,7 @@ Bài kiểm một câu: *nếu câu trả lời ngược lại với giả đị
 
 ## Cách viết từng thứ
 
-**UC** — template ở `.sdd/templates/use-case/UC-000.md`. Bắt buộc: Actor, Trigger, Preconditions, Main Flow (bước "Hệ thống hiển thị" phải nêu SCR-ID), Alternative Flows (Na.), Exceptions (E#: điều kiện → màn hình → thông điệp bằng tiếng của khách → hệ thống làm gì), Postconditions, AC, Screens (bảng Nguồn | Màn hình | Khách thấy gì | Hành động), Dependencies, Open Questions (mỗi câu có "quyết định tạm"), Adversarial pass, History.
+**UC** — khuôn ở `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.md`. Bắt buộc: Actor, Trigger, Preconditions, Main Flow (bước "Hệ thống hiển thị" phải nêu SCR-ID), Alternative Flows (Na.), Exceptions (E#: điều kiện → màn hình → thông điệp bằng tiếng của khách → hệ thống làm gì), Postconditions, AC, Screens (bảng Nguồn | Màn hình | Khách thấy gì | Hành động), Dependencies, Open Questions (mỗi câu có "quyết định tạm"), Adversarial pass, History.
 
 **AC** — Given/When/Then, một cho Main Flow, một cho mỗi E#. Không chép rule: viết "theo RULE-004". Mỗi AC sẽ thành đúng một file test.
 
@@ -84,6 +74,7 @@ Bài kiểm một câu: *nếu câu trả lời ngược lại với giả đị
 UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn đúng. Tạo `specs/changes/CHG-###-slug/` (proposal, delta ADDED/MODIFIED/REMOVED, design, tasks); baseline trong `specs/` chỉ đổi khi archive. Thêm AC mới không phá AC cũ → vẫn là Phase 3, History v+1.
 
 ## Quy tắc cho bạn (AI) trong repo này
+- **Cần bối cảnh của một UC thì chạy `${CLAUDE_PLUGIN_ROOT}/scripts/context.sh UC-###`**, không tự đi nhặt file. Nó in đúng phần đang hiệu lực + đúng những RULE/CON/ADR UC trích (5.0.0); `--why` khi chỉ cần biết UC do cái gì quyết định. Ba mục `## Adversarial pass` · `## Đọc lại` · `## History` là dấu vết — không phải đầu vào để viết code.
 1. Gặp số, ngưỡng, enum, quyền mà spec chưa nói → dừng, hỏi. Không chọn mặc định.
 2. Khi user trả lời → nhắc ghi vào spec + commit `docs(UC-###)` trước khi code tiếp.
 3. Không viết code cho UC khi `.sdd/gate/UC-###.ok` chưa có, hoặc khi thư mục UC chưa có `design.md`.

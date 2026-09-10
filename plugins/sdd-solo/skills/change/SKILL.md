@@ -10,7 +10,7 @@ Cổng Phase 5 cho `$1`.
 
 Phase 5 chỉ dành cho thay đổi làm **một AC cũ không còn đúng** trên UC đã `implemented`. Thêm AC mới mà không phá AC cũ thì vẫn là Phase 3: sửa thẳng UC, `## History` v+1, xong. Nếu user mở change cho việc thuộc Phase 3, nói ngay và đừng chạy tiếp.
 
-1. Chưa có thư mục change thì tạo trước — copy `.sdd/templates/change/` thành `specs/changes/$1-<slug>/`, điền cùng user, commit `docs($1): ...`. Không tự bịa Why/Scope/delta thay user.
+1. Chưa có thư mục change thì tạo trước — copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/change/` (không thay được biến: `find ~/.claude/plugins -type d -name skel -path '*sdd-solo*' | head -1`) thành `specs/changes/$1-<slug>/`, điền cùng user, commit `docs($1): ...`. Không tự bịa Why/Scope/delta thay user.
 2. Chạy và in nguyên output:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/change-check.sh" $1

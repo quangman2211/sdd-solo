@@ -1,5 +1,104 @@
 # Changelog
 
+## 5.0.0 — 2026-09-10
+
+### Vừa với một người — bớt file · bớt dấu vết · một lệnh cho agent
+
+Không cắt bước nào trong 14. Cắt **thứ mỗi bước để lại** và **chỗ nó nằm**. Số đo trên `runxops`
+(dự án thật, nhiều tuần làm việc) trước khi quyết cắt gì:
+
+| Đo | Kết quả |
+|---|---|
+| Chữ đã viết trong `specs/` | **44.761 từ · 258 KB · 30 file** — đổi lấy 0 dòng `src/`, 0 UC implemented, `57 docs : 1 feat` |
+| File rơi vào dự án | **55**, trong đó **34 vẫn nguyên khuôn** (62%), chỉ **13** có nội dung |
+| Để hiểu một UC agent phải đọc | **210 KB ≈ 53k token**, 15 file, 6 thư mục |
+| `UC-009.md` 56 KB | 18 KB hiệu lực · **33 KB dấu vết** — `## Đọc lại` 11,3 · `## Adversarial pass` 11,0 · `## History` 6,3 — không ai đọc lại |
+| `BR-001` 73 KB | 15 KB quyết định · **56 KB** — `## Background` 31,8 KB chứng cứ · Open Q 12,9 · Adversarial 6,5 · History 4,9 |
+
+Sách nguồn (`SDD-Ebook.epub`) **không** định nghĩa 14 bước — chuỗi đó do ta đắp dần, mỗi bước vì một
+lần hỏng thật, và chưa lần nào đứng lại hỏi cả 14 cộng lại có còn vừa với một người. Sách xếp *"side
+project một người"* vào **"khi nào không nên dùng"**; runxops lại trúng 4–5/6 dấu hiệu "nên dùng"
+(sống > 6 tháng · rule nghiệp vụ không tầm thường · **AI sinh phần lớn code** · lõi sản phẩm) — nhưng
+**vì lý do khác sách**. Sách viết cho *truyền đạt giữa người và người*; lý do của một dev solo là *trí
+nhớ xuyên thời gian* và *đầu vào chính xác cho AI*. Chỗ khác đó là đường cắt:
+
+> Artifact phục vụ truyền đạt / biên bản cho người thứ hai → bỏ.
+> Artifact phục vụ trí nhớ và đầu vào AI → giữ.
+> **Một bước là công cụ để nghĩ thì để lại một quyết định, không để lại một tài liệu.**
+
+Sách còn dặn đúng thứ đã xảy ra: *"Đừng đo SDD bằng số dòng spec… Lines of spec: khuyến khích viết dài."*
+
+Rút lại một nhận xét cũ: bước ⑥ và ⑬ (chạy xong không để lại gì) từng bị em gọi là "thiếu". Số đo nói
+ngược lại — chúng là hai bước duy nhất **có hình dạng đúng** cho solo. Bệnh ở ⑦ ⑧: cùng loại *công cụ
+để nghĩ* nhưng lưu biên bản như thể có người thứ hai sẽ kiểm.
+
+### A. Bớt file — khuôn 43 → 16, runxops 55 → ~28
+
+- **`.sdd/templates/` (14 file) về plugin** tại `templates/skel/{use-case,context,change}/`. Chỉ skill
+  đọc chúng, mà skill chỉ chạy khi có plugin → lý do "bản sao chạy được không có plugin" (lý do
+  `.sdd/scripts/` tồn tại) **không áp**. Bốn skill (`start` · `design` · `change` · `sdd-process`) copy
+  từ `${CLAUDE_PLUGIN_ROOT}/templates/skel/`.
+- **13 ngăn kéo trống bỏ khỏi khuôn** — đo hai lần: không script/skill nào đọc, và ở runxops vẫn
+  nguyên byte sau nhiều tuần: `context-map` · `story-map` · `design-system` · `onboarding` ·
+  `runbooks/README` · `changes/README` · `contexts/README` · `internal/README` · `README.md` gốc ·
+  `definition-of-done` · `feedback-triage` · `prompts/session-start` · `.sdd/gate/README`. Phase 0 /
+  Phase 4 không còn file hứa hộ — `specs/README.md` ghi một dòng "chưa có lệnh".
+  Ranh giới đã dùng: *chưa ai đụng + không ai đọc = chết · chưa ai đụng + đang được chạy = sống*
+  (`verify-pass.md` 27,5 KB nguyên khuôn nhưng là prompt đang chạy → giữ).
+- `scaffold.sh` **`RETIRED_TPL`** liệt kê đích danh 27 đường dẫn, xoá **chỉ khi sha khớp manifest**
+  (đã sửa tay → giữ + cảnh báo), rồi `rmdir` thư mục rỗng. Đo: repo 4.2 nguyên khuôn → dọn 27, sạch;
+  một file sửa tay → còn nguyên.
+- `specs/README.md` là biển chỉ đường duy nhất; `docs/` (một khái niệm cũ không còn thư mục) ra khỏi
+  mục *Ranh giới*.
+
+### B. Dấu vết → quyết định
+
+**B1. `pass.sh close` dời thân `## Adversarial pass` · `## Đọc lại` · `## History` · Open Question đã
+`[x]` sang `UC-###.trace.md`** cùng thư mục, để lại tại chỗ một dòng có **số đếm bằng máy**:
+```
+- Ngày chạy: 2026-09-09 · 3 vai · 24 câu, đã áp hết → UC-009.trace.md
+- Ngày chạy: 2026-09-09 · 51 phát hiện · 1 dương tính giả · đã áp hết → UC-009.trace.md
+- v14 (2026-09-10): implemented · lịch sử đầy đủ → UC-009.trace.md
+```
+Nén ở ⑭ chứ không ở ⑨: lúc UC còn mở, `F#` là danh sách việc và cổng đọc nó bằng máy. Không xoá gì —
+git giữ, tranh chấp thì mở `trace.md`. Đo trên `UC-009` thật: **56 → 27 KB**, `trace.md` 29 KB, tổng
+56 = 56. `uc-steps` ⑦⑧⑭ xanh; `gate-check`/`close-check` chạy lại sau close **không đỏ oan** (nhánh
+mới nhận commit `implemented — traceability`); chạy close lần hai không nén kép.
+Lỗi bắt được khi test: UC **khuôn trống** cũng bị "dời 3 mục" — nó nén cả `YYYY-MM-DD`. → thân còn
+placeholder thì không phải dấu vết, không dời.
+
+**B2. `migrate.sh --evidence BR-###`** dời thân `## Background` sang `specs/br.evidence.md`, giữ trong
+`br.md` mọi `### heading` (+ dòng `→ specs/br.evidence.md`) và mọi đoạn bắt đầu bằng `**` (`**Vì sao
+vẫn xây:**`, `**Nguồn brief:**` — `br-check` đọc chúng). Đo trên `BR-001` thật: **31,8 → 6,4 KB**, 15
+`###` + 13 dòng `**` ở lại, `br-check` xanh, `--dry-run` không đụng đĩa, chạy lại không làm kép.
+`/sdd-solo:intake` từ nay viết chứng cứ thẳng vào `br.evidence.md`; Background trong `br.md` là mục lục.
+
+### C. `context.sh UC-### [--why]` — một lệnh, đúng đủ bối cảnh
+
+Thay cho lời dặn đọc **13 tên file** ở `/sdd-solo:design` §2 — lời dặn không kiểm được, và đã hụt ở #34.
+In ra (không ghi file): UC bỏ ba mục dấu vết và Open Q đã đóng · flow · **chỉ những** `RULE`/`CON`/`ADR`
+được trích (thiếu → dòng `!`) · mục BR cha không Background · bốn mục `architecture.md` (còn `<...>` →
+dòng `!`) · entity/glossary UC nhắc tên · dòng brief để đọc riêng (ngoài `specs/`, #34 giữ nguyên).
+Cuối có dòng đo KB. `--why` chỉ in RULE · CON · ADR · `## Cấm` — nửa còn lại của `decisions.sh`: một
+cái đi từ thời gian xuống quyết định, cái kia đi từ một UC lên.
+
+Đo trên `UC-009` runxops: **210 KB → 88,8 KB** (−58%), 9 nguồn; `--why` **28,7 KB**. Mục tiêu ~30 KB
+trong plan là **sai** cho bản đầy đủ — soi từng mục thì không có mục nào bất thường (UC 26,7 · RULE
+11,0 · architecture 9,7 · entities 9,3 · BR 8,8 · CON 7,5 · ADR 6,8 · glossary 5,2): 89 KB là cỡ thật
+của phần đang hiệu lực. Ghi số thật, không ép.
+`adversarial` · `verify` · `design` · `status` gọi nó; `design-check` §4 gợi ý `--why`; vào `KEEP`
+của scaffold.
+
+### D. Bớt context thường trực
+`sdd-process/SKILL.md`: đoạn sử AIUP (#29) thành một quy tắc chung không gọi tên lệnh ai; thêm luật
+*"cần bối cảnh UC thì chạy `context.sh`, không tự nhặt file"*. `skills/start` bỏ hai chỗ trỏ
+`/use-case-spec` (AIUP).
+
+### Ở dự án — major, phải làm tay
+`/plugin marketplace update` → `/plugin update` → `/sdd-solo:init --update` → session mới →
+`bash .sdd/scripts/migrate.sh --evidence BR-### --dry-run` rồi thật. `br.md` còn `BR-000` mẫu →
+xoá (4.2.0). Xem README *Nâng cấp 4.x → 5.0.0*.
+
 ## 4.2.0 — 2026-09-10
 
 ### Bộ tài liệu này chứa những quyết định gì — trả lời được bằng một lệnh

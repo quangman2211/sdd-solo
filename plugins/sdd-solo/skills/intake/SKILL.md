@@ -75,6 +75,12 @@ thiếu dòng này, và vai hoài nghi ở `/sdd-solo:adversarial BR-###` sẽ b
 
 - Câu 1 + 3 → `## Background`. Chỉ những gì user thật sự nói. Con số user nêu thì ghi kèm nguồn
   ("anh đếm tay trong inbox tuần rồi"). Không có nguồn → xuống Open Questions.
+  **Từ 5.0.0, Background trong `br.md` là MỤC LỤC, không phải kho chứng cứ:** mỗi ý một `### heading`
+  + một dòng `→ specs/br.evidence.md`, và các dòng `**…:**` (như `**Vì sao vẫn xây:**`). Thân — số đo,
+  trích dẫn dài, bảng — viết vào `specs/br.evidence.md` dưới `### heading` cùng tên. Đo ở runxops:
+  `## Background` một mình 31,8 KB, 15 mục chứng cứ, và mọi lượt đọc BR sau đó đều phải lội qua nó dù
+  chỉ cần biết Goal và Scope. Chứng cứ là thứ làm BR đứng vững *lúc viết*; sau đó nó là dấu vết.
+  Repo đang có thì `bash .sdd/scripts/migrate.sh --evidence BR-### --dry-run` rồi chạy thật.
 - Câu 1 + 2 → `## Goal`, **một câu**, dạng "ai làm được gì mà giờ chưa làm được".
 - Câu 7 → `## Success Metrics`. Số để `___` thoải mái; **cách đo thì không được để trống**.
   Chưa có analytics thì viết cách đếm tay — "đếm thread trong inbox mỗi thứ Hai" là một cách đo hợp lệ.

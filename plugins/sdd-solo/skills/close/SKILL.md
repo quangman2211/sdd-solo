@@ -20,4 +20,8 @@ allowed-tools: Bash Read Edit
 "${CLAUDE_PLUGIN_ROOT}/scripts/pass.sh" close $1
 ```
 6. Nếu spec có đổi trong lúc code mà `## History` chưa ghi → thêm dòng v+1 trước khi pass.
+   Từ 5.0.0 `pass.sh close` **dời** thân `## Adversarial pass` · `## Đọc lại` · `## History` · Open Question
+   đã `[x]` sang `UC-###.trace.md` cùng thư mục, để lại mỗi mục một dòng có số đếm bằng máy. Nói với
+   user: `trace.md` là **giấy nháp đã dùng xong** — mở khi tranh chấp, không phải file đọc thường;
+   `context.sh` và `decisions.sh` không đọc nó. UC-009 ở runxops: 56 KB → ~20 KB, không mất một chữ.
 7. Gợi ý UC tiếp theo từ `specs/contexts/<ctx>/use-cases.md` (status draft đầu tiên) và nhắc `/sdd-solo:state`.

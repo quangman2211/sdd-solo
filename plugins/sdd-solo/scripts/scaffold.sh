@@ -72,7 +72,24 @@ done
 # không phải bản sao hành vi. Ranh giới "dự án giữ nội dung" đứng trên việc dọn dẹp,
 # nên chỉ xoá khi user CHƯA đụng vào (sha khớp manifest). Đã sửa tay thì cảnh báo và
 # để nguyên — thà để lỗi kêu to còn hơn tự tay xoá chữ của người khác.
-RETIRED_TPL="specs/internal/adr/ADR-000-template.md"
+RETIRED_TPL="specs/internal/adr/ADR-000-template.md
+  specs/context-map.md specs/story-map.md specs/internal/design-system.md
+  specs/internal/onboarding.md specs/internal/runbooks/README.md specs/changes/README.md
+  specs/contexts/README.md specs/internal/README.md README.md
+  .sdd/checklists/definition-of-done.md .sdd/checklists/feedback-triage.md
+  .sdd/prompts/session-start.md .sdd/gate/README.md
+  .sdd/templates/change/delta/UC-000.delta.md .sdd/templates/change/design.md
+  .sdd/templates/change/proposal.md .sdd/templates/change/tasks.md
+  .sdd/templates/context/README.md .sdd/templates/context/diagrams/README.md
+  .sdd/templates/context/entities.md .sdd/templates/context/use-cases.md
+  .sdd/templates/use-case/UC-000.design.md .sdd/templates/use-case/UC-000.flow.md
+  .sdd/templates/use-case/UC-000.md .sdd/templates/use-case/UC-000.sequence.md
+  .sdd/templates/use-case/UC-000.tasks.md .sdd/templates/use-case/screens/README.md"
+# 5.0.0: 13 "ngăn kéo trống" (đo hai lần: không script/skill nào đọc, và ở runxops
+# vẫn nguyên byte sau nhiều tuần) + 13 khuôn của .sdd/templates/ (chỉ skill đọc, mà
+# skill chỉ chạy khi có plugin — bản sao trong dự án không phục vụ CI hay người
+# clone, nên lý do tồn tại của .sdd/scripts/ không áp cho chúng; giờ ở
+# templates/skel/ của plugin). Khuôn 43 → 16 file. Xem CHANGELOG 5.0.0.
 for rel in $RETIRED_TPL; do
   # chốt an toàn: không bao giờ xoá đường dẫn mà bản NÀY đang phát hành
   [ -f "$TPL/$rel" ] && continue
@@ -80,11 +97,17 @@ for rel in $RETIRED_TPL; do
   esc="$(printf '%s' "$rel" | sed 's/[.[\*^$/]/\\&/g')"
   rec_inst="$(grep -E "^$esc " "$MAN" | tail -1 | awk '{print $2}')"
   if [ -n "$rec_inst" ] && [ "$rec_inst" = "$(sha "$dst")" ]; then
-    rm -f "$dst"; ok "dọn  $rel — đã đổi tên thành _adr-template.md (CHANGELOG 4.2.0)"
+    rm -f "$dst"; ok "dọn  $rel — không còn trong khuôn (CHANGELOG 4.2.0 / 5.0.0)"
   else
-    warn "còn  $rel — anh đã sửa tay nên KHÔNG xoá. Tên này làm id_exists ADR-000 báo xanh sai:"
-    warn "     đổi tên nó (vd _adr-template.md) rồi chạy lại init --update"
+    warn "còn  $rel — anh đã sửa tay nên KHÔNG xoá; khuôn 5.0.0 không còn file này (xem CHANGELOG)"
   fi
+done
+# Thư mục rỗng sau khi dọn — git không theo dõi thư mục rỗng, nhưng người mở
+# Finder thì thấy, và một thư mục trống trông y hệt "chưa làm tới".
+for d in .sdd/templates/use-case/screens .sdd/templates/use-case .sdd/templates/context/diagrams \
+         .sdd/templates/context .sdd/templates/change/delta .sdd/templates/change .sdd/templates \
+         specs/internal/runbooks; do
+  [ -d "$ROOT/$d" ] && rmdir "$ROOT/$d" 2>/dev/null && ok "dọn  $d/ (rỗng)"
 done
 
 # CLAUDE.md: khối giữa marker
@@ -156,7 +179,7 @@ fi
 # plugin (CI, người clone repo). Đổi lại: bản sao có thể trôi version — .sdd/version
 # so với version plugin, lệch thì session-start và status cảnh báo.
 mkdir -p "$ROOT/.sdd/scripts"
-KEEP="lib.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
+KEEP="lib.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
 for f in $KEEP; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done

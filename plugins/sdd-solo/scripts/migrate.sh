@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # migrate.sh [--dry-run] — 3.x → 4.0.0: tách cây của Spec Kit ra khỏi specs/.
+# migrate.sh --evidence BR-### [--dry-run] — 5.0.0: tách thân ## Background ra br.evidence.md.
 #
 #   specs/00N-<slug>/  →  .speckit/work/00N-<slug>/
 #
@@ -14,7 +15,75 @@
 # KHÔNG tự commit. Dời file rồi in ra những gì đã đổi; người đọc rồi commit.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"
-DRY=0; [ "${1:-}" = "--dry-run" ] && DRY=1
+DRY=0; EV=""
+for a in "$@"; do
+  case "$a" in
+    --dry-run) DRY=1;;
+    --evidence) EV="_";;
+    BR-[0-9]*) [ "$EV" = "_" ] && EV="$a";;
+  esac
+done
+
+# ── --evidence BR-### : tách thân ## Background sang specs/br.evidence.md ────
+# 5.0.0. Đo ở runxops: BR-001 dài 73 KB thì ## Background 31,8 KB — 15 mục ###
+# chứng cứ đo từ dữ liệu thật ("982/1986 ô có nhiều hơn một dòng"). Chứng cứ là
+# thứ làm BR đứng vững LÚC VIẾT; sau đó nó là thứ mọi lượt đọc đều phải lội qua,
+# và số đo tháng 9/2026 sang năm sau là dấu vết chứ không còn là hiệu lực.
+# Giữ trong br.md: mọi `### heading` (mục lục) + mọi đoạn bắt đầu bằng `**`
+# (`**Vì sao vẫn xây:**`, `**Nguồn brief:**` — br-check đọc chúng). Thân đi.
+if [ -n "$EV" ]; then
+  [ "$EV" = "_" ] && { echo "Dùng: migrate.sh --evidence BR-### [--dry-run]" >&2; exit 2; }
+  python3 - "$ROOT/specs/br.md" "$ROOT/specs/br.evidence.md" "$EV" "$DRY" "$(today)" <<'PY'
+import sys, re, io
+brp, evp, BR, dry, today = sys.argv[1:6]; dry = dry == "1"
+s = io.open(brp, encoding='utf-8').read()
+m = re.search(r'(?ms)^# ' + re.escape(BR) + r':.*?(?=^# BR-|\Z)', s)
+if not m: print(f"  ✗ không thấy '# {BR}:' trong specs/br.md"); sys.exit(1)
+sec = m.group(0)
+bg = re.search(r'(?ms)^## Background[ \t]*\n(.*?)(?=^## |\Z)', sec)
+if not bg: print(f"  ✗ {BR} không có ## Background"); sys.exit(1)
+body = bg.group(1)
+if '→ specs/br.evidence.md' in body:
+    print(f"  ✓ {BR} ## Background đã tách rồi — không làm lại"); sys.exit(0)
+paras = re.split(r'\n[ \t]*\n', body.strip('\n'))
+keep, move, cur = [], [], '(mở đầu)'
+nmove = 0
+for pgh in paras:
+    first = pgh.lstrip().split('\n', 1)[0]
+    if first.startswith('### '):
+        cur = first[4:].strip()
+        keep.append(first + '\n→ specs/br.evidence.md')
+        move.append(('### ' + cur, None))
+        rest = pgh.split('\n', 1)[1] if '\n' in pgh else ''
+        if rest.strip(): move.append((None, rest)); nmove += 1
+    elif first.startswith('**'):
+        keep.append(pgh)
+    else:
+        move.append((None, pgh)); nmove += 1
+kb0 = len(body.encode()) / 1024
+newbody = '\n\n'.join(keep) + '\n\n'
+kb1 = len(newbody.encode()) / 1024
+print(f"  {BR} ## Background: {kb0:.1f} KB → {kb1:.1f} KB · dời {nmove} đoạn, giữ {len(keep)} dòng heading/**")
+if dry:
+    print("  --dry-run: chưa đụng đĩa"); sys.exit(0)
+try: ev = io.open(evp, encoding='utf-8').read()
+except FileNotFoundError:
+    ev = ('# Chứng cứ — thân ## Background của specs/br.md\n\n'
+          '<!-- Sinh bởi migrate.sh --evidence. Đây là CHỨNG CỨ lúc viết BR (số đo, trích dẫn dài),\n'
+          '     không phải thứ đang hiệu lực. br.md giữ mục lục ### trỏ về đây. context.sh và\n'
+          '     decisions.sh không đọc file này; cần tra "hồi đó đo ra sao" thì mở. -->\n')
+ev += f'\n## {BR} — ## Background — tách {today}\n'
+for h, t in move:
+    if h: ev += f'\n{h}\n'
+    else: ev += t + '\n'
+io.open(evp, 'w', encoding='utf-8').write(ev)
+s2 = s[:m.start()] + sec[:bg.start(1)] + newbody + sec[bg.end(1):] + s[m.end():]
+io.open(brp, 'w', encoding='utf-8').write(s2)
+print(f"  ✓ đã ghi specs/br.evidence.md và cập nhật specs/br.md — chưa commit")
+print(f"  git add specs/br.md specs/br.evidence.md && git commit -m 'docs({BR}): tách chứng cứ Background (5.0.0)'")
+PY
+  exit $?
+fi
 
 DIRS="$(find "$ROOT/specs" -maxdepth 1 -type d -name '[0-9][0-9][0-9]-*' 2>/dev/null | sort)"
 if [ -z "$DIRS" ]; then

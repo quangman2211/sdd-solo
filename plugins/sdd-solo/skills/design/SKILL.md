@@ -26,22 +26,29 @@ ls "$(git rev-parse --show-toplevel)/.sdd/gate/$1.ok"
 Không có → **dừng**. Bảo user chạy `/sdd-solo:gate $1` trước. Thiết kế cho một UC chưa qua cổng là
 thiết kế cho một spec còn đang đổi. **Không sinh file nào** trong lượt này.
 
-## 2. Đọc — sáu nguồn, đọc hết rồi mới viết
+## 2. Đọc — MỘT lệnh, rồi brief
 
-1. `UC-###.md` (Main Flow · Exceptions · AC · `**Giả định triển khai:**`) + `UC-###.flow.md`
-2. các `RULE-###` mà UC trích, đọc trong `specs/rules.md` — **chỉ những cái được trích**
-3. `entities.md` + `glossary.md` của context
-4. mục `BR-###` mà UC trỏ tới trong `specs/br.md`, **gồm cả `## Đã loại khỏi brief`**
-5. **brief nguồn** — `grep '^brief_path=' .sdd/config`; có thì đọc file đó. Đây là nguồn duy nhất
-   mà không phép kiểm nào khác trong plugin được giao nhìn tới.
-6. `specs/internal/architecture.md` + các `ADR-###` liên quan
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/context.sh" $1
+```
+(không thay được biến: `find ~/.claude/plugins -type f -name context.sh -path '*sdd-solo*' | head -1`)
 
-Thiếu (6) hoặc nó còn `<...>` → **dừng và làm nó trước**, cùng user. Một `design.md` đối chiếu lên
-một hiến pháp trống là một lượt đối chiếu rỗng, và phép thử rỗng trông y hệt phép thử qua.
+Nó in ra đúng đủ: UC (bỏ ba mục dấu vết) · flow · **chỉ những** `RULE`/`CON`/`ADR` UC trích · mục BR cha
+không Background · bốn mục `architecture.md` · entity/glossary UC nhắc tên. Tới 4.2.0 chỗ này là một
+lời dặn đọc **13 tên file**, không kiểm được, và đã hụt ở #34 — bản thiết kế nói ngược brief hai ngày
+không ai thấy. Đo ở runxops: 210 KB / 15 file → một lệnh ≤ 30 KB.
+
+Rồi đọc **brief nguồn** — dòng cuối output có `brief_path` và sha. Đây là nguồn duy nhất nằm ngoài
+`specs/` mà không phép kiểm nào khác được giao nhìn tới; `context.sh` cố ý không in nó.
+
+Output có dòng `! architecture.md … còn placeholder` hoặc `! thiếu specs/internal/architecture.md` →
+**dừng và làm nó trước**, cùng user. Một `design.md` đối chiếu lên một hiến pháp trống là một lượt
+đối chiếu rỗng, và phép thử rỗng trông y hệt phép thử qua. Dòng `! RULE-### — UC trích nhưng
+rules.md không có` cũng là dừng: thiết kế trên một luật không tồn tại.
 
 ## 3. Viết `design.md`
 
-Copy `.sdd/templates/use-case/UC-000.design.md` sang `<thư mục UC>/design.md`, đổi `UC-000` thành
+Copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.design.md` sang `<thư mục UC>/design.md`, đổi `UC-000` thành
 `$1`, rồi điền cùng user. Sáu mục, và hai mục giữa là lý do cả bước này tồn tại:
 
 - `## Tóm tắt` · `## Bối cảnh kỹ thuật` (ngôn ngữ · phụ thuộc · lưu trữ · test · nền chạy)
@@ -61,7 +68,7 @@ sẽ không bao giờ tìm thấy.
 
 ## 4. Viết `tasks.md`
 
-Copy `.sdd/templates/use-case/UC-000.tasks.md` sang `<thư mục UC>/tasks.md`. **Mỗi AC một dòng,
+Copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.tasks.md` sang `<thư mục UC>/tasks.md`. **Mỗi AC một dòng,
 một việc, một file test** `tests/use-cases/<ctx>/$1/AC-#.test.*`. Không chép nội dung AC sang —
 chép là tạo bản thứ hai để sau này lệch nhau. Việc không gắn AC nào (dựng khung, cấu hình) xuống
 mục riêng ở cuối.

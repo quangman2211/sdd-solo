@@ -172,6 +172,7 @@ GD="$(grep -E '^\*\*Giả định triển khai:\*\*' "$F" | head -1)"
 if [ -n "$GD" ] && [ -f "$AR" ]; then
   info "đối chiếu bằng mắt: $GD"
   info "  với ## Ngăn xếp / ## Nơi chạy / ## Ai gọi của architecture.md — máy không đọc được nghĩa"
+  info "  một màn hình mọi thứ $ID trích: .sdd/scripts/context.sh $ID --why"
 fi
 
 echo

@@ -22,6 +22,14 @@ User hỏi **dự án đã quyết những gì** — "có luật gì rồi", "c�
 "${CLAUDE_PLUGIN_ROOT}/scripts/decisions.sh"
 ```
 Nó gom CON · RULE · ADR · Cấm · CHG · ghi chú từ sáu chỗ về một dòng thời gian. Luôn exit 0,
+không phải cổng. Và chiều ngược lại — *"UC này do cái gì quyết định?"*, *"sao tính năng này lại
+thế?"* — là:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/context.sh" UC-### --why
+```
+chỉ in RULE · CON · ADR mà UC đó trích, kèm `## Cấm` của architecture. Hai lệnh là hai chiều của
+cùng một câu hỏi: `decisions.sh` đi từ thời gian xuống quyết định, `--why` đi từ một UC lên.
+`decisions.sh` luôn exit 0,
 không phải cổng. In nguyên bảng cho user đọc — đây là bảng để **mắt người** đối chiếu, đừng
 tóm tắt nó thành vài câu.
 
