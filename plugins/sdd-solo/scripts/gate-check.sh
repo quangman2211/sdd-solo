@@ -255,31 +255,22 @@ if [ -n "$OQ" ]; then echo "$OQ" | grep -vqi 'quyết định tạm' && bad "Ope
 
 # 9. commit docs + đọc lại bằng đầu chưa neo
 #
-# HAI CỬA, không phải một (3.5.0, #27). Thứ bước ⑧ cần là một người đọc KHÔNG BỊ
-# NEO bởi giả định của người viết. Luật cũ mua thứ đó bằng một đêm lịch — nhưng
-# một đêm đo THỜI GIAN TRÔI QUA, không đo VIỆC ĐỌC CÓ XẢY RA KHÔNG: cùng người,
-# cùng cái neo, sáng mai lướt 30 giây vẫn qua cổng. Còn bước ⑦ ngay trên đây thì
-# giải đúng cùng nhu cầu bằng session mới, và ô 'Session mới: [x]' chưa từng
-# được script nào kiểm. Hai giá cho một bệnh.
+# MỘT CỬA (6.0.0, #38): verify là bắt buộc. Thứ bước ⑧ cần là một người đọc KHÔNG
+# BỊ NEO bởi giả định của người viết. Luật gốc mua thứ đó bằng một đêm lịch; 3.5.0
+# (#27) mở thêm cửa 2 (verify) vì một đêm đo THỜI GIAN TRÔI QUA, không đo VIỆC ĐỌC
+# CÓ XẢY RA KHÔNG: cùng người, cùng cái neo, sáng mai lướt 30 giây vẫn qua cổng.
+# Giữ cửa 1 thêm hai bản lớn nữa thì thấy: nó vẫn là đường rẻ nhất nên vẫn là
+# đường được đi — chủ dự án chốt bỏ hẳn (runxops 2026-09-13, CHG-001 đứng ở
+# change-check chỉ vì "mới hôm nay").
 #
-# Cửa 2 đo đúng thứ cần đo: có một lần đọc đã xảy ra và đã ra kết quả. Chốt chống
-# khai gian nằm ở chỗ dòng F# phải CÓ NEO và CÓ ĐẦU RA — bịa một dòng như vậy tốn
-# đúng bằng đọc thật. Đọc mà không thấy gì thì cửa 2 không mở, rơi về cửa 1.
-RR="$(sed -n '/^## Đọc lại/,/^## /p' "$F" 2>/dev/null | grep -E '^- F[0-9]+ ')"
-RRN=0
-if [ -n "$RR" ]; then
-  RRN="$(printf '%s\n' "$RR" | awk '
-    /\[neo:[^]]*[^] [:space:]]\]/ && /→/ {
-      i = index($0, "→"); o = substr($0, i + 3)
-      # Bóc nhãn trước rồi mới hỏi còn gì không: nếu giữ lại thì chuỗi
-      # mũi-tên + dau ra + ___ vẫn khác rỗng nhờ chính hai chữ nhãn, nên một
-      # dòng chưa quyết gì cũng mở được cửa. Đây là ca khai gian rẻ nhất.
-      # KHÔNG đặt dấu nháy đơn trong khối awk này — nó đóng chuỗi của shell.
-      sub(/^[[:space:]]*đầu ra[[:space:]]*:/, "", o)
-      gsub(/[_[:space:]]/, "", o)
-      if (o != "") n++
-    } END { print n + 0 }')"
-fi
+# Cửa còn lại đo đúng thứ cần đo: có một lần đọc đã xảy ra và đã ra kết quả. Chốt
+# chống khai gian nằm ở chỗ dòng F# phải CÓ NEO và CÓ ĐẦU RA — bịa một dòng như vậy
+# tốn đúng bằng đọc thật. Và commit đọc lại phải là commit spec MỚI NHẤT: sửa spec
+# sau khi đọc lại thì đọc lại lần nữa, bất kể ngày. Đọc mà không thấy gì thì cổng
+# không mở — chủ ý: một lần đọc bằng đầu chưa neo trên spec cỡ UC mà không ra một
+# phát hiện nào (kể cả bị bác "không phải lỗi vì") là phạm vi đọc quá hẹp.
+RR="$(rr_lines "$F")"; RRN=0
+[ -n "$RR" ] && RRN="$(printf '%s\n' "$RR" | rr_count)"
 # Lời khai trong ## Đọc lại phải kèm ID CÓ THẬT — y hệt luật của §7 cho
 # adversarial (#12). Ca thật (runxops): một dòng F# khai '→ sửa RULE-007' sau khi
 # người sửa đã đổi lại mã; thân sửa xong, còn CHỖ GHI LẠI VIỆC SỬA thì không —
@@ -309,32 +300,28 @@ LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- "$F" "$DIR/$ID
 LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- "$F" "$DIR/$ID.flow.md" "$DIR/screens" "$RF" "$EF" 2>/dev/null)"
 # Phải dùng `case`, KHÔNG dùng ${LASTS#docs($ID): ...}: dấu ngoặc đơn trong
 # pattern của phép bóc tiền tố làm nó không khớp gì cả, im lặng — đo được:
-# chuỗi trả về y nguyên chuỗi vào, nên điều kiện luôn sai và cửa 2 không bao
+# chuỗi trả về y nguyên chuỗi vào, nên điều kiện luôn sai và cửa không bao
 # giờ mở. Cùng họ với bẫy `ls a b` (#16): hỏng lặng lẽ, không báo lỗi.
 RRC=0; case "$LASTS" in "docs($ID): đọc lại"*) RRC=1;; esac
 if [ -z "$LAST" ]; then bad "chưa có commit docs($ID) — /sdd-solo:adversarial kết thúc bằng commit này"
-elif [ "$LAST" = "$(today)" ] && [ "$RRN" -gt 0 ] && [ "$RRC" = 1 ]; then
-  # Cửa 2: verify pass đã chạy, đã ra kết quả, và được commit RIÊNG sau commit
-  # adversarial. Ba điều kiện phải cùng đúng — mục ## Đọc lại có dòng dùng được,
-  # commit mới nhất là chính nó, nên không tự viết chung một hơi với spec được.
-  printf '  \033[32m✓\033[0m %s\n' "đọc lại bằng đầu chưa neo: $RRN phát hiện có neo + đầu ra (cửa 2, #27)"
 elif [ "$LASTS" = "docs($ID): implemented — traceability" ]; then
   # 5.0.0: UC đã đóng — pass.sh close nén ## Đọc lại còn một dòng và commit. Chạy lại
   # gate-check sau đó không được đỏ: cửa đã qua rồi, và đỏ oan thì bị học cách phớt lờ.
   ok "docs($ID) mới nhất là commit đóng UC — đã qua cổng và đã đóng"
-elif [ "$LAST" = "$(today)" ] && [ "$LASTS" = "docs($ID): spec reviewed — qua cổng DoR" ]; then
-  # Commit docs mới nhất do chính gate-pass tạo, không phải người sửa spec.
-  # Không có nhánh này thì hành động qua cổng tự phá điều kiện qua cổng và
-  # gate-check đỏ liên tục tới hôm sau. Sửa spec THẬT sau khi qua cổng vẫn
-  # sinh commit docs khác tiêu đề, nên vẫn phải ngủ lại một đêm. Xem #7.
-  ok "docs($ID) hôm nay là commit của gate-pass — đã qua cổng trước đó"
-elif [ "$LAST" = "$(today)" ]; then
-  bad "commit docs($ID) mới hôm nay ($LAST) — spec chưa được đọc lại bằng đầu chưa bị neo"
-  if [ -n "$RR" ] && [ "$RRN" -eq 0 ]; then
-    info "có mục ## Đọc lại nhưng chưa dòng F# nào đủ [neo: ...] + đầu ra khác ___ — cửa 2 không mở"
-  fi
-  info "hai cách qua: /sdd-solo:verify $ID (subagent đọc lại, xong là qua ngay) — hoặc đợi sang buổi khác"
-else ok "docs($ID) commit $LAST — đã qua ít nhất một đêm (cửa 1)"; fi
+elif [ "$LASTS" = "docs($ID): spec reviewed — qua cổng DoR" ]; then
+  # Commit spec mới nhất do chính gate-pass tạo, không phải người sửa spec. Không có
+  # nhánh này thì hành động qua cổng tự phá điều kiện qua cổng (#7). Sửa spec THẬT sau
+  # khi qua cổng sinh commit khác tiêu đề → rơi xuống nhánh cuối, phải đọc lại.
+  ok "docs($ID) mới nhất là commit của gate-pass — đã qua cổng trước đó"
+elif [ "$RRN" -gt 0 ] && [ "$RRC" = 1 ]; then
+  ok "đọc lại bằng đầu chưa neo: $RRN phát hiện có neo + đầu ra, commit riêng là commit spec mới nhất (#27, #38)"
+elif [ "$RRN" -eq 0 ]; then
+  bad "chưa đọc lại bằng đầu chưa neo — ## Đọc lại không có dòng F# nào đủ [neo: ...] + đầu ra khác ___"
+  info "/sdd-solo:verify $ID (subagent đọc lại, ghi F#, commit riêng). Từ 6.0.0 không còn cửa qua đêm."
+else
+  bad "spec đổi sau lần đọc lại — commit docs($ID) mới nhất là '$LASTS' ($LAST), không phải commit đọc lại"
+  info "chạy lại /sdd-solo:verify $ID — commit đọc lại phải là commit spec mới nhất"
+fi
 git -C "$ROOT" status --porcelain -- "$DIR" "$RF" 2>/dev/null | grep -q . && bad "còn thay đổi chưa commit trong spec — commit docs($ID) trước"
 
 echo

@@ -1,6 +1,6 @@
 ---
 name: gate
-description: Bước ⑨ — cổng Definition of Ready cho một UC, kiểm cơ học (AC vs E#, Screens, RULE tồn tại, flow mermaid đối chiếu E# hai chiều, adversarial pass, và đọc lại bằng đầu chưa neo — verify pass trong ngày HOẶC commit docs đã qua một đêm). Đỏ thì không được thiết kế hay viết code; xanh thì đặt status reviewed, ghi marker .sdd/gate/UC-###.ok và commit.
+description: Bước ⑨ — cổng Definition of Ready cho một UC, kiểm cơ học (AC vs E#, Screens, RULE tồn tại, flow mermaid đối chiếu E# hai chiều, adversarial pass, và đọc lại bằng đầu chưa neo — `/sdd-solo:verify` bắt buộc, commit đọc lại phải là commit spec mới nhất; 6.0.0 bỏ cửa qua đêm). Đỏ thì không được thiết kế hay viết code; xanh thì đặt status reviewed, ghi marker .sdd/gate/UC-###.ok và commit.
 disable-model-invocation: true
 argument-hint: "UC-###"
 allowed-tools: Bash Read

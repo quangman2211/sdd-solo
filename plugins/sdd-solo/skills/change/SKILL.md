@@ -16,7 +16,8 @@ Phase 5 chỉ dành cho thay đổi làm **một AC cũ không còn đúng** tr�
 "${CLAUDE_PLUGIN_ROOT}/scripts/change-check.sh" $1
 ```
 (nếu `${CLAUDE_PLUGIN_ROOT}` không được thay: `find ~/.claude/plugins -type f -name change-check.sh -path '*sdd-solo*' | head -1`).
-3. Exit ≠ 0 → **KHÔNG QUA CỔNG**. Với mỗi dòng ✗ nói cần sửa gì, ở file nào. Ba loại ✗ hay gặp và ý nghĩa thật của chúng:
+3. Exit ≠ 0 → **KHÔNG QUA CỔNG**. Với mỗi dòng ✗ nói cần sửa gì, ở file nào. Bốn loại ✗ hay gặp và ý nghĩa thật của chúng:
+   - *"chưa đọc lại bằng đầu chưa neo"* / *"change đổi sau lần đọc lại"* → chạy `/sdd-solo:verify $1` (6.0.0, #38: bắt buộc, không còn cửa qua đêm). Đây là việc đầu, không phải sửa spec.
    - *"UC đang draft, chưa implemented"* → đây là Phase 3, đóng change lại.
    - *"không delta nào MODIFIED/REMOVED"* → cũng là Phase 3.
    - *"REMOVED AC-# nhưng baseline không có"* → delta đang nói về một baseline khác với baseline thật; đọc lại UC trước khi sửa delta.

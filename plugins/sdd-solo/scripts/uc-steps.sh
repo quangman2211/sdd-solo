@@ -69,13 +69,10 @@ grep -qE '^- *Ngày chạy: *[0-9]{4}-' "$(printf '%s' "$F")" 2>/dev/null \
   && sed -n '/^## Adversarial pass/,/^## /p' "$F" | grep -qE 'Ngày chạy: *[0-9]{4}-'
 st "⑦" $? "adversarial pass (3 vai)"
 
-# ⑧ đọc lại: mục ## Đọc lại có dòng F#, HOẶC commit docs đã qua một đêm
+# ⑧ đọc lại: mục ## Đọc lại có dòng F# (hoặc dòng nén sau close). 6.0.0 (#38): không
+# còn đếm "commit docs đã qua một đêm" — cửa đó đã bỏ, verify là bắt buộc.
 R8=1
 sed -n '/^## Đọc lại/,/^## /p' "$F" 2>/dev/null | grep -qE '^- F[0-9]+ |^- Ngày chạy:.*phát hiện' && R8=0
-if [ "$R8" = 1 ]; then
-  L="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" 2>/dev/null)"
-  [ -n "$L" ] && [ "$L" != "$(today)" ] && R8=0
-fi
 st "⑧" $R8 "đọc lại bằng đầu chưa neo"
 
 [ -f "$ROOT/.sdd/gate/$ID.ok" ]; st "⑨" $? "qua cổng DoR"

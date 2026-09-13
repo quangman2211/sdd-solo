@@ -96,7 +96,7 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
      nhãn vẫn deref được — nhưng đọc `Main Flow` từ 1 xuống vẫn ra thứ tự cũ, tức thứ tự sai. Ca
      thật ở `runxops`: câu Q1 bảo *duyệt trước, ghi sau*; bản vá đảo nội dung, giữ số; nửa sai sống
      sót qua cả một lượt adversarial lẫn **ba lần chạy cổng**. Cái sai nằm ở thứ tự — thứ chỉ đọc
-     mới thấy, và đó là lý do bước ⑧ *"đọc lại buổi sau"* tồn tại.
+     mới thấy, và đó là lý do bước ⑧ *"đọc lại bằng đầu chưa neo"* tồn tại.
 
      Ba việc, làm đủ cả ba:
      1. **Đánh số lại** theo thứ tự đúng, sửa luôn `UC-###.flow.md` cho khớp.
@@ -108,12 +108,10 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
    - Out of Scope → thêm vào BR liên quan trong `specs/br.md`.
    Không được để câu nào không có đầu ra.
 6. Kết thúc: `git add specs/ && git commit -m "docs($1): spec vN — sau adversarial pass"`. Commit này là mốc để `/sdd-solo:gate` biết spec vừa đổi hôm nay.
-7. STATE.md: `Đang làm: $1 · bước ⑧ — chờ đọc lại bằng đầu chưa neo`. Nói với user **hai cách, để user chọn**:
-   - `/sdd-solo:verify $1` — subagent đọc lại ngay, xong là qua cổng được trong ngày. Chọn cái này khi đang có đà.
-   - Đóng máy, buổi sau tự đọc lại với vai người trả lời ticket rồi `/sdd-solo:gate $1`.
-
-   Không nói "đóng máy" như thể chỉ có một đường. Thứ bước ⑧ cần là **đầu chưa bị neo**, không phải
-   thời gian trôi qua — một đêm chỉ là một cách mua thứ đó, và là cách duy nhất trước 3.5.0 (#27).
+7. STATE.md: `Đang làm: $1 · bước ⑧ — chờ đọc lại bằng đầu chưa neo`. Nói với user bước tiếp là
+   **`/sdd-solo:verify $1`** — subagent đọc lại, ghi `## Đọc lại`, commit riêng; xong là chạy cổng được.
+   Từ 6.0.0 (#38) đây là đường **duy nhất**: cửa "đóng máy, buổi sau đọc lại" đã bỏ, vì một đêm đo thời
+   gian trôi qua chứ không đo việc đọc có xảy ra không, và cửa rẻ hơn vẫn là cửa được đi (#27 → #38).
 
 ---
 

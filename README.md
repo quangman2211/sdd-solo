@@ -31,7 +31,7 @@ Trong repo dự án:
 | **Bắt đầu dự án — chưa biết viết gì** | `/sdd-solo:intake` (phỏng vấn 7 câu) hoặc `/sdd-solo:intake brief.md` (chuyển brief của agent khác) |
 | BR viết xong | `/sdd-solo:adversarial BR-###` — ba vai người trả tiền / vận hành mãi / hoài nghi |
 | Bắt đầu một use case | `/sdd-solo:start UC-### [ctx] [slug]` rồi viết nội dung UC cùng AI |
-| Sau khi viết RULE, AC, vẽ flow, vẽ màn hình | `/sdd-solo:adversarial UC-###` → `/sdd-solo:verify UC-###` (hoặc **đóng máy**, đọc lại buổi sau) |
+| Sau khi viết RULE, AC, vẽ flow, vẽ màn hình | `/sdd-solo:adversarial UC-###` → `/sdd-solo:verify UC-###` (bắt buộc từ 6.0.0 — không còn cửa "đọc lại buổi sau") |
 | Đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/sdd-solo:design UC-###` → viết code theo `tasks.md` |
 | Code xong | `/sdd-solo:close UC-###` |
 | Cuối buổi | `/sdd-solo:state` |
@@ -131,6 +131,23 @@ bash .sdd/scripts/context.sh UC-### --why                      # UC này do cái
 
 `init --update` xoá file khuôn cũ **chỉ khi anh chưa sửa tay** (sha khớp manifest); đã sửa thì giữ và báo.
 `br.md` đã có BR thật mà còn `BR-000` mẫu → `br-check` đỏ: xoá mục `BR-000` đi (từ 4.2.0).
+
+## Nâng cấp 5.x → 6.0.0
+
+Một luật đổi, và nó bắt dự án đang chạy làm một việc tay — vì thế là major:
+
+- **Cửa "qua đêm" bỏ hẳn ở cả cổng DoR lẫn cổng Phase 5** (#38). `/sdd-solo:verify UC-###` là đường
+  duy nhất qua bước ⑧; Phase 5 có thêm `/sdd-solo:verify CHG-###` ghi `## Đọc lại` vào `proposal.md`.
+  Commit đọc lại phải là commit spec/change **mới nhất** — sửa sau đó thì đọc lại lần nữa, bất kể ngày.
+- Việc tay: UC nào **đã qua cổng bằng cửa qua đêm** (không có dòng `F#` trong `## Đọc lại`) mà chưa
+  đóng sẽ đỏ khi chạy lại `gate-check` → chạy `/sdd-solo:verify` cho UC đó. UC đã `implemented` không
+  bị đụng (nhánh "đã đóng" giữ nguyên). Đếm trước bằng:
+  ```bash
+  for f in $(find specs/contexts -path '*use-cases/UC-*/UC-*.md' ! -name '*.*.md'); do
+    printf '%s F#=%s\n' "$(basename "$f" .md)" "$(sed -n '/^## Đọc lại/,/^## /p' "$f" | grep -cE '^- F[0-9]+ |^- Ngày chạy:.*phát hiện')"; done
+  ```
+- Chuỗi: `/plugin marketplace update sdd-solo` → `/plugin update sdd-solo` → `/sdd-solo:init --update`
+  (đụng `definition-of-ready.md` trong `templates/project/`).
 
 ## Đang chạy bản nào
 

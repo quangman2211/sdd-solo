@@ -1,5 +1,38 @@
 # Changelog
 
+## 6.0.0 — 2026-09-13
+
+### Đổi luật — không còn cửa "qua đêm" ở cổng nào (#38, chủ dự án chốt)
+
+Nguyên văn: *"anh muốn verify là bắt buộc, bỏ option qua đêm đi."* Ca thật: runxops `CHG-001` — `change-check`
+xanh mọi dòng, đỏ mỗi *"commit docs(CHG-001) mới hôm nay — đọc lại ở một buổi khác"*; mục §8 của nó **chỉ có**
+cửa qua đêm dù chú thích ghi "cùng luật với cổng DoR" (DoR đã có cửa verify từ 3.5.0/#27). Vì sao bỏ hẳn thay vì
+thêm cửa verify cho Phase 5: một đêm đo *thời gian trôi qua*, không đo *việc đọc có xảy ra không* (#27); giữ hai
+cửa song song qua hai bản lớn thì cửa rẻ hơn vẫn là cửa được đi. **Major** vì UC đang mở đã qua cổng bằng cửa qua
+đêm (không có `F#` trong `## Đọc lại`) sẽ đỏ khi chạy lại `gate-check` → phải chạy `/sdd-solo:verify`. Đo trên
+runxops: **0 UC bị đụng** (UC-009 implemented → nhánh "đã đóng"; UC-012 có 30 `F#`; UC-008 chưa qua cổng).
+
+- `gate-check.sh` §9: bỏ cửa 1 và nhánh "gate-pass hôm nay" theo ngày. Còn: đã đóng → ✓ · commit spec mới nhất là
+  gate-pass → ✓ · `## Đọc lại` có ≥ 1 `F#` đủ `[neo]` + đầu ra **và** commit `docs(UC): đọc lại …` là commit spec
+  mới nhất → ✓ · không `F#` → ✗ "chưa đọc lại" · có `F#` nhưng spec đổi sau đó → ✗ "spec đổi sau lần đọc lại". Bộ
+  lọc đường dẫn 5.2.0 giữ nguyên (design.md không tính). Không còn `today()` trong §9.
+- `change-check.sh` §8: cùng hình — đọc `## Đọc lại` **trong `proposal.md`**, commit `docs(CHG): đọc lại …` phải
+  là commit `docs(CHG)` mới nhất trong thư mục change; `change reviewed` của `pass.sh` vẫn ✓.
+- `lib.sh`: `rr_lines` · `rr_count` dùng chung cho hai cổng (awk chuyển từ gate-check, không đổi logic).
+- `uc-steps.sh` ⑧: chỉ đếm `F#` (hoặc dòng nén sau close); bỏ vế "commit qua một đêm".
+- **`/sdd-solo:verify CHG-###`** (skill `verify` mục A′): subagent đọc proposal + delta + design + `context.sh`
+  của mỗi UC baseline + toàn bộ rules.md + git log thư mục change; ghi `## Đọc lại` vào `proposal.md`; commit riêng.
+- Khuôn `skel/change/proposal.md` có `## Đọc lại` (comment, không có dòng `F#` giả — đo: `rr_count` = 0 trên khuôn).
+- Chữ: `adversarial` bước 7 (một đường, không còn "đóng máy buổi sau") · `verify` mô tả/bước 8 · `gate` mô tả ·
+  `change` bước 3 · `sdd-process` ⑧ · `definition-of-ready.md` (templates/project → cần `init --update`) ·
+  `skel/use-case/UC-000.md` · README gốc (bảng lệnh + mục "Nâng cấp 5.x → 6.0.0") · CLAUDE.md gốc (ranh giới mới).
+- Đo trên bản sao runxops: UC-012 không `F#` → ✗ (5.2.0: ✓ cửa 1) · 30 `F#` + commit đọc lại → ✓ · sửa spec sau →
+  ✗ · commit design.md → không đổi kết luận · đọc lại lần nữa → ✓ · gate-pass → ✓ · UC-009 → ✓ đã đóng ·
+  CHG-001: thêm `F#` + commit đọc lại → ✓ · sửa delta → ✗ · đọc lại → ✓ · change-pass → ✓.
+- Hệ quả cố ý, nói thật: **đọc không ra gì thì cổng không mở**, không có cửa thoát. Đường đúng là mở rộng phạm vi
+  đọc (rule UC không trích, sequence, entities, đo lại số) — một dòng `→ không phải lỗi vì <lý do>` sau khi đọc
+  thật là đầu ra hợp lệ; bịa một dòng `F#` thì không, và `gate-check` §7/§9 kiểm ID trong dòng đó có thật.
+
 ## 5.2.0 — 2026-09-13
 
 ### Sửa — cổng DoR đỏ oan sau bước ⑩ (runxops-ea)

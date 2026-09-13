@@ -1,19 +1,21 @@
 ---
 name: verify
-description: Đọc lại tài liệu bằng subagent chưa bị neo để tìm chỗ spec tự mâu thuẫn hoặc khai điều không có thật. UC-### là bước ⑧ (mở cửa thứ hai của cổng DoR, không phải đợi qua đêm); không tham số là quét cả cây specs/. Dùng khi sắp qua cổng, hoặc khi tài liệu vừa đổi nhiều và cần biết còn chỗ nào nói ngược nhau.
+description: Đọc lại tài liệu bằng subagent chưa bị neo để tìm chỗ spec tự mâu thuẫn hoặc khai điều không có thật. UC-### là bước ⑧ — cửa duy nhất của cổng DoR từ 6.0.0; CHG-### là cửa của cổng Phase 5; không tham số là quét cả cây specs/. Dùng khi sắp qua cổng, hoặc khi tài liệu vừa đổi nhiều và cần biết còn chỗ nào nói ngược nhau.
 disable-model-invocation: true
-argument-hint: "[UC-###]"
+argument-hint: "[UC-### | CHG-###]"
 allowed-tools: Bash Read Write Edit Grep Glob Agent AskUserQuestion
 ---
 
 Verify pass cho `$1`.
 
-Có `UC-###` → **phần A** (bước ⑧, mở cửa thứ hai của cổng). Không tham số → **phần B** (quét cây).
+Có `UC-###` → **phần A** (bước ⑧). Có `CHG-###` → **phần A** với năm khác biệt ở **A′**. Không tham số → **phần B** (quét cây).
 
 **Vì sao skill này tồn tại:** người viết không đọc được cái mình vừa viết — mắt đọc *ý định*, không
 đọc *chữ*. Bước ⑦ đã giải đúng nhu cầu đó bằng session mới cho ba vai. Bước ⑧ cần **cùng một thứ**,
 và trước 3.5.0 nó mua bằng một đêm lịch. Một đêm đo **thời gian trôi qua**, không đo **việc đọc có
-xảy ra không** — cùng người, cùng cái neo, sáng mai lướt 30 giây vẫn qua cổng.
+xảy ra không** — cùng người, cùng cái neo, sáng mai lướt 30 giây vẫn qua cổng. Từ 3.5.0 tới 5.2.0 hai
+cửa sống cạnh nhau; **6.0.0 (#38) bỏ cửa qua đêm** — verify là bắt buộc ở cả DoR lẫn Phase 5, vì cửa rẻ
+hơn vẫn là cửa được đi.
 
 ---
 
@@ -84,9 +86,26 @@ grep -rn '<giá trị cũ>' specs/ scripts/ *.md
 ```bash
 git add specs/ && git commit -m "docs($1): đọc lại — <n> phát hiện, <m> phải sửa"
 ```
-8. Nói với user: giờ chạy `/sdd-solo:gate $1` được ngay, **không cần đợi qua đêm**. Nếu lần đọc
-   này không ra dòng `F#` nào có đầu ra thật thì cửa thứ hai **không mở** — rơi về luật cũ, đợi
-   một đêm. Nói thẳng điều đó, đừng để user chạy cổng rồi mới ngạc nhiên.
+8. Nói với user: giờ chạy `/sdd-solo:gate $1` được ngay. Nếu lần đọc này không ra dòng `F#` nào có
+   đầu ra thật thì cổng **không mở** — từ 6.0.0 không còn cửa qua đêm để rơi về. Nói thẳng điều đó,
+   và nói luôn cái đúng phải làm: *"không thấy gì"* là bằng chứng yếu (Giới hạn 3) — mở rộng phạm vi
+   (rule UC *không* trích, `sequence.md`, entities, số liệu đo lại) rồi chạy lại, chứ **không** bịa
+   một dòng `F#` cho qua. Một dòng `→ không phải lỗi vì <lý do>` sau khi đọc thật là đầu ra hợp lệ.
+
+### A′. `/sdd-solo:verify CHG-###` — cửa của cổng Phase 5 (6.0.0, #38)
+
+Cùng phần A, khác năm chỗ:
+1. Tìm: `ls -d specs/changes/$1-*/` — có `proposal.md` · `delta/` · `design.md`. Không có → dừng, báo.
+2. Không đòi bước ⑦ — Phase 5 không có adversarial.
+3. Đầu vào cho subagent: `proposal.md` + toàn bộ `delta/*.delta.md` + `design.md`, **cộng** output
+   `context.sh UC-###` cho **mỗi** UC delta đụng (baseline — để soi delta khai MODIFIED/REMOVED một AC
+   mà baseline nói khác), toàn bộ `specs/rules.md`, và `git log --oneline -20 -- specs/changes/$1-*/`.
+4. Ghi `## Đọc lại` vào **`proposal.md`** (không vào UC baseline — baseline chưa đổi cho tới khi
+   archive), cùng dạng phần A bước 5; neo trỏ `delta/UC-009 MODIFIED AC-3` · `proposal Scope` ·
+   `UC-009 AC-3`.
+5. Commit riêng `docs($1): đọc lại — <n> phát hiện, <m> phải sửa`, rồi `/sdd-solo:change $1`.
+   `change-check` §8 đòi commit này là commit `docs($1)` **mới nhất** trong thư mục change — sửa
+   proposal/delta sau đó thì đọc lại lần nữa.
 
 ---
 

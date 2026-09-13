@@ -12,7 +12,7 @@ UC được coi là ready khi **tất cả** đúng:
       không có ngăn nào cho câu này. Nói ra ở đây thì `/sdd-solo:design` (bước ⑩) có cái để đối chiếu
       với `specs/internal/architecture.md`; không nói thì lệch chỉ lộ ra khi code đã viết. `gate` nhắc, không chặn.
 - [ ] Adversarial pass đã chạy trong session mới; mọi câu hỏi có đầu ra (spec / Open Question / Out of Scope).
-- [ ] Spec đã được đọc lại bằng một cái đầu chưa bị neo — `/sdd-solo:verify UC-###` (subagent, xong là qua cổng ngay) **hoặc** để sang buổi khác buổi viết. `/sdd-solo:gate` kiểm bằng máy: cửa 2 đòi ≥ 1 dòng `F#` có `[neo: ...]` và có đầu ra.
-- [ ] Đã commit `docs(UC-###): spec vN — reviewed`.
+- [ ] Spec đã được đọc lại bằng một cái đầu chưa bị neo — `/sdd-solo:verify UC-###` (subagent). Từ 6.0.0 đây là cửa **duy nhất**, không còn "để sang buổi khác". `/sdd-solo:gate` kiểm bằng máy: ≥ 1 dòng `F#` có `[neo: ...]` và có đầu ra, và commit `docs(UC-###): đọc lại — …` là commit spec mới nhất.
+- [ ] Đã commit `docs(UC-###): đọc lại — …` (verify) là commit spec cuối; sửa spec sau đó thì đọc lại lần nữa.
 
 Thiếu một dòng → không mở Claude Code. UC nhỏ thì checklist chạy nhanh, không phải bỏ.

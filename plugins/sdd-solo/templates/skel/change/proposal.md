@@ -14,5 +14,9 @@ proposed | specified | designed | applying | verified | archived | dropped
 ## Impact on customers
 <Khách đang dựa vào hành vi cũ sẽ thấy gì thay đổi>
 
+## Đọc lại
+<!-- /sdd-solo:verify CHG-### ghi vào đây (6.0.0). Cổng Phase 5 đòi ≥ 1 dòng
+     `- F# <phát hiện> [neo: <chỗ>] → <đầu ra>` — không còn cửa qua đêm. -->
+
 ## History
 - YYYY-MM-DD: proposed

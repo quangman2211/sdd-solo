@@ -40,6 +40,25 @@ br_untouched() { grep -q '<Tên business requirement>' "$1/specs/br.md" 2>/dev/n
 sha() { if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | cut -d' ' -f1; else sha256sum "$1" | cut -d' ' -f1; fi; }
 today() { date +%Y-%m-%d; }
 
+# 6.0.0 (#38): cửa verify dùng chung cho cổng DoR (file UC) và cổng Phase 5 (proposal.md).
+# rr_lines <file> → các dòng F# trong ## Đọc lại; rr_count (stdin) → bao nhiêu dòng có
+# CẢ [neo: ...] LẪN đầu ra khác ___. Đó là toàn bộ chốt chống khai gian: bịa một dòng
+# như vậy tốn đúng bằng đọc thật.
+rr_lines() { sed -n '/^## Đọc lại/,/^## /p' "$1" 2>/dev/null | grep -E '^- F[0-9]+ '; }
+rr_count() {
+  awk '
+    /\[neo:[^]]*[^] [:space:]]\]/ && /→/ {
+      i = index($0, "→"); o = substr($0, i + 3)
+      # Bóc nhãn trước rồi mới hỏi còn gì không: nếu giữ lại thì chuỗi
+      # mũi-tên + dau ra + ___ vẫn khác rỗng nhờ chính hai chữ nhãn, nên một
+      # dòng chưa quyết gì cũng mở được cửa. Đây là ca khai gian rẻ nhất.
+      # KHÔNG đặt dấu nháy đơn trong khối awk này — nó đóng chuỗi của shell.
+      sub(/^[[:space:]]*đầu ra[[:space:]]*:/, "", o)
+      gsub(/[_[:space:]]/, "", o)
+      if (o != "") n++
+    } END { print n + 0 }'
+}
+
 # ── version ─────────────────────────────────────────────────────────────
 CLAUDE_PLUGINS_DIR="$HOME/.claude/plugins"
 # jver <file.json> <đường.dẫn> — đọc version, fallback grep nếu không có python3

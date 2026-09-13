@@ -146,15 +146,29 @@ else
   [ "$MODS" -gt 0 ] && ok "$MODS mục lật AC cũ — đúng phạm vi Phase 5"
 fi
 
-# 8. commit docs + ngủ qua đêm — cùng luật với cổng DoR. Đổi hành vi đã giao cho
-# khách thì lại càng phải đọc lại ở một buổi khác.
-LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" 2>/dev/null)"
-LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" 2>/dev/null)"
-if [ -z "$LAST" ]; then bad "chưa có commit docs($ID) — commit change rồi để qua một đêm"
-elif [ "$LAST" = "$(today)" ] && [ "$LASTS" = "docs($ID): change reviewed — qua cổng Phase 5" ]; then
-  ok "docs($ID) hôm nay là commit của change-pass — đã qua cổng trước đó"
-elif [ "$LAST" = "$(today)" ]; then bad "commit docs($ID) mới hôm nay ($LAST) — đọc lại ở một buổi khác"
-else ok "docs($ID) commit $LAST — đã qua ít nhất một đêm"; fi
+# 8. đọc lại bằng đầu chưa neo + commit — cùng luật với cổng DoR (6.0.0, #38: verify là
+# bắt buộc, không còn cửa qua đêm). Trước 6.0.0 mục này CHỈ có cửa qua đêm dù chú thích
+# ghi "cùng luật với cổng DoR" — DoR đã có cửa verify từ 3.5.0; ca thật runxops CHG-001:
+# xanh mọi dòng, đỏ mỗi "mới hôm nay". Đổi hành vi đã giao cho khách thì càng phải có
+# một lần đọc đã xảy ra: /sdd-solo:verify CHG-### ghi ## Đọc lại vào proposal.md,
+# commit riêng, và commit đó phải là commit docs(CHG) mới nhất trong thư mục change.
+RR="$(rr_lines "$P")"; RRN=0
+[ -n "$RR" ] && RRN="$(printf '%s\n' "$RR" | rr_count)"
+LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- "$D" 2>/dev/null)"
+LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- "$D" 2>/dev/null)"
+RRC=0; case "$LASTS" in "docs($ID): đọc lại"*) RRC=1;; esac
+if [ -z "$LAST" ]; then bad "chưa có commit docs($ID) — commit change trước"
+elif [ "$LASTS" = "docs($ID): change reviewed — qua cổng Phase 5" ]; then
+  ok "docs($ID) mới nhất là commit của change-pass — đã qua cổng trước đó"
+elif [ "$RRN" -gt 0 ] && [ "$RRC" = 1 ]; then
+  ok "đọc lại bằng đầu chưa neo: $RRN phát hiện có neo + đầu ra, commit riêng là commit mới nhất của $ID"
+elif [ "$RRN" -eq 0 ]; then
+  bad "chưa đọc lại bằng đầu chưa neo — proposal.md không có ## Đọc lại với dòng F# đủ [neo: ...] + đầu ra khác ___"
+  info "/sdd-solo:verify $ID (subagent đọc proposal + delta + UC baseline, ghi F#, commit riêng)"
+else
+  bad "change đổi sau lần đọc lại — commit docs($ID) mới nhất là '$LASTS' ($LAST), không phải commit đọc lại"
+  info "chạy lại /sdd-solo:verify $ID"
+fi
 git -C "$ROOT" status --porcelain -- "$D" 2>/dev/null | grep -q . && bad "còn thay đổi chưa commit trong $ID"
 
 echo

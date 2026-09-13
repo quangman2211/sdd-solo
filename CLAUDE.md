@@ -30,6 +30,10 @@ CHANGELOG.md                         mỗi bản một mục — đây là ## Hi
   history là giấy nháp: khi UC đóng, `pass.sh close` dời thân sang `UC-###.trace.md`, để lại một dòng có số đếm bằng máy.
   Đo ở runxops: 44.761 từ spec đổi lấy 0 UC implemented, `57 docs : 1 feat`; hơn 60% của 210 KB một agent phải đọc là
   dấu vết. Không thêm mục mới vào file UC/BR mà không trả lời được *ai đọc lại nó sau khi UC đóng*.
+- **Không có cửa "qua đêm" ở cổng nào** (6.0.0, #38). Bước ⑧ và cổng Phase 5 chỉ qua bằng `/sdd-solo:verify` — mục
+  `## Đọc lại` có dòng `F#` đủ `[neo]` + đầu ra, commit riêng là commit spec mới nhất. Lý do đo được: một đêm đo thời
+  gian trôi qua, không đo việc đọc có xảy ra không (#27); giữ hai cửa song song hai bản lớn thì cửa rẻ hơn vẫn là cửa
+  được đi. Đọc không ra gì thì cổng không mở — đó là chủ ý, không thêm cửa thoát.
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 
