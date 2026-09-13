@@ -14,7 +14,9 @@ Xác định chế độ:
 
 Trước khi bắt đầu, đọc `specs/_intake.md` trong repo (bộ câu hỏi bản giấy) và `specs/br.md`
 (xem `BR-000` mẫu). Nếu `br.md` đã có BR thật (khác `BR-000`), hỏi user muốn thêm BR mới hay
-sửa BR đang có.
+sửa BR đang có — **bằng `AskUserQuestion`**, mỗi BR đang có một lựa chọn. Bảy câu phỏng vấn ở
+mục A là câu mở, hỏi bằng lời như đã ghi; luật `AskUserQuestion` (sdd-process 1b) chỉ cho câu
+chọn giữa các hướng.
 
 ---
 

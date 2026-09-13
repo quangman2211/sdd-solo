@@ -1,5 +1,35 @@
 # Changelog
 
+## 5.2.0 — 2026-09-13
+
+### Sửa — cổng DoR đỏ oan sau bước ⑩ (runxops-ea)
+
+`gate-check.sh` §9 tìm commit `docs(UC-###)` mới nhất **theo tiêu đề**. Bước ⑩ (skill `design` §6) bảo
+commit `docs(UC-###): thiết kế — design.md + tasks.md` → cổng đỏ *"spec mới hôm nay"* dù `UC-###.md`
+không đổi một byte. "Luật đúng, phạm vi sai." Tái hiện trên repo tạm với nội dung runxops: đỏ ngay sau
+commit design.md. → Chỉ tính commit `docs(UC-###)` **có đụng spec**: `UC-###.md` · `UC-###.flow.md` ·
+`screens/` · `rules.md` · `entities.md`. Đo 6 ca: commit design.md hôm nay → xanh cửa 1; sửa `UC-###.md`
+hôm nay → đỏ; commit gate-pass → xanh nhánh gate-pass; design.md sau gate-pass → xanh; commit đóng UC → xanh
+"đã đóng"; sửa `rules.md` dưới `docs(UC-###)` → đỏ. Lỗ **có sẵn từ trước, chưa xử**: sửa `rules.md` dưới
+tiêu đề `docs(UC-010)` hay `docs(RULE-###)` thì UC-009 không thấy — bỏ grep tiêu đề sẽ đúng nghĩa hơn nhưng
+làm mọi UC cùng context đỏ khi ai đó sửa rules.md; chờ ca thật.
+
+### Thêm — câu cần người quyết phải hiện bằng `AskUserQuestion` (#36)
+
+Đo ở runxops 2026-09-11, một session: bốn câu "chốt trước" ở `start` bước 8 viết thành bullet cuối tin
+nhắn → chủ dự án tự đánh số trả lời, trả lời một nửa; cùng ngày, câu đi qua `AskUserQuestion` (E1/E5/E9 của
+UC-009, context của UC-012) → dứt điểm ngay. Issue #25 đã đòi ngữ cảnh + phương án, chưa nói **kênh**.
+
+- `sdd-process` luật **1b**: câu chọn giữa các hướng → `AskUserQuestion`; ≤ 4 câu/lượt · 2–4 lựa chọn kèm
+  hệ quả · đề nghị đặt đầu "(Recommended)" · `Chưa quyết — ghi Open Question` luôn là một lựa chọn. Câu
+  treo được thì không hỏi. Câu mở (khổ gì, ai khổ) vẫn hỏi bằng lời. Đặt ở kiến thức nền vì ca ADR-007
+  trong issue nằm **ngoài mọi skill lệnh** — chỉ chỗ này với tới.
+- `start` bước 3 (chọn context) và bước 8 (nhóm "chốt trước") nói rõ kênh; nhóm "treo" ghi thẳng, không hỏi.
+- `intake`: "BR mới hay sửa BR cũ" qua `AskUserQuestion`; bảy câu phỏng vấn giữ nguyên là câu mở.
+- **Không sửa** `adversarial` (A5/B5) · `verify` (bước 4) · `design` (§2): ba chỗ đã nói đúng
+  `AskUserQuestion` từ #25 — issue #36 kể cả ba vào "chưa nói kênh" là chưa đo lại.
+- Không có script kiểm — đây là chỉ dẫn cho agent, không phải cổng.
+
 ## 5.1.1 — 2026-09-10
 
 ### Sửa (hai lệch runxops-ea báo sau khi chuẩn hoá theo 5.1.0)

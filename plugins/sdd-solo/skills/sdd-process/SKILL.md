@@ -76,6 +76,16 @@ UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn �
 ## Quy tắc cho bạn (AI) trong repo này
 - **Cần bối cảnh của một UC thì chạy `${CLAUDE_PLUGIN_ROOT}/scripts/context.sh UC-###`**, không tự đi nhặt file. Nó in đúng phần đang hiệu lực + đúng những RULE/CON/ADR UC trích (5.0.0); `--why` khi chỉ cần biết UC do cái gì quyết định. Ba mục `## Adversarial pass` · `## Đọc lại` · `## History` là dấu vết — không phải đầu vào để viết code.
 1. Gặp số, ngưỡng, enum, quyền mà spec chưa nói → dừng, hỏi. Không chọn mặc định.
+1b. **Câu cần người quyết thì hiện bằng công cụ `AskUserQuestion`, không kết tin nhắn bằng văn
+   xuôi** (5.2.0, #36). Đo ở runxops một ngày: bốn câu "chốt trước" viết thành bullet cuối tin
+   nhắn → chủ dự án phải tự đánh số trả lời, trả lời một nửa; cùng ngày, cùng người, câu đi qua
+   `AskUserQuestion` (E1/E5/E9 của UC-009, context của UC-012) → trả lời dứt điểm ngay. Văn xuôi
+   là để lập luận *trước* khi hỏi; câu hỏi lẫn giữa lập luận thì bị đọc lướt. Khuôn: ≤ 4 câu một
+   lượt · mỗi câu 2–4 lựa chọn, mỗi lựa chọn ghi **hệ quả** một câu · lựa chọn đề nghị đặt đầu
+   kèm "(Recommended)" · **`Chưa quyết — ghi Open Question` luôn là một lựa chọn** (`___` hợp lệ
+   ở mọi tầng). Câu *treo được* (đổi giá trị, xem bảng trên) thì không hỏi — ghi thẳng Open
+   Question kèm quyết định tạm. Câu mở ("khổ gì?", "ai khổ?") không có lựa chọn thì vẫn hỏi
+   bằng lời; luật này là cho câu **chọn giữa các hướng**.
 2. Khi user trả lời → nhắc ghi vào spec + commit `docs(UC-###)` trước khi code tiếp.
 3. Không viết code cho UC khi `.sdd/gate/UC-###.ok` chưa có, hoặc khi thư mục UC chưa có `design.md`.
 4. Dùng đúng tên trong `specs/glossary.md`.

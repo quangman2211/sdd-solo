@@ -297,8 +297,16 @@ if [ -n "$RR" ]; then
     done
   done <<< "$RR"
 fi
-LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" 2>/dev/null)"
-LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" 2>/dev/null)"
+# 5.2.0: chỉ tính commit docs($ID) có ĐỤNG SPEC — file UC, flow, screens/, rules.md,
+# entities.md. Trước đây grep tiêu đề là đủ, nên commit `docs(UC-###): thiết kế —
+# design.md + tasks.md` ở bước ⑩ (skill design §6 bảo đặt tên thế) làm cổng đỏ tới hôm
+# sau dù UC-###.md không đổi một byte. "Luật đúng, phạm vi sai" — và đỏ oan thì bị học
+# cách phớt lờ. Ca thật: runxops UC-009 đỏ ngay sau khi commit design.md (runxops-ea).
+# Lỗ còn lại, biết mà chưa xử: sửa rules.md dưới tiêu đề docs(UC-010) hay docs(RULE-###)
+# thì UC-009 không thấy — bỏ grep tiêu đề sẽ đúng nghĩa hơn nhưng làm mọi UC cùng
+# context đỏ khi ai đó sửa rules.md; chưa có ca thật để cân.
+LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- "$F" "$DIR/$ID.flow.md" "$DIR/screens" "$RF" "$EF" 2>/dev/null)"
+LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- "$F" "$DIR/$ID.flow.md" "$DIR/screens" "$RF" "$EF" 2>/dev/null)"
 # Phải dùng `case`, KHÔNG dùng ${LASTS#docs($ID): ...}: dấu ngoặc đơn trong
 # pattern của phép bóc tiền tố làm nó không khớp gì cả, im lặng — đo được:
 # chuỗi trả về y nguyên chuỗi vào, nên điều kiện luôn sai và cửa 2 không bao
