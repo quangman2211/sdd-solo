@@ -21,6 +21,25 @@ ctx_of() { echo "$1" | sed -E 's#.*/specs/contexts/([^/]+)/.*#\1#'; }
 # slug_of <path> → phần sau UC-###-
 slug_of() { basename "$(dirname "$1")" | sed -E 's/^UC-[0-9]+-//'; }
 
+# ── bảng use-cases.md của context (#44) ─────────────────────────────────
+# Hai chỗ nói trạng thái của một UC: dòng **Status:** trong file UC và cột Status
+# của bảng specs/contexts/<ctx>/use-cases.md. Tới 6.0.0 pass.sh chỉ đổi chỗ thứ
+# nhất, nên /sdd-solo:state gợi "UC tiếp theo" từ bảng đọc ra một UC đã đóng.
+# Dòng bảng: | UC-### | Tên | Actor | BR-### | Status |  — ô đầu là ID, ô cuối là Status.
+uc_table_file() { f="$(find_uc "$1" "$2")"; [ -n "$f" ] && printf '%s/specs/contexts/%s/use-cases.md' "$2" "$(ctx_of "$f")"; }
+# uc_table_status UC-### <root> → ô Status của dòng UC trong bảng (rỗng nếu không có dòng/bảng)
+uc_table_status() {
+  _t="$(uc_table_file "$1" "$2")"; [ -n "$_t" ] && [ -f "$_t" ] || return 0
+  awk -F'|' -v id="$1" 'NF>=3 && $2 ~ ("^[ ]*" id "[ ]*$") { s=$(NF-1); gsub(/^[ ]+|[ ]+$/,"",s); print s; exit }' "$_t"
+}
+# uc_table_set UC-### <status> <root> → ghi ô Status; 0 nếu có dòng để ghi, 1 nếu không
+uc_table_set() {
+  _t="$(uc_table_file "$1" "$3")"; [ -n "$_t" ] && [ -f "$_t" ] || return 1
+  [ -n "$(uc_table_status "$1" "$3")" ] || return 1
+  awk -F'|' -v OFS='|' -v id="$1" -v st="$2" '
+    NF>=3 && $2 ~ ("^[ ]*" id "[ ]*$") { $(NF-1) = " " st " " } { print }' "$_t" > "$_t.tmp" && mv "$_t.tmp" "$_t"
+}
+
 # find_chg CHG-001 <root> → thư mục change (rỗng nếu không có). 2.0.0 dời
 # changes/ → specs/changes/; nhận cả hai cho repo chưa migrate.
 find_chg() {

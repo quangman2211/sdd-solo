@@ -33,7 +33,11 @@ gate)
   F="$(find_uc "$ID" "$ROOT")"; [ -z "$F" ] && exit 1
   sed -i.bak -E 's/(\*\*Status:\*\* *)draft/\1reviewed/' "$F" && rm -f "$F.bak"
   sed -i.bak -E "s/(\*\*Last updated:\*\* *).*/\1$(today)/" "$F" && rm -f "$F.bak"
-  git -C "$ROOT" commit -q --only -m "docs($ID): spec reviewed — qua cổng DoR" -- "$F" || true
+  # #44: bảng use-cases.md của context nói cùng một trạng thái, cùng một commit.
+  T="$(uc_table_file "$ID" "$ROOT")"; TF=""
+  if uc_table_set "$ID" reviewed "$ROOT"; then TF="$T"; else
+    printf '  ! bảng %s không có dòng %s — thêm dòng cho /sdd-solo:state gợi đúng UC tiếp theo\n' "${T#$ROOT/}" "$ID"; fi
+  git -C "$ROOT" commit -q --only -m "docs($ID): spec reviewed — qua cổng DoR" -- "$F" $TF || true
   mark "$ID"
   printf 'QUA CỔNG. Status -> reviewed · marker .sdd/gate/%s.ok · đã commit.\n' "$ID"
   printf 'Bước tiếp: /sdd-solo:design %s — thiết kế trước khi viết dòng code đầu tiên.\n' "$ID"
@@ -119,9 +123,14 @@ PY
     SCRS="$(sed -n '/^## Screens/,/^## /p' "$F" | grep -oE 'SCR-[0-9]+-[0-9]+' | sort -u | tr '\n' ' ')"
     echo "| $BR | $ID | AC-$n | $RULES | $SCRS | tests/use-cases/$CTX/$ID/AC-$n.test.* | $ADRS | implemented |" >> "$TR"
   done
+  # #44: bảng use-cases.md — ca thật runxops UC-014: file UC implemented, bảng vẫn draft,
+  # /sdd-solo:state gợi UC tiếp theo sai, phải sửa tay một commit riêng (cfbead4).
+  T="$(uc_table_file "$ID" "$ROOT")"; TF=""
+  if uc_table_set "$ID" implemented "$ROOT"; then TF="$T"; else
+    printf '  ! bảng %s không có dòng %s — thêm dòng cho /sdd-solo:state gợi đúng UC tiếp theo\n' "${T#$ROOT/}" "$ID"; fi
   [ -f "$TRACE" ] && git -C "$ROOT" add "$TRACE"
-  git -C "$ROOT" commit -q --only -m "docs($ID): implemented — traceability" -- "$F" "$TR" $( [ -f "$TRACE" ] && printf '%s' "$TRACE" ) || true
-  echo "ĐÃ ĐÓNG $ID. Status → implemented · traceability +$(grep -cE '^### AC-' "$F") dòng · commit xong."
+  git -C "$ROOT" commit -q --only -m "docs($ID): implemented — traceability" -- "$F" "$TR" $TF $( [ -f "$TRACE" ] && printf '%s' "$TRACE" ) || true
+  echo "ĐÃ ĐÓNG $ID. Status → implemented${TF:+ (file UC + bảng use-cases.md)} · traceability +$(grep -cE '^### AC-' "$F") dòng · commit xong."
   echo "Nhớ: cập nhật STATE.md (/sdd-solo:state) trước khi đóng máy."
   ;;
 

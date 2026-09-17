@@ -31,10 +31,20 @@ if br_untouched "$ROOT"; then
 fi
 
 echo; echo "=== UC theo status ==="
-for f in $(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' -not -name '*.sequence.md' 2>/dev/null | sort); do
+# Chỉ file UC: bỏ .flow.md · .sequence.md · .trace.md (5.0.0 sinh trace sau close) — trước
+# 6.1.0 dòng 'UC-###.flow ?' và 'UC-###.trace ?' in lẫn vào danh sách như hai UC không status.
+for f in $(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' -not -name '*.sequence.md' -not -name '*.flow.md' -not -name '*.trace.md' 2>/dev/null | sort); do
   id="$(basename "$f" .md)"; st="$(grep -oE '\*\*Status:\*\* *[a-z]+' "$f" | head -1 | awk '{print $2}')"
   g=""; [ -f "$ROOT/.sdd/gate/$id.ok" ] && g=" · gate ✓"
   printf '  %-8s %-12s%s\n' "$id" "${st:-?}" "$g"
+  # #44: bảng use-cases.md của context phải nói cùng trạng thái — /sdd-solo:state gợi
+  # UC tiếp theo từ bảng, nên bảng lệch là gợi sai. Không có bảng/dòng thì chỉ nhắc.
+  ts="$(uc_table_status "$id" "$ROOT")"
+  if [ -n "$ts" ] && [ "$ts" != "$st" ]; then
+    warn "$id: file UC nói '$st' nhưng bảng use-cases.md nói '$ts' — sửa bảng cho khớp (pass.sh gate/close từ 6.1.0 tự sửa)"
+  elif [ -z "$ts" ] && [ -f "$(uc_table_file "$id" "$ROOT")" ]; then
+    info "$id không có dòng trong bảng use-cases.md của context"
+  fi
 done
 # Phase 5: change nào đang mở, đã qua cổng chưa
 CD="$(ls -d "$ROOT/specs/changes/CHG-"* "$ROOT/changes/CHG-"* 2>/dev/null)"
