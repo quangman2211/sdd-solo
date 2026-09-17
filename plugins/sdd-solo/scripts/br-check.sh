@@ -84,6 +84,12 @@ filled "$BG" && ok "## Background có nội dung" || bad "## Background rỗng h
 printf '%s' "$BG" | grep -qE '\*\*Vì sao vẫn xây:\*\*' \
   && ok "Background có dòng 'Vì sao vẫn xây'" \
   || warn "Background chưa có dòng '**Vì sao vẫn xây:**' — chưa ai chứng minh phần mềm này cần tồn tại; đây là chỗ vai hoài nghi sẽ bấu vào"
+# #46: BR chuyển từ brief phải có lời của người trả tiền, không chỉ lời của agent viết brief.
+if printf '%s' "$(sec '## Metadata')" | grep -qiE 'Nguồn:\*\* *brief'; then
+  printf '%s' "$BG" | grep -qE '\*\*Khổ gì, vì sao rơi:\*\*' \
+    && ok "Background có dòng 'Khổ gì, vì sao rơi' (hỏi bằng lời, #46)" \
+    || warn "BR chuyển từ brief mà Background chưa có dòng '**Khổ gì, vì sao rơi:**' — intake từ brief phải hỏi user bằng lời trước khi điền Goal/In Scope (#46); brief không thay được câu trả lời đó"
+fi
 
 # 3. Goal — một câu, và không được mơ hồ khi chưa có số nào để đo
 G="$(sec '## Goal')"

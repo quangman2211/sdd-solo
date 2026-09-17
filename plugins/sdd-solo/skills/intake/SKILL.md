@@ -101,6 +101,24 @@ thiếu dòng này, và vai hoài nghi ở `/sdd-solo:adversarial BR-###` sẽ b
 Đọc file, rồi tách thành bốn tầng: vì sao (BR) · ai làm gì (UC ứng viên) · ràng buộc (CON) ·
 chưa rõ (Open Questions).
 
+**Trước khi điền Goal / In Scope: hỏi user ba câu bằng lời, một câu một lượt — bắt buộc, kể cả khi brief
+đã trả lời (#46, #47).** Ca thật runxops: BR-003 chuyển thẳng từ brief; cả hai vai hoài nghi (BR-003, BR-002)
+kết luận *"giải pháp viết ngược thành lý do"*; hai câu lộ ra **sau** đó — *"nguyên nhân việc rơi = không được
+báo"* và *"chạy cho mình trước khi bán"* — đổi plan nhiều hơn mọi phát hiện kỹ thuật cộng lại. Brief là lời
+của agent khác; ba câu này là lời của người trả tiền.
+
+1. *"Anh đang khổ chuyện gì — và vì sao nó rơi?"* (nguyên nhân, không phải triệu chứng)
+2. *"Làm cho anh chạy trước, hay đi hỏi khách trước?"*
+3. *"v1 xong, anh mở cái gì lên để làm việc mỗi ngày? tự đổi được gì mà không cần dev?"*
+
+Ghi **nguyên văn** câu trả lời, có dấu vết, vào file — không vào lời nói:
+- 1 → `## Background`, dòng `**Khổ gì, vì sao rơi:** "<nguyên văn>" (hỏi bằng lời, <ngày>)`; và `## Goal` viết từ
+  câu này, không từ brief.
+- 2 → `## Background`, dòng `**Chạy cho mình trước hay bán:** "<nguyên văn>" (hỏi bằng lời, <ngày>)`.
+- 3 → `## In Scope`, dòng đầu `**Mở lên mỗi ngày:** "<nguyên văn>"` — thứ này **phải có** trong In Scope trước khi cắt
+  bất cứ gì; mâu thuẫn với brief thì brief thua và ghi vào `## Đã loại khỏi brief`.
+`br-check` cảnh báo khi BR có `**Nguồn:** brief` mà Background chưa có dòng `**Khổ gì, vì sao rơi:**`.
+
 **Bộ luật bắt buộc — không có ngoại lệ:**
 
 1. **Không bao giờ bịa số.** Mọi ngưỡng, thời hạn, quota, quyền mà brief không nêu **nguồn**
