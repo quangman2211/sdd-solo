@@ -34,6 +34,13 @@ Ranh giới spec/doc: **khách cảm nhận được → spec** (`specs/`). Ch�
 
 Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
 
+**⑦ → ⑧ → ⑨ phải liền nhau, không chen sửa (#41).** Áp **hết** phát hiện của ⑦ (kể cả sửa chữ, nhãn,
+file bên cạnh: glossary · entities · `Áp dụng cho` của RULE) **trước** khi chạy ⑧. Sau ⑧, **mọi** commit
+đụng spec — dù chỉ áp chữ — làm cổng ⑨ đỏ *"spec đổi sau lần đọc lại"*, vì cổng đòi commit đọc lại là
+commit spec mới nhất; sửa sau ⑧ nghĩa là chấp nhận verify lại (từ 6.3.0: `/sdd-solo:verify UC-### --since`
+chỉ đọc phần đổi). Ca thật runxops UC-014: một đợt áp phiếu chữ sau verify → gate đỏ; luật đúng, chỉ
+chưa được viết ra cho người làm.
+
 **Không dùng lệnh sinh spec của plugin khác cho bước ② ③ ④.** Chúng ghi ra cây và hệ ID của họ (`docs/`, `BR-###` nghĩa là *rule*), cổng DoR đọc `specs/` và `BR-###` nghĩa là *requirement* — githook cho qua một commit gắn ID có heading thật mà sai nghĩa. Số đo và tên lệnh cụ thể ở CHANGELOG 3.x (#29); quy tắc cứng ở đây cố ý không gọi tên lệnh của ai (4.0.0).
 
 **Bước nào cố ý bỏ thì ghi vào file UC một dòng `**Bỏ bước <ký hiệu>:** <lý do>`.** Bỏ có ghi lý do

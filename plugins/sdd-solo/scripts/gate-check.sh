@@ -321,6 +321,8 @@ elif [ "$RRN" -eq 0 ]; then
 else
   bad "spec đổi sau lần đọc lại — commit docs($ID) mới nhất là '$LASTS' ($LAST), không phải commit đọc lại"
   info "chạy lại /sdd-solo:verify $ID — commit đọc lại phải là commit spec mới nhất"
+  # #41: "đủ để sửa, thiếu để hiểu" — nói luôn thứ tự, để lần sau người ta áp phiếu TRƯỚC verify.
+  info "thứ tự: áp hết phát hiện ⑦ (kể cả chữ/nhãn, file bên cạnh) → ⑧ verify → ⑨ gate, liền nhau; sửa spec sau ⑧ là chấp nhận đọc lại lần nữa"
 fi
 git -C "$ROOT" status --porcelain -- "$DIR" "$RF" 2>/dev/null | grep -q . && bad "còn thay đổi chưa commit trong spec — commit docs($ID) trước"
 
