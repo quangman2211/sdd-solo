@@ -162,6 +162,11 @@ diff của D so với thân việc và với chỗ khác đang nói). R gộp v�
 - Ô nhập hiện gợi ý mờ (`\x1b[2m` khi đọc `--format ansi`) sau khi một skill kết thúc — là gợi ý ma, vô hại; `agent
   read` text không phân biệt được với chữ đã gõ.
 - `agent read` có thể không lấy lại được câu trả lời dài → kết quả dài bắt agent ghi file.
-- C phiên mới: `send-keys soi "/clear" enter`, chờ ~8 s, rồi prompt. Agent báo "3% until auto-compact" → `/clear`
+- `agent send-keys` chỉ nhận **phím đặt tên** (`enter`, `escape`, `ctrl-u`…), không gõ được chữ — `send-keys soi
+  "/clear" enter` trả `invalid_key` và không làm gì. Mọi lệnh gạch chéo đi qua `agent prompt <tên> "/clear"`.
+  C phiên mới: `prompt soi "/clear"`, chờ ~8 s, rồi prompt lời giao. Agent báo "3% until auto-compact" → `/clear`
   trước đợt kế; D/T giữ phiên vì đang có ngữ cảnh code.
+- Khởi động lại agent để nạp plugin mới (bản mới không áp vào phiên đang mở): `agent prompt <tên> "/exit"` → pane về
+  shell, tên agent biến mất → `agent start <tên> --kind claude --pane <pane> --timeout 90000` → đọc màn hình → gửi lại
+  lời giao vai. Runxops làm cho 6 pane sau 6.6.1, cả 6 trả "sẵn sàng".
 - Pane Claude Code vẽ file đổi do `git merge` y hệt agent tự sửa (§2 luật 2).

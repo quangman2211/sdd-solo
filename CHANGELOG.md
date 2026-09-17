@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.6.2 — 2026-09-18
+
+- `orchestrate` phụ lục herdr: `agent send-keys` chỉ nhận phím đặt tên, không gõ chữ — dòng "C phiên mới:
+  `send-keys soi /clear enter`" của 6.6.0 sai (trả `invalid_key`, không làm gì); đúng là `agent prompt <tên> "/clear"`.
+  Thêm cách khởi động lại agent để nạp plugin mới (`prompt "/exit"` → `agent start` → đọc màn hình → lời giao vai).
+  Peer runxops báo sau khi restart 6 pane lên 6.6.1.
+
 ## 6.6.1 — 2026-09-18
 
 - `orchestrate` §2/§4: vai C được **ghi thẳng** `specs/internal/soat-<ID>-luot-N.md` (cách runxops đang chạy), hoặc ghi
