@@ -39,7 +39,7 @@ siblings() {
     for e in $(grep -oE '^[[:space:]]*class [A-Za-z][A-Za-z0-9_]*|^## [A-Z][A-Za-z0-9_]*' "$EF_" | awk '{print $NF}' | grep -vxE 'Domain|History|Entity[AB]?' | sort -u); do
       grep -qw "$e" "$F" || continue
       # runxops viết `- **Việc** (`WorkItem`)`: tên code đứng sau tên tiếng Việt — chỉ đòi có mặt trên một dòng thuật ngữ
-      grep -qE "^- \*\*.*[^A-Za-z0-9_]$e([^A-Za-z0-9_]|$)" "$GF_" || MISS="$MISS $e"
+      grep -qE "^- \*\*(.*[^A-Za-z0-9_])?$e([^A-Za-z0-9_]|$)" "$GF_" || MISS="$MISS $e"
     done
     [ -n "$MISS" ] && warn "entity UC nhắc tên chưa có dòng '- **Tên**' trong glossary.md:$MISS"
   fi
@@ -116,7 +116,7 @@ fi
 # 0. status
 STL="$(grep -E '\*\*Status:\*\*' "$F" | head -1)"; echo "$STL" | grep -q '|' && bad "Status còn là danh sách lựa chọn — chọn một giá trị"
 ST="$(echo "$STL" | grep -oE '\*\*Status:\*\* *[a-z]+' | awk '{print $2}')"
-case "$ST" in draft|reviewed) ok "status: $ST";; implemented) bad "status đã implemented — dùng Phase 5 (specs/changes/) nếu đổi hành vi";; *) bad "status không hợp lệ: '$ST'";; esac
+case "$ST" in draft|reviewed) ok "status: $ST";; implemented) bad "status đã implemented — dùng Phase 5 (specs/changes/) nếu đổi hành vi";; deprecated) bad "status deprecated — UC đã bỏ (#45); mở UC thay thế ghi ở ## History, không qua cổng UC này";; *) bad "status không hợp lệ: '$ST'";; esac
 
 # 1. các mục bắt buộc
 for sec in "## Actor" "## Trigger" "## Preconditions" "## Main Flow" "## Exceptions" "## Postconditions" "## Acceptance Criteria" "## Screens" "## History"; do
