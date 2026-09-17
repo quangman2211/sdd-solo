@@ -1,5 +1,30 @@
 # Changelog
 
+## 6.5.0 — 2026-09-18
+
+### `context.sh --brief` cho subagent ⑦/⑧ (#43 phần còn lại, chủ dự án uỷ quyền) · vá nhỏ sau ca thật 6.1–6.4
+
+- **`context.sh UC-### --brief`**: ADR chỉ in **đoạn đầu** của `## Decision` + tên các mục con làm con trỏ
+  (đoạn đầu rỗng thì in mục con đầu tiên); `architecture.md` chỉ `## Cấm · ## Ranh giới · ## Nơi chạy` (bỏ Ngăn
+  xếp, Ai gọi). Ba vai adversarial và verify soi **hành vi và ràng buộc**, không soi "dựng bằng gì" — hai skill đó
+  gọi `--brief`; `design` (⑩) vẫn đọc trọn. **Không cắt RULE** (mâu thuẫn nấp trong văn xuôi của rule — RULE-012
+  phát biểu một mình đã 2 KB), **không lọc glossary** theo thuật ngữ UC nhắc (đo: bỏ 24 mục, không bớt KB).
+  Đo runxops UC-014: trọn **221,9 KB → `--brief` 176,0 KB** (ADR 59,8 → 30,9 · architecture 45,1 → 28,0). Phần
+  còn lại là UC 47 KB (27 AC) · RULE 25 KB · glossary 17 KB — nội dung hiệu lực; muốn thấp hơn nữa là quyết định
+  về spec, không phải về script.
+- `gate-check` hàm `siblings` (#48) đọc **phần hiệu lực** của UC (bỏ Adversarial pass · Đọc lại · History) khi rút
+  RULE/ADR/entity — ca thật: *"dải rule 001–011"* trong `## Đọc lại` của UC-014 làm nó tưởng UC trích RULE-001.
+  Sau khi runxops sửa hai lệch thật: `--pre UC-014` = 0 cảnh báo.
+- `scaffold.sh` gọi tay thiếu tham số → in usage thay vì *"invalid option"* từ `source` một đường rỗng.
+- `pre-commit.d/README.md`: thử luật `.d` ở worktree — hook mẹ tìm `.d` dưới toplevel của **worktree**, nên
+  `git -c core.hooksPath=<repo chính>/.sdd/hooks commit` ở worktree không chạy luật; merge main trước hoặc gọi thẳng
+  script với env (peer runxops lọt hai commit, reset hai lần).
+- `pass.sh deprecate`: không ghi dòng `decisions.md` thứ hai khi đã có *"Bỏ UC-###"*; chỉ nhắc *"Related Use Cases
+  của BR cha"* khi BR cha chưa deprecated (ca UC-009/UC-012 runxops, BR-001 đã deprecated).
+- Chủ dự án chốt (AskUserQuestion, 2026-09-18): `core.hooksPath` **giữ tương đối** (worktree merge main là đủ; đường
+  tuyệt đối gãy khi đổi tên repo) — đóng câu hỏi để ngỏ ở 6.2.0; skill #39 tên `orchestrate`; sổ hỏi đáp ở
+  `specs/internal/hoi-dap.md`.
+
 ## 6.4.0 — 2026-09-18
 
 ### Ba lệnh/câu hỏi mới từ ngày chạy thật ở runxops (#45 #46 #47)
