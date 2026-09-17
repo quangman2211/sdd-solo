@@ -45,7 +45,7 @@ từ lượt hiện tại. Không tham số → in bảng vai (§2) và hỏi us
 |---|---|---|---|
 | **A · Điều phối** | `STATE.md`, `specs/internal/decisions.md`, `specs/internal/hoi-dap.md` (commit thay R), sổ điều phối | code, spec | giao việc; **cổng duy nhất hỏi chủ dự án** (`AskUserQuestion`, mỗi lựa chọn một câu hệ quả, luôn có "Uỷ quyền R") |
 | **B · Spec** | `specs/` | code, `STATE.md`, `decisions.md` | commit `docs(ID)` + hash + danh sách `___` còn lại |
-| **C · Soi** | file phát hiện (scratchpad → A chép vào `specs/internal/soat-<ID>-luot-N.md`) | nội dung spec/code | số phát hiện + đường dẫn file; **phiên mới mỗi lượt**, không đọc sổ điều phối/STATE, không hỏi ai — HỎI ghi vào file |
+| **C · Soi** | `specs/internal/soat-<ID>-luot-N.md` — ghi thẳng (runxops) hoặc scratchpad rồi A chép; **A commit**, C không commit | nội dung spec/code | số phát hiện + đường dẫn file; **phiên mới mỗi lượt**, không đọc sổ điều phối/STATE, không hỏi ai — HỎI ghi vào file |
 | **R · Trọng tài** | chỉ `specs/internal/hoi-dap.md`, **không commit** | mọi file khác | phiếu `#n · L? · Cho: spec · D · T` |
 | **V · Trình bày** | `specs/internal/` ghi chú, artifact | spec, code | link; **không quyết** |
 | **D · Code** | `<code>/**`, migrations, `<test>/**` **trừ** `<uctest>/**`, deploy — trong **worktree riêng**, nhánh `code/<uc-###>` | `<uctest>/**`, `specs/` (trừ `specs/internal/hoi-D.md`) | `feat(UC-###)` · câu hỏi → `specs/internal/hoi-D.md` (`HỎI-D#` · `TEST-#`) |
@@ -112,7 +112,7 @@ dịch lại. Ghi trong prompt của C và R: **phép đo nào có thể đã c�
 ```
 T lượt 1  — test ĐỎ từ AC (mỗi AC một file trong <uctest>/<ctx>/UC-###/), harness + fake từ design; nhánh test/uc-###
 D lượt 1  — khối nền (tasks "việc không gắn AC nào"), rồi merge test/uc-### từng AC, làm xanh; nhánh code/uc-###
-C soát    — phiên mới, diff lượt D, năm câu §3 → file phát hiện → A chép vào specs/internal/soat-UC-###-luot-N.md
+C soát    — phiên mới, diff lượt D, năm câu §3 → specs/internal/soat-UC-###-luot-N.md (C ghi thẳng, A commit)
 R         — một phiếu gom K1…Kn: mức từng K, Cho: spec · D · T, thứ tự áp; A commit sổ
 spec ‖ D ‖ T — ba vai áp CÙNG LÚC, mỗi vai đọc đúng phần "Cho:" của mình
 … lặp: D lượt n → C soát → R → spec ‖ D ‖ T … tới khi hai suite xanh trên code thật và C không còn K mức L0/L1

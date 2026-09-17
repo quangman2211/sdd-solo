@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.6.1 — 2026-09-18
+
+- `orchestrate` §2/§4: vai C được **ghi thẳng** `specs/internal/soat-<ID>-luot-N.md` (cách runxops đang chạy), hoặc ghi
+  scratchpad rồi A chép — cùng kết quả, bớt một bước; A vẫn là người commit. Runxops đã áp 6.6.0 (`955d50a`,
+  `54e5ac6`): dời sổ hỏi đáp, `hoi-D/T.md`, 5 file soát từ `notes/` sang `specs/internal/`; file soát và QA cùng ở
+  `specs/internal/` — "chỉ người xây quan tâm" đúng nghĩa internal, không cần khoá `.sdd/config`.
+
 ## 6.6.0 — 2026-09-18
 
 ### `/sdd-solo:orchestrate` — nhiều agent trên một repo (#39)
