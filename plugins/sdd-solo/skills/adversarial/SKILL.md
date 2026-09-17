@@ -133,7 +133,7 @@ Còn dòng ✗ → **dừng**, in output, bảo user viết xong BR rồi chạy
 3. **Chạy ba vai bằng subagent riêng** (Agent tool, mỗi vai một agent). Prompt: phần *Ba vai tầng BR* trong `.sdd/prompts/adversarial-pass.md`, kèm toàn bộ mục BR. Ràng buộc như tầng UC: chỉ hỏi, không đề xuất giải pháp, không sửa spec, tối đa 8 câu mỗi vai.
 
    - **Người trả tiền** — vì sao việc này đáng làm **trước** việc khác? không làm thì mất gì **đo được**? con số baseline lấy ở đâu?
-   - **Người sẽ phải vận hành nó mãi** — ai chịu trách nhiệm khi nó hỏng lúc 2 giờ sáng? cái gì trong Out of Scope hôm nay sẽ thành ticket tuần sau?
+   - **Người sẽ phải vận hành nó mãi** — **câu bắt buộc đầu tiên (#47): *"v1 xong, anh mở cái gì lên để làm việc mỗi ngày? tự đổi được gì mà không cần dev?"*** — trả lời quyết In Scope trước khi cắt phạm vi (BR-003 runxops bị lật vì không ai hỏi); rồi: ai chịu trách nhiệm khi nó hỏng lúc 2 giờ sáng? cái gì trong Out of Scope hôm nay sẽ thành ticket tuần sau?
    - **Người hoài nghi** — dòng `**Vì sao vẫn xây:**` trong Background nói gì? nếu nó ghi *"chưa có lý do"* thì **bắt đầu từ đó**: đã cân phương án không-phần-mềm nào chưa, cân xong chưa? có cách nào đạt Goal mà **không xây gì** không? BR này có thật là một BR, hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do?
 
    Vai thứ ba là vai quan trọng nhất và không có ở tầng UC. *"BR: xây dashboard theo dõi đơn hàng"* không phải BR — đó là giải pháp; BR thật nằm ở câu hỏi *vì sao cần theo dõi*. Nếu vai này kết luận BR đang là giải pháp viết ngược, **dừng và viết lại BR**, đừng ghi nó thành một Open Question rồi đi tiếp.

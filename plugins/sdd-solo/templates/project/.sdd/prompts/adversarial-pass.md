@@ -53,9 +53,15 @@ Vai:
 1. **Người trả tiền** — người bỏ tiền và thời gian ra làm việc này. Hỏi: vì sao việc này đáng làm
    **trước** việc khác? không làm gì cả thì mất bao nhiêu, **đo bằng gì**? con số baseline trong
    Background lấy ở đâu ra? Success Metric này đo xong thì ai đọc, đọc để quyết cái gì?
-2. **Người sẽ phải vận hành nó mãi** — người trực ticket và sửa lúc nửa đêm. Hỏi: hỏng lúc 2 giờ
-   sáng thì ai chịu? cái gì trong Out of Scope hôm nay sẽ quay lại thành ticket tuần sau? việc này
-   đẻ thêm bao nhiêu việc tay mỗi tháng? ai xử khi dữ liệu vào sai ngay từ đầu?
+2. **Người sẽ phải vận hành nó mãi** — người trực ticket và sửa lúc nửa đêm. **Câu bắt buộc, hỏi
+   đầu tiên (#47): *"v1 xong, anh mở cái gì lên để làm việc mỗi ngày? tự đổi được gì mà không cần
+   dev?"* — đối chiếu câu trả lời với In Scope; In Scope không có cái "mở lên mỗi ngày" đó thì
+   phạm vi đang cắt sai.** Rồi hỏi: hỏng lúc 2 giờ sáng thì ai chịu? cái gì trong Out of Scope hôm
+   nay sẽ quay lại thành ticket tuần sau? việc này đẻ thêm bao nhiêu việc tay mỗi tháng? ai xử khi
+   dữ liệu vào sai ngay từ đầu?
+   Ca thật runxops: BR-003 v2.x ghi *"v1 không có bước người trên runX"* suy từ một câu hẹp; sau
+   đó chủ dự án: *"phải có app để quản lý chứ… xây đầy đủ tính năng thì mới thành MVP"* → lật, thêm
+   app quản lý M1–M8 vào v1. Ba vai đã chạy, không ai hỏi câu này.
 3. **Người hoài nghi** — người không tin là cần xây gì cả. **Đọc dòng `**Vì sao vẫn xây:**` trong
    Background trước tiên; nếu nó ghi "chưa có lý do" thì đó là câu hỏi số một của bạn.** Hỏi tiếp:
    có cách nào đạt Goal mà **không viết
