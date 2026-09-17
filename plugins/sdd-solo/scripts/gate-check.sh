@@ -22,10 +22,14 @@ CTX="$(ctx_of "$F")"; DIR="$(dirname "$F")"
 # `--pre` xanh vì chỉ kiểm UC + flow. Danh sách anh em lấy đúng cách context.sh lấy: ID UC
 # trích (RULE/CON/ADR) + entities/glossary của context. Cảnh báo vì đây là thứ verify sẽ bắt;
 # bắt sớm ở đây rẻ hơn một lượt verify (~10 phút, ~200 KB), nhưng chưa đủ chắc để chặn.
+# uc_live — file UC bỏ ba mục dấu vết (cùng luật context.sh #43). Ca thật runxops: "dải rule
+# 001–011" trong ## Đọc lại làm siblings tưởng UC trích RULE-001 → cảnh báo oan.
+uc_live() { awk '/^## (Adversarial pass|Đọc lại|History)/{t=1;next} /^## /{t=0} !t' "$F"; }
 siblings() {
   RF_="$ROOT/specs/rules.md"; EF_="$ROOT/specs/contexts/$CTX/entities.md"; GF_="$ROOT/specs/glossary.md"
   SIB="$F $DIR/$ID.flow.md $DIR/$ID.sequence.md $RF_ $ROOT/specs/br.md $EF_ $GF_"
-  for a in $(grep -oE 'ADR-[0-9]+' "$F" | sort -u); do SIB="$SIB $(ls "$ROOT"/specs/internal/adr/$a* 2>/dev/null | head -1)"; done
+  LIVE="$(uc_live)"
+  for a in $(printf '%s' "$LIVE" | grep -oE 'ADR-[0-9]+' | sort -u); do SIB="$SIB $(ls "$ROOT"/specs/internal/adr/$a* 2>/dev/null | head -1)"; done
   # 1. cụm đánh dấu treo — ngoài mục dấu vết (History · Adversarial pass · Đọc lại)
   for f in $SIB; do
     [ -f "$f" ] || continue
@@ -37,14 +41,14 @@ siblings() {
   if [ -f "$EF_" ] && [ -f "$GF_" ]; then
     MISS=""
     for e in $(grep -oE '^[[:space:]]*class [A-Za-z][A-Za-z0-9_]*|^## [A-Z][A-Za-z0-9_]*' "$EF_" | awk '{print $NF}' | grep -vxE 'Domain|History|Entity[AB]?' | sort -u); do
-      grep -qw "$e" "$F" || continue
+      printf '%s' "$LIVE" | grep -qw "$e" || continue
       # runxops viết `- **Việc** (`WorkItem`)`: tên code đứng sau tên tiếng Việt — chỉ đòi có mặt trên một dòng thuật ngữ
       grep -qE "^- \*\*(.*[^A-Za-z0-9_])?$e([^A-Za-z0-9_]|$)" "$GF_" || MISS="$MISS $e"
     done
     [ -n "$MISS" ] && warn "entity UC nhắc tên chưa có dòng '- **Tên**' trong glossary.md:$MISS"
   fi
   # 3. RULE được trích phải ghi UC này ở 'Áp dụng cho' — chiều ngược của §4
-  for r in $(grep -oE 'RULE-[0-9]+' "$F" | sort -u); do
+  for r in $(printf '%s' "$LIVE" | grep -oE 'RULE-[0-9]+' | sort -u); do
     AP="$(awk -v h="## $r" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f' "$RF_" 2>/dev/null | grep -i 'Áp dụng cho' | head -1)"
     [ -z "$AP" ] && continue
     printf '%s' "$AP" | grep -q "$ID" || warn "$r: 'Áp dụng cho' không có $ID — UC trích rule mà rule không nhận UC (#48)"

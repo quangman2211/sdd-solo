@@ -10,3 +10,9 @@ Hook mẹ export cho script con: `SDD_ROOT` · `SDD_STAGED` (file đã stage, m�
 Hook nằm trong git, nên **mỗi worktree chạy bản hook của nhánh nó**: luật mới thêm trên `main`
 chỉ có hiệu lực ở nhánh khác sau khi nhánh đó `merge main`. Ca thật: sửa hook trên `main`, commit thử
 ở worktree `code/uc-014` → không chặn, phải `reset --hard`.
+
+**Thử luật `.d` ở worktree:** hook mẹ tìm `.d/` dưới `git rev-parse --show-toplevel` **của worktree đó**,
+nên `git -c core.hooksPath=<repo chính>/.sdd/hooks commit` ở worktree vẫn **không** chạy luật `.d` (thư mục
+`.d` của worktree chưa có file) — commit lọt. Hai cách đúng: `merge main` vào worktree trước, hoặc gọi thẳng
+script với env: `SDD_STAGED="$(git diff --cached --name-only)" SDD_CODE_PATHS=src SDD_UC_TEST_DIR=tests/use-cases
+bash .sdd/hooks/pre-commit.d/10-role-boundary.sh`.

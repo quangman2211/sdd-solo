@@ -3,6 +3,12 @@
 # Copy templates/project vào repo. Ghi manifest sha để lần update chỉ ghi đè file chưa sửa tay.
 set -e
 PLUGIN="$1"; ROOT="$2"; MODE="${3:-}"
+# Gọi tay thiếu tham số vị trí thì `source` một đường rỗng đổ "invalid option" — không ai đoán được.
+if [ -z "$PLUGIN" ] || [ -z "$ROOT" ] || [ ! -f "$PLUGIN/scripts/lib.sh" ]; then
+  echo "Dùng: scaffold.sh <thư mục plugin> <thư mục dự án> [--update]" >&2
+  echo "  ví dụ: bash ~/.claude/plugins/cache/sdd-solo/sdd-solo/<ver>/scripts/scaffold.sh <thư mục plugin đó> \"\$(git rev-parse --show-toplevel)\" --update" >&2
+  exit 2
+fi
 . "$PLUGIN/scripts/lib.sh"
 VER="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$PLUGIN/.claude-plugin/plugin.json" 2>/dev/null || grep -oE '"version": *"[^"]+"' "$PLUGIN/.claude-plugin/plugin.json" | head -1 | sed -E 's/.*"([^"]+)"$/\1/')"
 # Chiều ngược: plugin CŨ chạy trên repo MỚI. Bản 1.x scaffold vào repo 2.x sẽ

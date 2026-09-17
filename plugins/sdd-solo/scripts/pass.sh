@@ -169,7 +169,8 @@ PY
     rm -f "$MK"; MKF=".sdd/gate/$ID.ok"
   fi
   DEC="$ROOT/specs/internal/decisions.md"; DF=""
-  if [ -f "$DEC" ]; then
+  # Đã có dòng "Bỏ UC-###" (deprecate lần hai, hoặc ghi tay trước đó) thì không thêm dòng trùng.
+  if [ -f "$DEC" ] && ! grep -qF -- "Bỏ $ID (" "$DEC"; then
     printf -- '- %s — Bỏ %s (%s). Loại: giữ %s. Chi tiết: %s\n' "$(today)" "$ID" "$REASON" "$ID" "$( [ "$BY" = "-" ] && printf 'không có UC thay thế' || printf '%s' "$BY" )" >> "$DEC"
     DF="$DEC"
   fi
@@ -177,7 +178,12 @@ PY
   printf 'ĐÃ BỎ %s. Status -> deprecated · History v+1 · marker cổng %s · bảng use-cases.md %s · decisions.md %s · đã commit.\n' \
     "$ID" "$( [ -n "$MKF" ] && printf 'đã gỡ' || printf 'không có' )" "$( [ -n "$TF" ] && printf 'đã sửa' || printf 'không có dòng' )" "$( [ -n "$DF" ] && printf '+1 dòng' || printf 'không có file' )"
   [ "$BY" != "-" ] && printf 'Thay bằng %s — chưa có thư mục thì /sdd-solo:start %s.\n' "$BY" "$BY"
-  echo "Nhớ: ## Related Use Cases của BR cha và STATE.md còn trỏ $ID thì sửa tay (/sdd-solo:state)."
+  BRP="$(grep -oE 'BR-[0-9]+' "$F" | head -1)"; BRST="$(br_body "$BRP" "$ROOT" | sed -n 's/.*\*\*Status:\*\* *//p' | head -1 | awk '{print $1}')"
+  if [ -n "$BRP" ] && [ "$BRST" != "deprecated" ]; then
+    echo "Nhớ: ## Related Use Cases của $BRP và STATE.md còn trỏ $ID thì sửa tay (/sdd-solo:state)."
+  else
+    echo "Nhớ: STATE.md còn trỏ $ID thì cập nhật (/sdd-solo:state)."
+  fi
   ;;
 
 change)
