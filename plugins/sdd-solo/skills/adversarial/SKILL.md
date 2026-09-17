@@ -104,6 +104,11 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
         vào bước khác hẳn. **Số không phải danh tính** — nó là vị trí, và vị trí thì đổi.
      3. `## History` ghi **vì sao số đổi**, không chỉ ghi "đã sửa". Sáu tháng sau, một số nhảy chỗ
         mà không có lý do trong file thì không ai dám tin nhãn nào nữa.
+   - **Sau mỗi khái niệm vừa đổi: grep chỗ anh em** (#49, #48). Một khái niệm của UC-014 ở runxops chép lại ở
+     3–5 chỗ (glossary · entities · sequence · `Áp dụng cho` của RULE · flow · ADR); ba đợt áp chỉ sửa file UC
+     → 14/18 phát hiện verify là lệch với file anh em. Chạy `grep -rn '<tên/giá trị cũ>' specs/` **và**
+     `grep -rn '<tên/giá trị mới>' specs/`, sửa hết trong cùng lượt, rồi `gate-check.sh --pre $1` — nó cảnh báo
+     cụm treo, entity thiếu glossary, RULE không nhận UC.
    - Open Question → thêm `- [ ] <câu> (quyết định tạm: <user nói>)`. User chưa có gì để nói thì `___`, và giữ nhãn nguồn `[Main 7]` trong câu để sáu tháng sau còn truy được.
    - Out of Scope → thêm vào BR liên quan trong `specs/br.md`.
    Không được để câu nào không có đầu ra.

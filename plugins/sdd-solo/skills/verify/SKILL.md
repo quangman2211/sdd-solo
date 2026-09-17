@@ -2,13 +2,14 @@
 name: verify
 description: Đọc lại tài liệu bằng subagent chưa bị neo để tìm chỗ spec tự mâu thuẫn hoặc khai điều không có thật. UC-### là bước ⑧ — cửa duy nhất của cổng DoR từ 6.0.0; CHG-### là cửa của cổng Phase 5; không tham số là quét cả cây specs/. Dùng khi sắp qua cổng, hoặc khi tài liệu vừa đổi nhiều và cần biết còn chỗ nào nói ngược nhau.
 disable-model-invocation: true
-argument-hint: "[UC-### | CHG-###] [--no-commit]"
+argument-hint: "[UC-### | CHG-###] [--since <commit>] [--no-commit]"
 allowed-tools: Bash Read Write Edit Grep Glob Agent AskUserQuestion
 ---
 
 Verify pass cho `$1`.
 
-Có `UC-###` → **phần A** (bước ⑧). Có `CHG-###` → **phần A** với năm khác biệt ở **A′**. Không tham số → **phần B** (quét cây).
+Có `UC-###` → **phần A** (bước ⑧). Có `CHG-###` → **phần A** với năm khác biệt ở **A′**. Có `--since` → **A″**
+(chỉ đọc phần đổi từ lần đọc lại trước). Không tham số → **phần B** (quét cây).
 
 **Vì sao skill này tồn tại:** người viết không đọc được cái mình vừa viết — mắt đọc *ý định*, không
 đọc *chữ*. Bước ⑦ đã giải đúng nhu cầu đó bằng session mới cho ba vai. Bước ⑧ cần **cùng một thứ**,
@@ -75,7 +76,9 @@ hơn vẫn là cửa được đi.
 # với MỖI con số / quyết định vừa đổi, tìm giá trị CŨ trên cả cây
 grep -rn '<giá trị cũ>' specs/ scripts/ *.md
 ```
-   Còn hit nào **ngoài** `## History` và **ngoài** câu dạng `<cũ> → <mới>` thì **chưa xong**.
+   Còn hit nào **ngoài** `## History` và **ngoài** câu dạng `<cũ> → <mới>` thì **chưa xong**. Chỗ anh em hay
+   sót nhất (đo #48: 14/18): `glossary.md` · `entities.md` · `$1.sequence.md` · dòng `Áp dụng cho` của RULE ·
+   `$1.flow.md` · ADR được trích. `gate-check.sh --pre $1` cảnh báo ba loại lệch đó bằng máy — chạy nó trước khi commit.
 
    **Quét cả giá trị MỚI, không chỉ giá trị cũ.** Bước sửa **tự sinh lỗi mới**: đổi sang một
    `RULE-###` chưa có heading, đổi rồi đổi lại, gõ nhầm một `AC-#`. Quét giá trị cũ không thấy
@@ -110,6 +113,34 @@ git add specs/ && git commit -m "docs($1): đọc lại — <n> phát hiện, <m
    và nói luôn cái đúng phải làm: *"không thấy gì"* là bằng chứng yếu (Giới hạn 3) — mở rộng phạm vi
    (rule UC *không* trích, `sequence.md`, entities, số liệu đo lại) rồi chạy lại, chứ **không** bịa
    một dòng `F#` cho qua. Một dòng `→ không phải lỗi vì <lý do>` sau khi đọc thật là đầu ra hợp lệ.
+
+### A″. `/sdd-solo:verify UC-### --since [<commit>]` — đọc lại phần đổi (6.3.0, #49)
+
+Ca thật runxops UC-014: **sáu lần đọc lại** (19 → 23 → 11 → 7 → 7 → 10 phát hiện) vì mỗi đợt áp 1–2 chỗ
+hành vi lại lộ 1–2 chỗ chữ/nhãn ở file bên cạnh, và cổng đòi commit đọc lại là mới nhất nên mọi sửa chữ
+kéo theo một lượt verify **trọn** (phiên mới, ~200 KB, ~10 phút). Đọc lại trọn còn diễn đạt lại phát hiện
+cũ thành "mới". Chủ dự án chốt: *lặp tới khi chặn = 0*, và luật dừng nằm ở `verify-pass.md` (chặn = mâu
+thuẫn hai chỗ · AC không test được; còn lại là nợ chữ).
+
+Cùng phần A, khác bốn chỗ:
+1. Mốc: `<commit>` nếu có; không có thì **commit đọc lại gần nhất** —
+   `git log -1 --format=%H --grep="^docs($1): đọc lại" -- <thư mục UC> specs/rules.md specs/contexts/<ctx>/entities.md`.
+   Không có mốc nào → đây là lần đầu, chạy phần A trọn.
+2. Đầu vào cho subagent **thay vì** `context.sh` trọn: `git diff <mốc>..HEAD -- specs/` (nguyên văn), cộng **các
+   mục bị chạm** ở dạng hiện tại (mục `## …` của UC chứa dòng đổi, RULE có dòng đổi, khối entities có dòng đổi)
+   và **mọi chỗ khác trong `specs/` nhắc tới cùng khái niệm vừa đổi** (`grep -rn` giá trị mới và giá trị cũ) — vì
+   loại sai #3 và #8 nằm giữa chỗ đổi và chỗ chưa đổi theo. Phạm vi này in ra đầu báo cáo. `verify-pass.md`
+   áp nguyên; mục *Luật dừng* của nó quyết dòng nào là chặn.
+3. Ghi vào `## Đọc lại` **một khối mới**, không xoá khối cũ:
+```
+- Ngày chạy: YYYY-MM-DD · Đầu chưa neo: subagent · --since <hash ngắn>
+- F12 <phát hiện> [neo: …] → …
+```
+   Số `F#` tiếp nối khối trước (cổng đếm mọi dòng `- F#` trong mục, không phân biệt khối).
+4. Commit `docs($1): đọc lại --since <hash ngắn> — <n> phát hiện, <m> chặn, <k> nợ chữ`. Cổng nhận tiền tố
+   `docs($1): đọc lại`, nên commit này là mốc mới. Từ 6.3.0 cổng **cho qua commit áp chữ/nhãn sau lần đọc lại**
+   (vân tay hành vi không đổi: Main/Alt/Exceptions/Postconditions/AC · flow · phát biểu RULE · mermaid entities);
+   đổi hành vi thì cổng đỏ và tự in lệnh `--since` với đúng mốc.
 
 ### A′. `/sdd-solo:verify CHG-###` — cửa của cổng Phase 5 (6.0.0, #38)
 

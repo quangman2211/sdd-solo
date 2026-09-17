@@ -330,16 +330,34 @@ Cách làm:
    *lệnh nào* · chốt cấu trúc hỏi *lệnh còn đúng hình dạng không* — cả ba đều **giả định lệnh và
    số là một cặp đúng**, và không tầng nào kiểm chính cái cặp đó. Nó rẻ và kiểm được bằng máy.
 
+## Luật dừng — chặn hay nợ chữ (6.3.0, #49)
+
+Mỗi `F#` mang **một trong hai mức**, ghi ngay sau số. Chủ dự án chốt sau sáu lần đọc lại UC-014 ở runxops
+(19 → 23 → 11 → 7 → 7 → 10 phát hiện, mỗi đợt áp sửa lại lộ chữ/nhãn mới ở file bên cạnh): *lặp tới khi
+**chặn = 0***, và chỉ hai thứ là chặn.
+
+| Mức | Là gì | Sau khi áp |
+|---|---|---|
+| **chặn** | (a) **mâu thuẫn hai chỗ về hành vi** — Main Flow · Alternative · Exceptions · Postconditions · AC · flow · phát biểu RULE · state/class của entities nói ngược nhau; (b) **AC không test được** — Given/When/Then thiếu một vế đo được, hoặc hứa thứ không bước nào sinh ra (loại #6) | phải verify lại (`--since`) |
+| **nợ chữ** | nhãn, tên, tiêu đề, số đếm trong tiêu đề, `Áp dụng cho`, glossary, câu văn xuôi lặp lại một quyết định đã đổi, thiếu file bên cạnh trong thông điệp commit (#42) — sửa xong **không** có hành vi nào khác đi | áp thẳng, cổng cho qua không cần verify lại |
+
+Bài kiểm một câu: *sửa chỗ này xong, test nào phải viết khác đi, hoặc khách thấy gì khác?* Có → chặn. Không →
+nợ chữ. Không chắc → **chặn** (đọc lại một lần rẻ hơn một AC sai đi vào code). Loại #7 (số đã mục) là chặn
+khi số đó đứng trong RULE/AC, nợ chữ khi đứng trong Background/ghi chú.
+
 ## Đầu ra
 
-Một danh sách `F#`, xếp theo hậu quả (tiền · quyền · dữ liệu khách trước). Mỗi dòng:
+Một danh sách `F#`, **chặn trước, nợ chữ sau**, trong mỗi mức xếp theo hậu quả (tiền · quyền · dữ liệu khách
+trước). Cuối báo cáo một dòng đếm: `<n> phát hiện · <m> chặn · <k> nợ chữ`. Mỗi dòng:
 
 ```
-F1 <phát hiện một câu>
+F1 [chặn] <phát hiện một câu>
    A: <đường dẫn:dòng> "<nguyên văn>"
    B: <đường dẫn:dòng> "<nguyên văn>"
    [neo: Main 7 · RULE-003]
    → đầu ra: ___
+F2 [nợ chữ] <phát hiện một câu>
+   …
 ```
 
 `đầu ra: ___` để **người quyết** điền, không tự điền.
