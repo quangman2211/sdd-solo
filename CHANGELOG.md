@@ -1,5 +1,40 @@
 # Changelog
 
+## 6.3.0 — 2026-09-18
+
+### Vòng verify hội tụ: `--since`, luật dừng, cổng phân biệt commit chữ (#49) · cổng cảnh báo file anh em (#48)
+
+Ca thật runxops UC-014: **sáu lần đọc lại** (19 → 23 → 11 → 7 → 7 → 10) — mỗi đợt áp 1–2 chỗ hành vi lộ 1–2 chỗ
+chữ/nhãn ở file bên cạnh; cổng đòi commit đọc lại là mới nhất nên mọi sửa chữ kéo theo một lượt verify trọn
+(~200 KB, ~10 phút). Và 14/18 phát hiện lần 1 là lệch UC ↔ file anh em (glossary, entities, sequence, `Áp dụng
+cho`) sau ba đợt áp chỉ sửa file UC, `--pre` xanh vì chỉ kiểm UC + flow. Chủ dự án chốt: *lặp tới khi chặn = 0*;
+chỉ **mâu thuẫn hai chỗ** hoặc **AC không test được** là chặn.
+
+- **`/sdd-solo:verify UC-### --since [<commit>]`** (skill `verify` mục A″): mốc mặc định = commit
+  `docs(UC): đọc lại` gần nhất; subagent đọc `git diff <mốc>..HEAD -- specs/` + các mục bị chạm + mọi chỗ nhắc
+  cùng khái niệm (grep cũ và mới), áp nguyên `verify-pass.md`; ghi một khối mới trong `## Đọc lại` (F# tiếp
+  nối); commit `docs(UC): đọc lại --since <hash> — n phát hiện, m chặn, k nợ chữ` — cổng nhận tiền tố nên đó
+  là mốc mới.
+- **`verify-pass.md` mục *Luật dừng*:** mỗi `F#` mang `[chặn]` hoặc `[nợ chữ]`; bài kiểm một câu *"sửa xong,
+  test nào phải viết khác, khách thấy gì khác?"*; không chắc → chặn. Đầu ra xếp chặn trước, cuối có dòng đếm.
+  `templates/project` → cần `init --update`.
+- **`gate-check` §9 phân biệt commit chữ:** tính *vân tay hành vi* ở commit đọc lại gần nhất và ở HEAD — Main
+  Flow · Alternative · Exceptions · Postconditions · AC của UC · `flow.md` · phát biểu RULE được trích (bỏ dòng
+  `Áp dụng cho`) · khối mermaid của `entities.md`. Không đổi vùng nào → ✓ *"N commit spec sau đó chỉ áp
+  chữ/nhãn"*; đổi → ✗ *"spec đổi HÀNH VI … vùng đổi: ac"* và in sẵn lệnh `--since <mốc>`. Nhánh gate-pass và
+  nhánh đã đóng giữ nguyên. Đo repo giả: sửa Dependencies + glossary sau đọc lại → xanh; sửa Then của AC-1 → đỏ
+  `vùng đổi: ac`.
+- **`gate-check` hàm `siblings` (#48), chạy ở cả `--pre` lẫn cổng, chỉ cảnh báo:** (1) cụm treo `chờ phiếu` ·
+  `đang xét lại` · `(chưa mở)` trong UC/flow/sequence/rules/br/entities/glossary/ADR được trích — ngoài mục dấu
+  vết và ngoài dòng `[x]`; (2) entity UC nhắc tên chưa có trên dòng `- **…**` nào của glossary (nhận cả kiểu
+  runxops `- **Việc** (`WorkItem`)`); (3) RULE được trích mà `Áp dụng cho` không có UC này. Danh sách anh em rút
+  từ ID UC trích — cùng nguồn với `context.sh`. Đo runxops UC-014: ADR-011 `(chưa mở)` · `NotifyConfig` thiếu
+  glossary · RULE-001 không nhận UC-014 — ba lệch thật.
+- `adversarial` bước 5 và `verify` bước 6 thêm **grep chỗ anh em** cho mỗi khái niệm vừa đổi (cũ **và** mới),
+  rồi `gate-check --pre` trước khi commit. `sdd-process` (6.1.0) đã trỏ `--since` ở đoạn ⑦→⑧→⑨.
+- Chưa làm: gate không đọc nhãn `[chặn]`/`[nợ chữ]` — nó là chỉ dẫn cho người/agent áp, không phải cổng; cổng
+  đo hành vi bằng vân tay, không đo lời khai.
+
 ## 6.2.0 — 2026-09-18
 
 ### Thêm — `pre-commit.d/` · `commit-msg.d/`: chỗ cắm luật riêng của repo (#50)
