@@ -16,6 +16,41 @@ ROOT="$(project_root)"; F="$(find_uc "$ID" "$ROOT")"
 CTX="$(ctx_of "$F")"; DIR="$(dirname "$F")"
 [ "$PRE" = "0" ] && info "file: ${F#$ROOT/}"
 
+# ── #48: file anh em — CẢNH BÁO, không chặn ──────────────────────────────
+# Ca thật runxops: verify UC-014 lần 1, 14/18 phát hiện là LỆCH GIỮA UC VÀ FILE ANH EM
+# (glossary, entities, sequence, `Áp dụng cho` của RULE) sau ba đợt áp phiếu chỉ sửa file UC —
+# `--pre` xanh vì chỉ kiểm UC + flow. Danh sách anh em lấy đúng cách context.sh lấy: ID UC
+# trích (RULE/CON/ADR) + entities/glossary của context. Cảnh báo vì đây là thứ verify sẽ bắt;
+# bắt sớm ở đây rẻ hơn một lượt verify (~10 phút, ~200 KB), nhưng chưa đủ chắc để chặn.
+siblings() {
+  RF_="$ROOT/specs/rules.md"; EF_="$ROOT/specs/contexts/$CTX/entities.md"; GF_="$ROOT/specs/glossary.md"
+  SIB="$F $DIR/$ID.flow.md $DIR/$ID.sequence.md $RF_ $ROOT/specs/br.md $EF_ $GF_"
+  for a in $(grep -oE 'ADR-[0-9]+' "$F" | sort -u); do SIB="$SIB $(ls "$ROOT"/specs/internal/adr/$a* 2>/dev/null | head -1)"; done
+  # 1. cụm đánh dấu treo — ngoài mục dấu vết (History · Adversarial pass · Đọc lại)
+  for f in $SIB; do
+    [ -f "$f" ] || continue
+    HITS="$(awk '/^#{1,6} (History|Adversarial pass|Đọc lại)/{t=1;next} /^#{1,6} /{t=0} !t' "$f" \
+            | grep -nE 'chờ phiếu|đang xét lại|\(chưa mở\)' | grep -vE '^[0-9]+:[[:space:]]*[-*] \[x\]' | head -3)"
+    [ -n "$HITS" ] && { warn "${f#$ROOT/} còn cụm treo (chờ phiếu · đang xét lại · chưa mở):"; printf '%s\n' "$HITS" | cut -c1-110 | sed 's/^/      /'; }
+  done
+  # 2. entity UC nhắc tên phải có dòng **Tên** trong glossary — ba vai và code gọi cùng một tên
+  if [ -f "$EF_" ] && [ -f "$GF_" ]; then
+    MISS=""
+    for e in $(grep -oE '^[[:space:]]*class [A-Za-z][A-Za-z0-9_]*|^## [A-Z][A-Za-z0-9_]*' "$EF_" | awk '{print $NF}' | grep -vxE 'Domain|History|Entity[AB]?' | sort -u); do
+      grep -qw "$e" "$F" || continue
+      # runxops viết `- **Việc** (`WorkItem`)`: tên code đứng sau tên tiếng Việt — chỉ đòi có mặt trên một dòng thuật ngữ
+      grep -qE "^- \*\*.*[^A-Za-z0-9_]$e([^A-Za-z0-9_]|$)" "$GF_" || MISS="$MISS $e"
+    done
+    [ -n "$MISS" ] && warn "entity UC nhắc tên chưa có dòng '- **Tên**' trong glossary.md:$MISS"
+  fi
+  # 3. RULE được trích phải ghi UC này ở 'Áp dụng cho' — chiều ngược của §4
+  for r in $(grep -oE 'RULE-[0-9]+' "$F" | sort -u); do
+    AP="$(awk -v h="## $r" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f' "$RF_" 2>/dev/null | grep -i 'Áp dụng cho' | head -1)"
+    [ -z "$AP" ] && continue
+    printf '%s' "$AP" | grep -q "$ID" || warn "$r: 'Áp dụng cho' không có $ID — UC trích rule mà rule không nhận UC (#48)"
+  done
+}
+
 # ── --pre: cổng trước bước ⑦ ──────────────────────────────────────────────
 # Bốn tiền điều kiện cũ ở skills/adversarial đo CẤU TRÚC nên template rỗng qua
 # hết: 4 dòng Main Flow đánh số, 2 AC, 2 E#, 3 dòng Screens — mà cả file còn 23
@@ -71,6 +106,7 @@ if [ "$PRE" = "1" ]; then
   fi
   grep -qE '<Thuật ngữ>|<Context A>' "$ROOT/specs/glossary.md" 2>/dev/null && \
     warn "specs/glossary.md còn là template — ba vai và code sẽ gọi cùng một thứ bằng những tên khác nhau"
+  siblings
 
   echo
   if [ "$FAIL" -eq 0 ]; then echo "ĐỦ ĐIỀU KIỆN — chạy ba vai được ($WARN cảnh báo)."; exit 0; fi
@@ -202,6 +238,8 @@ else
   [ "$GN" -ge 1 ] && ok "glossary có $GN thuật ngữ" || bad "specs/glossary.md chưa có dòng '- **từ** — nghĩa' nào"
 fi
 
+siblings
+
 # 7. adversarial pass có nội dung
 AP="$(sed -n '/^## Adversarial pass/,/^## /p' "$F")"
 if echo "$AP" | grep -qE 'Ngày chạy: *[0-9]{4}-[0-9]{2}-[0-9]{2}'; then ok "adversarial pass đã chạy"; else bad "mục ## Adversarial pass chưa có 'Ngày chạy: YYYY-MM-DD'"; fi
@@ -296,8 +334,38 @@ fi
 # Lỗ còn lại, biết mà chưa xử: sửa rules.md dưới tiêu đề docs(UC-010) hay docs(RULE-###)
 # thì UC-009 không thấy — bỏ grep tiêu đề sẽ đúng nghĩa hơn nhưng làm mọi UC cùng
 # context đỏ khi ai đó sửa rules.md; chưa có ca thật để cân.
-LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- "$F" "$DIR/$ID.flow.md" "$DIR/screens" "$RF" "$EF" 2>/dev/null)"
-LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- "$F" "$DIR/$ID.flow.md" "$DIR/screens" "$RF" "$EF" 2>/dev/null)"
+SPECP="$F $DIR/$ID.flow.md $DIR/screens $RF $EF"
+LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- $SPECP 2>/dev/null)"
+LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- $SPECP 2>/dev/null)"
+# #49: commit đọc lại gần nhất, và "vân tay hành vi" của spec ở một revision. Ca thật runxops
+# UC-014: sáu lần đọc lại (19 → 23 → 11 → 7 → 7 → 10) vì mỗi đợt áp chữ/nhãn ở file bên cạnh
+# cũng kéo theo một lượt verify trọn (~200 KB, ~10 phút). Chủ dự án chốt: chỉ MÂU THUẪN HAI CHỖ
+# hoặc AC KHÔNG TEST ĐƯỢC là chặn; nợ chữ áp không cần verify lại. Cổng vì thế cho qua commit
+# sau lần đọc lại NẾU vân tay hành vi không đổi: Main/Alternative/Exceptions/Postconditions/AC
+# của UC · flow.md · phát biểu RULE được trích (bỏ dòng Áp dụng cho) · mermaid của entities.md.
+# Đổi bất cứ vùng nào trong đó là đổi hành vi → đọc lại lần nữa (trọn hoặc --since).
+RH="$(git -C "$ROOT" log -1 --format=%H --grep="^docs($ID): đọc lại" -- $SPECP 2>/dev/null)"
+spec_fp() { # spec_fp <rev> <vùng>
+  _uc="$(git -C "$ROOT" show "$1:${F#$ROOT/}" 2>/dev/null)"
+  case "$2" in
+    main|alt|exc|post|ac)
+      case "$2" in main) _h="## Main Flow";; alt) _h="## Alternative Flows";; exc) _h="## Exceptions";; post) _h="## Postconditions";; ac) _h="## Acceptance Criteria";; esac
+      printf '%s\n' "$_uc" | awk -v h="$_h" 'index($0,h)==1{f=1;next} f&&/^## /{f=0} f';;
+    flow) git -C "$ROOT" show "$1:${DIR#$ROOT/}/$ID.flow.md" 2>/dev/null;;
+    rules)
+      _rl="$(git -C "$ROOT" show "$1:specs/rules.md" 2>/dev/null)"
+      for _r in $(printf '%s' "$_uc" | grep -oE 'RULE-[0-9]+' | sort -u); do
+        printf '%s\n' "$_rl" | awk -v h="## $_r" 'index($0,h)==1{f=1;print;next} f&&/^## /{f=0} f' | grep -v 'Áp dụng cho'
+      done;;
+    entities) git -C "$ROOT" show "$1:specs/contexts/$CTX/entities.md" 2>/dev/null | sed -n '/^```mermaid/,/^```/p';;
+  esac
+}
+FP_CHANGED=""
+if [ -n "$RH" ]; then
+  for _z in main alt exc post ac flow rules entities; do
+    [ "$(spec_fp "$RH" "$_z")" = "$(spec_fp HEAD "$_z")" ] || FP_CHANGED="$FP_CHANGED $_z"
+  done
+fi
 # Phải dùng `case`, KHÔNG dùng ${LASTS#docs($ID): ...}: dấu ngoặc đơn trong
 # pattern của phép bóc tiền tố làm nó không khớp gì cả, im lặng — đo được:
 # chuỗi trả về y nguyên chuỗi vào, nên điều kiện luôn sai và cửa không bao
@@ -318,9 +386,12 @@ elif [ "$RRN" -gt 0 ] && [ "$RRC" = 1 ]; then
 elif [ "$RRN" -eq 0 ]; then
   bad "chưa đọc lại bằng đầu chưa neo — ## Đọc lại không có dòng F# nào đủ [neo: ...] + đầu ra khác ___"
   info "/sdd-solo:verify $ID (subagent đọc lại, ghi F#, commit riêng). Từ 6.0.0 không còn cửa qua đêm."
+elif [ -n "$RH" ] && [ -z "$FP_CHANGED" ]; then
+  NCH="$(git -C "$ROOT" log --format=%h "$RH..HEAD" --grep="^docs($ID)" -- $SPECP 2>/dev/null | wc -l | tr -d ' ')"
+  ok "đọc lại: $RRN phát hiện có neo + đầu ra; $NCH commit spec sau đó chỉ áp chữ/nhãn — Main/Alt/Exceptions/Postconditions/AC · flow · phát biểu RULE · mermaid entities không đổi (#49)"
 else
-  bad "spec đổi sau lần đọc lại — commit docs($ID) mới nhất là '$LASTS' ($LAST), không phải commit đọc lại"
-  info "chạy lại /sdd-solo:verify $ID — commit đọc lại phải là commit spec mới nhất"
+  bad "spec đổi HÀNH VI sau lần đọc lại — commit docs($ID) mới nhất là '$LASTS' ($LAST); vùng đổi:${FP_CHANGED:- (không rõ)}"
+  info "chạy lại /sdd-solo:verify $ID --since $(git -C "$ROOT" log -1 --format=%h "$RH" 2>/dev/null) — chỉ đọc phần đổi từ lần đọc lại trước; commit đọc lại mới sẽ là mốc mới"
   # #41: "đủ để sửa, thiếu để hiểu" — nói luôn thứ tự, để lần sau người ta áp phiếu TRƯỚC verify.
   info "thứ tự: áp hết phát hiện ⑦ (kể cả chữ/nhãn, file bên cạnh) → ⑧ verify → ⑨ gate, liền nhau; sửa spec sau ⑧ là chấp nhận đọc lại lần nữa"
 fi
