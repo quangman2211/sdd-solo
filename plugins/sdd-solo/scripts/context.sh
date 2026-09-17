@@ -17,19 +17,26 @@
 # --why: chỉ in RULE · CON · ADR · ## Cấm — trả lời "tính năng này do cái gì quyết
 # định" cho người bảo trì, một màn hình. Đây là nửa còn lại của decisions.sh:
 # decisions.sh đi từ thời gian xuống quyết định; --why đi từ một UC lên quyết định.
+#
+# --brief (6.5.0, #43 phần còn lại, chủ dự án uỷ quyền): bản cho subagent ⑦/⑧ — họ đọc HÀNH VI
+# và RÀNG BUỘC, không đọc "dựng bằng gì". Khác bản trọn ở hai chỗ: ADR chỉ in đoạn đầu của
+# ## Decision + tên các mục con (con trỏ, không thân); architecture chỉ ## Cấm · ## Ranh giới ·
+# ## Nơi chạy (bỏ Ngăn xếp, Ai gọi). Đo runxops UC-014: 9 ADR Decision 53 KB, đoạn đầu ~21 KB;
+# architecture 45 → ~22 KB. KHÔNG cắt RULE (mâu thuẫn nấp trong văn xuôi của rule), không lọc
+# glossary theo thuật ngữ UC nhắc (đo: bỏ 24 mục mà không bớt KB). Bước ⑩ design đọc bản trọn.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"
-ID=""; WHY=0
-for a in "$@"; do case "$a" in --why) WHY=1;; UC-[0-9]*) ID="$a";; esac; done
-[ -z "$ID" ] && { echo "Dùng: context.sh UC-### [--why]" >&2; exit 2; }
+ID=""; WHY=0; BRIEF=0
+for a in "$@"; do case "$a" in --why) WHY=1;; --brief) BRIEF=1;; UC-[0-9]*) ID="$a";; esac; done
+[ -z "$ID" ] && { echo "Dùng: context.sh UC-### [--why | --brief]" >&2; exit 2; }
 F="$(find_uc "$ID" "$ROOT")"
 [ -z "$F" ] && { printf '  \033[31m✗\033[0m không tìm thấy file %s\n' "$ID" >&2; exit 1; }
 CTX="$(ctx_of "$F")"; DIR="$(dirname "$F")"
 BP="$(brief_path "$ROOT")"; BS=""; [ -n "$BP" ] && BS="$(brief_sha "$ROOT" 2>/dev/null)"
 
-python3 - "$ROOT" "$F" "$ID" "$CTX" "$WHY" "$BP" "$BS" <<'PY'
+python3 - "$ROOT" "$F" "$ID" "$CTX" "$WHY" "$BP" "$BS" "$BRIEF" <<'PY'
 import sys, re, io, os, glob
-ROOT, F, ID, CTX, WHY, BP, BS = sys.argv[1:8]; WHY = WHY == "1"
+ROOT, F, ID, CTX, WHY, BP, BS, BRIEF = sys.argv[1:9]; WHY = WHY == "1"; BRIEF = BRIEF == "1"
 out = []; warns = []; srcs = []   # srcs: (tên nguồn, chỉ số bắt đầu trong out)
 def rd(p):
     try: return io.open(p, encoding='utf-8').read()
@@ -118,6 +125,12 @@ if adrs:
         title = next((l for l in t.split('\n') if l.startswith('# ')), f'# {a}')
         st = (sect(t, 'Status') or '').strip().split('\n')[0]
         dec = drop_trace(sect(t, 'Decision') or '').strip()
+        if BRIEF:
+            # đoạn đầu tới ### đầu tiên + tên mục con; đoạn đầu rỗng thì mục con đầu tiên nguyên
+            parts = re.split(r'(?m)^(?=### )', dec)
+            head = parts[0].strip(); subs = [p.split('\n', 1)[0] for p in parts[1:]]
+            if not head and parts[1:]: head = parts[1].strip(); subs = subs[1:]
+            dec = head + ('\n' + '\n'.join(f'{h} — (mục con, xem file)' for h in subs) if subs else '')
         out.append(f'{title}\nStatus: {st}\n{dec}')
 
 # ── 5. BR cha — quyết định, không chứng cứ ──
@@ -136,11 +149,13 @@ if not WHY and brid:
 ar = rd(os.path.join(ROOT, 'specs/internal/architecture.md'))
 if ar:
     ars = strip_markup(ar)
-    heads = ('Cấm',) if WHY else ('Ngăn xếp', 'Nơi chạy', 'Ai gọi', 'Cấm')
-    H('specs/internal/architecture.md')
+    heads = ('Cấm',) if WHY else (('Cấm', 'Ranh giới', 'Nơi chạy') if BRIEF else ('Ngăn xếp', 'Nơi chạy', 'Ai gọi', 'Cấm'))
+    H('specs/internal/architecture.md' + (' — --brief: Cấm · Ranh giới · Nơi chạy' if BRIEF else ''))
     for hname in heads:
         sb = sect(ars, hname)
-        if sb is None: warns.append(f'architecture.md thiếu ## {hname}'); continue
+        if sb is None:
+            if hname != 'Ranh giới': warns.append(f'architecture.md thiếu ## {hname}')
+            continue
         if re.search(r'<[^>\n]+>', sb): warns.append(f'architecture.md ## {hname} còn placeholder <...> — chưa ai quyết')
         out.append(f'## {hname}\n' + drop_trace(sb).rstrip())
 else: warns.append('thiếu specs/internal/architecture.md')
@@ -189,7 +204,7 @@ text = '\n'.join(out).strip() + '\n'
 sys.stdout.write(text)
 for w in warns: print(f'  ! {w}')
 kb = len(text.encode()) / 1024
-print(f'\n--- context.sh {ID}{" --why" if WHY else ""}: {kb:.1f} KB · {len(srcs)} nguồn')
+print(f'\n--- context.sh {ID}{" --why" if WHY else ""}{" --brief" if BRIEF else ""}: {kb:.1f} KB · {len(srcs)} nguồn')
 # #43: kích thước từng nguồn — để thấy nguồn nào phình, thay vì một tổng không chỉ vào đâu.
 sizes = []
 for i, (t, k) in enumerate(srcs):

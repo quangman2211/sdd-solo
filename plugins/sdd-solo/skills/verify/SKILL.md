@@ -28,8 +28,10 @@ hơn vẫn là cửa được đi.
 3. **Chạy verify bằng subagent riêng** (Agent tool). Đây là chỗ không được rút gọn: subagent
    **không có context của buổi viết**, nên nó không bị neo **do cấu tạo**, chứ không phải do ai
    khai là mình không bị neo. Prompt = nội dung `.sdd/prompts/verify-pass.md`, kèm:
-   - output của `"${CLAUDE_PLUGIN_ROOT}/scripts/context.sh" $1` — UC (bỏ ba mục dấu vết), flow,
-     RULE/CON/ADR được trích, BR cha, architecture, entity/glossary. **Cộng thêm** `$1.sequence.md` nếu
+   - output của `"${CLAUDE_PLUGIN_ROOT}/scripts/context.sh" $1 --brief` — UC (bỏ ba mục dấu vết), flow,
+     RULE/CON/ADR được trích, BR cha, architecture (Cấm · Ranh giới · Nơi chạy), entity/glossary. `--brief`
+     (6.5.0) cắt ADR còn đoạn đầu Decision và bỏ Ngăn xếp/Ai gọi — verify soi hành vi; dòng kích thước từng
+     nguồn cuối output cho biết còn nguồn nào phình. **Cộng thêm** `$1.sequence.md` nếu
      có, và **toàn bộ `specs/rules.md`** (verify soi cả rule UC *không* trích mà lẽ ra phải trích —
      đó là loại sai #4, context.sh cố ý không in rule không được trích).
    - `git log --oneline -20 -- <thư mục UC>` để soi được loại sai #2 (commit khai một đằng, file một nẻo —
