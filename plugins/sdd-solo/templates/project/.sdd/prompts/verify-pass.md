@@ -27,7 +27,7 @@ cách đó hai dòng — một cái nhãn mang số thì mỗi lần thêm dòng
 | # | Loại | Câu hỏi |
 |---|---|---|
 | 1 | **Khai điều không có thật** | Tài liệu nói *"X chưa tồn tại"* / *"đã thêm Y"* — X, Y có thật không? Mở file ra xem, đừng tin câu văn. |
-| 2 | **Commit khai một đằng, file một nẻo** | Thông điệp commit khai đã thêm khối nội dung nào — khối đó có trong file không? `git show` rồi so. |
+| 2 | **Commit khai một đằng, file một nẻo** | Thông điệp commit khai đã thêm/sửa **nội dung** nào — nội dung đó có trong diff không? `git show <hash>` rồi so **nội dung khai với diff**, không so danh sách file. |
 | 3 | **Hai tầng nói ngược nhau** | BR ↔ RULE ↔ UC ↔ AC. Một quyết định đổi ở tầng dưới mà tầng trên còn câu cũ là ca hay gặp nhất. |
 | 4 | **Đã bác nhưng còn dạy** | Một phương án bị loại ở Q#/CON-###/History mà chỗ khác vẫn hướng dẫn làm theo nó. Ai đọc chỗ đó sẽ dựng lại đúng cái vừa bị loại. |
 | 5 | **Thứ tự nói ngược nội dung** | Bước đánh số 1→N đọc xuôi có ra đúng trình tự không? Đổi nội dung mà giữ số thì mọi phép kiểm cơ học đều xanh. |
@@ -35,6 +35,15 @@ cách đó hai dòng — một cái nhãn mang số thì mỗi lần thêm dòng
 | 7 | **Con số đã mục** | Số mô tả **dữ liệu thật** (đếm dòng, tỉ lệ, "427 dòng", "10/1986") — đo lại hôm nay có ra đúng thế không? |
 | 8 | **Nhãn không đi theo nội dung** | Tiêu đề, câu tóm tắt, số đếm trong tiêu đề — có còn đúng với thân bên dưới không? Ai sửa thân thường không sửa nhãn. |
 | 9 | **Số đúng, chủ ngữ sai** | Phép đo hợp lệ, nhưng nó trả lời một câu hỏi **khác** câu hỏi trong văn bản. Đo lại vẫn ra đúng số đó, mãi mãi. |
+
+Loại #2 có **hai nửa, chỉ một nửa là lỗi** (#42). Khai một khối mà diff không có khối đó, hoặc diff sửa
+`AC-3` mà thông điệp nói `AC-5` → **lỗi thật**, thành `F#`. Diff chạm thêm file bên cạnh (glossary, flow,
+entities) mà thông điệp không kể tên → **không phải loại này**: thông điệp vẫn khai đúng cái nó làm, chỉ
+kể thiếu. Gộp mọi ca như vậy thành **một dòng cảnh báo mức thấp** cuối báo cáo — *"3 commit chạm thêm
+file bên cạnh không kể trong thông điệp: `7b452e1` (glossary) …"* — không thành `F#`. Ca thật runxops
+UC-014 F16: hai commit bị xếp loại #2 vì "không kể glossary, flow"; `git show` cho thấy cả hai chứa đúng
+khối chúng khai; agent chính bác được nhưng tốn một lượt đối chiếu. Cách kiểm đúng: đọc thông điệp, liệt
+kê **những gì nó khai đã làm**, rồi tìm từng cái trong diff — không đếm file.
 
 Loại #9 **không phải** loại #7. Loại #7 là *"số từng đúng, dữ liệu đổi bên dưới"* — chữa bằng **đo
 lại**. Loại #9 đo lại vẫn ra đúng con số ấy: hỏng không nằm ở con số, nằm ở **cái câu nó được gắn
