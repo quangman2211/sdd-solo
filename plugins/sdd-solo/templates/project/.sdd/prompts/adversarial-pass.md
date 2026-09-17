@@ -22,6 +22,9 @@ Vai:
 <dán UC-###.md>
 ---
 
+Chạy trong mô hình nhiều agent (`/sdd-solo:orchestrate`, có vai R): mỗi câu kèm ba dòng khuôn phiếu của
+`specs/internal/hoi-dap.md` — `Đã tra` · `Nếu chọn sai thì` · `Agent nghiêng về` — R xếp mức không phải dịch lại (#39).
+
 Đầu ra hợp lệ cho mỗi câu hỏi (ghi vào UC, mục Adversarial pass):
 - Trả lời trong spec → thêm RULE / AC / E# / SCR, History v+1
 - Chưa quyết được → `## Open Questions` kèm quyết định tạm

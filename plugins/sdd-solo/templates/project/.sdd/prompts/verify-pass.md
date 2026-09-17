@@ -362,6 +362,10 @@ F2 [nợ chữ] <phát hiện một câu>
 
 `đầu ra: ___` để **người quyết** điền, không tự điền.
 
+**Chạy trong mô hình nhiều agent** (`/sdd-solo:orchestrate`, có vai R xếp mức): mỗi `F#` thêm ba dòng đúng khuôn
+phiếu của `specs/internal/hoi-dap.md` — `Đã tra: <file:dòng>` · `Nếu chọn sai thì: <hậu quả>` · `Agent nghiêng về:
+<lựa chọn + vì sao>` — để R xếp L0–L3 không phải dịch lại (#39).
+
 ## Giới hạn — nói thẳng, không giấu
 
 1. **Lý do bác phải đến từ người ĐỌC phát hiện, không từ người VIẾT spec.** Đưa trước cho verify

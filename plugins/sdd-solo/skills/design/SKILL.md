@@ -57,7 +57,11 @@ Copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.design.md` sang `<th�
   kèm lý do và một `ADR-###` có thật. Không lệch chỗ nào thì vẫn phải viết ra là không lệch.
 - **`## Đối chiếu brief`** — brief đòi gì mà thiết kế này **không** làm, và vì sao. Không có brief
   thì ghi thẳng *"dự án không có brief nguồn"*.
-- `## Cấu trúc code` (đường dẫn thật) · `## Rủi ro & độ phức tạp`
+- `## Cấu trúc code` (đường dẫn thật) — **và chữ ký của mỗi cổng / hàm use-case** (tên · tham số · kiểu trả · lỗi
+  ném), không chỉ tên file (#39). Vai T viết harness + fake **từ mục này** trước khi D có code; design chỉ nêu tên
+  file thì T phải đoán chữ ký → `HỎI-T1` ở runxops ngay lượt đầu. Làm một mình cũng có lợi: chữ ký viết ra trước là
+  thứ test đỏ bám vào.
+- `## Rủi ro & độ phức tạp`
 
 **Gặp quyết định kỹ thuật mà cả UC lẫn `architecture.md` đều chưa nói** (chọn thư viện, chọn kiểu
 lưu trữ, chọn giao thức) → **DỪNG và hỏi user** bằng `AskUserQuestion`, đúng luật đã áp cho quyết
