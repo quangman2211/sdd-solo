@@ -34,6 +34,7 @@ Trong repo dự án:
 | Sau khi viết RULE, AC, vẽ flow, vẽ màn hình | `/sdd-solo:adversarial UC-###` → `/sdd-solo:verify UC-###` (bắt buộc từ 6.0.0 — không còn cửa "đọc lại buổi sau") |
 | Đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/sdd-solo:design UC-###` → viết code theo `tasks.md` |
 | Code xong | `/sdd-solo:close UC-###` |
+| Bỏ một UC (viết lại / không làm nữa) | `/sdd-solo:deprecate UC-### --by UC-### <lý do>` — Status, History, gỡ marker cổng, bảng use-cases, decisions.md, một commit (6.4.0) |
 | Cuối buổi | `/sdd-solo:state` |
 | Đang tới đâu · có đang chạy bản cũ không | `/sdd-solo:status` |
 | Có bản mới | `/sdd-solo:init --plugin` — chạy trọn ba khe, rồi mở session mới |
@@ -196,7 +197,7 @@ sdd-solo/
 ├── .claude-plugin/marketplace.json
 └── plugins/sdd-solo/
     ├── .claude-plugin/plugin.json
-    ├── skills/  sdd-process · init · intake · start · adversarial · verify · gate · design · change · close · state · status
+    ├── skills/  sdd-process · init · intake · start · adversarial · verify · gate · design · change · close · deprecate · state · status
     ├── hooks/hooks.json            SessionStart → scripts/session-start.sh
     ├── scripts/                    scaffold · br-check · gate-check · design-check · change-check · close-check · pass · status · metrics · migrate
     ├── templates/

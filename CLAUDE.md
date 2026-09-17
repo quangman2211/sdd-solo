@@ -7,7 +7,7 @@ Repo này là **plugin Claude Code** (đồng thời là marketplace một plugi
 .claude-plugin/marketplace.json      version phải khớp plugin.json
 plugins/sdd-solo/
   .claude-plugin/plugin.json         version
-  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · state · status
+  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · state · status
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
   scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start

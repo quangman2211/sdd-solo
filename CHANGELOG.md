@@ -1,5 +1,30 @@
 # Changelog
 
+## 6.4.0 — 2026-09-18
+
+### Ba lệnh/câu hỏi mới từ ngày chạy thật ở runxops (#45 #46 #47)
+
+- **`/sdd-solo:deprecate UC-### [--by UC-###] <lý do>`** (#45) + `pass.sh deprecate`: `Status: deprecated` ·
+  `## History` v+1 *"deprecated — <lý do> · thay bằng UC-###"* · **gỡ `.sdd/gate/UC-###.ok`** (githook từ đó chặn
+  `feat(UC-###)`) · cột Status bảng `use-cases.md` · một dòng `specs/internal/decisions.md` · một commit
+  `docs(UC-###): deprecated — <lý do>`. Ca thật: UC-009/UC-012 deprecated bằng tay, marker còn nguyên, History và
+  decisions ghi tay, STATE ghi nợ nhiều ngày. Skill hỏi lý do bằng lời và UC thay thế bằng `AskUserQuestion`, không
+  tự chọn; không xoá file, không đụng code (gỡ code là việc của CHG hoặc UC thay thế). `status.sh` cảnh báo *"UC
+  deprecated nhưng marker còn"* và *"STATE.md đang làm UC đã deprecated"*; `gate-check` §0: `deprecated` → ✗.
+  Đo repo giả: qua cổng → deprecate → marker mất, 4 file một commit, History v3, bảng `deprecated`, decisions +1;
+  đặt lại marker tay → status `!`.
+- **Intake từ brief hỏi ba câu bằng lời trước khi điền Goal/In Scope** (#46, #47): *"khổ gì, vì sao rơi?"* ·
+  *"chạy cho mình trước hay đi hỏi khách trước?"* · *"v1 xong, anh mở cái gì lên để làm việc mỗi ngày?"* — ghi
+  nguyên văn có ngày vào `## Background` (`**Khổ gì, vì sao rơi:**`, `**Chạy cho mình trước hay bán:**`) và
+  `## In Scope` (`**Mở lên mỗi ngày:**`); brief mâu thuẫn thì brief thua. Ca thật BR-003: hai câu lộ ra **sau**
+  adversarial đổi plan nhiều hơn mọi phát hiện kỹ thuật. `br-check` cảnh báo BR có `**Nguồn:** brief` mà thiếu dòng
+  `**Khổ gì, vì sao rơi:**` — đo runxops BR-003: `!` đúng.
+- **Vai "người sẽ phải vận hành nó mãi"** (`adversarial-pass.md` + skill B) hỏi bắt buộc đầu tiên: *"v1 xong, anh mở
+  cái gì lên để làm việc mỗi ngày? tự đổi được gì mà không cần dev?"* — đối chiếu với In Scope trước khi cắt. Ca
+  thật: In Scope BR-003 ghi *"v1 không có bước người trên runX"*, sau bị lật thêm app quản lý M1–M8. `templates/project`
+  → cần `init --update`.
+- Sửa nhỏ: `gate-check` hàm `siblings` (6.3.0) không nhận `- **Order** —` vì đòi một ký tự trước tên — đã sửa.
+
 ## 6.3.0 — 2026-09-18
 
 ### Vòng verify hội tụ: `--since`, luật dừng, cổng phân biệt commit chữ (#49) · cổng cảnh báo file anh em (#48)
