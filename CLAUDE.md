@@ -7,12 +7,12 @@ Repo này là **plugin Claude Code** (đồng thời là marketplace một plugi
 .claude-plugin/marketplace.json      version phải khớp plugin.json
 plugins/sdd-solo/
   .claude-plugin/plugin.json         version
-  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · state · status
+  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · state · status
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
   scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start
   templates/project/                 16 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16)
-  templates/skel/                    khuôn use-case/ · context/ · change/ — skill copy khi tạo, KHÔNG rơi vào dự án
+  templates/skel/                    khuôn use-case/ · context/ · change/ · hoi-dap.md — skill copy khi tạo, KHÔNG rơi vào dự án
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
   templates/githooks/                commit-msg · pre-commit — chặn cứng; pre-commit.d/ commit-msg.d/ chỉ README + .example (luật riêng của repo, 6.2.0)
   docs/playbook-example-khoskill.html

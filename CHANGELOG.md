@@ -1,5 +1,37 @@
 # Changelog
 
+## 6.6.0 — 2026-09-18
+
+### `/sdd-solo:orchestrate` — nhiều agent trên một repo (#39)
+
+sdd-solo tới 6.5.0 viết cho *một dev + một AI*. Ở runxops (2026-09-17, một ngày, 46 đợt spec, UC-014 start → close)
+chủ dự án chạy **tám agent song song** phối hợp bằng file trong repo; mọi luật nằm ở `notes/dieu-phoi.md` §1–§27 và
+`notes/hoi-dap.md` (62 phiếu) của repo đó. Đưa vào plugin để lần sau không dựng lại bằng tay. Không phụ thuộc herdr.
+
+- **Skill `orchestrate`** (`setup | UC-### | round UC-###`), người đọc là vai A: §1 `setup` — sổ hỏi đáp
+  `specs/internal/hoi-dap.md` copy từ `templates/skel/hoi-dap.md` (chủ dự án chốt vị trí 2026-09-18: phiếu là quyết
+  định, nằm cạnh `decisions.md`; **không** rơi vào `templates/project` — chỉ repo chạy nhiều agent mới có), bật hook
+  ranh giới vai từ `.example` (#50), hai câu `AskUserQuestion` (quyền R tới L2 · bật Q khi nào); §2 bảng tám vai
+  A/B/C/R/V/D/T/Q với **ranh giới theo đường dẫn từ `.sdd/config`** (`code_paths` · `test_paths` · `uc_test_dir`)
+  + bảy luật đã trả giá (fake thuộc T · kiểm ranh giới bằng `git diff`/`git log --no-merges`, không tin pane ·
+  merge main đầu lượt + đọc đúng phiếu · hợp đồng T↔D ở một harness · câu "cần chủ dự án" của C chỉ đi sau khi R
+  xác nhận L3 · tối đa hai agent ghi · không giao số/hình dạng UC/gate/close/push); §3 khuôn lời giao vai và lời
+  giao việc mười mục + lời giao soát code năm câu; §4 chuỗi chuẩn `T₁ → D₁ → C → R → (spec ‖ D ‖ T) … → C trọn →
+  self-review → merge → close`, bốn việc của A sau mỗi lượt, luồng phiếu `hoi-<vai>.md` (trong worktree) → R →
+  `Cho:`; §5 giới hạn; phụ lục bẫy herdr 0.9.0 (timeout ms · `[Pasted text]` không tự gửi · `<…>` qua zsh · PATH
+  shell nền · hộp thoại khởi động · gợi ý mờ · `/clear` cho C).
+- **`templates/skel/hoi-dap.md`**: thang L0–L3 (L0 phải có `file:dòng`; phân vân → mức cao hơn; bài kiểm *"quyết sai
+  thì khách thấy khác hoặc Main Flow viết lại?"* → L3), khuôn phiếu `Câu · Đã tra · Nếu chọn sai thì · Agent nghiêng
+  về · Trả lời (R) · Nguồn · Cho: · Duyệt:`, quyền tự quyết mặc định tới L2, luật "R tra design trước khi xếp".
+- `verify-pass.md` và `adversarial-pass.md`: chạy trong mô hình nhiều agent thì mỗi phát hiện/câu kèm ba dòng khuôn
+  phiếu (`Đã tra · Nếu chọn sai thì · Agent nghiêng về`) — R xếp mức không phải dịch lại. `templates/project` → cần
+  `init --update`.
+- `design` §3: `## Cấu trúc code` phải khai **chữ ký cổng / hàm use-case**, không chỉ tên file — T viết harness từ
+  đó (HỎI-T1 runxops).
+- Vai D/T được ghi **một** file trong `specs/`: `specs/internal/hoi-D.md` / `hoi-T.md` (câu hỏi của nó) — ngoại lệ
+  cố ý của ranh giới đường dẫn; hook ranh giới (#50) chỉ chặn `uc_test_dir` ↔ `code_paths` nên không đụng.
+- Không có script mới: skill này chỉ nói vai · file · thứ tự; thứ đo được là hook `.d` và hai lệnh git ở §2.
+
 ## 6.5.0 — 2026-09-18
 
 ### `context.sh --brief` cho subagent ⑦/⑧ (#43 phần còn lại, chủ dự án uỷ quyền) · vá nhỏ sau ca thật 6.1–6.4
