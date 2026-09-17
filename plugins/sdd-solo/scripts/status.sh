@@ -37,6 +37,9 @@ for f in $(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' -not -na
   id="$(basename "$f" .md)"; st="$(grep -oE '\*\*Status:\*\* *[a-z]+' "$f" | head -1 | awk '{print $2}')"
   g=""; [ -f "$ROOT/.sdd/gate/$id.ok" ] && g=" · gate ✓"
   printf '  %-8s %-12s%s\n' "$id" "${st:-?}" "$g"
+  # #45: UC bỏ rồi mà marker còn → githook vẫn cho feat($id). Ca thật runxops UC-009/UC-012.
+  [ "$st" = "deprecated" ] && [ -f "$ROOT/.sdd/gate/$id.ok" ] && \
+    warn "$id deprecated nhưng .sdd/gate/$id.ok còn — githook vẫn cho commit code gắn $id. Gỡ: /sdd-solo:deprecate $id (hoặc git rm .sdd/gate/$id.ok)"
   # #44: bảng use-cases.md của context phải nói cùng trạng thái — /sdd-solo:state gợi
   # UC tiếp theo từ bảng, nên bảng lệch là gợi sai. Không có bảng/dòng thì chỉ nhắc.
   ts="$(uc_table_status "$id" "$ROOT")"
@@ -103,6 +106,11 @@ fi
 # khác đo SẢN PHẨM; không cái nào đo BƯỚC, nên một bước bị bỏ hẳn vẫn đi trọn
 # vòng mà không ai biết. Lấy ID từ dòng "Đang làm:" của STATE.md.
 UCNOW="$(grep -oE 'UC-[0-9]+' "$ROOT/STATE.md" 2>/dev/null | head -1)"
+if [ -n "$UCNOW" ]; then
+  FN="$(find_uc "$UCNOW" "$ROOT")"
+  [ -n "$FN" ] && grep -qE '\*\*Status:\*\* *deprecated' "$FN" && \
+    warn "STATE.md ghi đang làm $UCNOW nhưng UC đó đã deprecated — cập nhật STATE sang UC thay thế (/sdd-solo:state)"
+fi
 # Bản .sdd/scripts/ cũ chưa có uc-steps.sh — im, đừng gãy cả status vì một mục thêm.
 if [ -n "$UCNOW" ] && [ -f "$HERE/uc-steps.sh" ]; then echo; bash "$HERE/uc-steps.sh" "$UCNOW"; fi
 
