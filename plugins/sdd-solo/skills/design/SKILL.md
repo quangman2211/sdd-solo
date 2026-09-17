@@ -36,7 +36,8 @@ thiết kế cho một spec còn đang đổi. **Không sinh file nào** trong l
 Nó in ra đúng đủ: UC (bỏ ba mục dấu vết) · flow · **chỉ những** `RULE`/`CON`/`ADR` UC trích · mục BR cha
 không Background · bốn mục `architecture.md` · entity/glossary UC nhắc tên. Tới 4.2.0 chỗ này là một
 lời dặn đọc **13 tên file**, không kiểm được, và đã hụt ở #34 — bản thiết kế nói ngược brief hai ngày
-không ai thấy. Đo ở runxops: 210 KB / 15 file → một lệnh ≤ 30 KB.
+không ai thấy. Đo ở runxops: UC-009 210 KB / 15 file → một lệnh ≤ 30 KB; UC-014 trích 5 RULE + 9 ADR → 222 KB
+sau khi cắt dấu vết (#43) — dòng kích thước từng nguồn ở cuối output chỉ vào nguồn phình, đọc nó trước.
 
 Rồi đọc **brief nguồn** — dòng cuối output có `brief_path` và sha. Đây là nguồn duy nhất nằm ngoài
 `specs/` mà không phép kiểm nào khác được giao nhìn tới; `context.sh` cố ý không in nó.
