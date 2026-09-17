@@ -1,5 +1,39 @@
 # Changelog
 
+## 6.1.0 — 2026-09-18
+
+### Năm lỗi cơ học từ một ngày chạy thật ở runxops (2026-09-17, #40 #41 #42 #43 #44)
+
+- **#44** `pass.sh gate` → `reviewed`, `pass.sh close` → `implemented` **cả trong bảng
+  `specs/contexts/<ctx>/use-cases.md`**, cùng commit với file UC. Ca thật: UC-014 đóng (`45dc32f`) mà bảng vẫn
+  `draft`, `/sdd-solo:state` gợi UC tiếp theo sai, phải sửa tay một commit riêng (`cfbead4`). `lib.sh` thêm
+  `uc_table_file · uc_table_status · uc_table_set` (ô đầu là ID, ô cuối là Status). Không có dòng thì nhắc, không
+  chặn. `status.sh` in `!` khi file UC và bảng nói hai trạng thái, `–` khi UC không có dòng; và danh sách UC không
+  còn in `UC-###.flow ?` / `UC-###.trace ?` như hai UC không status (lọt từ 5.0.0 khi có `.trace.md`).
+- **#40** `verify`: *lượt verify kết thúc bằng commit đọc lại, không kết thúc bằng báo cáo.* Ca thật: subagent trả
+  19 phát hiện, agent chính in "Báo cáo về…" rồi idle; `## Đọc lại` vẫn `___`; chạy bằng agent tự động thì dừng
+  hẳn và cổng ⑨ đỏ dù đã đọc lại. Bước 4→5→6→7 là một lượt. Không có người trả lời (lời giao của agent điều
+  phối, hoặc user bảo "tự chạy") thì **không** mở `AskUserQuestion` — agent chính đối chiếu, bác thì `→ không phải
+  lỗi vì`, còn lại `→ Chưa quyết (chờ <ai>)`, vẫn ghi + commit. `--no-commit`: vẫn ghi `## Đọc lại`, chỉ bỏ commit,
+  và nói rõ cổng chưa mở.
+- **#41** `sdd-process` 14 bước thêm đoạn *"⑦ → ⑧ → ⑨ phải liền nhau"*: áp hết phát hiện ⑦ (kể cả chữ/nhãn, file
+  bên cạnh) **trước** ⑧; sau ⑧ mọi commit đụng spec làm ⑨ đỏ, sửa là chấp nhận verify lại. `gate-check` §9 nhánh
+  *"spec đổi sau lần đọc lại"* in thêm một dòng thứ tự — trước chỉ nói "chạy lại verify": đủ để sửa, thiếu để hiểu
+  (họ hàng #37).
+- **#42** `verify-pass.md` loại #2 tách hai nửa: khai nội dung mà diff không có → lỗi, thành `F#`; diff chạm thêm
+  file bên cạnh mà thông điệp không kể → **cảnh báo mức thấp gộp một dòng**, không `F#`. Cách kiểm: so **nội dung
+  khai** với diff, không so danh sách file. Ca thật F16 UC-014: hai commit bị xếp sai, tốn một lượt bác.
+  `templates/project` → cần `init --update`.
+- **#43** `context.sh`: `drop_trace()` cắt `## Adversarial pass · ## Đọc lại · ## History` **ở mọi cấp heading** của
+  mọi nguồn trích (RULE, ADR Decision, BR, architecture, entities, glossary) và mọi dòng `- [x]`; entities không
+  còn nhận khối "History" vì UC có chữ History; glossary bỏ `## History` và mục `## <context khác>` (tên context
+  lấy từ `specs/contexts/*`); RULE nhận heading `##` lẫn `###`; ID trích lấy từ phần hiệu lực của UC, không từ dấu
+  vết. **Cuối output in kích thước từng nguồn**, đánh dấu nguồn lớn nhất.
+  Đo runxops UC-014: **250,9 → 221,6 KB** · entities 18,3 → 4,4 · glossary 28,3 → 16,5 · RULE 6 → 5. Nói thật phần
+  còn lại: 9 ADR `## Decision` 60 KB · architecture 4 mục 45 KB · UC 27 AC 47 KB — là nội dung hiệu lực, không phải
+  dấu vết. Muốn về ~30 KB như skill hứa thì phải **quyết cắt gì** (ADR chỉ in đoạn đầu Decision? architecture chỉ
+  `## Cấm` cho verify?) — chưa quyết, chưa làm; skill `design` sửa lời hứa "≤ 30 KB" thành số đo thật.
+
 ## 6.0.0 — 2026-09-13
 
 ### Đổi luật — không còn cửa "qua đêm" ở cổng nào (#38, chủ dự án chốt)
