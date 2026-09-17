@@ -2,7 +2,7 @@
 name: verify
 description: Đọc lại tài liệu bằng subagent chưa bị neo để tìm chỗ spec tự mâu thuẫn hoặc khai điều không có thật. UC-### là bước ⑧ — cửa duy nhất của cổng DoR từ 6.0.0; CHG-### là cửa của cổng Phase 5; không tham số là quét cả cây specs/. Dùng khi sắp qua cổng, hoặc khi tài liệu vừa đổi nhiều và cần biết còn chỗ nào nói ngược nhau.
 disable-model-invocation: true
-argument-hint: "[UC-### | CHG-###]"
+argument-hint: "[UC-### | CHG-###] [--no-commit]"
 allowed-tools: Bash Read Write Edit Grep Glob Agent AskUserQuestion
 ---
 
@@ -31,7 +31,17 @@ hơn vẫn là cửa được đi.
      RULE/CON/ADR được trích, BR cha, architecture, entity/glossary. **Cộng thêm** `$1.sequence.md` nếu
      có, và **toàn bộ `specs/rules.md`** (verify soi cả rule UC *không* trích mà lẽ ra phải trích —
      đó là loại sai #4, context.sh cố ý không in rule không được trích).
-   - `git log --oneline -20 -- <thư mục UC>` để soi được loại sai #2 (commit khai một đằng, file một nẻo)
+   - `git log --oneline -20 -- <thư mục UC>` để soi được loại sai #2 (commit khai một đằng, file một nẻo —
+     so **nội dung** khai với diff, không so danh sách file; thiếu file bên cạnh chỉ là cảnh báo, #42)
+
+   **Lượt verify kết thúc bằng commit đọc lại, không kết thúc bằng báo cáo (#40).** Ca thật runxops
+   UC-014: subagent trả 19 phát hiện, agent chính in *"Báo cáo về: 19 phát hiện. Đọc nguyên văn để đối
+   chiếu từng cái trước khi ghi."* rồi về idle — `## Đọc lại` vẫn `Ngày chạy: ___`, phải gõ thêm một lượt
+   mới có commit. Chạy bằng agent tự động theo lời giao (không có người gõ tiếp) thì *"dừng chờ"* nghĩa là
+   **dừng hẳn**, và cổng ⑨ đỏ dù đã đọc lại. Bước 4 → 5 → 6 → 7 là **một lượt**: báo cáo về là đi tiếp ngay
+   sang bước 4 rồi 5, không dừng để *"đối chiếu trước"* — đối chiếu **là** bước 4, và kết quả đối chiếu ghi
+   thẳng vào dòng `F#` (bác thì `→ không phải lỗi vì`). Không có ngoại lệ "để user xem báo cáo đã": muốn xem
+   trước thì dùng `--no-commit` (bước 7), mục `## Đọc lại` vẫn phải được ghi trong lượt này.
 
    **Nếu spec có con số mô tả dữ liệu thật** (đếm dòng, tỉ lệ) thì subagent phải được phép **chạy
    lệnh đo lại** — đó là loại sai #7, và nó là loại duy nhất không thể phát hiện bằng cách đọc.
@@ -44,6 +54,12 @@ hơn vẫn là cửa được đi.
    - → `không phải lỗi vì <lý do>` — **bác phải rẻ**, một dòng là đủ; nhưng **lý do phải được ghi
      lại**, để lần chạy sau không moi lại đúng câu đó
    - → `Chưa quyết` — luôn hiện sẵn
+
+   **Không có người trả lời** — lượt chạy theo lời giao của agent điều phối, hoặc user đã bảo *"tự chạy,
+   đừng hỏi"* — thì **không mở `AskUserQuestion`** (nó sẽ treo lượt vô hạn). Agent chính tự đối chiếu
+   nguyên văn hai phía của từng `F#`: bác được → `→ không phải lỗi vì <lý do>`; bác không được → `→ Chưa
+   quyết (chờ <ai>: <câu hỏi một dòng>)`. Cả hai đều là đầu ra hợp lệ của cổng, và **vẫn ghi + commit** ở
+   bước 5–7. Người quyết đọc `## Đọc lại` sau; sửa spec theo đó là một lượt verify nữa (`--since`, #49).
 5. Ghi vào mục `## Đọc lại` của file UC, **đúng dạng này vì cổng đọc nó bằng máy**:
 ```
 ## Đọc lại
@@ -86,6 +102,9 @@ grep -rn '<giá trị cũ>' specs/ scripts/ *.md
 ```bash
 git add specs/ && git commit -m "docs($1): đọc lại — <n> phát hiện, <m> phải sửa"
 ```
+   Có `--no-commit` → **vẫn ghi** `## Đọc lại` ở bước 5 (đó là sản phẩm của lượt), chỉ bỏ commit này; nói
+   rõ với user: cổng ⑨ **chưa mở** cho tới khi chính commit đó tồn tại và là commit spec mới nhất. Không có
+   cờ nào bỏ được bước 5.
 8. Nói với user: giờ chạy `/sdd-solo:gate $1` được ngay. Nếu lần đọc này không ra dòng `F#` nào có
    đầu ra thật thì cổng **không mở** — từ 6.0.0 không còn cửa qua đêm để rơi về. Nói thẳng điều đó,
    và nói luôn cái đúng phải làm: *"không thấy gì"* là bằng chứng yếu (Giới hạn 3) — mở rộng phạm vi
