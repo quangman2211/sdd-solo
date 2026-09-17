@@ -1,5 +1,34 @@
 # Changelog
 
+## 6.2.0 — 2026-09-18
+
+### Thêm — `pre-commit.d/` · `commit-msg.d/`: chỗ cắm luật riêng của repo (#50)
+
+Ca thật runxops: muốn nhánh `code/*` không chạm `tests/use-cases/**` (của vai T), `test/*` không chạm `src/**`.
+Sửa thẳng `.sdd/hooks/pre-commit` thì (a) `update.sh` ghi đè mất, (b) `core.hooksPath=.sdd/hooks` là đường tương đối
+và thư mục nằm trong git nên **worktree chạy bản hook của nhánh nó** — sửa trên `main`, commit thử ở `code/uc-014`
+lọt, phải `reset --hard`.
+
+- `pre-commit` và `commit-msg` của plugin chạy mọi file **thực thi** trong `.sdd/hooks/pre-commit.d/` /
+  `commit-msg.d/` theo thứ tự tên, sau các kiểm của plugin; exit ≠ 0 là chặn, in `✗ <thư mục>/<file> chặn commit
+  (exit N)`. `.example` và `README.md` không chạy. `commit-msg.d/*` nhận `$1` = file thông điệp như hook gốc.
+  Hook mẹ export `SDD_ROOT · SDD_STAGED · SDD_CODE_PATHS · SDD_TEST_PATHS · SDD_UC_TEST_DIR` (+ `SDD_MSG`) để script
+  con khỏi parse `.sdd/config` lại.
+- `templates/githooks/pre-commit.d/10-role-boundary.sh.example` — khối ranh giới vai của runxops (`c3db645`), tổng
+  quát theo `uc_test_dir` và `code_paths` thay vì viết chết `tests/use-cases` / `src`; merge (có `MERGE_HEAD`) qua.
+- `scaffold.sh`: chép từng **file** trong `templates/githooks/` (cp trần lên thư mục dưới `set -e` sẽ gãy), tạo hai
+  thư mục `.d`, chỉ làm mới `README.md` và `.example` — file thực thi của user là nội dung dự án, không đụng.
+- README (mục *Mức chặn*) và `README.md` trong mỗi thư mục `.d` ghi rõ: **hook theo nhánh khi dùng worktree**, luật
+  mới chỉ có hiệu lực sau merge.
+- Đo trên repo giả: script exit 3 → `(exit 3)`, chặn; bỏ đi → qua; `code/uc-001` chạm `tests/use-cases/` → chặn
+  đúng dòng ranh giới; `test/uc-001` chạm `src/` → chặn; nhánh chính chạm test → không có dòng ranh giới (chỉ
+  `commit-msg` chặn vì chưa qua cổng); `init --update` giữ `10-role-boundary.sh` của user, làm mới README.
+- Bẫy đã gặp lúc viết: `echo "… $(basename "$h") (exit $?)"` in `exit 0` — command substitution chạy trước khi `$?`
+  khai triển. Bắt `rc=$?` trước.
+- **Chưa làm, chờ chủ dự án quyết:** đặt `core.hooksPath` **tuyệt đối** tới `.sdd/hooks` của repo chính để mọi
+  worktree chạy cùng một bản hook. Đổi hành vi: hook không còn theo nhánh, và đường tuyệt đối gãy khi đổi tên/di
+  chuyển thư mục repo. Không tự chọn.
+
 ## 6.1.0 — 2026-09-18
 
 ### Năm lỗi cơ học từ một ngày chạy thật ở runxops (2026-09-17, #40 #41 #42 #43 #44)

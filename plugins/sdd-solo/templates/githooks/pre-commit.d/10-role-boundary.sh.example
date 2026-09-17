@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Ranh giới vai theo NHÁNH — ví dụ luật riêng của repo (#50, chạy thật ở runxops c3db645).
+# Dùng: cp 10-role-boundary.sh.example 10-role-boundary.sh && chmod +x 10-role-boundary.sh
+#
+# Nhánh code/*  (vai D — code)  không được commit thường chạm <uc_test_dir>/**  (của T)
+# Nhánh test/*  (vai T — test)  không được commit thường chạm <code_paths>/**   (của D)
+# Commit merge (có MERGE_HEAD) được qua: nó chỉ mang bản của nhánh kia.
+# D cần fake/harness khác → ghi TEST-# vào sổ hỏi của mình, T sửa lượt kế; không tự sửa.
+#
+# Hook mẹ (.sdd/hooks/pre-commit) đã export: SDD_ROOT · SDD_STAGED (danh sách file đã stage,
+# mỗi dòng một file) · SDD_CODE_PATHS · SDD_TEST_PATHS · SDD_UC_TEST_DIR (đọc từ .sdd/config).
+re_of() { printf '^(%s)/' "$(printf '%s' "$1" | tr -s ' ' '|' | sed 's/^|//; s/|$//')"; }
+BR="$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"
+[ -f "$(git rev-parse --git-path MERGE_HEAD)" ] && exit 0
+case "$BR" in
+  code/*)
+    if printf '%s\n' "$SDD_STAGED" | grep -qE "^${SDD_UC_TEST_DIR%/}/"; then
+      echo "✗ Nhánh $BR (vai D) không được sửa $SDD_UC_TEST_DIR/** — của T. Ghi TEST-# vào sổ hỏi của D." >&2
+      exit 1
+    fi ;;
+  test/*)
+    if printf '%s\n' "$SDD_STAGED" | grep -qE "$(re_of "$SDD_CODE_PATHS")"; then
+      echo "✗ Nhánh $BR (vai T) không được sửa $SDD_CODE_PATHS/** — của D. Ghi HỎI-T# vào sổ hỏi của T." >&2
+      exit 1
+    fi ;;
+esac
+exit 0

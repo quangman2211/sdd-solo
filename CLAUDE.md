@@ -14,7 +14,7 @@ plugins/sdd-solo/
   templates/project/                 16 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16)
   templates/skel/                    khuôn use-case/ · context/ · change/ — skill copy khi tạo, KHÔNG rơi vào dự án
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
-  templates/githooks/                commit-msg · pre-commit — chặn cứng
+  templates/githooks/                commit-msg · pre-commit — chặn cứng; pre-commit.d/ commit-msg.d/ chỉ README + .example (luật riêng của repo, 6.2.0)
   docs/playbook-example-khoskill.html
 CHANGELOG.md                         mỗi bản một mục — đây là ## History của plugin
 ```

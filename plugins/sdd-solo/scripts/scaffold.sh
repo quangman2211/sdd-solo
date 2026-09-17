@@ -130,10 +130,17 @@ fi
 # chạy SAU thì ghi đè bản mỏng, không báo gì. Bước ⑩ giờ là /sdd-solo:design.
 # git hooks
 if [ -d "$ROOT/.git" ]; then
-  mkdir -p "$ROOT/.sdd/hooks"; cp "$PLUGIN/templates/githooks/"* "$ROOT/.sdd/hooks/"; chmod +x "$ROOT/.sdd/hooks/"*
+  mkdir -p "$ROOT/.sdd/hooks"
+  for h in "$PLUGIN/templates/githooks/"*; do [ -f "$h" ] && cp "$h" "$ROOT/.sdd/hooks/" && chmod +x "$ROOT/.sdd/hooks/$(basename "$h")"; done
+  # #50: pre-commit.d/ · commit-msg.d/ — luật riêng của repo. Chỉ làm mới README và .example;
+  # file thực thi của user ở đó là NỘI DUNG của dự án, plugin không đụng.
+  for d in pre-commit.d commit-msg.d; do
+    mkdir -p "$ROOT/.sdd/hooks/$d"
+    for h in "$PLUGIN/templates/githooks/$d/"*; do [ -f "$h" ] && cp "$h" "$ROOT/.sdd/hooks/$d/"; done
+  done
   git -C "$ROOT" config core.hooksPath .sdd/hooks
   [ -f "$ROOT/.sdd/gitmessage" ] && git -C "$ROOT" config commit.template .sdd/gitmessage
-  ok "git hooks: commit-msg, pre-commit (core.hooksPath=.sdd/hooks)"
+  ok "git hooks: commit-msg, pre-commit (core.hooksPath=.sdd/hooks) + pre-commit.d/ commit-msg.d/ cho luật riêng"
 else
   warn "chưa có .git — git init rồi chạy lại để cài hook"
 fi

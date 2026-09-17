@@ -172,6 +172,7 @@ Khe ④ là khe nguy hiểm nhất: vừa `/plugin update` xong, `.sdd/` đã m�
 ## Mức chặn — nói thật
 
 - **Chặn cứng**: git hook `commit-msg` từ chối commit code không có ID hoặc UC chưa qua cổng; `pre-commit` từ chối trộn spec và code. Không có cờ bỏ qua.
+- **Luật riêng của repo** (6.2.0, #50): file thực thi trong `.sdd/hooks/pre-commit.d/` và `.sdd/hooks/commit-msg.d/` chạy sau hook của plugin; `init --update` không đụng file của anh ở đó, chỉ làm mới `README.md` và `.example`. Có sẵn `10-role-boundary.sh.example` — nhánh `code/*` không chạm `uc_test_dir`, nhánh `test/*` không chạm `code_paths` — cho mô hình nhiều agent. **Hook nằm trong git**, nên khi dùng worktree **mỗi worktree chạy bản hook của nhánh nó**: luật mới thêm trên `main` chỉ có hiệu lực ở nhánh khác sau khi nhánh đó merge `main`. Ca thật runxops: sửa hook trên `main`, commit thử ở worktree `code/uc-014` lọt, phải `reset --hard`.
 - **Chặn mềm**: không lệnh nào của công cụ ngoài bị gọi tên nữa (từ 4.0.0). Khối `CLAUDE.md` và hook SessionStart dạy session từ chối **viết code** khi chưa có marker `.sdd/gate/UC-###.ok` hoặc chưa có `design.md`; AI tuân, người thì có thể ép.
 
 ## Báo lỗi · yêu cầu sửa
@@ -201,7 +202,7 @@ sdd-solo/
     ├── templates/
     │   ├── project/                specs/ docs/ changes/ checklists/ prompts/ STATE.md .gitmessage
     │   ├── CLAUDE.md.tmpl          khối quy tắc, ghép vào CLAUDE.md của repo
-    │   └── githooks/               commit-msg · pre-commit
+    │   └── githooks/               commit-msg · pre-commit · pre-commit.d/ commit-msg.d/ (README + .example)
     └── docs/
 ```
 
