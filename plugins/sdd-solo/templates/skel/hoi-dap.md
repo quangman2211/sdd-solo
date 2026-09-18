@@ -3,7 +3,7 @@
 Sổ append-only. Agent (B · spec, C · soi, D · code, T · test, Q · QA) gặp điều spec chưa nói thì **ghi phiếu
 rồi dừng** — không `AskUserQuestion`, không nhắn agent khác. R · trọng tài xếp mức và trả lời ngay dưới phiếu;
 A · điều phối chuyển phần `Cho:` tới từng vai, hoặc hỏi chủ dự án khi L3. Không phải spec: quyết định nào
-thành luật thì B đưa vào `specs/`, A ghi `specs/internal/decisions.md`.
+thành luật thì B đưa vào `specs/`, A ghi `specs/decisions.md`. Sổ này nằm ở `notes/hoi-dap/` — ngoài `specs/`, vì nó là vết quá trình, không phải spec.
 
 Quyền tự quyết mặc định: R tự quyết tới **L2**; L2 là quyết **tạm**, ô `Duyệt:` để trống chờ chủ dự án.
 Lật quá ___ quyết định của R trong một tuần thì hạ quyền R xuống L1.

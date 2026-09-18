@@ -29,6 +29,18 @@ nhãn "③ RULE + entity + glossary"). Từng mốc ghi dưới đây; mốc ch�
     `ls a b c d` chặn oan ADR-001 có thật ở runxops (bẫy #16, chính hook đã ghi chú mà vẫn dẫm). `pre-commit` nhận
     `specs/<nghề>/rules.md` là spec.
   - Mọi `cat $DANH_SÁCH | grep` có `/dev/null` đứng đầu — danh sách rỗng thì `cat` đọc stdin và treo cổng.
+- **(2) Khuôn theo cây 7.0.** `templates/project/specs/`: thêm `vision.md` (tầng 0: định vị · không thu hẹp ·
+  bảng nghề và lát · "xong" mỗi nghề (T1, số là ý muốn chủ dự án, ví dụ runxops 7 ngày) · sổ sửa ngược);
+  `internal/{architecture,decisions,adr/}` lên gốc; `br.md` gộp → `core/br-000/br.md` (mẫu điền đủ, có
+  `**Lát:**`, Related Use Cases là bảng, Out of Scope mỗi dòng có đích `→ lát ___` / `→ mở lại khi ___` /
+  `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`); `core/entities/README.md` (T2: mỗi entity một file). Bỏ
+  `internal/`. `skel/`: bỏ `context/`; thêm `nghe/{README,glossary,rules,entities/README}` · `br/{br,evidence}`
+  · `entity.md`; UC/design/tasks đổi đường `tests/use-cases/<core|nghề>/`, UC Metadata `**Nghề:** · **Lát:**`
+  thay `Bounded Context`. `CLAUDE.md.tmpl` thứ tự đọc mới `STATE → vision → glossary gốc → nghề → entity →
+  UC + RULE → decisions/adr → brief` + luật ranh giới lõi/nghề + "vision.md là của chủ dự án". `specs/README`
+  bảng ID theo chỗ mới; `_intake.md` câu 0 (vision) và luật 4 đòi đích; DoR · prompts · STATE · hoi-dap trỏ
+  `specs/architecture.md` · `notes/hoi-dap/`. Scaffold repo trắng → cây 7.0, `layout`=v7, mọi script chạy
+  xanh; fixture v7 (`mk-testrepo7.sh`) qua cổng DoR.
 
 ## 6.6.2 — 2026-09-18
 

@@ -1,11 +1,9 @@
 # Glossary — Ubiquitous Language
 
-Một từ, một nghĩa trong một context. Từ có hai nghĩa ở hai context → hai dòng, ghi rõ context.
-Dán file này vào đầu mỗi session Claude Code.
+Từ **xuyên suốt cả dự án** — mọi nghề dùng cùng một nghĩa. Từ chỉ một nghề dùng, hoặc cùng chữ mà
+khác nghĩa theo nghề, nằm ở `specs/<nghề>/glossary.md`. Một từ một chỗ, nơi khác không chép lại.
+`context.sh UC-###` in gốc rồi nghề của UC.
 
-## <Context A>
-- **<Thuật ngữ>** — <định nghĩa một câu>. Không nhầm với **<từ gần nghĩa>** (<context khác>) là <...>.
-- **<Thuật ngữ>** — ...
-
-## <Context B>
-- **<Thuật ngữ>** — ...
+## Chung
+- **<Thuật ngữ>** — <định nghĩa một câu>. Không nhầm với **<từ gần nghĩa>** là <...>.
+- **<Thuật ngữ>** (`<TênTrongCode>`) — ...

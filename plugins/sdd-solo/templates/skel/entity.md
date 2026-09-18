@@ -1,26 +1,13 @@
-# Entity Model — <Context>
+# EntityA
 
-Không phải ERD. Chỉ tên, ý nghĩa, quan hệ, trạng thái. Mỗi entity có `status` phải có state diagram.
+<!-- Một entity một file (7.0, T2). Tên file = tên entity trong code = tên trong glossary.
+     Không phải ERD: chỉ ý nghĩa, trường đáng chú ý, quan hệ, trạng thái. -->
 
-## Domain Model
-```mermaid
-classDiagram
-  direction LR
-  class EntityA {
-    fieldOne
-    fieldTwo — RULE-###
-    status — s1 / s2 / s3
-  }
-  class EntityB {
-    fieldOne
-  }
-  EntityA "1" --> "*" EntityB : <quan hệ>
-```
-
-## EntityA
 - **Đại diện:** <một câu>
+- **Thuộc:** core | <nghề>
 - **Trường đáng chú ý:** `fieldTwo` — giá trị theo RULE-###, không phải default.
-- **Trạng thái:** s1 → s2 → s3 (xem state diagram)
+- **Quan hệ:** EntityA "1" --> "*" EntityB : <quan hệ>
+- **Trạng thái:** s1 → s2 → s3 (state diagram dưới; không có `status` thì bỏ mục này)
 
 ```mermaid
 stateDiagram-v2
@@ -38,10 +25,7 @@ stateDiagram-v2
 Mỗi mũi tên ghi **nguyên nhân** kéo nó. Thường là một `UC-###`; nhưng trạng thái đổi vì thế giới
 bên ngoài (sàn khoá tài khoản, hết hạn theo đồng hồ, hệ thống khác đẩy sang) thì ghi đúng nguyên
 nhân đó — **đừng dán một `UC-###` giả lên cho đủ hình thức**. Cổng DoR chỉ đòi ít nhất một mũi tên
-gắn UC có thật trong cả file.
-
-## EntityB
-- ...
+gắn UC có thật trong các file entity UC nhắc tên.
 
 ## History
 - v1 (YYYY-MM-DD): initial

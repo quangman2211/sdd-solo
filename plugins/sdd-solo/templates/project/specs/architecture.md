@@ -3,7 +3,7 @@
 **Status:** draft
 **Last updated:** ___
 
-> Bốn tầng yêu cầu (BR · UC · Entity · AC) trả lời *vì sao · ai làm gì · khái niệm nào ·
+> Năm tầng yêu cầu (Hướng · BR · UC · Entity · AC) trả lời *vì sao · ai làm gì · khái niệm nào ·
 > biết đúng bằng cách nào*. **Không tầng nào trả lời *dựng bằng gì · chạy ở đâu · ai gọi*.**
 > File này là ngăn đó. Nó viết MỘT lần cho cả dự án và sửa khi có ADR đụng tới;
 > `design.md` của mỗi UC phải đối chiếu ngược lên đây.
@@ -93,5 +93,5 @@ nhất: một điều cấm không viết ra thì sáu tháng sau không ai phâ
 
 ## Đã chốt từ brief
 <Đích đến của mọi dòng `→ chuyển: architecture.md` trong `## Đã loại khỏi brief` của
-`specs/br.md`. Mỗi dòng: brief nói gì · ở đây quyết thế nào · nếu khác brief thì VÌ SAO.
+`br.md` các lát (`specs/<core|nghề>/br-###/br.md`). Mỗi dòng: brief nói gì · ở đây quyết thế nào · nếu khác brief thì VÌ SAO.
 Trống mục này trong khi br.md có dòng trỏ tới đây nghĩa là hàng đã gửi mà chưa ai nhận.>

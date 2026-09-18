@@ -4,5 +4,5 @@ Cập nhật mỗi khi một UC qua DoD. Ô trống là lỗ hổng, không ph�
 
 | BR | UC | AC | RULE trích | SCR | Test file | ADR liên quan | Status |
 |---|---|---|---|---|---|---|---|
-| BR-### | UC-### | AC-1 | RULE-### | SCR-###-1 | tests/use-cases/<ctx>/UC-###/AC-1.test.* | ADR-### | implemented |
+| BR-### | UC-### | AC-1 | RULE-### | SCR-###-1 | tests/use-cases/<core|nghề>/UC-###/AC-1.test.* | ADR-### | implemented |
 | | | AC-2 | | | | | |

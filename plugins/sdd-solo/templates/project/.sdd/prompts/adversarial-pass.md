@@ -23,7 +23,7 @@ Vai:
 ---
 
 Chạy trong mô hình nhiều agent (`/sdd-solo:orchestrate`, có vai R): mỗi câu kèm ba dòng khuôn phiếu của
-`specs/internal/hoi-dap.md` — `Đã tra` · `Nếu chọn sai thì` · `Agent nghiêng về` — R xếp mức không phải dịch lại (#39).
+`notes/hoi-dap/hoi-dap.md` — `Đã tra` · `Nếu chọn sai thì` · `Agent nghiêng về` — R xếp mức không phải dịch lại (#39).
 
 Đầu ra hợp lệ cho mỗi câu hỏi (ghi vào UC, mục Adversarial pass):
 - Trả lời trong spec → thêm RULE / AC / E# / SCR, History v+1
@@ -35,7 +35,7 @@ Không có đầu ra "để đó".
 
 # Ba vai tầng BR — dùng cho `/sdd-solo:adversarial BR-###`
 
-Dán toàn bộ mục `# BR-###` trong `br.md`. Chạy ba vai, mỗi vai một lượt. AI chỉ được HỎI.
+Dán toàn bộ `br.md` của lát (`specs/<core|nghề>/br-###/br.md`) và mục `## Không thu hẹp` của `specs/vision.md`. Chạy ba vai, mỗi vai một lượt. AI chỉ được HỎI.
 
 ---
 Bạn đọc business requirement dưới đây với vai **<VAI>**. Nhiệm vụ duy nhất: liệt kê những câu hỏi

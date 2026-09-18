@@ -2,7 +2,7 @@
 
 Đang làm:            ___ (Phase 1: BR-### · hoặc Phase 3: UC-### + bước nào trong 14 bước)
 <!-- Repo mới: chưa có BR thì việc đang làm là /sdd-solo:intake, không phải UC nào cả -->
-Quyết định gần nhất: ___ (→ ADR-### hoặc docs/decisions.md)
+Quyết định gần nhất: ___ (→ ADR-### hoặc specs/decisions.md)
 Câu hỏi treo:        ___ (quyết định tạm: ___)
 Việc tiếp theo:      ___
 Bỏ dở vì:            ___

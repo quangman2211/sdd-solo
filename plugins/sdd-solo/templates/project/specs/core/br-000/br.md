@@ -1,27 +1,20 @@
-# Business Requirements
+<!-- Một lát = một thư mục `specs/<core|nghề>/br-###/` gồm `br.md` (file này) · `evidence.md`
+     (chứng cứ dài, mở khi tranh chấp) · `use-cases/UC-###-slug/`. Từ 7.0 không còn `specs/br.md`
+     gộp: mỗi BR một file, đúng một lát trong `specs/vision.md`.
 
-Mỗi BR một mục. Impact Map ngay dưới BR. Success Metric để trống cho tới khi có cách đo thật.
+     ĐÂY LÀ MẪU. Đọc để thấy một BR viết đủ trông thế nào, rồi `/sdd-solo:intake` tạo `br-001/`
+     ở đúng nghề. `br-check.sh` bỏ qua `BR-000`. Xoá cả thư mục này khi không cần nữa.
 
-Chưa biết bắt đầu từ đâu → `/sdd-solo:intake` (phỏng vấn từng câu, hoặc chuyển brief của
-agent khác thành BR chuẩn). Viết xong, kiểm bằng máy:
-
-```bash
-.sdd/scripts/br-check.sh BR-001
-```
-
-Quy tắc quan trọng nhất của tầng này: **`___` là câu trả lời hợp lệ, số bịa thì không.**
-Chưa đo được thì để `___` và ghi cách sẽ đo. Một con số đẹp không nguồn ở đây sẽ được cả
-bộ 24 kiểm ở cổng DoR bảo vệ rất kỷ luật suốt phần đời còn lại của dự án.
-
----
+     Quy tắc quan trọng nhất của tầng này: `___` là câu trả lời hợp lệ, số bịa thì không.
+     Chưa đo được thì để `___` và ghi cách sẽ đo. Một con số đẹp không nguồn ở đây sẽ được cả
+     bộ 24 kiểm ở cổng DoR bảo vệ rất kỷ luật suốt phần đời còn lại của dự án.
+     Kiểm bằng máy: .sdd/scripts/br-check.sh BR-001 -->
 
 # BR-000: Khách tự kích hoạt plugin đã mua, không cần hỗ trợ thủ công
 
-> **ĐÂY LÀ MẪU.** Đọc để thấy một BR viết đủ trông thế nào, rồi viết `BR-001` ở dưới.
-> `br-check.sh` bỏ qua `BR-000`. Xoá cả mục này khi không cần nữa.
-
 ## Metadata
 - **Status:** approved
+- **Lát:** core · lát 1 "khách tự kích hoạt" — tên lát có ở bảng `## Nghề và lát` của `specs/vision.md`
 - **Nguồn:** phỏng vấn (/sdd-solo:intake)
 - **Target release:** v1
 - **Last updated:** 2026-01-15
@@ -53,14 +46,23 @@ metric này có thật hay chỉ là câu nói hay.
 - Khách tự xem trạng thái license của mình
 
 ## Out of Scope
-- Chuyển license sang thiết bị khác (→ BR sau, khi đo được có bao nhiêu người hỏi)
-- Một license dùng chung cho cả đội
-- Kích hoạt hoàn toàn offline, không cần mạng lần đầu
-- Tự động hoàn tiền khi kích hoạt lỗi — v1 vẫn làm tay
+- Chuyển license sang thiết bị khác → lát 2 "đổi máy", mở khi đo được có bao nhiêu người hỏi
+- Một license dùng chung cho cả đội → mở lại khi có khách đội đầu tiên
+- Kích hoạt hoàn toàn offline, không cần mạng lần đầu — cố ý thu hẹp — chủ dự án chốt 2026-01-15
+- Tự động hoàn tiền khi kích hoạt lỗi — v1 vẫn làm tay → mở lại khi quá 5 ca/tháng
+
+<!-- Mỗi dòng Out of Scope nói nó đi ĐÂU: `→ lát ___` (một lát trong vision.md) hoặc `→ mở lại khi ___`.
+     Dòng trùng với một điều ở `## Không thu hẹp` của vision.md thì br-check đỏ — trừ khi ghi
+     `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`: thu hẹp là quyết định của chủ dự án, có ngày. -->
 
 ## Related Use Cases
-- UC-001: Kích hoạt license trên một thiết bị
-- UC-002: Xem trạng thái license
+| UC | Tên | Actor | BR | Status |
+|---|---|---|---|---|
+| UC-001 | Kích hoạt license trên một thiết bị | khách vừa mua | BR-000 | draft |
+| UC-002 | Xem trạng thái license | khách | BR-000 | draft |
+
+<!-- Bảng này là bảng UC của lát (7.0 — thay use-cases.md của context). Cột Status do
+     pass.sh gate/close/deprecate tự ghi; /sdd-solo:state gợi UC tiếp theo từ đây. -->
 
 ## Constraints
 - **CON-001 Technical:** hosting chia sẻ, không chạy được job nền quá 30 giây.
@@ -145,83 +147,3 @@ chỉ là đường thẳng từ Goal xuống danh sách việc đã định là
 
 ## History
 - v1 (2026-01-15): initial
-
----
-
-# BR-001: <Tên business requirement>
-
-## Metadata
-- **Status:** draft | approved | in-progress | done
-- **Nguồn:** phỏng vấn (/sdd-solo:intake) | brief `<đường/dẫn>` | tự viết
-<!-- Chuyển từ brief thì thêm dòng dưới (ngoài lề, không phải gạch đầu dòng) và
-     khai `brief_path=` trong .sdd/config. Nó đưa brief vào thứ tự đọc bắt buộc
-     của session sau, và cho br-check biết brief đã đổi kể từ lần nạp hay chưa. -->
-**Nguồn brief:** <đường/dẫn> · sha256 <12 hex đầu> · nạp <YYYY-MM-DD>
-- **Target release:** v___
-- **Last updated:** YYYY-MM-DD
-
-## Background
-<Vì sao có requirement này — bối cảnh kinh doanh, phản hồi khách, ràng buộc bên ngoài.
-Khẳng định nào không có số hoặc nguồn thì đưa xuống Open Questions, đừng viết ở đây như sự thật>
-
-**Vì sao vẫn xây:** <đã cân những cách không-phần-mềm nào, bỏ vì sao. Chưa cân cái nào thì ghi
-thẳng "chưa có lý do" — đó là câu trả lời trung thực, và vai hoài nghi sẽ bấu vào đúng chỗ này>
-
-## Goal
-<Một câu. Tránh "tối ưu", "cải thiện", "nâng cao" nếu Success Metrics chưa có số>
-
-## Success Metrics
-- <Metric 1>: ___ → ___   (đo qua: <cách đo thật, kể cả đếm tay> · baseline tháng ___)
-- <Metric 2>: ___          (đo qua: <cách đo thật>)
-
-## In Scope (v___)
-- ...
-
-## Out of Scope
-- <Những thứ cố ý không làm — mỗi dòng nên là một nhánh trên Impact Map không nối về Goal>
-
-<!-- Mục dưới CHỈ có khi BR chuyển từ brief. Viết từ phỏng vấn thì xoá đi —
-     không loại cái gì khỏi brief thì không có gì để ghi. -->
-## Đã loại khỏi brief
-- <mục trong brief> — <lý do không đưa vào spec>
-- <mục hoãn sang bước sau> — <lý do> → chuyển: <architecture.md · ADR-### · CHG-### · Open Question>
-
-<!-- Hoãn mà không ghi ĐÍCH là hoãn vào hư không: không cơ chế nào tự mang mục đó
-     tới đó. Đích của một mục kiến trúc bị hoãn là specs/internal/architecture.md,
-     mục ## Đã chốt từ brief. Ca thật: "toàn bộ kiến trúc — thuộc tầng thiết kế" nằm ở đây hai
-     ngày trong khi plan.md được viết với kiến trúc NGƯỢC LẠI brief. br-check
-     cảnh báo khi dòng hoãn thiếu '→ chuyển:'. -->
-
-## Related Use Cases
-- UC-###: ...
-
-## Constraints
-- **CON-001 Technical:** ...
-  - Từ: YYYY-MM-DD · Biết qua: <ai nói · đo ở đâu · điều luật nào> · Kiểm lại: <mốc hoặc sự kiện> · Trạng thái: đúng
-- **CON-002 Regulatory:** ...
-  - Từ: YYYY-MM-DD · Biết qua: ... · Kiểm lại: ... · Trạng thái: đúng
-- **CON-003 Timing/SLA:** ...
-  - Từ: YYYY-MM-DD · Biết qua: ... · Kiểm lại: ... · Trạng thái: đúng
-
-## Impact Map
-```mermaid
-flowchart LR
-  G["<b>WHY</b><br/>BR-001<br/><goal>"]
-  A1["<b>WHO</b><br/><actor 1>"]
-  H1["<b>HOW</b><br/><hành vi cần thay đổi>"]
-  W1["<b>WHAT</b><br/>UC-### <tên>"]
-  X1["<nhánh ngoài scope>"]
-  G --> A1 --> H1 --> W1
-  A1 -.-> X1
-  classDef out fill:#F8E7E1,stroke:#B4472B,stroke-dasharray:4 3
-  class X1 out
-```
-
-## Adversarial pass
-<`/sdd-solo:adversarial BR-001` điền vào đây — ba vai: người trả tiền, người vận hành mãi, người hoài nghi>
-
-## Open Questions
-- [ ] ...
-
-## History
-- v1 (YYYY-MM-DD): initial

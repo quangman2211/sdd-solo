@@ -1,8 +1,12 @@
 # Intake — bộ câu hỏi để moi ý tưởng ra thành BR
 
-Dùng khi `specs/br.md` còn trắng và chưa biết bắt đầu từ đâu.
-Có Claude Code thì gõ `/sdd-solo:intake` — nó hỏi từng câu và tự viết ra `br.md`.
-Không có thì tự trả lời bảy câu dưới đây bằng giấy bút, rồi điền vào `br.md` theo cột bên phải.
+Dùng khi chỉ còn `core/br-000/` mẫu và chưa biết bắt đầu từ đâu.
+Có Claude Code thì gõ `/sdd-solo:intake` — nó hỏi từng câu và tự viết ra `br.md` của lát.
+Không có thì tự trả lời bảy câu dưới đây bằng giấy bút, rồi điền vào `specs/<core|nghề>/br-###/br.md` theo cột bên phải.
+
+**Câu 0 — trước bảy câu:** `specs/vision.md` đã có chưa? Chưa thì chủ dự án viết nó trước, bằng lời
+thường: đi về đâu · 3–5 điều không được co lại · nghề nào mở trước, "xong" nghĩa là gì. BR nào cũng
+phải tự nhận `**Lát:**` ở bảng đó, nên không có tầng 0 thì bảy câu dưới không có chỗ để đứng.
 
 **Ba quy tắc khi trả lời:**
 
@@ -106,5 +110,6 @@ Bốn luật khi chuyển:
 2. Mọi "xây X" phải đẩy ngược lên được một mục tiêu đo được. Không ra → tính năng mồ côi,
    vào Out of Scope hoặc Open Question, không giữ im lặng.
 3. Khẳng định không bằng chứng ("khách phàn nàn nhiều") → Open Question, không vào Background.
-4. Thứ đã **bỏ** phải ghi vào mục `## Đã loại khỏi brief` trong BR, mỗi dòng một lý do — không
-   phải chỉ nói miệng rồi thôi. Sáu tháng sau, thứ duy nhất còn lại là file.
+4. Thứ đã **bỏ** phải ghi vào mục `## Đã loại khỏi brief` trong BR, mỗi dòng một lý do **và một đích**:
+   `→ lát ___` (lát nào trong `vision.md` sẽ nhận) hoặc `→ mở lại khi ___` — không phải chỉ nói miệng
+   rồi thôi. Sáu tháng sau, thứ duy nhất còn lại là file. `br-check` đỏ khi dòng thiếu đích (7.0).
