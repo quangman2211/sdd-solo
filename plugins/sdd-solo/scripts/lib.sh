@@ -313,8 +313,11 @@ brief_sha() { _b="$(brief_path "$1")"; [ -n "$_b" ] && [ -f "$1/$_b" ] || return
 # Ở chung một chỗ vì hai nơi dùng nó (br-check, session-start) phải rút cùng một
 # con số; bản đầu của session-start viết '[^\n]*' — trong ERE của grep đó là
 # "mọi ký tự trừ \ và n", nên đường dẫn nào có chữ 'n' là hụt, và hụt thì im.
-brief_rec_sha() { br_text "$1" | grep -oE '\*\*Nguồn brief:\*\*.*sha256 [0-9a-f]{12}' \
-                  | grep -oE '[0-9a-f]{12}$' | head -1; }
+# 7.0: nhiều br.md → lấy dòng có `nạp YYYY-MM-DD` MUỘN NHẤT (BR-001 cũ của runxops khai sha cũ, BR-003 khai sha
+# mới; lấy dòng đầu theo thứ tự file thì đỏ oan "brief đã đổi"). Không có ngày thì dòng đầu như cũ.
+brief_rec_sha() { br_text "$1" | grep -oE '\*\*Nguồn brief:\*\*.*sha256 [0-9a-f]{12}([^0-9a-f].*)?$' \
+                  | awk '{d=""; if (match($0,/nạp [0-9]{4}-[0-9]{2}-[0-9]{2}/)) d=substr($0,RSTART+4,10); print d "\t" $0}' \
+                  | sort | tail -1 | grep -oE 'sha256 [0-9a-f]{12}' | cut -c8-; }
 # ── nội dung THẬT hay còn là template ───────────────────────────────────
 # Một bản DUY NHẤT. Tới 4.0.0 hàm này được chép nguyên vào br-check.sh và
 # change-check.sh — hai bản y hệt nhau, nên một lượt vá chỉ trúng một nửa, và

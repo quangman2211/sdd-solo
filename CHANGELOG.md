@@ -41,6 +41,25 @@ nhãn "③ RULE + entity + glossary"). Từng mốc ghi dưới đây; mốc ch�
   bảng ID theo chỗ mới; `_intake.md` câu 0 (vision) và luật 4 đòi đích; DoR · prompts · STATE · hoi-dap trỏ
   `specs/architecture.md` · `notes/hoi-dap/`. Scaffold repo trắng → cây 7.0, `layout`=v7, mọi script chạy
   xanh; fixture v7 (`mk-testrepo7.sh`) qua cổng DoR.
+- **(3) `migrate.sh --layout v7 [--map <file>] [--dry-run]`.** Đọc `.sdd/migrate-v7.map` (mỗi dòng ba từ:
+  `context <ctx> <nghề>` · `uc UC-### BR-###` · `br BR-### <core|nghề>` · `adr ADR-### <nghề>` · `rule RULE-### <nghề>`
+  · `entity <Tên> <core|nghề>` · `glossary <từ-đầu-heading> <nghề>`; thiếu context/BR thì in đủ chỗ thiếu và KHÔNG
+  chạy). Làm: `internal/{architecture,decisions}` lên gốc · ADR về `specs/adr/` hay `specs/<nghề>/adr/` · `hoi-*`/`soat-*`/
+  `*ban-do*` sang `notes/{hoi-dap,soat,ban-do}/` · `br.md` tách mỗi BR một `specs/<nghề>/br-###/br.md` (thêm `**Lát:** <nghề>
+  · ___`, `→ evidence.md`, bảng `## Related Use Cases` dựng từ `use-cases.md` + thư mục UC, giữ nguyên văn cũ bên dưới) ·
+  `br.evidence.md` tách theo BR · `git mv` thư mục UC vào lát của BR (BR chỉ có trong map → dựng khung `br.md` từ skel,
+  Status draft, có sẵn dòng UC — không đỏ) · `entities.md` mỗi `## Tên` một file (tên lấy trong backtick nếu có:
+  `## Khoá API (\`ApiKey\`)` → `ApiKey.md`; mục không phải entity vào `entities/README.md`) · RULE theo map sang
+  `specs/<nghề>/rules.md` · mục glossary tên context sang `specs/<nghề>/glossary.md` · `tests/use-cases/<ctx>/UC-###` →
+  `<nghề>/` · `vision.md` từ khuôn · `nghe_paths=` vào config · UC Metadata `Bounded Context` → `**Nghề:** · **Lát:**`.
+  Sửa đường dẫn trong file theo TÊN THẬT vừa dời (dài trước ngắn sau); đích mơ hồ (`specs/br.md`, `specs/contexts/`)
+  không sửa, chỉ đếm; **brief nguồn không đụng** (sha phải giữ). Cuối cùng in ba bảng: đã dời · file đã sửa đường ·
+  CẦN TAY. Không commit hộ. Đo trên bản sao runxops (84a38fc, map thử theo plan §4): 71 chỗ dời, 118 rename +
+  32 A + 17 D + 23 M; gate-check UC-014/UC-024/UC-009, br-check BR-003, decisions (190 mục), design-check, metrics
+  ra cùng kết luận trước và sau; commit đọc lại trước migrate vẫn là mốc (§9 pathspec cũ); close-check trỏ
+  `tests/use-cases/ebay/UC-014` đúng chỗ mới.
+  - `lib.sh brief_rec_sha`: nhiều `br.md` thì lấy dòng `Nguồn brief:` có `nạp <ngày>` muộn nhất — bản đầu lấy dòng đầu
+    theo thứ tự file, gặp BR-001 cũ của runxops (sha cũ) là br-check đỏ oan "brief đã đổi".
 
 ## 6.6.2 — 2026-09-18
 
