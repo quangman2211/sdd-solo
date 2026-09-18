@@ -42,6 +42,21 @@ if [ -f "$ROOT/.sdd/version" ]; then
     exit 1
   fi
 fi
+# 7.0: repo 6.x CÓ NỘI DUNG (specs/contexts/ có UC, hoặc specs/br.md có BR thật) mà chưa migrate → chặn, cùng
+# lý do với #8 ở trên: scaffold sẽ dựng specs/core/br-000/ + vision.md cạnh cây cũ, rồi `layout` thấy vision.md
+# mà tưởng là 7.0 — hai cây cùng lúc, không dòng đỏ nào. Repo 6.x còn nguyên khuôn (chưa BR, chưa UC) thì
+# cứ scaffold: khuôn cũ có sha khớp manifest sẽ được dọn ở RETIRED_TPL dưới.
+if [ -f "$ROOT/.sdd/version" ] && [ "$(layout "$ROOT")" = v6 ]; then
+  HAS_UC="$(find "$ROOT/specs/contexts" -type f -path '*/use-cases/UC-*/UC-*.md' 2>/dev/null | head -1)"
+  HAS_BR=""; grep -qE '^# BR-[0-9]+: *[^ <]' "$ROOT/specs/br.md" 2>/dev/null && ! br_untouched "$ROOT" && HAS_BR=1
+  if [ -n "$HAS_UC" ] || [ -n "$HAS_BR" ]; then
+    bad "repo đang ở bố cục 6.x có nội dung (specs/contexts/ · specs/br.md) — 7.0 đổi cây sang core|nghề × br-###"
+    info "chạy MIGRATE TRƯỚC, init sau: viết .sdd/migrate-v7.map rồi  bash .sdd/scripts/migrate.sh --layout v7 --dry-run  →  bỏ --dry-run  →  commit"
+    info "  (bản migrate.sh 7.0 nằm ở plugin: ${PLUGIN}/scripts/migrate.sh — .sdd/scripts/ của repo còn bản cũ cho tới khi init --update xong)"
+    info "rồi mới /sdd-solo:init --update — nó dọn khuôn 6.x còn sót và chép khuôn 7.0 (vision.md, core/br-000/, adr/, layer-check.sh)"
+    exit 1
+  fi
+fi
 MAN="$ROOT/.sdd/manifest"; mkdir -p "$ROOT/.sdd/gate"; touch "$MAN"
 TPL="$PLUGIN/templates/project"
 COPIED=0; KEPT=0; NEW=0
@@ -59,8 +74,15 @@ find . -type f | sed 's#^\./##' | sort | while read -r rel; do
     : # template không đổi kể từ lần cài → không đụng
   else
     cur="$(sha "$dst")"
-    if [ -z "$rec_inst" ] || [ "$rec_inst" = "$cur" ]; then
+    # 7.0: KHÔNG có dòng manifest mà file đã có → của user (hoặc file thật vừa migrate tới đúng tên khuôn:
+    # specs/architecture.md từ internal/). Bản cũ chép đè ở đây — ca thật: architecture.md của runxops thay bằng
+    # khuôn, không một dòng đỏ. Chỉ ghi đè khi sha hiện tại KHỚP sha lúc cài (chưa ai sửa).
+    if [ "$rec_inst" = "$cur" ]; then
       cp "$src" "$dst"; echo "$rel $(sha "$dst") $tsha" >> "$MAN"; ok "cập nhật $rel"
+    elif [ -z "$rec_inst" ] && [ "$cur" = "$tsha" ]; then
+      echo "$rel $cur $tsha" >> "$MAN"; ok "ghi nhận $rel — đã có sẵn, y hệt khuôn"
+    elif [ -z "$rec_inst" ]; then
+      cp "$src" "$dst.new"; echo "$rel $cur $tsha" >> "$MAN"; warn "giữ  $rel — file có sẵn, không có trong manifest nên coi là của anh; khuôn ở $rel.new (xem rồi xoá .new)"
     else
       cp "$src" "$dst.new"; echo "$rel $rec_inst $tsha" >> "$MAN"; warn "giữ  $rel — anh đã sửa; bản mới ở $rel.new (tự merge rồi xoá .new)"
     fi
@@ -79,6 +101,7 @@ done
 # nên chỉ xoá khi user CHƯA đụng vào (sha khớp manifest). Đã sửa tay thì cảnh báo và
 # để nguyên — thà để lỗi kêu to còn hơn tự tay xoá chữ của người khác.
 RETIRED_TPL="specs/internal/adr/ADR-000-template.md
+  specs/internal/adr/_adr-template.md specs/internal/architecture.md specs/internal/decisions.md specs/br.md
   specs/context-map.md specs/story-map.md specs/internal/design-system.md
   specs/internal/onboarding.md specs/internal/runbooks/README.md specs/changes/README.md
   specs/contexts/README.md specs/internal/README.md README.md
@@ -112,7 +135,7 @@ done
 # Finder thì thấy, và một thư mục trống trông y hệt "chưa làm tới".
 for d in .sdd/templates/use-case/screens .sdd/templates/use-case .sdd/templates/context/diagrams \
          .sdd/templates/context .sdd/templates/change/delta .sdd/templates/change .sdd/templates \
-         specs/internal/runbooks; do
+         specs/internal/runbooks specs/internal/adr specs/internal specs/contexts; do
   [ -d "$ROOT/$d" ] && rmdir "$ROOT/$d" 2>/dev/null && ok "dọn  $d/ (rỗng)"
 done
 
@@ -172,6 +195,9 @@ if [ ! -f "$ROOT/.sdd/config" ]; then
     echo "# /sdd-solo:intake ghi dòng này. Nó đưa brief vào THỨ TỰ ĐỌC BẮT BUỘC —"
     echo "# không có nó thì brief thành file chỉ-ghi ngay sau intake (#34)."
     echo "brief_path="
+    echo "# nghe_paths: tên các nghề — thư mục specs/<nghề>/ và src/<nghề>/ (7.0). core không kể. Trống thì"
+    echo "# script dò từ specs/*/ (thư mục có br-###/, glossary.md hay entities/). migrate --layout v7 ghi giúp."
+    echo "nghe_paths="
   } > "$ROOT/.sdd/config"
   ok ".sdd/config — code_paths=$DC · test_paths=$DT (dò từ repo; sửa nếu sai)"
   # tests/ · __tests__/ · spec/ là ba quy ước khác hẳn nhau. Đoán trượt thì
@@ -180,6 +206,12 @@ if [ ! -f "$ROOT/.sdd/config" ]; then
     warn ".sdd/config: uc_test_dir=$UCT là ĐOÁN — thư mục test chưa tồn tại. Sửa cho khớp quy ước của repo (tests/ · __tests__/ · spec/)."
 else
   info ".sdd/config đã có — code_paths=$(code_paths "$ROOT")"
+  # 7.0: repo cũ chưa có key nghe_paths → thêm (không đụng dòng nào khác của config)
+  if ! grep -qE '^nghe_paths=' "$ROOT/.sdd/config" 2>/dev/null; then
+    NG="$(nghe_list "$ROOT")"
+    printf '# nghe_paths: tên các nghề — thư mục specs/<nghề>/ và src/<nghề>/ (7.0). core không kể. Trống thì script dò từ specs/*/.\nnghe_paths=%s\n' "$NG" >> "$ROOT/.sdd/config"
+    ok ".sdd/config — thêm nghe_paths=${NG:-(trống)} (7.0)"
+  fi
 fi
 if ! has_code_path "$ROOT"; then
   if repo_has_code "$ROOT"; then
@@ -192,7 +224,7 @@ fi
 # plugin (CI, người clone repo). Đổi lại: bản sao có thể trôi version — .sdd/version
 # so với version plugin, lệch thì session-start và status cảnh báo.
 mkdir -p "$ROOT/.sdd/scripts"
-KEEP="lib.sh layer-check.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
+KEEP="lib.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
 for f in $KEEP; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done
@@ -224,6 +256,7 @@ echo; echo "Xong. Commit: git add -A && git commit -m \"chore(sdd): init sdd-sol
 # /requirements đọc vision.md (không ai tạo), còn "tự viết br.md" chính là chỗ
 # người ta đứng lại. Xem #20.
 echo "BƯỚC TIẾP — Phase 1: gõ /sdd-solo:intake"
-echo "  Nó hỏi 7 câu (khổ gì · ai khổ · tốn gì · ...) rồi tự viết specs/br.md."
+echo "  Bước 0: chủ dự án nói hướng đi (specs/vision.md) bằng lời thường; rồi 7 câu (khổ gì · ai khổ · tốn gì · ...)"
+echo "  và intake viết BR đầu tiên vào specs/<core|nghề>/br-001/br.md."
 echo "  Đang cầm sẵn brief của agent khác: /sdd-solo:intake duong/dan/brief.md"
-echo "  Muốn tự viết: đọc BR-000 mẫu trong specs/br.md, hoặc specs/_intake.md để tự hỏi mình."
+echo "  Muốn tự viết: đọc BR-000 mẫu trong specs/core/br-000/br.md, hoặc specs/_intake.md để tự hỏi mình."

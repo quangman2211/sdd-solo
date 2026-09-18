@@ -82,5 +82,8 @@ Vai:
 - Là ràng buộc → một `CON-###` mới
 Không có đầu ra "để đó".
 
-**Nếu vai người hoài nghi kết luận BR đang là giải pháp viết ngược thành lý do — dừng và viết lại BR.**
+**Nếu vai người hoài nghi kết luận BR đang là giải pháp viết ngược thành lý do — dừng, nói rõ BR sẽ co từ gì thành gì
+(`br-scope-diff.sh BR-###` in dòng thêm/bớt của In Scope · Out of Scope), hỏi chủ dự án, rồi mới viết lại.** Ba vai
+cũng đọc `## Không thu hẹp` của `specs/vision.md`: câu hỏi nào đẩy một điều ở đó vào Out of Scope thì đầu ra phải là
+"hỏi chủ dự án", không phải "co BR" (7.0).
 Đừng ghi nó thành một Open Question rồi đi tiếp: mọi UC sinh ra từ BR đó sẽ kế thừa nguyên lỗi.

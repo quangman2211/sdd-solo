@@ -42,18 +42,28 @@ Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qu
 
 ## Cái gì nằm ở đâu
 
-Từ 2.0.0, repo dự án chỉ còn **hai thư mục của quy trình**:
+Từ 2.0.0, repo dự án chỉ còn **hai thư mục của quy trình** (+ `notes/` cho vết quá trình từ 7.0):
 
 ```
-.sdd/     bộ máy — config, gate/, scripts/, hooks/, checklists/, prompts/, templates/
-specs/    toàn bộ nội dung — br.md rules.md contexts/ internal/ changes/
-STATE.md  CLAUDE.md  <code>/  <tests>/
+.sdd/     bộ máy — config, gate/, scripts/, hooks/, checklists/, prompts/
+specs/    toàn bộ nội dung — ba tầng chỗ (7.0):
+  vision.md · glossary.md · rules.md · architecture.md · decisions.md · adr/ · changes/   ← gốc: xuyên suốt cả dự án
+  core/{entities/<Tên>.md, br-###/{br.md, evidence.md, use-cases/UC-###-slug/}}        ← lõi, ngang hàng nghề
+  <nghề>/{glossary.md, rules.md, adr/, entities/, br-###/…}                             ← mỗi nghề một thư mục
+notes/    hoi-dap/ · soat/ · ban-do/ — vết quá trình giữa các agent, ngoài specs/
+STATE.md  CLAUDE.md  <code>/  <tests>/use-cases/<core|nghề>/UC-###/
 ```
+
+Tầng 0 `specs/vision.md` (7.0): chủ dự án viết bằng lời thường — định vị · **không thu hẹp** · bảng nghề và lát ·
+"xong" mỗi nghề. Mỗi BR là **một lát** của một nghề (`specs/<nghề>/br-###/`) và tự nhận `**Lát:**`; `br-check` đỏ khi
+Out of Scope co lại điều vision.md không cho co. Lõi không biết nghề, nghề biết lõi — `layer-check.sh` kiểm, githook
+`pre-commit.d/20-layer-boundary` chặn khi bật. Repo 6.x (`specs/contexts/`, `specs/br.md` gộp) dời bằng
+`migrate.sh --layout v7` với file map `.sdd/migrate-v7.map`; script vẫn đọc được cả hai bố cục.
 
 - **`.sdd/`** giữ bộ máy, kể cả **một bản sao script kiểm** — nên `bash .sdd/scripts/gate-check.sh UC-###` chạy được ở CI và trên máy người clone repo, không cần cài plugin. Lệch version so với plugin thì hook và `status` cảnh báo.
-- **`specs/`** giữ mọi thứ mô tả hệ thống. Ranh giới spec↔doc không mất, nó tụt một tầng: khách cảm nhận được → `contexts/`, chỉ người xây quan tâm → `internal/`. Đang sửa dở → `changes/`.
+- **`specs/`** giữ mọi thứ mô tả hệ thống. Ranh giới spec↔doc không mất, nó tụt một tầng: khách cảm nhận được → `core/` · `<nghề>/`, chỉ người xây quan tâm → `architecture.md` · `adr/` · `decisions.md` ở gốc. Đang sửa dở → `changes/`. Vết quá trình (hỏi đáp, soát) → `notes/`, ngoài specs/.
 - Artifact của một UC nằm **trọn trong thư mục UC**: `UC-###.md` · `UC-###.flow.md` · `screens/` · và từ 4.0.0 là `design.md` + `tasks.md` (bước ⑩).
-- Thiết kế kỹ thuật có **hai mức**: `specs/internal/architecture.md` cho cả dự án (ngăn xếp · nơi chạy · ai gọi · ranh giới · cái gì cấm), và `design.md` mỗi UC đối chiếu ngược lên nó.
+- Thiết kế kỹ thuật có **hai mức**: `specs/architecture.md` cho cả dự án (ngăn xếp · nơi chạy · ai gọi · ranh giới · cái gì cấm), và `design.md` mỗi UC đối chiếu ngược lên nó.
 - Plugin không bao giờ ghi đè file bạn đã sửa — `init --update` để bản mới cạnh dưới tên `.new`.
 
 ## Vì sao Spec Kit ra khỏi chuỗi

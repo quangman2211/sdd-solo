@@ -292,6 +292,19 @@ for n in NGHE:
     if not os.path.exists(f'specs/{n}/README.md'):
         r = rd(f'{SKEL}/nghe/README.md') if SKEL else None
         write(f'specs/{n}/README.md', (r or '# Nghề: <tên>\n').replace('<tên>', n))
+# 8b. .sdd/manifest: file khuôn vừa dời giữ dòng manifest dưới TÊN MỚI (sha lúc cài giữ nguyên) — để init --update
+# sau đó còn phân biệt "chưa sửa kể từ khi cài" (ghi đè được) với "đã sửa" (.new). Dòng của khuôn 6.x không còn
+# (br.md, contexts/…) bỏ đi để RETIRED_TPL của scaffold không thấy đường cũ.
+MAN = rd('.sdd/manifest')
+if MAN is not None:
+    ren = {o: nw for o, nw in MOVED if ' ## ' not in o and ' (' not in nw and o.startswith('specs/internal/')}
+    out = []
+    for ln in MAN.split('\n'):
+        pth = ln.split(' ', 1)[0]
+        if pth in ren: out.append(ren[pth] + ln[len(pth):])
+        elif pth in ('specs/br.md',) or pth.startswith('specs/contexts/'): continue
+        else: out.append(ln)
+    if '\n'.join(out) != MAN: write('.sdd/manifest', '\n'.join(out))
 # 9. sửa đường dẫn trong file — theo tên THẬT vừa dời, dài trước ngắn sau; đích mơ hồ thì không sửa, chỉ đếm
 REPL = []
 for o, nw in MOVED:
@@ -362,7 +375,7 @@ if not DRY:
             if os.path.isdir(dp) and not os.listdir(dp): os.rmdir(dp)
         d = f'specs/contexts/{c}'
         if os.path.isdir(d) and os.listdir(d): NEED.append((f'specs/contexts/{c}/ còn file không thuộc khuôn — xem và dời tay', d))
-    for pth in ['specs', 'notes', UCT, '.sdd/config']:
+    for pth in ['specs', 'notes', UCT, '.sdd/config', '.sdd/manifest']:
         if os.path.exists(pth): subprocess.run(['git', 'add', '-A', pth], check=False)
 # ── báo cáo ───────────────────────────────────────────────────────────────
 print(f'\n=== {"SẼ dời" if DRY else "Đã dời"} ({len(MOVED)}) ===')

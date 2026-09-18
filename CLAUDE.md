@@ -12,7 +12,7 @@ plugins/sdd-solo/
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
   scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start
   templates/project/                 16 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16)
-  templates/skel/                    khuôn use-case/ · context/ · change/ · hoi-dap.md — skill copy khi tạo, KHÔNG rơi vào dự án
+  templates/skel/                    khuôn use-case/ · br/ · nghe/ · entity.md · change/ · hoi-dap.md — skill copy khi tạo, KHÔNG rơi vào dự án
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
   templates/githooks/                commit-msg · pre-commit — chặn cứng; pre-commit.d/ commit-msg.d/ chỉ README + .example (luật riêng của repo, 6.2.0)
   docs/playbook-example-khoskill.html
@@ -34,6 +34,18 @@ CHANGELOG.md                         mỗi bản một mục — đây là ## Hi
   `## Đọc lại` có dòng `F#` đủ `[neo]` + đầu ra, commit riêng là commit spec mới nhất. Lý do đo được: một đêm đo thời
   gian trôi qua, không đo việc đọc có xảy ra không (#27); giữ hai cửa song song hai bản lớn thì cửa rẻ hơn vẫn là cửa
   được đi. Đọc không ra gì thì cổng không mở — đó là chủ ý, không thêm cửa thoát.
+- **Mọi đường dẫn trong `specs/` tra qua `lib.sh`** (7.0, #55). `find_uc` · `owner_of` · `br_file` · `rules_files` · `adr_file` ·
+  `entity_files` · `glossary_files`… mỗi hàm tra bố cục 7.0 (`core|<nghề>` × `br-###/`) trước rồi rơi về 6.x
+  (`specs/contexts/<ctx>/`, `specs/br.md`, `specs/internal/`). Script không được `find`/`grep` thẳng đường dẫn — tới 6.6.x
+  có 11 script + 2 githook làm thế, đổi cây là đổi 13 chỗ và hụt thì im. Githook chạy bash trần nên chép danh sách
+  đường dẫn của `id_exists`; đổi một nơi thì đổi cả hai. Kiểm tương thích 6.x bằng snapshot output mọi script trên
+  bản sao runxops chưa migrate (CHANGELOG 7.0.0).
+- **`specs/vision.md` là của chủ dự án** (7.0, T1–T3): skill hỏi và chép, không tự viết; số ở đó miễn luật "không số".
+  Nghề là thư mục ngang hàng `core/`; lát là một BR; không còn context như đơn vị thư mục. Lõi không biết nghề.
+- **`scaffold.sh` không bao giờ ghi đè file không có trong manifest** (7.0). Bản tới 6.6.x coi "không có dòng manifest"
+  là "chưa cài" và chép đè — trên repo vừa migrate, `specs/architecture.md` thật (dời từ `internal/`) bị thay bằng khuôn
+  trong im lặng. Giờ: không dòng manifest mà file đã có → `.new` + cảnh báo; `migrate --layout v7` đổi tên đường dẫn
+  trong manifest cho file khuôn vừa dời để lần `init --update` sau vẫn phân biệt được "chưa sửa" với "đã sửa".
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 

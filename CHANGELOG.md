@@ -82,6 +82,25 @@ nhãn "③ RULE + entity + glossary"). Từng mốc ghi dưới đây; mốc ch�
     mục "orders" sang ebay, gate UC-024 cảnh báo oan). Dấu vết "dời từ context X, BR-Y" của UC ghi trong `<!-- -->`
     để layer-check không tính UC về core là trích nghề cũ. Khuôn `skel/br/br.md` Impact Map dùng `BR-000` (bản
     đầu ghi `BR-001`, khung BR-004 sinh ra tự trích BR-001).
+- **(6) `scaffold.sh` nâng cấp lên cây 7.0 — ba cơ chế, không để hai cây cùng lúc (bug #8 cũ).** ① Chặn `init` trên
+  repo 6.x CÓ NỘI DUNG (UC trong `specs/contexts/` hay BR thật trong `specs/br.md`) chưa migrate, chỉ đường
+  `migrate.sh --layout v7`; repo 6.x còn nguyên khuôn thì cứ init. ② `RETIRED_TPL` thêm `specs/internal/{adr/_adr-template,
+  architecture,decisions}.md` · `specs/br.md` (chỉ xoá khi sha khớp manifest — chưa ai sửa); dọn thư mục rỗng
+  `specs/internal/adr` · `specs/internal` · `specs/contexts`. ③ `.sdd/config` sinh mới có `nghe_paths=`; config cũ chưa có
+  key thì thêm một dòng (dò `specs/*/`), không đụng dòng khác. `KEEP` thêm `layer-check.sh` · `br-scope-diff.sh`.
+  - **Sửa một lỗi mất dữ liệu im lặng** tìm ra khi đo trên bản sao runxops đã migrate: scaffold coi "không có dòng
+    manifest" là "chưa cài" và **chép đè** — `specs/architecture.md` THẬT (vừa dời từ `internal/`) và
+    `specs/core/entities/README.md` (Domain Model vừa tách) bị thay bằng khuôn, in "✓ cập nhật". Giờ: không dòng
+    manifest mà file đã có → `.new` + cảnh báo; file y hệt khuôn thì chỉ ghi nhận. `migrate --layout v7` đổi tên đường
+    dẫn trong manifest cho khuôn vừa dời (`internal/architecture.md` → `architecture.md`, giữ sha lúc cài) và bỏ dòng
+    của khuôn 6.x không còn, nên `init --update` sau migrate vẫn phân biệt "chưa sửa" (ghi đè) với "đã sửa" (.new).
+    Đo lại: architecture.md nguyên vẹn, decisions.md 85 KB nguyên vẹn, `specs/internal` không còn.
+  - `scripts/br-scope-diff.sh BR-### [<rev>]` (mới): dòng thêm/bớt của In Scope · Out of Scope · Đã loại khỏi brief so
+    với HEAD — "được và mất" cho skill adversarial đọc cho chủ dự án gật trước History v+1. Prompt
+    `adversarial-pass.md`: vai hoài nghi "dừng, nói rõ BR sẽ co từ gì thành gì, hỏi chủ dự án, rồi mới viết lại"; ba vai
+    đọc thêm `## Không thu hẹp`.
+  - README plugin và CLAUDE.md gốc: cây 7.0, ranh giới "mọi đường dẫn qua lib.sh", "vision.md là của chủ dự án",
+    "scaffold không ghi đè file không có trong manifest".
 
 ## 6.6.2 — 2026-09-18
 
