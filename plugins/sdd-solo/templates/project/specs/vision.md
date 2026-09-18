@@ -19,12 +19,13 @@
 <Một câu: sản phẩm này là gì, cho ai, và điều gì làm nó khác.>
 
 ## Không thu hẹp
-<3–5 điều. Mỗi dòng một điều BR nào cũng không được đưa vào Out of Scope. `br-check` đỏ khi một
-dòng Out of Scope của BR chứa cụm trong mục này — trừ khi dòng đó ghi
-`cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`.>
-- <điều 1>
-- <điều 2>
-- <điều 3>
+<3–5 điều. Mỗi dòng một điều BR nào cũng không được đưa vào Out of Scope. Dạng
+`- **<từ khoá ngắn>** — <giải thích>`: `br-check` so **từ khoá** (không phân biệt hoa thường) với từng
+dòng Out of Scope của mọi BR — trùng thì đỏ, trừ khi dòng đó ghi `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`.
+Từ khoá là cụm người ta sẽ viết y như thế trong Out of Scope ("chiều ghi", "offline"), không phải cả câu.>
+- **<từ khoá 1>** — <điều 1>
+- **<từ khoá 2>** — <điều 2>
+- **<từ khoá 3>** — <điều 3>
 
 ## Nghề và lát
 <Mỗi nghề là một thư mục `specs/<nghề>/`; `core` là lõi dùng chung, ngang hàng với nghề. Mỗi lát

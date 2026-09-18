@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# layer-check.sh [--staged] [--file <path> ...] — luật ranh giới lõi/nghề (7.0, plan §3).
+#
+#   Lõi không biết nghề; nghề biết lõi. Cụ thể, đo được:
+#   ① gốc specs/*.md · specs/adr/ · specs/core/**  KHÔNG trích ID của nghề: RULE/ADR/UC/BR sống trong
+#      specs/<nghề>/, và tên entity ở specs/<nghề>/entities/.
+#   ② src/core/**  KHÔNG import từ src/<nghề>/ (đường tương đối `../<nghề>/`, tuyệt đối `src/<nghề>/`,
+#      hay alias `@/<nghề>/`).
+#   Trừ: specs/vision.md (bảng Nghề và lát kể tên BR của nghề là việc của nó) · specs/decisions.md (một sổ
+#   cho cả dự án) · specs/traceability.md (script sinh) · *.trace.md · evidence.md · file dưới notes/.
+#
+# Mặc định quét cả repo → in từng chỗ, exit 1 nếu có. `--staged` chỉ xét file đang stage (githook
+# pre-commit.d/20-layer-boundary dùng — chỉ chặn vi phạm MỚI, không bắt repo vừa migrate phải sạch
+# ngay). `--file` xét đúng những file nêu tên (gate-check/design-check gọi cho UC ở core, chỉ cảnh báo).
+# Repo 6.x (chưa có nghề) → không có gì để kiểm, exit 0.
+HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
+ROOT="$(project_root)"
+MODE=all; FILES=""
+PREV=""
+for a in "$@"; do
+  case "$PREV" in --file) FILES="$FILES $a"; PREV=""; continue;; esac
+  case "$a" in --staged) MODE=staged;; --file) MODE=files; PREV="$a";; *) [ "$MODE" = files ] && FILES="$FILES $a";; esac
+done
+[ "$(layout "$ROOT")" = v7 ] || { info "repo chưa ở bố cục 7.0 — không có nghề để kiểm ranh giới"; exit 0; }
+NGHE="$(nghe_list "$ROOT")"
+[ -n "$NGHE" ] || { info "chưa có nghề nào (nghe_paths trống, specs/<nghề>/ chưa có) — không có gì để kiểm"; exit 0; }
+NRE="$(printf '%s' "$NGHE" | tr -s ' ' '|')"
+
+# ── ID của nghề: gom từ cây specs/<nghề>/ ────────────────────────────────
+NIDS="$(for n in $NGHE; do
+  [ -f "$ROOT/specs/$n/rules.md" ] && grep -oE '^## RULE-[0-9]+' "$ROOT/specs/$n/rules.md" | awk '{print $2}'
+  ls "$ROOT/specs/$n/adr/"ADR-[0-9]*.md 2>/dev/null | xargs -n1 basename 2>/dev/null | grep -oE '^ADR-[0-9]+'
+  ls -d "$ROOT/specs/$n"/br-[0-9]*/ 2>/dev/null | sed -E 's#.*/br-([0-9]+)/$#BR-\1#'
+  ls -d "$ROOT/specs/$n"/br-[0-9]*/use-cases/UC-[0-9]*/ 2>/dev/null | sed -E 's#.*/(UC-[0-9]+)-[^/]*/$#\1#'
+  ls "$ROOT/specs/$n/entities/"*.md 2>/dev/null | xargs -n1 basename 2>/dev/null | sed 's/\.md$//' | grep -vE '^(README|_.*)$'
+done | sort -u)"
+# tên entity hay là chữ thường (`Order`, `Listing`) — so nguyên từ, phân biệt hoa thường
+IDRE="$(printf '%s\n' "$NIDS" | awk 'NF' | tr '\n' '|' | sed 's/|$//')"
+
+# ── danh sách file cần xét ────────────────────────────────────────────────
+is_root_spec() { # 0 nếu file thuộc vùng "gốc + core" (① áp dụng)
+  case "$1" in
+    specs/vision.md|specs/decisions.md|specs/traceability.md) return 1;;
+    *.trace.md|*/evidence.md|notes/*) return 1;;
+    specs/adr/*|specs/core/*) return 0;;
+    specs/*/*) return 1;;
+    specs/*.md) return 0;;
+  esac
+  return 1
+}
+is_core_src() { case "$1" in src/core/*) return 0;; esac; return 1; }
+case "$MODE" in
+  staged) LIST="${SDD_STAGED:-$(git -C "$ROOT" diff --cached --name-only --diff-filter=d)}";;
+  files)  LIST="$(for f in $FILES; do printf '%s\n' "${f#$ROOT/}"; done)";;
+  *)      LIST="$( { find "$ROOT/specs" -maxdepth 1 -name '*.md'; find "$ROOT/specs/adr" "$ROOT/specs/core" -type f -name '*.md' 2>/dev/null
+                     find "$ROOT/src/core" -type f 2>/dev/null; } | sed "s#^$ROOT/##")";;
+esac
+HITS=0
+for f in $LIST; do
+  [ -f "$ROOT/$f" ] || continue
+  if is_root_spec "$f" && [ -n "$IDRE" ]; then
+    # bỏ khối <!-- --> và dòng trong ``` — trích dẫn ví dụ trong lời giảng không phải trích thật
+    H="$(strip_markup < "$ROOT/$f" | awk '/^```/{c=!c; next} !c' | grep -nwE "($IDRE)" | head -5)"
+    if [ -n "$H" ]; then
+      HITS=$((HITS+1))
+      bad "$f trích ID của nghề ($(printf '%s\n' "$H" | grep -owE "($IDRE)" | sort -u | tr '\n' ' ' | sed 's/ $//')) — gốc và core không biết nghề"
+      printf '%s\n' "$H" | cut -c1-100 | sed 's/^/      /'
+    fi
+  fi
+  if is_core_src "$f"; then
+    H="$(grep -nE "(import|require|from)[^\n]*['\"](\.\./)+($NRE)/|['\"](src|@|~)/($NRE)/" "$ROOT/$f" | head -5)"
+    if [ -n "$H" ]; then
+      HITS=$((HITS+1))
+      bad "$f import từ src/<nghề> — src/core không được biết nghề ($NGHE)"
+      printf '%s\n' "$H" | cut -c1-100 | sed 's/^/      /'
+    fi
+  fi
+done
+if [ "$HITS" -eq 0 ]; then
+  ok "ranh giới lõi/nghề: không chỗ nào ở gốc/core trích nghề ($(printf '%s\n' "$NIDS" | grep -c .) ID nghề, $(printf '%s\n' "$LIST" | grep -c .) file xét)"
+  exit 0
+fi
+info "sửa: thứ nghề cần mà lõi cũng cần thì đưa lên gốc/core (RULE xuyên suốt, entity chung); còn lại thì dòng đó về specs/<nghề>/"
+exit 1

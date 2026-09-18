@@ -248,6 +248,12 @@ else
 fi
 
 siblings
+# 7.0: UC của lõi không được biết nghề — layer-check chỉ CẢNH BÁO ở đây (repo vừa migrate còn nợ cũ; githook
+# pre-commit.d/20-layer-boundary chặn nợ mới khi bật).
+if [ "$CTX" = core ] && [ -f "$HERE/layer-check.sh" ]; then
+  LCO="$(bash "$HERE/layer-check.sh" --file "$F" "$DIR/$ID.flow.md" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep '✗' | head -3)"
+  [ -n "$LCO" ] && { warn "UC ở core trích ID của nghề — lõi không biết nghề (layer-check.sh):"; printf '%s\n' "$LCO" | cut -c1-110 | sed 's/^/      /'; }
+fi
 
 # 7. adversarial pass có nội dung
 AP="$(sed -n '/^## Adversarial pass/,/^## /p' "$F")"

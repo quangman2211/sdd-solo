@@ -71,6 +71,68 @@ fi
 sec() { printf '%s' "$B" | awk -v h="$1" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}'; }
 # nonempty/filled dùng bản chung ở lib.sh (4.0.1)
 
+# ── 7.0: tầng 0 — BR tự nhận là một lát, và không co lại điều vision.md cấm co ──
+# Ca thật (plan 7.0 §1): BR-003 của runxops bị co ba lần qua ba lượt adversarial — mỗi lần đều đúng luật
+# "không số thì không vào Background" — tới khi "chiều ghi" nằm ở Out of Scope mà không ai thấy, vì không
+# tầng nào giữ ý định. Ba kiểm dưới chỉ chạy ở bố cục 7.0 (repo 6.x chưa migrate không có vision.md).
+V7=0; [ "$(layout "$ROOT")" = v7 ] && V7=1
+if [ "$V7" = 1 ]; then
+  VF="$(find_vision "$ROOT")"
+  if [ -z "$VF" ]; then
+    warn "chưa có specs/vision.md — tầng 0 chưa viết; BR không có gì để tự nhận lát (/sdd-solo:intake bước 0)"
+  else
+    # (a) **Lát:** <nghề> · <tên lát> — nghề phải là thư mục chứa BR, tên lát phải có ở bảng ## Nghề và lát
+    LAT="$(printf '%s' "$B" | grep -oE '^- \*\*Lát:\*\* *.*' | head -1 | sed 's/^- \*\*Lát:\*\* *//')"
+    LN="$(printf '%s' "$LAT" | awk -F' · ' '{print $1}' | sed 's/[[:space:]]*$//')"
+    LT="$(printf '%s' "$LAT" | awk -F' · ' '{ $1=""; sub(/^ · /,""); print }' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/ — .*//')"
+    OWN="$(owner_of_br "$ID" "$ROOT")"
+    VT="$(awk '/^## Nghề và lát/{f=1;next} f&&/^## /{exit} f' "$VF" | grep -E '^\|' | grep -vE '^\|[- |]*\|$')"
+    if [ -z "$LAT" ]; then
+      bad "thiếu dòng '- **Lát:** <nghề> · <tên lát>' trong ## Metadata — BR nào cũng phải tự nhận là một lát ở specs/vision.md"
+    elif ! nonempty "$LT" || printf '%s' "$LT" | grep -qE '^___$|<'; then
+      bad "**Lát:** chưa có tên lát (còn ___ hoặc <...>) — chọn một dòng ở bảng ## Nghề và lát của specs/vision.md"
+    elif [ -n "$OWN" ] && [ "$LN" != "$OWN" ]; then
+      bad "**Lát:** nói nghề '$LN' nhưng BR nằm ở specs/$OWN/ — hai chỗ phải cùng một nghề"
+    elif ! printf '%s\n' "$VT" | grep -F -- "$LT" | grep -qE "^\| *$LN *\|"; then
+      bad "**Lát:** '$LN · $LT' không có trong bảng ## Nghề và lát của specs/vision.md — thêm dòng ở đó (chủ dự án) hoặc sửa tên cho khớp"
+    else
+      ok "lát: $LN · $LT — có ở specs/vision.md"
+    fi
+    # (b) Out of Scope không được chứa từ khoá của ## Không thu hẹp — trừ khi chủ dự án chốt có ngày
+    OOS="$(sec '## Out of Scope' | grep -E '^[[:space:]]*[-*] ')"
+    KEYS="$(awk '/^## Không thu hẹp/{f=1;next} f&&/^## /{exit} f' "$VF" | grep -E '^[[:space:]]*[-*] ' | sed -E 's/^[[:space:]]*[-*] *//' \
+           | awk '{ if (match($0, /\*\*[^*]+\*\*/)) print substr($0, RSTART+2, RLENGTH-4); else print }' | grep -vE '^<|^___$' | awk 'NF')"
+    if [ -n "$KEYS" ] && [ -n "$OOS" ]; then
+      HITN=0
+      while IFS= read -r k; do
+        [ -n "$k" ] || continue
+        H="$(printf '%s\n' "$OOS" | grep -iF -- "$k")"
+        [ -n "$H" ] || continue
+        while IFS= read -r ln; do
+          [ -n "$ln" ] || continue
+          if printf '%s' "$ln" | grep -qE 'cố ý thu hẹp — chủ dự án chốt [0-9]{4}-[0-9]{2}-[0-9]{2}'; then
+            info "Out of Scope thu hẹp '$k' có chủ ý (chủ dự án chốt): $(printf '%s' "$ln" | cut -c1-90)"
+          else
+            HITN=$((HITN+1))
+            bad "Out of Scope co lại điều vision.md không cho co — '$k': $(printf '%s' "$ln" | cut -c1-100)"
+          fi
+        done <<EOF_H
+$H
+EOF_H
+      done <<EOF_K
+$KEYS
+EOF_K
+      [ "$HITN" -gt 0 ] && info "muốn thu hẹp thật thì dòng đó ghi 'cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD' (quyết định của chủ dự án, có ngày); không thì đưa ra khỏi Out of Scope"
+      [ "$HITN" -eq 0 ] && ok "Out of Scope không co lại điều nào của ## Không thu hẹp ($(printf '%s\n' "$KEYS" | grep -c .) từ khoá)"
+    elif [ -z "$KEYS" ]; then
+      warn "specs/vision.md ## Không thu hẹp chưa có điều nào (dạng '- **từ khoá** — giải thích') — không có gì để giữ BR khỏi co"
+    fi
+    # Out of Scope mỗi dòng nói nó đi đâu — cảnh báo (khuôn 7.0 bảo thế; chưa đủ ca thật để chặn)
+    NOD_OOS="$(printf '%s\n' "$OOS" | grep -vE '→|cố ý thu hẹp' | grep -vE '<[^>]+>' | grep -c .)"
+    [ "$NOD_OOS" -gt 0 ] && warn "$NOD_OOS dòng Out of Scope chưa nói đi đâu — thêm '→ lát ___' hoặc '→ mở lại khi ___' (hoặc 'cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD')"
+  fi
+fi
+
 # 1. tiêu đề
 grep -qE "^# $ID: *[^ <]" "$BF" && ok "có tiêu đề" || bad "dòng '# $ID:' chưa có tên thật"
 
@@ -209,8 +271,20 @@ if printf '%s' "$B" | grep -qiE '\*\*Nguồn:\*\*.*brief'; then
     # bản thiết kế viết ra kiến trúc NGƯỢC HẲN brief mà không ai đối chiếu.
     # Từ 4.0.0 đích của loại dòng này là specs/internal/architecture.md, mục
     # ## Đã chốt từ brief — một chỗ CÓ THẬT và design-check đọc tới.
+    # 7.0 (c): MỌI dòng loại phải có đích — `→ lát ___` (lát nào trong vision.md nhận) · `→ mở lại khi ___` ·
+    # `→ chuyển: <đích>` (mục kiến trúc). Không đích là hoãn vào hư không — plan 7.0 §1: ba thứ bị loại khỏi
+    # BR-003 không ai biết chúng thuộc lát nào. Ở 6.x vẫn chỉ cảnh báo như cũ (khối dưới).
+    if [ "$V7" = 1 ]; then
+      NOD7="$(printf '%s' "$DR" | grep -E '^[[:space:]]*[-*] ' | grep -vE '→ *(lát|mở lại khi|chuyển)' | grep -vE '^[[:space:]]*[-*] *<' | grep -c .)"
+      if [ "$NOD7" -gt 0 ]; then
+        bad "$NOD7 dòng ## Đã loại khỏi brief không có đích — mỗi dòng thêm '→ lát <tên lát>' hoặc '→ mở lại khi <điều kiện>' (hay '→ chuyển: <đích>' nếu là mục kiến trúc)"
+        printf '%s' "$DR" | grep -E '^[[:space:]]*[-*] ' | grep -vE '→ *(lát|mở lại khi|chuyển)' | head -3 | cut -c1-110 | sed 's/^/      /'
+      else
+        ok "mọi dòng ## Đã loại khỏi brief đều có đích (lát · mở lại khi · chuyển)"
+      fi
+    fi
     FWD="$(printf '%s' "$DR" | grep -iE 'speckit-plan|/plan|design\.md|architecture|kiến trúc|ADR|Phase 5|sau này|để sau|tầng thiết kế')"
-    if [ -n "$FWD" ]; then
+    if [ "$V7" = 0 ] && [ -n "$FWD" ]; then
       NOD="$(printf '%s\n' "$FWD" | grep -vE '→ *(chuyển|đích)' | grep -c .)"
       if [ "$NOD" -gt 0 ]; then
         warn "$NOD mục hoãn sang bước sau mà không ghi ĐÍCH — không cơ chế nào tự chuyển chúng đi"

@@ -41,6 +41,11 @@ else
   done
   if [ -n "$MISS" ]; then bad "architecture.md thiếu mục:$MISS"
   else ok "architecture.md có đủ sáu mục"; fi
+  # 7.0: design.md của UC ở core không được kéo nghề vào lõi — cảnh báo (layer-check.sh)
+  if [ "$CTX" = core ] && [ -f "$DS" ] && [ -f "$HERE/layer-check.sh" ]; then
+    LCO="$(bash "$HERE/layer-check.sh" --file "$DS" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep '✗' | head -3)"
+    [ -n "$LCO" ] && { warn "design.md của UC ở core trích ID/entity của nghề — lõi không biết nghề:"; printf '%s\n' "$LCO" | cut -c1-110 | sed 's/^/      /'; }
+  fi
   # Placeholder <...> = chưa ai quyết. '___' thì HỢP LỆ (chưa quyết được, nhưng đã
   # biết là mình chưa quyết) — cùng luật với tầng BR: '___' là câu trả lời, '<...>'
   # là chỗ chưa ai đụng tới. Bỏ dòng trích dẫn '>' của phần hướng dẫn đầu file.

@@ -196,10 +196,11 @@ for u, x in sorted(UCS.items()):
     n = nghe_of_br(x['br']); dst = f'{br_dir(x["br"])}/use-cases/{os.path.basename(x["dir"])}'
     mv(x['dir'], dst)
     f = rd(f'{x["dir"]}/{u}.md') or ''
-    f2 = re.sub(r'(?m)^- \*\*Bounded Context:\*\* *[^\n]*$', f'- **Nghề:** {n} · **Lát:** {x["br"]} (trước 7.0: context `{x["ctx"]}`)', f, count=1)
     old_br = (re.search(r'Liên quan tới BR:\*\* *(BR-[0-9]+)', f) or [None, None])[1]
+    # dấu vết "trước 7.0" để trong <!-- --> — strip_markup bỏ, nên layer-check không tính UC về core là trích nghề cũ
+    f2 = re.sub(r'(?m)^- \*\*Bounded Context:\*\* *[^\n]*$', f'- **Nghề:** {n} · **Lát:** {x["br"]} <!-- 7.0 ({TODAY}): dời từ context `{x["ctx"]}`' + (f', {old_br}' if old_br and old_br != x['br'] else '') + ' -->', f, count=1)
     if old_br and old_br != x['br']:   # map `uc` đổi BR (UC-024 console → BR core mới): dòng Metadata phải nói cùng một thứ với thư mục
-        f2 = re.sub(r'(?m)^(- \*\*Liên quan tới BR:\*\* *)BR-[0-9]+', r'\g<1>' + f'{x["br"]} (trước 7.0: {old_br})', f2, count=1)
+        f2 = re.sub(r'(?m)^(- \*\*Liên quan tới BR:\*\* *)BR-[0-9]+', r'\g<1>' + x['br'], f2, count=1)
     if f2 != f: write(f'{dst}/{u}.md', f2)
     if n != nghe_of_ctx[x['ctx']]:
         NEED.append((f'{u} sang `{n}` (context `{x["ctx"]}` → nghề `{nghe_of_ctx[x["ctx"]]}`): entity nó dùng phải nằm ở `specs/core/entities/` hoặc `specs/{n}/entities/` — thêm dòng `entity <Tên> {n}` vào map nếu chưa', dst))
@@ -246,13 +247,30 @@ if M['rule']:
             write(f'specs/{n}/rules.md', head.rstrip('\n') + '\n\n' + ''.join(secs).rstrip('\n') + '\n')
 # 7. glossary.md → nghề
 gl = rd('specs/glossary.md') or ''
-parts = re.split(r'(?m)^(?=## )', gl); keep = [parts[0]]; per = {}
+parts = re.split(r'(?m)^(?=## )', gl); keep = [parts[0]]; per = {}; STAY = []
+CORE_ENT = set(k for k, v in M['entity'].items() if v == 'core')
+ROOT_TERMS = set(k for k, v in M['glossary'].items() if v in ('gốc', 'goc', 'root'))
+def term_names(block):   # tên trong **đậm** và trong `backtick` của dòng đầu một mục từ
+    h = block.split('\n', 1)[0]
+    return set(re.findall(r'\*\*([^*]+)\*\*', h)) | set(re.findall(r'`([A-Za-z][A-Za-z0-9_]*)`', h))
 for sec in parts[1:]:
     head = sec.split('\n', 1)[0][3:].strip(); fw = re.sub(r'[^A-Za-z0-9_-]', ' ', head).split()
     fw = fw[0].lower() if fw else ''
     n = M['glossary'].get(fw) or nghe_of_ctx.get(fw)
-    if n and fw != 'history': per.setdefault(n, []).append(sec); MOVED.append((f'specs/glossary.md ## {head[:40]}', f'specs/{n}/glossary.md'))
+    if n in ('gốc', 'goc', 'root'): n = None
+    if n and fw != 'history':
+        # tách mục thành từng khối từ (bắt đầu bằng `- ` ở cột 0); khối nào là entity core / từ khai `gốc` thì ở lại
+        blocks = re.split(r'(?m)^(?=- )', sec); go = [blocks[0]]
+        for bl in blocks[1:]:
+            names = term_names(bl)
+            if names & CORE_ENT or names & ROOT_TERMS: STAY.append(bl.rstrip('\n') + '\n'); MOVED.append((f'specs/glossary.md ## {head[:30]} · {", ".join(sorted(names))[:40]}', 'specs/glossary.md ## Chung (entity core / khai gốc)'))
+            else: go.append(bl)
+        per.setdefault(n, []).append(''.join(go)); MOVED.append((f'specs/glossary.md ## {head[:40]}', f'specs/{n}/glossary.md'))
     else: keep.append(sec)
+if STAY:
+    stay_sec = '## Chung — từ của entity core, giữ ở gốc (migrate 7.0)\n' + ''.join(STAY) + '\n'
+    hist = next((i for i, k in enumerate(keep) if k.startswith('## History')), len(keep))
+    keep.insert(hist, stay_sec)
 if per:
     write('specs/glossary.md', ''.join(keep).rstrip('\n') + '\n')
     for n, secs in per.items():

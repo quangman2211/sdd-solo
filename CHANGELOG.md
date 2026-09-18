@@ -60,6 +60,28 @@ nhãn "③ RULE + entity + glossary"). Từng mốc ghi dưới đây; mốc ch�
   `tests/use-cases/ebay/UC-014` đúng chỗ mới.
   - `lib.sh brief_rec_sha`: nhiều `br.md` thì lấy dòng `Nguồn brief:` có `nạp <ngày>` muộn nhất — bản đầu lấy dòng đầu
     theo thứ tự file, gặp BR-001 cũ của runxops (sha cũ) là br-check đỏ oan "brief đã đổi".
+- **(4) Tầng 0 kiểm bằng máy + ranh giới lõi/nghề.** `br-check` ở bố cục 7.0 (6.x không đổi một dòng — đo bằng snapshot):
+  (a) BR phải có `- **Lát:** <nghề> · <tên lát>`; nghề phải là thư mục chứa BR, tên lát phải có ở bảng `## Nghề và lát`
+  của `specs/vision.md` — thiếu/lệch/không có trong bảng → đỏ. (b) `## Không thu hẹp` của vision.md viết
+  `- **<từ khoá>** — <giải thích>`; dòng Out of Scope nào chứa từ khoá (không phân biệt hoa thường) → đỏ, trừ dòng
+  ghi `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD` (in info). Dòng Out of Scope chưa nói đi đâu → cảnh báo.
+  (c) mỗi dòng `## Đã loại khỏi brief` phải có `→ lát …` / `→ mở lại khi …` / `→ chuyển: …` → thiếu là đỏ (6.x vẫn
+  chỉ cảnh báo như cũ). Đo trên fixture: đúng ba ca đỏ (thiếu Lát · "Chiều ghi" ở Out of Scope · dòng loại không đích),
+  ca có nhãn chủ dự án qua.
+  - `scripts/layer-check.sh [--staged | --file …]` (mới, vào `.sdd/scripts/`): ① gốc `specs/*.md` · `specs/adr/` ·
+    `specs/core/**` không trích ID của nghề (RULE/ADR/UC/BR sống trong `specs/<nghề>/` + tên entity ở
+    `specs/<nghề>/entities/`; bỏ khối `<!-- -->` và ``` ```; trừ vision.md · decisions.md · traceability.md · trace ·
+    evidence · notes/); ② `src/core/**` không import `../<nghề>/` · `src/<nghề>/` · `@/<nghề>/`. Repo 6.x → "không có
+    nghề để kiểm", exit 0. Đo trên bản sao runxops sau migrate: 12 file gốc/adr/core đang trích nghề — đó là nợ cũ
+    có thật, Bước C của runxops soát; hook chỉ chặn nợ MỚI.
+  - `templates/githooks/pre-commit.d/20-layer-boundary.sh.example`: gọi `layer-check.sh --staged`, tắt mặc định (`.example`).
+    `gate-check` (UC ở core) và `design-check` (design.md của UC ở core) gọi `layer-check --file` — chỉ cảnh báo.
+  - `migrate --layout v7`: mục glossary theo context sang nghề nhưng **từng dòng từ** là entity đã map về core (hay
+    khai `glossary <từ> gốc`) ở lại gốc dưới `## Chung — từ của entity core` (từ tên trong `**đậm**`/`` `backtick` ``
+    của dòng đầu khối; suy thẳng từ map, không đoán — ca thật: `Việc (WorkItem)` về core mà dòng glossary theo
+    mục "orders" sang ebay, gate UC-024 cảnh báo oan). Dấu vết "dời từ context X, BR-Y" của UC ghi trong `<!-- -->`
+    để layer-check không tính UC về core là trích nghề cũ. Khuôn `skel/br/br.md` Impact Map dùng `BR-000` (bản
+    đầu ghi `BR-001`, khung BR-004 sinh ra tự trích BR-001).
 
 ## 6.6.2 — 2026-09-18
 

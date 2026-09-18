@@ -67,7 +67,7 @@ thẳng "chưa có lý do" — đó là câu trả lời trung thực, và vai h
 ## Impact Map
 ```mermaid
 flowchart LR
-  G["<b>WHY</b><br/>BR-001<br/><goal>"]
+  G["<b>WHY</b><br/>BR-000<br/><goal>"]
   A1["<b>WHO</b><br/><actor 1>"]
   H1["<b>HOW</b><br/><hành vi cần thay đổi>"]
   W1["<b>WHAT</b><br/>UC-### <tên>"]
@@ -79,7 +79,7 @@ flowchart LR
 ```
 
 ## Adversarial pass
-<`/sdd-solo:adversarial BR-001` điền vào đây — ba vai: người trả tiền, người vận hành mãi, người hoài nghi>
+<`/sdd-solo:adversarial BR-000` điền vào đây — ba vai: người trả tiền, người vận hành mãi, người hoài nghi>
 
 ## Open Questions
 - [ ] ...
