@@ -24,9 +24,11 @@ từ lượt hiện tại. Không tham số → in bảng vai (§2) và hỏi us
 
 ## 1. `setup` — một lần cho repo
 
-1. Đọc `.sdd/config`: `code_paths` · `test_paths` · `uc_test_dir`. Ranh giới vai **lấy từ đó**, không viết chết.
-   Thiếu `uc_test_dir` → dừng, bảo user khai (mặc định `tests/use-cases`).
-2. Sổ hỏi đáp: `specs/internal/hoi-dap.md`. Chưa có → copy từ
+1. Đọc `.sdd/config`: `code_paths` · `test_paths` · `uc_test_dir` · `nghe_paths`. Ranh giới vai **lấy từ đó**, không viết chết.
+   Thiếu `uc_test_dir` → dừng, bảo user khai (mặc định `tests/use-cases`). `nghe_paths` (7.0) là tên các nghề —
+   nó quyết `<uctest>/<core|nghề>/UC-###/` của vai T và vùng `src/<nghề>/` của vai D; trống ở repo còn bố cục 6.x
+   thì ranh giới vẫn tính theo `code_paths`/`uc_test_dir` như cũ.
+2. Sổ hỏi đáp: `notes/hoi-dap/hoi-dap.md` (vết quá trình, **ngoài `specs/`** từ 7.0). Chưa có → copy từ
    `${CLAUDE_PLUGIN_ROOT}/templates/skel/hoi-dap.md` (không thay được biến: `find ~/.claude/plugins -name hoi-dap.md
    -path '*sdd-solo*' | head -1`). Có rồi → không đụng.
 3. Hook ranh giới: `.sdd/hooks/pre-commit.d/10-role-boundary.sh` chưa có → `cp .sdd/hooks/pre-commit.d/10-role-boundary.sh.example
@@ -43,14 +45,14 @@ từ lượt hiện tại. Không tham số → in bảng vai (§2) và hỏi us
 
 | Vai | Được ghi | Không được ghi | Kết thúc lượt bằng |
 |---|---|---|---|
-| **A · Điều phối** | `STATE.md`, `specs/internal/decisions.md`, `specs/internal/hoi-dap.md` (commit thay R), sổ điều phối | code, spec | giao việc; **cổng duy nhất hỏi chủ dự án** (`AskUserQuestion`, mỗi lựa chọn một câu hệ quả, luôn có "Uỷ quyền R") |
+| **A · Điều phối** | `STATE.md`, `specs/decisions.md`, `notes/hoi-dap/hoi-dap.md` (commit thay R), sổ điều phối | code, spec | giao việc; **cổng duy nhất hỏi chủ dự án** (`AskUserQuestion`, mỗi lựa chọn một câu hệ quả, luôn có "Uỷ quyền R") |
 | **B · Spec** | `specs/` | code, `STATE.md`, `decisions.md` | commit `docs(ID)` + hash + danh sách `___` còn lại |
-| **C · Soi** | `specs/internal/soat-<ID>-luot-N.md` — ghi thẳng (runxops) hoặc scratchpad rồi A chép; **A commit**, C không commit | nội dung spec/code | số phát hiện + đường dẫn file; **phiên mới mỗi lượt**, không đọc sổ điều phối/STATE, không hỏi ai — HỎI ghi vào file |
-| **R · Trọng tài** | chỉ `specs/internal/hoi-dap.md`, **không commit** | mọi file khác | phiếu `#n · L? · Cho: spec · D · T` |
-| **V · Trình bày** | `specs/internal/` ghi chú, artifact | spec, code | link; **không quyết** |
-| **D · Code** | `<code>/**`, migrations, `<test>/**` **trừ** `<uctest>/**`, deploy — trong **worktree riêng**, nhánh `code/<uc-###>` | `<uctest>/**`, `specs/` (trừ `specs/internal/hoi-D.md`) | `feat(UC-###)` · câu hỏi → `specs/internal/hoi-D.md` (`HỎI-D#` · `TEST-#`) |
-| **T · Test** | `<uctest>/<ctx>/UC-###/**` (test, harness, fake, fixture) — nhánh `test/<uc-###>` | `<code>/**`, spec (trừ `specs/internal/hoi-T.md`) | `test(UC-###)` · câu hỏi → `specs/internal/hoi-T.md` (`HỎI-T#`) |
-| **Q · QA** | `specs/internal/qa-UC-###.md`, fixture ẩn danh | code, spec | báo cáo; bật khi compose/deploy chạy được |
+| **C · Soi** | `notes/soat/soat-<ID>-luot-N.md` — ghi thẳng (runxops) hoặc scratchpad rồi A chép; **A commit**, C không commit | nội dung spec/code | số phát hiện + đường dẫn file; **phiên mới mỗi lượt**, không đọc sổ điều phối/STATE, không hỏi ai — HỎI ghi vào file |
+| **R · Trọng tài** | chỉ `notes/hoi-dap/hoi-dap.md`, **không commit** | mọi file khác | phiếu `#n · L? · Cho: spec · D · T` |
+| **V · Trình bày** | `notes/ban-do/` ghi chú, bản đồ, artifact | spec, code | link; **không quyết** |
+| **D · Code** | `<code>/**`, migrations, `<test>/**` **trừ** `<uctest>/**`, deploy — trong **worktree riêng**, nhánh `code/<uc-###>` | `<uctest>/**`, `specs/` (toàn bộ) | `feat(UC-###)` · câu hỏi → `notes/hoi-dap/hoi-D.md` (`HỎI-D#` · `TEST-#`) |
+| **T · Test** | `<uctest>/<core\|nghề>/UC-###/**` (test, harness, fake, fixture) — nhánh `test/<uc-###>` | `<code>/**`, `specs/` (toàn bộ) | `test(UC-###)` · câu hỏi → `notes/hoi-dap/hoi-T.md` (`HỎI-T#`) |
+| **Q · QA** | `notes/soat/qa-UC-###.md`, fixture ẩn danh | code, spec | báo cáo; bật khi compose/deploy chạy được |
 
 **Luật đã trả giá để có — đọc trước khi giao lượt đầu:**
 1. **Fake/harness của cổng thuộc T.** D thấy fake sai → **không sửa**, ghi `TEST-#` (file, dòng, cần gì, vì sao) vào
@@ -65,8 +67,8 @@ từ lượt hiện tại. Không tham số → in bảng vai (§2) và hỏi us
    phải khai **chữ ký cổng/hàm use-case**, không chỉ tên file (skill `design` §3 từ 6.6.0).
 5. **C hay đẩy lên chủ dự án cái design đã quyết** (hai lần một ngày). R tra design trước khi xếp mức; câu "cần
    chủ dự án chốt" của C chỉ tới chủ dự án **sau khi R xác nhận L3**. A không hỏi thẳng theo lời C.
-6. **Tối đa hai agent ghi chạy cùng lúc** vào cùng vùng; không song song hai UC khác context nếu cùng ghi
-   `glossary.md`/`rules.md`; đổi tên lớn không song song với việc code nào.
+6. **Tối đa hai agent ghi chạy cùng lúc** vào cùng vùng; không song song hai UC khác lát nếu cùng ghi một
+   `glossary.md`/`rules.md` (gốc hay của cùng một nghề); đổi tên lớn không song song với việc code nào.
 7. **Không bao giờ giao cho agent:** đặt số/ngưỡng/giá · câu chốt hình dạng UC · `gate`/`close` · push/deploy/xoá.
    Đó là L3 của `hoi-dap.md`, và là việc A hỏi chủ dự án.
 
@@ -75,8 +77,8 @@ từ lượt hiện tại. Không tham số → in bảng vai (§2) và hỏi us
 **Lời giao vai** (một lần khi khởi động agent, ≤ 1.500 ký tự):
 ```
 Vai: <D · Code cho UC-###>. Nhánh/worktree: <code/uc-###, đường-dẫn-worktree>.
-Được ghi: <code_paths> migrations. KHÔNG ghi: <uc_test_dir>/** (của T), specs/ (trừ specs/internal/hoi-D.md).
-Không tự quyết nghiệp vụ: spec thiếu số/enum/quyền → DỪNG, ghi HỎI-D# vào specs/internal/hoi-D.md, không đoán,
+Được ghi: <code_paths> migrations, notes/hoi-dap/hoi-D.md. KHÔNG ghi: <uc_test_dir>/** (của T), specs/ (toàn bộ).
+Không tự quyết nghiệp vụ: spec thiếu số/enum/quyền → DỪNG, ghi HỎI-D# vào notes/hoi-dap/hoi-D.md, không đoán,
 không AskUserQuestion, không nhắn agent khác. Không chạy /sdd-solo:*. Commit <type>(UC-###), không push.
 Kết thúc mỗi lượt: báo ngắn (commit · số kiểm · HỎI/TEST mới) rồi DỪNG.
 CHƯA có việc. Đọc <design.md, tasks.md> rồi trả lời đúng một dòng: "D sẵn sàng".
@@ -100,7 +102,8 @@ khối không tự gửi (phụ lục).
 
 **Lời giao soát code cho C** (sau mỗi lượt D, phiên mới): diff `git -C <worktree> diff <base>..<head>`; năm câu:
 (1) truy vết việc → AC → test → code; (2) đúng tầng domain / use-cases / adapters; (3) mặc định ngầm và chỗ D khai
-"ĐOÁN"; (4) chuyển trạng thái theo `entities.md`, cột cấm (CON) không lọt; (5) code đổi lặng lẽ so với `design.md`.
+"ĐOÁN"; (4) chuyển trạng thái theo file entity (`specs/<core|nghề>/entities/<Tên>.md`), cột cấm (CON) không lọt;
+(5) code đổi lặng lẽ so với `design.md`; (6) `src/core` có import `src/<nghề>` không — `layer-check.sh` đếm hộ.
 Mỗi phát hiện **theo khuôn phiếu** (`Câu · Đã tra · Nếu chọn sai thì · Agent nghiêng về`) để R xếp mức không phải
 dịch lại. Ghi trong prompt của C và R: **phép đo nào có thể đã cũ** vì T đang sửa song song.
 
@@ -110,9 +113,9 @@ dịch lại. Ghi trong prompt của C và R: **phép đo nào có thể đã c�
 (`/sdd-solo:gate`, `/sdd-solo:design`). Không dựng D khi chưa đủ — đó là luật của `CLAUDE.md`, không phải của A.
 
 ```
-T lượt 1  — test ĐỎ từ AC (mỗi AC một file trong <uctest>/<ctx>/UC-###/), harness + fake từ design; nhánh test/uc-###
+T lượt 1  — test ĐỎ từ AC (mỗi AC một file trong <uctest>/<core|nghề>/UC-###/), harness + fake từ design; nhánh test/uc-###
 D lượt 1  — khối nền (tasks "việc không gắn AC nào"), rồi merge test/uc-### từng AC, làm xanh; nhánh code/uc-###
-C soát    — phiên mới, diff lượt D, năm câu §3 → specs/internal/soat-UC-###-luot-N.md (C ghi thẳng, A commit)
+C soát    — phiên mới, diff lượt D, năm câu §3 → notes/soat/soat-UC-###-luot-N.md (C ghi thẳng, A commit)
 R         — một phiếu gom K1…Kn: mức từng K, Cho: spec · D · T, thứ tự áp; A commit sổ
 spec ‖ D ‖ T — ba vai áp CÙNG LÚC, mỗi vai đọc đúng phần "Cho:" của mình
 … lặp: D lượt n → C soát → R → spec ‖ D ‖ T … tới khi hai suite xanh trên code thật và C không còn K mức L0/L1
@@ -128,7 +131,7 @@ hình cho kết quả dài); (2) kiểm ranh giới bằng máy (§2 luật 2); 
 (`hoi-dap.md`, file soát) — `chore(sdd): hoi-dap #n` hoặc `docs(UC-###): soát lượt N`; (4) `STATE.md` một dòng:
 lượt nào đang chạy, phiếu nào chờ Duyệt.
 
-**Luồng phiếu:** agent ghi `HỎI-<vai>#` vào `specs/internal/hoi-<vai>.md` (trong worktree của nó) rồi DỪNG → A đọc
+**Luồng phiếu:** agent ghi `HỎI-<vai>#` vào `notes/hoi-dap/hoi-<vai>.md` (trong worktree của nó) rồi DỪNG → A đọc
 worktree, giao R: *"phiếu #n: xếp mức L0–L3, tra spec/ADR/design, ghi Cho: từng vai, thứ tự áp; chỉ ghi
 hoi-dap.md, không commit"* → L0–L2: A phát phần `Cho:` cho từng vai · L3: A hỏi chủ dự án `AskUserQuestion` (2–4
 lựa chọn, hệ quả một câu, có "Chưa quyết") → A ghi `decisions.md`/spec trước khi D bắt đầu lượt kế. Agent lặp lại

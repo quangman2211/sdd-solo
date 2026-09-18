@@ -1,6 +1,6 @@
 ---
 name: design
-description: Bước ⑩ — thiết kế kỹ thuật cho một UC đã qua cổng DoR. Sinh design.md + tasks.md trong thư mục UC, đối chiếu ngược lên specs/internal/architecture.md và lên brief nguồn. Dùng sau /sdd-solo:gate và TRƯỚC khi viết dòng code đầu tiên.
+description: Bước ⑩ — thiết kế kỹ thuật cho một UC đã qua cổng DoR. Sinh design.md + tasks.md trong thư mục UC, đối chiếu ngược lên specs/vision.md, specs/architecture.md và brief nguồn. Dùng sau /sdd-solo:gate và TRƯỚC khi viết dòng code đầu tiên.
 disable-model-invocation: true
 argument-hint: "UC-###"
 allowed-tools: Bash Read Write Edit Grep Glob AskUserQuestion
@@ -8,8 +8,8 @@ allowed-tools: Bash Read Write Edit Grep Glob AskUserQuestion
 
 Thiết kế cho `$1`.
 
-**Vì sao bước này thuộc về sdd-solo chứ không thuê ngoài:** bốn tầng yêu cầu (BR · UC · Entity · AC)
-trả lời *vì sao · ai làm gì · khái niệm nào · biết đúng bằng cách nào*. **Không tầng nào trả lời
+**Vì sao bước này thuộc về sdd-solo chứ không thuê ngoài:** năm tầng yêu cầu (Hướng · BR · UC · Entity · AC)
+trả lời *đi về đâu · vì sao làm lát này · ai làm gì · khái niệm nào · biết đúng bằng cách nào*. **Không tầng nào trả lời
 *dựng bằng gì · chạy ở đâu · ai gọi*.** Trước 4.0.0 câu đó rơi vào một công cụ ngoài, và công cụ ấy
 đọc đúng hai thứ: một file mỏng chỉ chứa ID, và một `constitution.md` mà ở repo thật vẫn nguyên
 placeholder. **Brief không nằm trong hai đầu vào đó và chưa bao giờ nằm** — nên bản thiết kế nói
@@ -42,7 +42,12 @@ sau khi cắt dấu vết (#43) — dòng kích thước từng nguồn ở cu�
 Rồi đọc **brief nguồn** — dòng cuối output có `brief_path` và sha. Đây là nguồn duy nhất nằm ngoài
 `specs/` mà không phép kiểm nào khác được giao nhìn tới; `context.sh` cố ý không in nó.
 
-Output có dòng `! architecture.md … còn placeholder` hoặc `! thiếu specs/internal/architecture.md` →
+Và đọc **`specs/vision.md`** — hai mục, không cần cả file: dòng của lát UC này trong bảng `## Nghề và lát`
+(nghề nào, lát nào, đang mở hay đang chờ) và `## Không thu hẹp`. Thiết kế là chỗ một điều "không thu hẹp"
+chết lặng lẽ nhất: nó không bị ai bỏ khỏi spec, chỉ là bản thiết kế chọn một đường không đỡ nổi nó, và sáu
+tháng sau việc mở lại tốn bằng viết lại. UC ở một lát đang **chờ** (chưa mở) → nói với user trước khi thiết kế.
+
+Output có dòng `! architecture.md … còn placeholder` hoặc `! thiếu specs/architecture.md` →
 **dừng và làm nó trước**, cùng user. Một `design.md` đối chiếu lên một hiến pháp trống là một lượt
 đối chiếu rỗng, và phép thử rỗng trông y hệt phép thử qua. Dòng `! RULE-### — UC trích nhưng
 rules.md không có` cũng là dừng: thiết kế trên một luật không tồn tại.
@@ -56,7 +61,9 @@ Copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.design.md` sang `<th�
 - **`## Đối chiếu architecture.md`** — bảng sáu dòng. Mỗi chỗ **đi khác** hiến pháp phải nằm ở đây
   kèm lý do và một `ADR-###` có thật. Không lệch chỗ nào thì vẫn phải viết ra là không lệch.
 - **`## Đối chiếu brief`** — brief đòi gì mà thiết kế này **không** làm, và vì sao. Không có brief
-  thì ghi thẳng *"dự án không có brief nguồn"*.
+  thì ghi thẳng *"dự án không có brief nguồn"*. **Cùng mục này ghi luôn đối chiếu `vision.md`:** mỗi điều
+  ở `## Không thu hẹp` một dòng — thiết kế này đỡ nó bằng cách nào, hay tạm chưa đỡ và mở lại bằng cách
+  nào. Không đỡ được điều nào → **dừng và hỏi chủ dự án**, đừng ghi một dòng nghe như đã cân nhắc xong.
 - `## Cấu trúc code` (đường dẫn thật) — **và chữ ký của mỗi cổng / hàm use-case** (tên · tham số · kiểu trả · lỗi
   ném), không chỉ tên file (#39). Vai T viết harness + fake **từ mục này** trước khi D có code; design chỉ nêu tên
   file thì T phải đoán chữ ký → `HỎI-T1` ở runxops ngay lượt đầu. Làm một mình cũng có lợi: chữ ký viết ra trước là
@@ -67,14 +74,20 @@ Copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.design.md` sang `<th�
 lưu trữ, chọn giao thức) → **DỪNG và hỏi user** bằng `AskUserQuestion`, đúng luật đã áp cho quyết
 định nghiệp vụ. Đừng chọn mặc định rồi ghi vào file như thể đã bàn.
 
-Quyết định nào **đổi hiến pháp** chứ không chỉ áp dụng nó → ghi vào `architecture.md`, không giấu
-trong `design.md` của một UC. Một quyết định cấp dự án nằm trong thư mục một UC là chỗ UC thứ hai
-sẽ không bao giờ tìm thấy.
+Quyết định nào **đổi hiến pháp** chứ không chỉ áp dụng nó → ghi vào `specs/architecture.md` (gốc, xuyên
+suốt), không giấu trong `design.md` của một UC. Một quyết định cấp dự án nằm trong thư mục một UC là chỗ
+UC thứ hai sẽ không bao giờ tìm thấy. ADR đi kèm: `specs/adr/` nếu nó ràng buộc cả dự án,
+`specs/<nghề>/adr/` nếu chỉ nghề đó — một dãy `ADR-###` cho cả dự án.
+
+**UC ở `core` không được trích ID của nghề nào** — không `RULE-###`/`ADR-###`/`UC-###`/`BR-###` sống trong
+`specs/<nghề>/`, không tên entity ở `specs/<nghề>/entities/`. Ở `## Cấu trúc code` thì `src/core` **không
+import** `src/<nghề>/`. `design-check` gọi `layer-check --file` và **cảnh báo** chỗ vi phạm; cảnh báo ở
+đây nghĩa là đọc lại, không phải bỏ qua — lõi trích nghề là chỗ nghề thứ hai sẽ không dùng lại được lõi.
 
 ## 4. Viết `tasks.md`
 
 Copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.tasks.md` sang `<thư mục UC>/tasks.md`. **Mỗi AC một dòng,
-một việc, một file test** `tests/use-cases/<ctx>/$1/AC-#.test.*`. Không chép nội dung AC sang —
+một việc, một file test** `tests/use-cases/<core|nghề>/$1/AC-#.test.*` — `<core|nghề>` là nghề của lát chứa UC. Không chép nội dung AC sang —
 chép là tạo bản thứ hai để sau này lệch nhau. Việc không gắn AC nào (dựng khung, cấu hình) xuống
 mục riêng ở cuối.
 
@@ -97,7 +110,7 @@ git add specs/ && git commit -m "docs($1): thiết kế — design.md + tasks.md
 
 Bước tiếp là ⑪ **viết code theo `tasks.md`**, test đỏ trước. Nhắc ba chỗ hay sai khi đọc `design.md`:
 RULE có được kiểm **trước** khi tạo record không · logic RULE nằm ở domain hay lỡ rơi xuống adapter ·
-chuyển trạng thái có đúng state diagram trong `entities.md` không.
+chuyển trạng thái có đúng state diagram trong file entity (`specs/<core|nghề>/entities/<Tên>.md`) không.
 
 ---
 

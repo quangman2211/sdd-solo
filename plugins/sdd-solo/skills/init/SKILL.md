@@ -33,9 +33,29 @@ Cài hoặc cập nhật sdd-solo trong repo hiện tại.
    một thứ thật sự bắt buộc; đọc lại dòng ✗ cho user.
 5. Output có cảnh báo *"specs/ đang chứa cả cây của Spec Kit"* → nói user chạy
    `bash .sdd/scripts/migrate.sh --dry-run` xem trước, rồi chạy thật. **Đừng tự chạy** — nó dời file.
-6. `specs/br.md` còn nguyên template (có chuỗi `<Tên business requirement>`) → nói bước tiếp là
-   **`/sdd-solo:intake`**. Đừng đề xuất viết code, đừng đề xuất công cụ ngoài.
-7. Có file `.new` trong output → liệt kê và nói user tự merge; không tự ghi đè.
+6. **Repo còn ở bố cục 6.x mà đã có nội dung** (`specs/contexts/` · `specs/br.md` · `specs/internal/`
+   còn đó) → nói user chuyển sang cây 7.0. Ba bước, theo đúng thứ tự, và **đừng tự chạy bước nào**:
+
+   a. Viết file map `.sdd/migrate-v7.map` — mỗi dòng ba từ, nói mỗi thứ về đâu:
+      `context <ctx> <nghề>` · `uc UC-### BR-###` · `br BR-### <core|nghề>` · `adr ADR-### <nghề>` ·
+      `rule RULE-### <nghề>` · `entity <Tên> <core|nghề>` · `glossary <từ-đầu-heading> <nghề>`.
+      Thiếu một context hay một BR thì script in đủ chỗ thiếu và **không chạy** — đó là chủ ý: cái gì
+      thuộc lõi, cái gì thuộc nghề là quyết định của chủ dự án, không phải thứ đoán được từ đường dẫn.
+   b. `bash .sdd/scripts/migrate.sh --layout v7 --dry-run` — đọc ba bảng nó in: đã dời · file đã sửa
+      đường dẫn · **CẦN TAY**.
+   c. Chạy thật, rồi làm bảng "CẦN TAY". Script **không commit hộ** và **không đụng brief nguồn**
+      (sha phải giữ nguyên).
+
+   Sau khi migrate: `.sdd/config` có key mới `nghe_paths=<tên nghề cách nhau dấu cách>` (`core` không
+   kể) — kiểm nó khớp với các thư mục `specs/<nghề>/` thật. Và `specs/vision.md` sinh ra từ khuôn,
+   **còn trống**: nói user chạy `/sdd-solo:intake` để chép tầng 0 vào, vì `br-check` đòi mỗi BR khai
+   `**Lát:**` khớp bảng `## Nghề và lát` của file đó.
+
+   Repo 6.x **chưa** migrate vẫn chạy y nguyên — mọi script tra cả hai bố cục. Không ép user chuyển.
+7. `specs/core/br-000/br.md` còn nguyên template (có chuỗi `<Tên business requirement>`), hoặc
+   `specs/vision.md` còn nguyên khuôn → nói bước tiếp là **`/sdd-solo:intake`**; bước 0 của nó là tầng 0.
+   Đừng đề xuất viết code, đừng đề xuất công cụ ngoài.
+8. Có file `.new` trong output → liệt kê và nói user tự merge; không tự ghi đè.
 
 ---
 
@@ -54,7 +74,8 @@ Sau đó:
   **nói user mở session mới**. Bản mới không áp vào phiên đang mở, y như Claude Code tự update
   chính nó. Đừng hứa là đã có hiệu lực.
 - Có file `.new` trong phần ③ → liệt kê, nói user tự merge. Không tự ghi đè.
-- Lên **major** (3.x → 4.x) thì scaffold không di chuyển được file đã có: đọc CHANGELOG của bản đó,
-  và với 4.0.0 thì nói user chạy `bash .sdd/scripts/migrate.sh --dry-run`.
+- Lên **major** thì scaffold không di chuyển được file đã có: đọc CHANGELOG của bản đó. Với 4.0.0
+  nói user chạy `bash .sdd/scripts/migrate.sh --dry-run`; với **7.0.0** thì đó là cây `specs/` mới —
+  làm theo bước 6 của chế độ A (map → `--layout v7 --dry-run` → chạy thật → bảng CẦN TAY).
 - Script không sửa spec và không commit gì. Thay đổi trong `.sdd/` và template là việc của user
   commit — nhắc `chore(sdd): update sdd-solo <ver>`.

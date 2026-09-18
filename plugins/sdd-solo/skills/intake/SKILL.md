@@ -1,6 +1,6 @@
 ---
 name: intake
-description: Bước đầu của Phase 1 — cửa vào của cả quy trình. Không tham số thì phỏng vấn từng câu để moi ý tưởng ra thành BR-###; có đường dẫn brief thì chuyển brief của agent khác thành BR chuẩn theo bộ luật không-bịa-số. Đầu ra là specs/br.md qua được br-check.sh.
+description: Bước đầu của Phase 1 — cửa vào của cả quy trình. Bước 0 hỏi chủ dự án để chép ra specs/vision.md (tầng 0). Không tham số thì phỏng vấn từng câu để moi ý tưởng ra thành BR-###; có đường dẫn brief thì chuyển brief của agent khác thành BR chuẩn theo bộ luật không-bịa-số. Đầu ra là specs/<core|nghề>/br-###/br.md qua được br-check.sh.
 disable-model-invocation: true
 argument-hint: "[đường-dẫn-brief]"
 allowed-tools: Bash Read Write Edit Grep AskUserQuestion
@@ -12,11 +12,55 @@ Xác định chế độ:
 - **`$1` rỗng → phỏng vấn.** Đây là chế độ mặc định và là tình huống hay gặp nhất.
 - **`$1` là đường dẫn file → chuyển đổi.** Đọc brief, tách thành BR theo bộ luật ở phần B.
 
-Trước khi bắt đầu, đọc `specs/_intake.md` trong repo (bộ câu hỏi bản giấy) và `specs/br.md`
-(xem `BR-000` mẫu). Nếu `br.md` đã có BR thật (khác `BR-000`), hỏi user muốn thêm BR mới hay
-sửa BR đang có — **bằng `AskUserQuestion`**, mỗi BR đang có một lựa chọn. Bảy câu phỏng vấn ở
-mục A là câu mở, hỏi bằng lời như đã ghi; luật `AskUserQuestion` (sdd-process 1b) chỉ cho câu
+Trước khi bắt đầu, đọc `specs/_intake.md` trong repo (bộ câu hỏi bản giấy) và `specs/core/br-000/br.md`
+(xem `BR-000` mẫu). Nếu đã có BR thật (thư mục `specs/*/br-*/` nào khác `core/br-000/`), hỏi user muốn
+thêm BR mới hay sửa BR đang có — **bằng `AskUserQuestion`**, mỗi BR đang có một lựa chọn. Bảy câu phỏng
+vấn ở mục A là câu mở, hỏi bằng lời như đã ghi; luật `AskUserQuestion` (sdd-process 1b) chỉ cho câu
 chọn giữa các hướng.
+
+---
+
+## Bước 0 — tầng 0 `specs/vision.md`, trước mọi câu hỏi về BR
+
+**Chạy bước này trước cả chế độ A lẫn chế độ B.** BR nào cũng phải khai `- **Lát:** <core | nghề> · <tên lát>`
+và tên lát phải có trong bảng `## Nghề và lát` của `vision.md` — `br-check` đỏ khi thiếu. Không có tầng 0
+thì bảy câu dưới không có chỗ để đứng, và BR viết ra sẽ đỏ ngay ở lượt kiểm đầu tiên.
+
+Kiểm:
+
+```bash
+cat specs/vision.md 2>/dev/null | grep -n 'Định vị\|Không thu hẹp\|Nghề và lát' -A3
+```
+
+File chưa có, hoặc các mục còn nguyên khuôn (`<Một câu: sản phẩm này là gì…>`, `<từ khoá 1>`, `___` ở
+`| Nghề |`) → **hỏi chủ dự án, ba câu, một câu một lượt, bằng lời thường**:
+
+1. *"Sản phẩm này là gì, cho ai, và cái gì làm nó khác? Nói một câu như anh sẽ nói với một người bạn."*
+   → `## Định vị`
+2. *"Có 3–5 điều mà dù sau này cắt gọt thế nào cũng KHÔNG được co lại. Là những điều gì?"*
+   → `## Không thu hẹp`, mỗi điều một dòng `- **<từ khoá ngắn>** — <giải thích>`. **Từ khoá phải là cụm
+   người ta sẽ viết y như thế trong Out of Scope** ("chiều ghi", "offline"), không phải cả câu — `br-check`
+   so từ khoá với từng dòng Out of Scope của mọi BR.
+3. *"Nghề nào mở trước? Và 'xong' của nghề đó nghĩa là gì — mình lấy gì làm dấu để mở nghề kế?"*
+   → `## Nghề và lát` (bảng) và `## "Xong" của mỗi nghề`.
+
+**Kỷ luật của bước 0 — khác hẳn bảy câu BR:**
+
+- **Người viết là chủ dự án. Em chỉ hỏi và CHÉP.** Không tự nghĩ ra một điều "không thu hẹp" nào, không
+  tự đặt tên nghề, không tự điền điều kiện "xong". Chủ dự án nói một câu lệch ngữ pháp thì chép câu lệch
+  ngữ pháp đó, đừng làm nó hay hơn — làm hay hơn là thêm ý.
+- **Tầng 0 được miễn luật "không số".** Số ở đây là **ý muốn của chủ dự án**, không phải sự thật cần nguồn:
+  *"pack chạy 7 ngày liên tục không dev sửa gì"* ghi thẳng con số 7, không `___`, không đòi đo ở đâu.
+  Đây là ngoại lệ duy nhất trong cả quy trình — mọi tầng dưới vẫn cấm số không nguồn.
+- **Chỗ chủ dự án chưa nghĩ tới vẫn để `___`** và một dòng `## Open Questions`. "Chưa biết mở nghề nào sau"
+  là câu trả lời hợp lệ.
+- **Đọc lại toàn bộ file cho chủ dự án nghe và chờ gật** trước khi sang BR. Tầng 0 sai thì mọi lượt
+  adversarial bên dưới sẽ bảo vệ một hướng đi sai rất kỷ luật.
+
+Đã có `vision.md` viết thật rồi → đọc `## Không thu hẹp` và `## Nghề và lát`, nói lại cho chủ dự án nghe
+một câu, rồi đi tiếp. Không sửa gì.
+
+Commit riêng: `git add specs/vision.md && git commit -m "docs(vision): tầng 0 — <định vị một câu>"`.
 
 ---
 
@@ -78,15 +122,22 @@ thiếu dòng này, và vai hoài nghi ở `/sdd-solo:adversarial BR-###` sẽ b
 - Câu 1 + 3 → `## Background`. Chỉ những gì user thật sự nói. Con số user nêu thì ghi kèm nguồn
   ("anh đếm tay trong inbox tuần rồi"). Không có nguồn → xuống Open Questions.
   **Từ 5.0.0, Background trong `br.md` là MỤC LỤC, không phải kho chứng cứ:** mỗi ý một `### heading`
-  + một dòng `→ specs/br.evidence.md`, và các dòng `**…:**` (như `**Vì sao vẫn xây:**`). Thân — số đo,
-  trích dẫn dài, bảng — viết vào `specs/br.evidence.md` dưới `### heading` cùng tên. Đo ở runxops:
+  + một dòng `→ evidence.md`, và các dòng `**…:**` (như `**Vì sao vẫn xây:**`). Thân — số đo,
+  trích dẫn dài, bảng — viết vào `evidence.md` **cạnh `br.md` của cùng lát** dưới `### heading` cùng tên. Đo ở runxops:
   `## Background` một mình 31,8 KB, 15 mục chứng cứ, và mọi lượt đọc BR sau đó đều phải lội qua nó dù
   chỉ cần biết Goal và Scope. Chứng cứ là thứ làm BR đứng vững *lúc viết*; sau đó nó là dấu vết.
-  Repo đang có thì `bash .sdd/scripts/migrate.sh --evidence BR-### --dry-run` rồi chạy thật.
+  Ở lát mới thì viết thẳng vào hai file, không cần công cụ. Repo **còn bố cục 6.x** (`specs/br.md` gộp)
+  mà `## Background` đã phình thì `bash .sdd/scripts/migrate.sh --evidence BR-### --dry-run` rồi chạy
+  thật — cờ đó chỉ hiểu cây 6.x; ở cây 7.0 thì `migrate.sh --layout v7` đã tách sẵn `evidence.md` cho
+  từng lát khi chuyển.
 - Câu 1 + 2 → `## Goal`, **một câu**, dạng "ai làm được gì mà giờ chưa làm được".
 - Câu 7 → `## Success Metrics`. Số để `___` thoải mái; **cách đo thì không được để trống**.
   Chưa có analytics thì viết cách đếm tay — "đếm thread trong inbox mỗi thứ Hai" là một cách đo hợp lệ.
-- Câu 6 → `## Out of Scope`, và mỗi dòng thành một nhánh `-.->` trên Impact Map.
+- Câu 6 → `## Out of Scope`, và mỗi dòng thành một nhánh `-.->` trên Impact Map. **Mỗi dòng phải nói nó
+  đi đâu:** `→ lát ___` (lát nào trong `vision.md` sẽ nhận) hoặc `→ mở lại khi ___` (điều kiện). Và trước
+  khi ghi, đối chiếu với `## Không thu hẹp` của `vision.md`: dòng nào trùng một từ khoá ở đó thì **hỏi lại
+  chủ dự án** — hoặc bỏ dòng đó ra khỏi Out of Scope, hoặc chủ dự án chốt thu hẹp có chủ ý và dòng ghi
+  `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`. Không tự chọn nhánh nào; `br-check` đỏ nếu không có nhãn đó.
 - Câu 5 → **luôn** ghi một dòng `**Vì sao vẫn xây:** ...` vào `## Background`, dù câu trả lời là
   gì. Có phương án không-phần-mềm mà user vẫn chọn xây → ghi lý do. Chưa nghĩ tới → ghi thẳng
   *"chưa có lý do"* + Open Question. Dòng này là thứ duy nhất trong BR nói được rằng phần mềm
@@ -98,8 +149,12 @@ thiếu dòng này, và vai hoài nghi ở `/sdd-solo:adversarial BR-###` sẽ b
 
 ## B. Chế độ chuyển brief
 
-Đọc file, rồi tách thành bốn tầng: vì sao (BR) · ai làm gì (UC ứng viên) · ràng buộc (CON) ·
+Đọc file, rồi tách thành bốn phần: vì sao (BR) · ai làm gì (UC ứng viên) · ràng buộc (CON) ·
 chưa rõ (Open Questions).
+
+**Bước 0 áp cho cả chế độ này.** Brief là lời của agent khác; tầng 0 là lời của chủ dự án. Brief đòi
+một thứ đi ngược một điều ở `## Không thu hẹp` → **chủ dự án thắng, brief thua**, và dòng đó xuống
+`## Đã loại khỏi brief` kèm đích.
 
 **Trước khi điền Goal / In Scope: hỏi user ba câu bằng lời, một câu một lượt — bắt buộc, kể cả khi brief
 đã trả lời (#46, #47).** Ca thật runxops: BR-003 chuyển thẳng từ brief; cả hai vai hoài nghi (BR-003, BR-002)
@@ -131,8 +186,11 @@ Ghi **nguyên văn** câu trả lời, có dấu vết, vào file — không và
    nhiều về…" mà không có số. Câu đó thành Open Question *"lấy ở đâu con số này?"*, không thành
    sự thật trong Background.
 4. **Ghi ra cái đã bỏ — vào FILE, không phải ra màn hình.** Mọi câu/mục trong brief không được
-   đưa vào spec phải thành một dòng `- <mục> — <lý do>` trong mục `## Đã loại khỏi brief` của BR,
-   rồi mới đọc lại cho user nghe. Bản 3.2.0 chỉ bảo "in danh sách" nên toàn bộ sản phẩm của luật
+   đưa vào spec phải thành một dòng `- <mục> — <lý do> → <đích>` trong mục `## Đã loại khỏi brief` của BR,
+   rồi mới đọc lại cho user nghe. **Đích là bắt buộc từ 7.0** — `→ lát ___` (lát nào trong `vision.md`
+   sẽ nhận) · `→ mở lại khi ___` (điều kiện) · `→ chuyển: <architecture.md · ADR-### · CHG-### · Open
+   Question>` cho mục thuộc tầng thiết kế. `br-check` **đỏ** khi một dòng thiếu đích, không còn chỉ cảnh
+   báo. Bản 3.2.0 chỉ bảo "in danh sách" nên toàn bộ sản phẩm của luật
    này sống trong lời nói: đóng terminal là mất, và sáu tháng sau không ai biết brief từng có
    những gì và vì sao chúng biến mất. Ba luật trên đều để lại `___` hoặc Open Question trong file;
    luật này cũng phải để lại dấu vết. Xem #21.
@@ -142,10 +200,10 @@ Ghi **nguyên văn** câu trả lời, có dấu vết, vào file — không và
    ghi ĐÍCH: `→ chuyển: architecture.md · ADR-### · CHG-### · Open Question`. Không có
    đích thì không cơ chế nào mang nó đi: `design.md` của mỗi UC do `/sdd-solo:design` sinh ra, và
    nó đọc brief **chỉ khi** `brief_path` đã khai. Đích thường gặp nhất của một mục kiến trúc bị
-   hoãn là `specs/internal/architecture.md`, mục `## Đã chốt từ brief`. Ca thật (`runxops`, #34): dòng *"toàn bộ kiến trúc ba lớp — thuộc tầng
+   hoãn là `specs/architecture.md` (gốc, xuyên suốt), mục `## Đã chốt từ brief`. Ca thật (`runxops`, #34): dòng *"toàn bộ kiến trúc ba lớp — thuộc tầng
    thiết kế"* nằm yên hai ngày trong khi `plan.md` được viết với kiến trúc **ngược lại brief**,
    và không ai thấy vì cả hai bên đều tự nhất quán. Một địa chỉ chuyển tiếp mà không ai giao hàng
-   trông y hệt một việc đã bàn giao xong. `br-check` cảnh báo dòng hoãn thiếu `→ chuyển:`.
+   trông y hệt một việc đã bàn giao xong. `br-check` đỏ khi dòng hoãn thiếu `→ chuyển:` (7.0).
 
 5. **Không tự viết UC.** Chỉ sinh ID + tên UC ứng viên.
 6. **Ghi nguồn vào Metadata của BR:** dòng `- **Nguồn:** brief <đường/dẫn>`. Đó là thứ cho
@@ -187,30 +245,50 @@ cả bộ 24 kiểm ở cổng DoR sẽ bảo vệ những con số ngầm ấy 
 
 ## C. Kết thúc (cả hai chế độ)
 
-1. Ghi vào `specs/br.md`: thêm mục `BR-###` mới **trước** khung `BR-001` trống, hoặc thay khung
-   đó nếu nó chưa được đụng tới. **Xoá cả mục `BR-000`** khi đây là BR thật đầu tiên — xoá từ dòng `# BR-000:` tới ngay
-   trước `# BR-001:`, kể cả khối trích dẫn "ĐÂY LÀ MẪU" của nó.
+1. **Hỏi lát nào, nghề nào — trước khi tạo file.** Bằng `AskUserQuestion`: mỗi nghề đã có
+   (`specs/<nghề>/`, cộng `core`) một lựa chọn, thêm lựa chọn *"nghề mới"*. Nghề suy ra từ đó; tên lát
+   lấy từ bảng `## Nghề và lát` của `vision.md`. Lát chưa có trong bảng → hỏi chủ dự án có thêm một dòng
+   vào bảng không, **chủ dự án gật thì mới thêm** — `vision.md` là của chủ dự án.
 
-   BR mẫu có ích đúng lúc chưa có gì để đọc. Sau đó nó thành một dãy ID GIẢ đứng TRƯỚC mọi ID
-   thật trong cùng một file — `BR-000` mang `CON-001/002/003` của riêng nó, và `id_exists()`
-   tra CON bằng grep *dòng đầu tiên khớp*. Ca thật ở runxops: `UC-009` trích `CON-002` và cổng
-   DoR khớp vào *"bản ghi thanh toán giữ 10 năm theo quy định kế toán"*; `architecture.md`
-   viết *"Không gọi API eBay. `CON-001` — tài khoản cá nhân…"* và `design-check` báo xanh bằng
-   cách trỏ vào *"hosting chia sẻ"*. UC đó đã qua cổng với những trích dẫn trỏ nhầm mục.
+   `core` là lõi dùng chung, **ngang hàng** với nghề: chọn `core` khi lát này mọi nghề đều dùng
+   (đăng nhập, console, hạ tầng chung). Không chắc thì hỏi, đừng mặc định `core`.
 
-   Cần đọc lại BR mẫu thì nó vẫn nằm trong `templates/project/specs/br.md` của plugin.
-   `br-check.sh` báo đỏ nếu br.md đã có BR thật mà `BR-000` còn đó.
-2. Vẽ Impact Map: `WHY → WHO → HOW → WHAT`, và **ít nhất một nhánh `-.->`** cho Out of Scope.
+2. **Số BR = số kế tiếp trong CẢ DỰ ÁN.** Một dãy `BR-###` cho mọi nghề, không đánh lại theo nghề:
+
+```bash
+ls -d specs/*/br-*/ 2>/dev/null | sed 's|.*/br-||; s|/$||' | sort -n | tail -1
+```
+   Số lớn nhất + 1. Bỏ qua `br-000` (mẫu).
+
+3. **Tạo lát:** copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/br/` (`br.md` + `evidence.md`) thành
+   `specs/<core|nghề>/br-###/`, đổi mọi `BR-000` thành `BR-###`. Nghề mới thì copy
+   `${CLAUDE_PLUGIN_ROOT}/templates/skel/nghe/` thành `specs/<nghề>/` trước (`README.md` ·
+   `glossary.md` · `rules.md` · `entities/README.md`), và thêm tên nghề vào `nghe_paths=` trong
+   `.sdd/config`. (Không thay được biến: `find ~/.claude/plugins -type d -name skel -path '*sdd-solo*' | head -1`.)
+
+   Ghi dòng `- **Lát:** <core | nghề> · <tên lát>` vào Metadata — **đúng chữ như trong bảng của
+   `vision.md`**. `br-check` đỏ khi thiếu dòng này, khi nghề khai lệch thư mục chứa BR, hoặc khi tên lát
+   không có trong bảng.
+
+   Đây là BR thật đầu tiên → **xoá cả thư mục mẫu `specs/core/br-000/`**. BR mẫu có ích đúng lúc chưa có
+   gì để đọc. Sau đó nó là một dãy ID GIẢ: `BR-000` mang `CON-001/002/003` của riêng nó, và `id_exists()`
+   tra CON bằng grep *dòng đầu tiên khớp*. Ca thật ở runxops: `UC-009` trích `CON-002` và cổng DoR khớp
+   vào *"bản ghi thanh toán giữ 10 năm theo quy định kế toán"*; `architecture.md` viết *"Không gọi API
+   eBay. `CON-001` — tài khoản cá nhân…"* và `design-check` báo xanh bằng cách trỏ vào *"hosting chia
+   sẻ"*. UC đó đã qua cổng với những trích dẫn trỏ nhầm mục. Cần đọc lại BR mẫu thì nó vẫn nằm trong
+   `templates/project/specs/core/br-000/br.md` của plugin.
+
+4. Vẽ Impact Map: `WHY → WHO → HOW → WHAT`, và **ít nhất một nhánh `-.->`** cho Out of Scope.
    Không có nhánh đứt nào nghĩa là chưa map gì — chỉ là đường thẳng từ Goal xuống việc đã định sẵn.
-3. Chạy kiểm và in nguyên output:
+5. Chạy kiểm và in nguyên output:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/br-check.sh" BR-###
 ```
 (nếu `${CLAUDE_PLUGIN_ROOT}` không được thay: `find ~/.claude/plugins -type f -name br-check.sh -path '*sdd-solo*' | head -1`).
 Còn ✗ thì sửa cùng user rồi chạy lại. Cảnh báo `___` là **bình thường ở Phase 1** — nói rõ điều
 đó cho user, đừng để user tưởng mình làm sai.
-4. Commit: `git add specs/br.md && git commit -m "docs(BR-###): intake — <tên BR>"`.
-5. STATE.md: `Đang làm: BR-### · Phase 1 — BR đã viết`. `Việc tiếp theo: /sdd-solo:adversarial BR-### (ba vai tầng BR), rồi /sdd-solo:start UC-### cho UC đầu tiên`.
+6. Commit: `git add specs/ && git commit -m "docs(BR-###): intake — <tên BR>"`.
+7. STATE.md: `Đang làm: BR-### · Phase 1 — BR đã viết`. `Việc tiếp theo: /sdd-solo:adversarial BR-### (ba vai tầng BR), rồi /sdd-solo:start UC-### cho UC đầu tiên`.
 6. Nói với user hai điều: những chỗ còn `___` là nợ đã ghi sổ chứ không phải lỗi; và bước sau
    `/sdd-solo:adversarial BR-###` sẽ hỏi ngược lại chính BR này bằng ba vai, đặc biệt là vai
    hoài nghi — *"BR này có thật là BR, hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do?"*

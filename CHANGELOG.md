@@ -101,6 +101,19 @@ nhãn "③ RULE + entity + glossary"). Từng mốc ghi dưới đây; mốc ch�
     đọc thêm `## Không thu hẹp`.
   - README plugin và CLAUDE.md gốc: cây 7.0, ranh giới "mọi đường dẫn qua lib.sh", "vision.md là của chủ dự án",
     "scaffold không ghi đè file không có trong manifest".
+- **(5) Skill theo cây 7.0** (12/14 skill; `gate` · `change` không có đường cũ). `sdd-process`: bảng 4 tầng → 5 tầng
+  (Hướng · BR · UC · Entity · AC), mục "ba tầng chỗ: gốc · lõi · nghề", quy tắc gốc/core không trích nghề, thứ tự đọc
+  mới. `intake`: **bước 0** trước bảy câu — hỏi chủ dự án ba câu bằng lời thường (định vị · không thu hẹp · nghề mở
+  trước và "xong"), chỉ hỏi và chép vào `vision.md`, gật rồi mới BR; BR mới: hỏi lát/nghề, số BR kế tiếp trên cả dự án,
+  tạo lát từ `skel/br/`, nghề mới từ `skel/nghe/`, ghi `**Lát:**`; Out of Scope và Đã loại bắt buộc có đích.
+  `adversarial`: ba vai BR đọc `## Không thu hẹp`; **bước 6 "được và mất"** — `br-scope-diff.sh`, nói bằng lời BR co từ gì
+  thành gì, chủ dự án gật (AskUserQuestion ba lựa chọn) rồi mới History; vai hoài nghi "dừng, nói rõ cái mất, hỏi, rồi
+  mới viết lại". `start`: `argument-hint` `UC-### [BR-###] [slug]`, hỏi lát thay context, nghề suy từ thư mục BR, BR chưa
+  có thư mục → bảo intake; thêm dòng UC vào bảng của `br.md` lát; entity chưa có file → `skel/entity.md`. `verify` ·
+  `design` · `close` · `deprecate` · `state` · `status` · `init` (bước 6: hướng dẫn migrate 6.x → 7.0) · `orchestrate`
+  (sổ/soát/bản đồ sang `notes/`, vùng cấm D và T là cả `specs/`, câu soát thứ sáu về `src/core` import nghề).
+  - `migrate.sh --evidence` đi qua `br_file`/`evidence_file` — tới đây nó hardcode `specs/br.md`, chạy trên cây 7.0 là
+    "No such file"; dòng đếm để lại trỏ `→ evidence.md` (tên tương đối với `br.md` của lát).
 
 ## 6.6.2 — 2026-09-18
 

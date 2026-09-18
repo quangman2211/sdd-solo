@@ -22,7 +22,7 @@ hơn vẫn là cửa được đi.
 
 ## A. `/sdd-solo:verify UC-###` — bước ⑧
 
-1. Tìm UC: `find specs/contexts -path "*use-cases/$1-*/$1.md"`. Không có → dừng, báo.
+1. Tìm UC: `find specs -path "*/br-*/use-cases/$1-*/$1.md"`. Không có → dừng, báo.
 2. Kiểm đã chạy bước ⑦ chưa: mục `## Adversarial pass` phải có nội dung thật. Chưa có → dừng, bảo
    chạy `/sdd-solo:adversarial $1` trước. Đọc lại trước khi soi là đọc lại một bản sắp đổi.
 3. **Chạy verify bằng subagent riêng** (Agent tool). Đây là chỗ không được rút gọn: subagent
@@ -32,8 +32,10 @@ hơn vẫn là cửa được đi.
      RULE/CON/ADR được trích, BR cha, architecture (Cấm · Ranh giới · Nơi chạy), entity/glossary. `--brief`
      (6.5.0) cắt ADR còn đoạn đầu Decision và bỏ Ngăn xếp/Ai gọi — verify soi hành vi; dòng kích thước từng
      nguồn cuối output cho biết còn nguồn nào phình. **Cộng thêm** `$1.sequence.md` nếu
-     có, và **toàn bộ `specs/rules.md`** (verify soi cả rule UC *không* trích mà lẽ ra phải trích —
-     đó là loại sai #4, context.sh cố ý không in rule không được trích).
+     có, và **toàn bộ `specs/rules.md` cùng `specs/<nghề>/rules.md` của nghề UC thuộc về** (verify soi cả
+     rule UC *không* trích mà lẽ ra phải trích — đó là loại sai #4, context.sh cố ý không in rule không
+     được trích). UC ở `core` thì chỉ đưa `specs/rules.md` gốc: lõi không được trích rule của nghề, nên
+     một rule nghề "lẽ ra phải trích" ở đó là phát hiện ngược — ghi thành `F#`, đừng đưa vào làm đầu vào.
    - `git log --oneline -20 -- <thư mục UC>` để soi được loại sai #2 (commit khai một đằng, file một nẻo —
      so **nội dung** khai với diff, không so danh sách file; thiếu file bên cạnh chỉ là cảnh báo, #42)
 
@@ -79,8 +81,9 @@ hơn vẫn là cửa được đi.
 grep -rn '<giá trị cũ>' specs/ scripts/ *.md
 ```
    Còn hit nào **ngoài** `## History` và **ngoài** câu dạng `<cũ> → <mới>` thì **chưa xong**. Chỗ anh em hay
-   sót nhất (đo #48: 14/18): `glossary.md` · `entities.md` · `$1.sequence.md` · dòng `Áp dụng cho` của RULE ·
-   `$1.flow.md` · ADR được trích. `gate-check.sh --pre $1` cảnh báo ba loại lệch đó bằng máy — chạy nó trước khi commit.
+   sót nhất (đo #48: 14/18): `glossary.md` gốc và của nghề · file entity UC nhắc tên · `$1.sequence.md` ·
+   dòng `Áp dụng cho` của RULE (cả `specs/rules.md` lẫn `specs/<nghề>/rules.md`) · `$1.flow.md` · ADR được trích ·
+   bảng `## Related Use Cases` trong `br.md` của lát. `gate-check.sh --pre $1` cảnh báo ba loại lệch đó bằng máy — chạy nó trước khi commit.
 
    **Quét cả giá trị MỚI, không chỉ giá trị cũ.** Bước sửa **tự sinh lỗi mới**: đổi sang một
    `RULE-###` chưa có heading, đổi rồi đổi lại, gõ nhầm một `AC-#`. Quét giá trị cũ không thấy
@@ -98,7 +101,7 @@ grep -rn '<giá trị cũ>' specs/ scripts/ *.md
    **trước** khi sửa. Đặt luật ấy trong prompt của họ là đặt nó vào một cơ chế **cấu tạo không
    chạy được nó** — và đó không phải chuyện ai quên, mà là **đặt sai bước**.
 
-   Ca thật (`runxops`): cặp số cũ nằm ở **bốn** chỗ — `entities.md` · `br.md` · docstring một
+   Ca thật (`runxops`): cặp số cũ nằm ở **bốn** chỗ — một file entity · `br.md` của lát · docstring một
    script · và prompt của chính plugin. **Hai vai verify đọc rất kỹ vẫn bỏ sót chỗ thứ tư.** Thứ
    bắt được nó là một `grep -rn` chạy **sau** khi sửa. Người đọc không thấy chỗ mình không nghĩ tới
    là có; `grep` không cần nghĩ.
@@ -126,10 +129,10 @@ thuẫn hai chỗ · AC không test được; còn lại là nợ chữ).
 
 Cùng phần A, khác bốn chỗ:
 1. Mốc: `<commit>` nếu có; không có thì **commit đọc lại gần nhất** —
-   `git log -1 --format=%H --grep="^docs($1): đọc lại" -- <thư mục UC> specs/rules.md specs/contexts/<ctx>/entities.md`.
+   `git log -1 --format=%H --grep="^docs($1): đọc lại" -- <thư mục UC> specs/rules.md specs/<nghề>/rules.md <các file entity UC nhắc tên>`.
    Không có mốc nào → đây là lần đầu, chạy phần A trọn.
 2. Đầu vào cho subagent **thay vì** `context.sh` trọn: `git diff <mốc>..HEAD -- specs/` (nguyên văn), cộng **các
-   mục bị chạm** ở dạng hiện tại (mục `## …` của UC chứa dòng đổi, RULE có dòng đổi, khối entities có dòng đổi)
+   mục bị chạm** ở dạng hiện tại (mục `## …` của UC chứa dòng đổi, RULE có dòng đổi, file entity có dòng đổi)
    và **mọi chỗ khác trong `specs/` nhắc tới cùng khái niệm vừa đổi** (`grep -rn` giá trị mới và giá trị cũ) — vì
    loại sai #3 và #8 nằm giữa chỗ đổi và chỗ chưa đổi theo. Phạm vi này in ra đầu báo cáo. `verify-pass.md`
    áp nguyên; mục *Luật dừng* của nó quyết dòng nào là chặn.
@@ -151,7 +154,7 @@ Cùng phần A, khác năm chỗ:
 2. Không đòi bước ⑦ — Phase 5 không có adversarial.
 3. Đầu vào cho subagent: `proposal.md` + toàn bộ `delta/*.delta.md` + `design.md`, **cộng** output
    `context.sh UC-###` cho **mỗi** UC delta đụng (baseline — để soi delta khai MODIFIED/REMOVED một AC
-   mà baseline nói khác), toàn bộ `specs/rules.md`, và `git log --oneline -20 -- specs/changes/$1-*/`.
+   mà baseline nói khác), toàn bộ `specs/rules.md` cùng `specs/<nghề>/rules.md` của các nghề UC delta đụng, và `git log --oneline -20 -- specs/changes/$1-*/`.
 4. Ghi `## Đọc lại` vào **`proposal.md`** (không vào UC baseline — baseline chưa đổi cho tới khi
    archive), cùng dạng phần A bước 5; neo trỏ `delta/UC-009 MODIFIED AC-3` · `proposal Scope` ·
    `UC-009 AC-3`.
@@ -167,13 +170,16 @@ Dùng khi tài liệu vừa đổi nhiều và cần biết còn chỗ nào nói
 
 1. **Chọn phạm vi trước, đừng đọc thưa cả cây.** Cây nhỏ (< ~3.000 dòng) thì đọc hết. Lớn hơn:
    lấy `git diff --name-only <lần verify trước>..HEAD -- specs/` cộng **mọi file mà đám đó trích ID
-   tới** (`RULE-###` → `rules.md`, `CON-###`/`BR-###` → `br.md`, `UC-###` → file UC đó). Đọc thưa
+   tới** (`RULE-###` → `specs/rules.md` hoặc `specs/<nghề>/rules.md`, `CON-###`/`BR-###` → `br.md` của
+   lát đó, `UC-###` → file UC đó, tên entity → file entity đó). Đọc thưa
    cả cây là cách chắc chắn nhất để bỏ sót loại sai #3 và #4, vốn là hai loại hay gặp nhất.
 2. Chạy **subagent** với `.sdd/prompts/verify-pass.md` trên phạm vi đó. Cây lớn thì chia theo
-   tầng — một agent BR↔RULE, một agent UC↔AC↔flow, một agent entities↔glossary — nhưng **mỗi agent
-   vẫn phải thấy cả hai phía** của cặp nó soi, nếu không nó chỉ đọc được một nửa cuộc cãi.
+   tầng — một agent vision↔BR, một agent BR↔RULE, một agent UC↔AC↔flow, một agent entity↔glossary — nhưng
+   **mỗi agent vẫn phải thấy cả hai phía** của cặp nó soi, nếu không nó chỉ đọc được một nửa cuộc cãi.
+   Thêm một phép soi chỉ có ở cây 7.0: **gốc `specs/*.md`, `specs/adr/` và `specs/core/` có trích ID của
+   nghề nào không** — `bash .sdd/scripts/layer-check.sh` đếm bằng máy, rẻ hơn đọc.
 3. Trình từng `F#` như phần A bước 4.
-4. Ghi kết quả vào `specs/internal/verify-<YYYY-MM-DD>.md`: phạm vi đã đọc, từng `F#` kèm nguyên
+4. Ghi kết quả vào `notes/soat/verify-<YYYY-MM-DD>.md` (vết quá trình, ngoài `specs/`): phạm vi đã đọc, từng `F#` kèm nguyên
    văn hai phía, đầu ra. **Cả những dòng bị bác cũng ghi, kèm lý do bác** — đó là thứ làm lần chạy
    sau rẻ đi, và là thứ duy nhất còn lại sau khi đóng terminal.
 5. Sửa những chỗ user chọn, rồi `git commit -m "docs: verify pass <ngày> — <n> phát hiện"`.

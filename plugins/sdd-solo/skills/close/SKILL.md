@@ -8,7 +8,7 @@ allowed-tools: Bash Read Edit
 
 Đóng `$1`.
 
-1. Chạy self-review 5 câu cùng user trước (từ `.sdd/checklists/self-review.md`), đặc biệt câu 5 *"AI quyết hay mình quyết?"* — nếu có quyết định kỹ thuật đáng nhớ, append một dòng vào `specs/internal/decisions.md` theo format trong file.
+1. Chạy self-review 5 câu cùng user trước (từ `.sdd/checklists/self-review.md`), đặc biệt câu 5 *"AI quyết hay mình quyết?"* — nếu có quyết định kỹ thuật đáng nhớ, append một dòng vào `specs/decisions.md` (gốc) theo format trong file.
 2. Chạy và in output:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/close-check.sh" $1
@@ -24,4 +24,9 @@ allowed-tools: Bash Read Edit
    đã `[x]` sang `UC-###.trace.md` cùng thư mục, để lại mỗi mục một dòng có số đếm bằng máy. Nói với
    user: `trace.md` là **giấy nháp đã dùng xong** — mở khi tranh chấp, không phải file đọc thường;
    `context.sh` và `decisions.sh` không đọc nó. UC-009 ở runxops: 56 KB → ~20 KB, không mất một chữ.
-7. Gợi ý UC tiếp theo từ `specs/contexts/<ctx>/use-cases.md` (status draft đầu tiên) và nhắc `/sdd-solo:state`.
+7. Gợi ý UC tiếp theo từ bảng `## Related Use Cases` trong `br.md` của lát (status `draft` đầu tiên) và nhắc `/sdd-solo:state`.
+
+   Lát này đã hết UC `draft` → nói ra, và đọc bảng `## Nghề và lát` của `specs/vision.md`: lát kế của nghề
+   là lát nào, hay nghề này sắp "xong" theo mục `## "Xong" của mỗi nghề`. **Không tự tuyên bố một nghề đã
+   xong và cũng không tự mở nghề kế** — điều kiện "xong" là của chủ dự án, ở tầng 0. Chỉ đọc lại điều kiện
+   đó cho user nghe và hỏi.

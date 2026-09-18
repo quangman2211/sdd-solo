@@ -406,9 +406,12 @@ fi
 # (`**Vì sao vẫn xây:**`, `**Nguồn brief:**` — br-check đọc chúng). Thân đi.
 if [ -n "$EV" ]; then
   [ "$EV" = "_" ] && { echo "Dùng: migrate.sh --evidence BR-### [--dry-run]" >&2; exit 2; }
-  python3 - "$ROOT/specs/br.md" "$ROOT/specs/br.evidence.md" "$EV" "$DRY" "$(today)" <<'PY'
-import sys, re, io
+  # 7.0: đường qua lib — 6.x specs/br.md · specs/br.evidence.md; 7.0 br.md · evidence.md của lát. Dòng đếm để lại
+  # trỏ `→ <tên file evidence tương đối với br.md>` (br-check nhận `→ .*evidence\.md`).
+  python3 - "$(br_file "$EV" "$ROOT")" "$(evidence_file "$EV" "$ROOT")" "$EV" "$DRY" "$(today)" <<'PY'
+import sys, re, io, os
 brp, evp, BR, dry, today = sys.argv[1:6]; dry = dry == "1"
+MARK = '→ ' + ('specs/br.evidence.md' if brp.endswith('/specs/br.md') else os.path.basename(evp))
 s = io.open(brp, encoding='utf-8').read()
 m = re.search(r'(?ms)^# ' + re.escape(BR) + r':.*?(?=^# BR-|\Z)', s)
 if not m: print(f"  ✗ không thấy '# {BR}:' trong specs/br.md"); sys.exit(1)
@@ -416,7 +419,7 @@ sec = m.group(0)
 bg = re.search(r'(?ms)^## Background[ \t]*\n(.*?)(?=^## |\Z)', sec)
 if not bg: print(f"  ✗ {BR} không có ## Background"); sys.exit(1)
 body = bg.group(1)
-bg_done = '→ specs/br.evidence.md' in body
+bg_done = MARK in body
 if bg_done: print(f"  ✓ {BR} ## Background đã tách rồi — không làm lại")
 paras = [] if bg_done else re.split(r'\n[ \t]*\n', body.strip('\n'))
 keep, move, cur = [], [], '(mở đầu)'
@@ -425,7 +428,7 @@ for pgh in paras:
     first = pgh.lstrip().split('\n', 1)[0]
     if first.startswith('### '):
         cur = first[4:].strip()
-        keep.append(first + '\n→ specs/br.evidence.md')
+        keep.append(first + '\n' + MARK)
         move.append(('### ' + cur, None))
         rest = pgh.split('\n', 1)[1] if '\n' in pgh else ''
         if rest.strip(): move.append((None, rest)); nmove += 1
@@ -443,7 +446,7 @@ if not bg_done: print(f"  {BR} ## Background: {kb0:.1f} KB → {kb1:.1f} KB · d
 # phải "đã áp hết". Giữ chữ "Ngày chạy:" vì br-check §10 grep đúng chuỗi đó.
 ap = re.search(r'(?ms)^## Adversarial pass[ \t]*\n(.*?)(?=^## |\Z)', sec)
 ap_move = None
-if ap and 'Ngày chạy' in ap.group(1) and '→ specs/br.evidence.md' not in ap.group(1) \
+if ap and 'Ngày chạy' in ap.group(1) and MARK not in ap.group(1) \
       and not re.search(r'YYYY-MM-DD|<[^>\n]+>', ap.group(1)):
     ab = ap.group(1)
     d = re.search(r'Ngày chạy:\s*(\d{4}-\d{2}-\d{2})', ab).group(1)
@@ -453,10 +456,10 @@ if ap and 'Ngày chạy' in ap.group(1) and '→ specs/br.evidence.md' not in ap
     applied = len(qs) - blank - noarrow
     onv = re.search(r'trên v(\d+)', ab)
     line = (f'- Ngày chạy: {d} · 3 vai' + (f' · trên v{onv.group(1)}' if onv else '') +
-            f' · {len(qs)} câu → {applied} đã áp · {blank + noarrow} → ___ → specs/br.evidence.md')
+            f' · {len(qs)} câu → {applied} đã áp · {blank + noarrow} → ___ {MARK}')
     ap_move = (ab.rstrip('\n') + '\n', line)
     print(f"  {BR} ## Adversarial pass: {len(ab.encode())/1024:.1f} KB → 1 dòng · {len(qs)} câu, {applied} đã áp, {blank + noarrow} còn ___")
-if ap and 'Ngày chạy' in ap.group(1) and '→ specs/br.evidence.md' in ap.group(1):
+if ap and 'Ngày chạy' in ap.group(1) and MARK in ap.group(1):
     print(f"  ✓ {BR} ## Adversarial pass đã tách rồi — không làm lại")
 if bg_done and not ap_move:
     sys.exit(0)
@@ -481,8 +484,8 @@ if ap_move:
 io.open(evp, 'w', encoding='utf-8').write(ev)
 s2 = s[:m.start()] + sec2 + s[m.end():]
 io.open(brp, 'w', encoding='utf-8').write(s2)
-print(f"  ✓ đã ghi specs/br.evidence.md và cập nhật specs/br.md — chưa commit")
-print(f"  git add specs/br.md specs/br.evidence.md && git commit -m 'docs({BR}): dời dấu vết BR sang br.evidence.md'")
+print(f"  ✓ đã ghi {os.path.relpath(evp)} và cập nhật {os.path.relpath(brp)} — chưa commit")
+print(f"  git add {os.path.relpath(brp)} {os.path.relpath(evp)} && git commit -m 'docs({BR}): dời dấu vết BR sang evidence.md'")
 PY
   exit $?
 fi

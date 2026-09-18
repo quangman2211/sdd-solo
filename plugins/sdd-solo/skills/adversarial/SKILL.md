@@ -27,7 +27,7 @@ Adversarial pass cho `$1`.
 "${CLAUDE_PLUGIN_ROOT}/scripts/gate-check.sh" --pre $1
 ```
 Exit ≠ 0 → **dừng**, in nguyên output, nói user viết xong nội dung rồi chạy lại. Không chạy ba vai trên spec còn placeholder.
-3. **Chạy ba vai bằng subagent riêng** (Agent tool, mỗi vai một agent, không dùng context của session này để tránh bị neo bởi giả định đã có). Prompt cho mỗi agent: nội dung `.sdd/prompts/adversarial-pass.md` trong repo, phần vai tương ứng, kèm toàn bộ UC + glossary + RULE liên quan. Ràng buộc chuyển nguyên văn: chỉ hỏi, không đề xuất code/kiến trúc, không sửa spec, tối đa 12 câu, xếp theo hậu quả (tiền / quyền / dữ liệu khách trước), mỗi câu kèm bước/E#/AC liên quan.
+3. **Chạy ba vai bằng subagent riêng** (Agent tool, mỗi vai một agent, không dùng context của session này để tránh bị neo bởi giả định đã có). Prompt cho mỗi agent: nội dung `.sdd/prompts/adversarial-pass.md` trong repo, phần vai tương ứng, kèm toàn bộ UC + glossary (gốc và của nghề) + RULE liên quan + **file entity của mỗi entity UC nhắc tên** (`specs/core/entities/<Tên>.md` · `specs/<nghề>/entities/<Tên>.md`, mỗi entity một file — đừng đưa cả thư mục, đưa đúng những file UC nhắc). Ràng buộc chuyển nguyên văn: chỉ hỏi, không đề xuất code/kiến trúc, không sửa spec, tối đa 12 câu, xếp theo hậu quả (tiền / quyền / dữ liệu khách trước), mỗi câu kèm bước/E#/AC liên quan.
 4. Gộp kết quả, bỏ trùng, ghi vào mục `## Adversarial pass` của file UC theo dạng:
 ```
 - Ngày chạy: YYYY-MM-DD · Session mới: [x]
@@ -59,16 +59,17 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
       | Nhãn | Tra ở đâu |
       |---|---|
       | `Main N` · `Alt Na` · `E#` · `AC-#` · `SCR-###-#` · `Open Q` | file `UC-###.md` — bước đánh số, mục `## Exceptions`, heading `### AC-#`, bảng Screens |
-      | `RULE-###` | `specs/rules.md` |
-      | **`CON-###`** | **`specs/br.md`** — trong `## Constraints` của BR liên quan, KHÔNG nằm trong UC |
-      | `Background` · `Success Metrics` · `Out of Scope` · `Impact Map` | `specs/br.md` |
+      | `RULE-###` | `specs/rules.md` (gốc) **và** `specs/<nghề>/rules.md` — một dãy số, hai chỗ ở; tra thiếu một chỗ là mất nhãn |
+      | **`CON-###`** | **`br.md` của lát UC thuộc về** (`specs/<core\|nghề>/br-###/br.md`) — trong `## Constraints`, KHÔNG nằm trong UC |
+      | `Background` · `Success Metrics` · `Out of Scope` · `Impact Map` | cùng `br.md` đó |
+      | tên entity | `specs/core/entities/<Tên>.md` · `specs/<nghề>/entities/<Tên>.md` — mỗi entity một file |
 
       Đo trên `runxops`: 50 nhãn trong 24 câu của một UC, deref được 49; cái trượt duy nhất là
       `CON-011` — vì nó nằm ở `br.md` chứ không ở hai file kia. Nhãn `CON-` thường là nhãn mang
       ràng buộc đắt nhất, nên bỏ sót đúng nó là bỏ sót ngữ cảnh quan trọng nhất.
 
       Tra không thấy → **nói thẳng trong câu hỏi**: *"nhãn `[CON-011]` không tìm thấy trong
-      `br.md`"*. Đừng lặng lẽ bỏ nhãn đi.
+      `br.md` của lát"*. Đừng lặng lẽ bỏ nhãn đi.
    b. **Mỗi lựa chọn kèm cái mất.** Không phải "chọn A hay B" mà "chọn A thì E4 phải viết lại,
       chọn B thì mất khả năng đối soát ngược".
    c. **`Chưa quyết — ghi Open Question` LUÔN là một lựa chọn hiện sẵn**, không phải thứ user
@@ -106,12 +107,12 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
      3. `## History` ghi **vì sao số đổi**, không chỉ ghi "đã sửa". Sáu tháng sau, một số nhảy chỗ
         mà không có lý do trong file thì không ai dám tin nhãn nào nữa.
    - **Sau mỗi khái niệm vừa đổi: grep chỗ anh em** (#49, #48). Một khái niệm của UC-014 ở runxops chép lại ở
-     3–5 chỗ (glossary · entities · sequence · `Áp dụng cho` của RULE · flow · ADR); ba đợt áp chỉ sửa file UC
+     3–5 chỗ (glossary gốc và nghề · file entity · sequence · `Áp dụng cho` của RULE · flow · ADR); ba đợt áp chỉ sửa file UC
      → 14/18 phát hiện verify là lệch với file anh em. Chạy `grep -rn '<tên/giá trị cũ>' specs/` **và**
      `grep -rn '<tên/giá trị mới>' specs/`, sửa hết trong cùng lượt, rồi `gate-check.sh --pre $1` — nó cảnh báo
      cụm treo, entity thiếu glossary, RULE không nhận UC.
    - Open Question → thêm `- [ ] <câu> (quyết định tạm: <user nói>)`. User chưa có gì để nói thì `___`, và giữ nhãn nguồn `[Main 7]` trong câu để sáu tháng sau còn truy được.
-   - Out of Scope → thêm vào BR liên quan trong `specs/br.md`.
+   - Out of Scope → thêm vào `br.md` của lát UC thuộc về, mỗi dòng kèm đích (`→ lát ___` · `→ mở lại khi ___`). Dòng trùng một từ khoá ở `## Không thu hẹp` của `specs/vision.md` → **hỏi chủ dự án trước**, đừng tự ghi: hoặc không đưa vào Out of Scope, hoặc chủ dự án chốt `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`.
    Không được để câu nào không có đầu ra.
 6. Kết thúc: `git add specs/ && git commit -m "docs($1): spec vN — sau adversarial pass"`. Commit này là mốc để `/sdd-solo:gate` biết spec vừa đổi hôm nay.
 7. STATE.md: `Đang làm: $1 · bước ⑧ — chờ đọc lại bằng đầu chưa neo`. Nói với user bước tiếp là
@@ -125,19 +126,27 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
 
 Ba vai của tầng UC hỏi về **hành vi**. Tầng BR cần vai hỏi về **lý do tồn tại** — đó là câu hỏi khác hẳn, và không hỏi ở đây thì không còn chỗ nào hỏi nữa.
 
-1. Đọc mục `# $1:` trong `specs/br.md`, cùng `specs/_intake.md` để biết bộ câu hỏi đã dùng.
+1. Đọc `br.md` của lát `$1` (`specs/<core|nghề>/br-###/br.md` — tìm bằng `ls -d specs/*/br-###/`), cùng
+   `specs/_intake.md` để biết bộ câu hỏi đã dùng, **và `specs/vision.md`** — mục `## Không thu hẹp` cùng
+   dòng của lát này trong bảng `## Nghề và lát`.
+
+   `## Không thu hẹp` là **đầu vào bắt buộc của cả ba vai**, không phải thông tin nền. Ba vai tồn tại để
+   bóp BR lại cho chặt; tầng 0 tồn tại để nói chỗ nào không được bóp. Chạy ba vai mà không đưa cho họ
+   `## Không thu hẹp` là chạy đúng nửa cơ chế — và nửa thiếu là nửa đã sinh ra tầng 0.
 2. Kiểm tiền điều kiện:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/br-check.sh" $1
 ```
 Còn dòng ✗ → **dừng**, in output, bảo user viết xong BR rồi chạy lại. Cảnh báo `___` thì **cứ chạy tiếp** — `___` là trạng thái hợp lệ ở Phase 1, và mấy chỗ `___` chính là thứ ba vai sẽ soi.
-3. **Chạy ba vai bằng subagent riêng** (Agent tool, mỗi vai một agent). Prompt: phần *Ba vai tầng BR* trong `.sdd/prompts/adversarial-pass.md`, kèm toàn bộ mục BR. Ràng buộc như tầng UC: chỉ hỏi, không đề xuất giải pháp, không sửa spec, tối đa 8 câu mỗi vai.
+3. **Chạy ba vai bằng subagent riêng** (Agent tool, mỗi vai một agent). Prompt: phần *Ba vai tầng BR* trong `.sdd/prompts/adversarial-pass.md`, kèm toàn bộ `br.md` của lát **và mục `## Không thu hẹp` của `specs/vision.md`** nguyên văn. Ràng buộc như tầng UC: chỉ hỏi, không đề xuất giải pháp, không sửa spec, tối đa 8 câu mỗi vai.
 
    - **Người trả tiền** — vì sao việc này đáng làm **trước** việc khác? không làm thì mất gì **đo được**? con số baseline lấy ở đâu?
    - **Người sẽ phải vận hành nó mãi** — **câu bắt buộc đầu tiên (#47): *"v1 xong, anh mở cái gì lên để làm việc mỗi ngày? tự đổi được gì mà không cần dev?"*** — trả lời quyết In Scope trước khi cắt phạm vi (BR-003 runxops bị lật vì không ai hỏi); rồi: ai chịu trách nhiệm khi nó hỏng lúc 2 giờ sáng? cái gì trong Out of Scope hôm nay sẽ thành ticket tuần sau?
    - **Người hoài nghi** — dòng `**Vì sao vẫn xây:**` trong Background nói gì? nếu nó ghi *"chưa có lý do"* thì **bắt đầu từ đó**: đã cân phương án không-phần-mềm nào chưa, cân xong chưa? có cách nào đạt Goal mà **không xây gì** không? BR này có thật là một BR, hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do?
 
-   Vai thứ ba là vai quan trọng nhất và không có ở tầng UC. *"BR: xây dashboard theo dõi đơn hàng"* không phải BR — đó là giải pháp; BR thật nằm ở câu hỏi *vì sao cần theo dõi*. Nếu vai này kết luận BR đang là giải pháp viết ngược, **dừng và viết lại BR**, đừng ghi nó thành một Open Question rồi đi tiếp.
+   Vai thứ ba là vai quan trọng nhất và không có ở tầng UC. *"BR: xây dashboard theo dõi đơn hàng"* không phải BR — đó là giải pháp; BR thật nằm ở câu hỏi *vì sao cần theo dõi*. Nếu vai này kết luận BR đang là giải pháp viết ngược thì **dừng, nói rõ BR sẽ co từ gì thành gì, hỏi chủ dự án, rồi mới viết lại** — đừng ghi nó thành một Open Question rồi đi tiếp, và cũng đừng tự viết lại trước khi chủ dự án nghe được cái mất. Viết lại một BR là thu hẹp nó; người duy nhất được quyết thu hẹp là chủ dự án.
+
+   **Mọi vai đều phải đối chiếu `## Không thu hẹp`.** Câu nào dẫn tới việc bỏ bớt một điều nằm trong đó thì vai phải nói ra rằng nó đang đụng vào tầng 0, và câu hỏi đi thẳng tới chủ dự án ở bước 5 — không phải một `Open Question` để đó.
 
 4. Ghi vào mục `## Adversarial pass` của BR:
 ```
@@ -153,9 +162,31 @@ Còn dòng ✗ → **dừng**, in output, bảo user viết xong BR rồi chạy
    Bốn đầu ra hợp lệ, không có "để đó":
    - → `## Background` (kèm **nguồn** của con số; không có nguồn thì không phải Background)
    - → `## Open Questions` kèm quyết định tạm
-   - → `## Out of Scope` + một nhánh `-.->` trên Impact Map
+   - → `## Out of Scope` + một nhánh `-.->` trên Impact Map, **kèm đích** `→ lát ___` hoặc `→ mở lại khi ___`
    - → một `CON-###` mới trong `## Constraints`
-6. Chạy lại `br-check.sh $1`, rồi `git add specs/br.md && git commit -m "docs($1): BR sau adversarial pass"`.
-7. STATE.md: `Đang làm: $1 · Phase 1 xong`. `Việc tiếp theo: /sdd-solo:start UC-### cho UC đầu tiên trong ## Related Use Cases`.
+
+6. **"Được và mất" — trước khi ghi `## History` v+1, bắt buộc, không bỏ.**
+
+   Áp xong các phiếu ở bước 5 nhưng **chưa** ghi History, chạy:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/br-scope-diff.sh" $1
+```
+(không thay được biến: `find ~/.claude/plugins -type f -name br-scope-diff.sh -path '*sdd-solo*' | head -1`).
+   Nó in những dòng `## In Scope` / `## Out of Scope` **thêm và bớt** so với `HEAD`.
+
+   Rồi **nói lại bằng lời thường cho chủ dự án nghe**, không dán nguyên diff: *"BR sẽ co từ ___ thành ___;
+   mở thêm ___; bỏ ___ sang lát ___."* Và **chờ chủ dự án gật** — bằng `AskUserQuestion`, một câu, ba lựa
+   chọn: *đồng ý co như vậy* · *giữ nguyên phạm vi, bác phiếu ___* · *chưa quyết, để lại ở Open Questions*.
+
+   Vì sao bước này tồn tại: ba lượt adversarial, mỗi lượt co BR một ít, mỗi lượt đều đúng luật — cộng lại
+   thì thứ còn lại nhỏ hơn hẳn ý định ban đầu, và **không lượt nào nhìn thấy hai lượt kia**. Diff của một
+   lượt là thứ duy nhất làm phép co ấy hiện ra trước khi nó thành nếp. Dòng nào đụng một từ khoá ở
+   `## Không thu hẹp` thì nói thẳng ra là nó đụng, đừng để lẫn trong danh sách.
+
+   Chủ dự án chưa gật → **không ghi History, không commit**. Đó không phải chờ cho lịch sự: `## History`
+   là chỗ khai rằng phiên bản này đã được chốt.
+7. Chạy lại `br-check.sh $1`, rồi `git add specs/ && git commit -m "docs($1): BR sau adversarial pass"`.
+8. STATE.md: `Đang làm: $1 · Phase 1 xong`. `Việc tiếp theo: /sdd-solo:start UC-### cho UC đầu tiên trong ## Related Use Cases của lát`.
 
 Không viết code. Không tạo thư mục UC.

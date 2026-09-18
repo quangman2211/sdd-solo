@@ -39,5 +39,6 @@ Ba khối cuối, nếu có, phải nói ra chứ đừng bỏ qua:
 - **Chưa có ngày** — không xếp được vào dòng thời gian. Nói thẳng đây là thứ duy nhất trong
   bộ tài liệu không tái tạo được: hai quyết định mất ngày thì sau này không ai dựng lại được
   cái nào ra trước khi chúng đá nhau.
-- **`br.md` còn nguyên khuôn** — những dòng in ra là ví dụ dạy việc, chưa phải quyết định của
-  dự án. Nói user chạy `/sdd-solo:intake` trước.
+- **`br.md` còn nguyên khuôn** — chỉ mới có lát mẫu `specs/core/br-000/`, nên những dòng in ra là ví
+  dụ dạy việc, chưa phải quyết định của dự án. Nói user chạy `/sdd-solo:intake` trước; bước 0 của nó
+  là `specs/vision.md`, và tầng 0 chưa viết thì BR nào cũng đỏ ở `br-check`.
