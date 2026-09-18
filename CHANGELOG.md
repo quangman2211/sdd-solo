@@ -72,8 +72,11 @@ nhãn "③ RULE + entity + glossary"). Từng mốc ghi dưới đây; mốc ch�
     `specs/core/**` không trích ID của nghề (RULE/ADR/UC/BR sống trong `specs/<nghề>/` + tên entity ở
     `specs/<nghề>/entities/`; bỏ khối `<!-- -->` và ``` ```; trừ vision.md · decisions.md · traceability.md · trace ·
     evidence · notes/); ② `src/core/**` không import `../<nghề>/` · `src/<nghề>/` · `@/<nghề>/`. Repo 6.x → "không có
-    nghề để kiểm", exit 0. Đo trên bản sao runxops sau migrate: 12 file gốc/adr/core đang trích nghề — đó là nợ cũ
-    có thật, Bước C của runxops soát; hook chỉ chặn nợ MỚI.
+    nghề để kiểm", exit 0. Đo trên bản sao runxops sau migrate: 18 file gốc/adr/core đang trích ID nghề — đó là nợ cũ
+    có thật, Bước C của runxops soát; hook chỉ chặn nợ MỚI. **Tên entity của nghề** (Channel, Product…) chỉ CẢNH BÁO,
+    không đỏ, không chặn: hiến pháp kỹ thuật và ADR gốc nhắc tên entity là chuyện thường; đỏ nhiều thì hook thành
+    nhiễu và người tắt nó (peer runxops chốt 2026-09-18; thử: ADR gốc trích RULE-012 → ✗ exit 1, ADR gốc nhắc
+    Product → ! exit 0).
   - `templates/githooks/pre-commit.d/20-layer-boundary.sh.example`: gọi `layer-check.sh --staged`, tắt mặc định (`.example`).
     `gate-check` (UC ở core) và `design-check` (design.md của UC ở core) gọi `layer-check --file` — chỉ cảnh báo.
   - `migrate --layout v7`: mục glossary theo context sang nghề nhưng **từng dòng từ** là entity đã map về core (hay

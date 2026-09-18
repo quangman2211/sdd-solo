@@ -3,7 +3,9 @@
 #
 #   Lõi không biết nghề; nghề biết lõi. Cụ thể, đo được:
 #   ① gốc specs/*.md · specs/adr/ · specs/core/**  KHÔNG trích ID của nghề: RULE/ADR/UC/BR sống trong
-#      specs/<nghề>/, và tên entity ở specs/<nghề>/entities/.
+#      specs/<nghề>/ → ĐỎ. Tên entity ở specs/<nghề>/entities/ (Channel, Product…) → chỉ CẢNH BÁO: hiến pháp
+#      kỹ thuật và ADR gốc nhắc tên entity là chuyện thường; đỏ nhiều thì hook thành nhiễu và người tắt nó
+#      (peer runxops chốt 2026-09-18).
 #   ② src/core/**  KHÔNG import từ src/<nghề>/ (đường tương đối `../<nghề>/`, tuyệt đối `src/<nghề>/`,
 #      hay alias `@/<nghề>/`).
 #   Trừ: specs/vision.md (bảng Nghề và lát kể tên BR của nghề là việc của nó) · specs/decisions.md (một sổ
@@ -32,10 +34,13 @@ NIDS="$(for n in $NGHE; do
   ls "$ROOT/specs/$n/adr/"ADR-[0-9]*.md 2>/dev/null | xargs -n1 basename 2>/dev/null | grep -oE '^ADR-[0-9]+'
   ls -d "$ROOT/specs/$n"/br-[0-9]*/ 2>/dev/null | sed -E 's#.*/br-([0-9]+)/$#BR-\1#'
   ls -d "$ROOT/specs/$n"/br-[0-9]*/use-cases/UC-[0-9]*/ 2>/dev/null | sed -E 's#.*/(UC-[0-9]+)-[^/]*/$#\1#'
+done | sort -u)"
+NENT="$(for n in $NGHE; do
   ls "$ROOT/specs/$n/entities/"*.md 2>/dev/null | xargs -n1 basename 2>/dev/null | sed 's/\.md$//' | grep -vE '^(README|_.*)$'
 done | sort -u)"
-# tên entity hay là chữ thường (`Order`, `Listing`) — so nguyên từ, phân biệt hoa thường
 IDRE="$(printf '%s\n' "$NIDS" | awk 'NF' | tr '\n' '|' | sed 's/|$//')"
+# tên entity so nguyên từ, phân biệt hoa thường (`Order`, `Listing`)
+ENRE="$(printf '%s\n' "$NENT" | awk 'NF' | tr '\n' '|' | sed 's/|$//')"
 
 # ── danh sách file cần xét ────────────────────────────────────────────────
 is_root_spec() { # 0 nếu file thuộc vùng "gốc + core" (① áp dụng)
@@ -55,16 +60,22 @@ case "$MODE" in
   *)      LIST="$( { find "$ROOT/specs" -maxdepth 1 -name '*.md'; find "$ROOT/specs/adr" "$ROOT/specs/core" -type f -name '*.md' 2>/dev/null
                      find "$ROOT/src/core" -type f 2>/dev/null; } | sed "s#^$ROOT/##")";;
 esac
-HITS=0
+HITS=0; ENTW=0
 for f in $LIST; do
   [ -f "$ROOT/$f" ] || continue
-  if is_root_spec "$f" && [ -n "$IDRE" ]; then
+  if is_root_spec "$f"; then
     # bỏ khối <!-- --> và dòng trong ``` — trích dẫn ví dụ trong lời giảng không phải trích thật
-    H="$(strip_markup < "$ROOT/$f" | awk '/^```/{c=!c; next} !c' | grep -nwE "($IDRE)" | head -5)"
+    BODY="$(strip_markup < "$ROOT/$f" | awk '/^```/{c=!c; next} !c')"
+    H=""; [ -n "$IDRE" ] && H="$(printf '%s\n' "$BODY" | grep -nwE "($IDRE)" | head -5)"
     if [ -n "$H" ]; then
       HITS=$((HITS+1))
       bad "$f trích ID của nghề ($(printf '%s\n' "$H" | grep -owE "($IDRE)" | sort -u | tr '\n' ' ' | sed 's/ $//')) — gốc và core không biết nghề"
       printf '%s\n' "$H" | cut -c1-100 | sed 's/^/      /'
+    fi
+    E=""; [ -n "$ENRE" ] && E="$(printf '%s\n' "$BODY" | grep -nwE "($ENRE)" | head -3)"
+    if [ -n "$E" ]; then
+      ENTW=$((ENTW+1))
+      warn "$f nhắc tên entity của nghề ($(printf '%s\n' "$E" | grep -owE "($ENRE)" | sort -u | tr '\n' ' ' | sed 's/ $//')) — thường là được, nhưng entity mọi nghề cần thì đặt ở specs/core/entities/"
     fi
   fi
   if is_core_src "$f"; then
@@ -77,7 +88,7 @@ for f in $LIST; do
   fi
 done
 if [ "$HITS" -eq 0 ]; then
-  ok "ranh giới lõi/nghề: không chỗ nào ở gốc/core trích nghề ($(printf '%s\n' "$NIDS" | grep -c .) ID nghề, $(printf '%s\n' "$LIST" | grep -c .) file xét)"
+  ok "ranh giới lõi/nghề: không chỗ nào ở gốc/core trích ID của nghề ($(printf '%s\n' "$NIDS" | grep -c .) ID nghề, $(printf '%s\n' "$NENT" | grep -c .) entity nghề, $(printf '%s\n' "$LIST" | grep -c .) file xét${ENTW:+; $ENTW file nhắc tên entity nghề — cảnh báo})"
   exit 0
 fi
 info "sửa: thứ nghề cần mà lõi cũng cần thì đưa lên gốc/core (RULE xuyên suốt, entity chung); còn lại thì dòng đó về specs/<nghề>/"
