@@ -5,9 +5,9 @@
 # một kiểm nào. Xem #18.
 ID="$1"; [ -z "$ID" ] && { echo "dùng: br-check.sh BR-###"; exit 2; }
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
-ROOT="$(project_root)"; BF="$ROOT/specs/br.md"
+ROOT="$(project_root)"; BF="$(br_file "$ID" "$ROOT")"
 echo "Kiểm BR — $ID"
-[ -f "$BF" ] || { bad "không có specs/br.md — chạy /sdd-solo:init"; exit 1; }
+[ -f "$BF" ] || { bad "không có ${BF#$ROOT/} — chạy /sdd-solo:init (6.x) hoặc /sdd-solo:intake (7.0 tạo lát br-###/)"; exit 1; }
 if [ "$ID" = "BR-000" ]; then
   info "BR-000 là BR mẫu của template — không kiểm. Viết BR-001 rồi kiểm cái đó."
   exit 0
@@ -43,7 +43,7 @@ if [ -n "$REAL" ] && grep -qE '^# BR-000\b' "$BF"; then
   info "  Cần đọc lại BR mẫu: nó nằm trong template của plugin, không mất đi đâu."
 fi
 B="$(br_body "$ID" "$ROOT")"
-[ -z "$B" ] && { bad "không tìm thấy '# $ID: ...' trong specs/br.md"; exit 1; }
+[ -z "$B" ] && { bad "không tìm thấy '# $ID: ...' trong ${BF#$ROOT/}"; exit 1; }
 
 # ── Brief nguồn (#34) ─────────────────────────────────────────────────────
 # Ba lớp kiểm của plugin đều đo TRONG specs/: gate-check đo trong specs/, verify
@@ -187,9 +187,9 @@ for u in $(printf '%s' "$RU" | grep -oE 'UC-[0-9]+' | sort -u); do
 done
 # Chiều ngược thì ĐỎ: UC đã khai thuộc BR này mà BR không nhận là trôi thật, và
 # luôn sửa được. Cùng bài học hai chiều của #12, #15, #17.
-for uf in $(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' \
-            -not -name '*.sequence.md' -not -name '*.flow.md' 2>/dev/null); do
-  grep -qE "Liên quan tới BR:.*$ID([^0-9]|$)" "$uf" || continue
+for uf in $(all_uc_files "$ROOT"); do
+  # 7.0: UC nằm trong br-###/use-cases/ của lát là khai thuộc lát đó — không cần dòng Metadata
+  { [ "$(br_of "$uf")" = "$ID" ] || grep -qE "Liên quan tới BR:.*$ID([^0-9]|$)" "$uf"; } || continue
   uid="$(basename "$uf" .md)"
   printf '%s' "$RU" | grep -qE "$uid([^0-9]|$)" \
     || bad "$uid khai thuộc $ID nhưng ## Related Use Cases của $ID không liệt kê nó"
@@ -240,9 +240,10 @@ printf '%s' "$AP" | grep -qE 'Ngày chạy: *[0-9]{4}-[0-9]{2}-[0-9]{2}' \
 # Phase 1 ĐƯỢC PHÉP còn `___` (quyết định 3.x, vẫn đúng) — nên ĐẾM RA, không chặn.
 # Sau migrate --evidence thân nằm ở br.evidence.md, mặt tiền là một dòng đếm; đọc cả hai.
 APB="$AP"
-if printf '%s' "$AP" | grep -q '→ specs/br.evidence.md' && [ -f "$ROOT/specs/br.evidence.md" ]; then
+EVF="$(evidence_file "$ID" "$ROOT")"
+if printf '%s' "$AP" | grep -qE '→ .*evidence\.md' && [ -f "$EVF" ]; then
   APB="$APB
-$(awk -v h="## $ID — ## Adversarial pass" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}' "$ROOT/specs/br.evidence.md")"
+$(awk -v h="## $ID — ## Adversarial pass" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}' "$EVF")"
 fi
 NQ="$(printf '%s\n' "$APB" | grep -cE '^[[:space:]]*-[[:space:]]*Q[0-9]+\b')"
 NB="$(printf '%s\n' "$APB" | grep -E '^[[:space:]]*-[[:space:]]*Q[0-9]+\b' | grep -cE '→[[:space:]]*`?___|^[^→]*$')"

@@ -16,7 +16,7 @@ notool() { if [ -n "$TRE" ]; then grep -vE "$TRE"; else cat; fi; }
 
 
 SPEC=0; CODE=0
-echo "$STAGED" | grep -vE '/_template/' | grep -qE '^specs/.*UC-[0-9]+\.md$|^specs/rules\.md$' && SPEC=1
+echo "$STAGED" | grep -vE '/_template/' | grep -qE '^specs/.*UC-[0-9]+\.md$|^specs/([^/]+/)?rules\.md$' && SPEC=1
 echo "$STAGED" | grep -vE 'README\.md$' | notool | grep -qE "$RE" && CODE=1
 if [ "$SPEC" = 1 ] && [ "$CODE" = 1 ]; then
   echo "✗ Commit đang trộn spec (specs/) và code ($CP $TP). Tách: commit docs(UC-###) trước, rồi feat(UC-###)." >&2

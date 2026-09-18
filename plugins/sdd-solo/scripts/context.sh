@@ -31,12 +31,26 @@ for a in "$@"; do case "$a" in --why) WHY=1;; --brief) BRIEF=1;; UC-[0-9]*) ID="
 [ -z "$ID" ] && { echo "Dùng: context.sh UC-### [--why | --brief]" >&2; exit 2; }
 F="$(find_uc "$ID" "$ROOT")"
 [ -z "$F" ] && { printf '  \033[31m✗\033[0m không tìm thấy file %s\n' "$ID" >&2; exit 1; }
-CTX="$(ctx_of "$F")"; DIR="$(dirname "$F")"
+CTX="$(owner_of "$F")"; DIR="$(dirname "$F")"
 BP="$(brief_path "$ROOT")"; BS=""; [ -n "$BP" ] && BS="$(brief_sha "$ROOT" 2>/dev/null)"
+# 7.0 (#55): mọi đường dẫn nguồn tra ở lib.sh rồi đưa vào python qua env, mỗi dòng một file —
+# python không tự biết bố cục. 6.x: rules.md · br.md · internal/{adr,architecture.md} ·
+# contexts/<ctx>/entities.md; 7.0: rules.md của gốc + nghề · br.md của lát · adr/ · architecture.md ·
+# entities/<Tên>.md mà UC nhắc tên (entity_cited). OTHERS = tên context/nghề KHÁC, để cắt khỏi glossary.
+export SDD_RULES="$(rules_files "$ROOT")" SDD_BRS="$(br_files "$ROOT")" SDD_ADRS="$(adr_dirs "$ROOT")"
+export SDD_ARCH="$(arch_file "$ROOT")" SDD_ENTS="$(entity_cited "$F" "$ROOT")" SDD_GLOS="$(glossary_files "$CTX" "$ROOT")"
+if [ "$(layout "$ROOT")" = v7 ]; then OTHERS="$(nghe_list "$ROOT" | tr ' ' '\n' | grep -vx "$CTX")"
+else OTHERS="$(ls -d "$ROOT"/specs/contexts/*/ 2>/dev/null | xargs -n1 basename | grep -v '^_' | grep -vx "$CTX")"; fi
+export SDD_OTHERS="$OTHERS"
 
 python3 - "$ROOT" "$F" "$ID" "$CTX" "$WHY" "$BP" "$BS" "$BRIEF" <<'PY'
 import sys, re, io, os, glob
 ROOT, F, ID, CTX, WHY, BP, BS, BRIEF = sys.argv[1:9]; WHY = WHY == "1"; BRIEF = BRIEF == "1"
+def env_list(k): return [x for x in os.environ.get(k, '').split('\n') if x.strip()]
+RULES, BRS, ADRS, ENTS, GLOS = (env_list(k) for k in ('SDD_RULES', 'SDD_BRS', 'SDD_ADRS', 'SDD_ENTS', 'SDD_GLOS'))
+ARCH = os.environ.get('SDD_ARCH', ''); OTHERS = set(x.lower() for x in env_list('SDD_OTHERS'))
+def rel(p): return os.path.relpath(p, ROOT)
+def rel_list(ps): return ' · '.join(rel(p) for p in ps)
 out = []; warns = []; srcs = []   # srcs: (tên nguồn, chỉ số bắt đầu trong out)
 def rd(p):
     try: return io.open(p, encoding='utf-8').read()
@@ -85,9 +99,9 @@ rules = sorted(set(re.findall(r'\bRULE-[0-9]+[a-z]?\b', cited)))
 cons  = sorted(set(re.findall(r'\bCON-[0-9]+\b', cited)))
 adrs  = sorted(set(re.findall(r'\bADR-[0-9]+\b', cited)))
 
-rl = rd(os.path.join(ROOT, 'specs/rules.md'))
+rl = '\n'.join((rd(p) or '') for p in RULES)
 if rules:
-    H(f'RULE được trích ({len(rules)}) — specs/rules.md')
+    H(f'RULE được trích ({len(rules)}) — {rel_list(RULES) or "specs/rules.md"}')
     rls = strip_markup(rl or '')
     for r in rules:
         # chỉ heading + thân của RULE này (## hoặc ###), không bao giờ cả file
@@ -99,10 +113,10 @@ if rules:
         if b is None: warns.append(f'{r} — UC trích nhưng rules.md không có'); continue
         out.append(f'## {r}\n' + drop_trace(b).rstrip())
 
-br = rd(os.path.join(ROOT, 'specs/br.md')) or ''
+br = '\n'.join((rd(p) or '') for p in BRS)
 brs = strip_markup(br)
 if cons:
-    H(f'CON được trích ({len(cons)}) — specs/br.md ## Constraints')
+    H(f'CON được trích ({len(cons)}) — {rel_list(BRS) or "specs/br.md"} ## Constraints')
     # bỏ BR-000 (BR mẫu) — cùng luật với br-check và decisions.sh
     brs_no0 = re.sub(r'(?ms)^# BR-000:.*?(?=^# BR-|\Z)', '', brs)
     lines = brs_no0.split('\n')
@@ -117,9 +131,9 @@ if cons:
         out.append(hit)
 
 if adrs:
-    H(f'ADR được trích ({len(adrs)}) — specs/internal/adr/')
+    H(f'ADR được trích ({len(adrs)}) — {rel_list(ADRS) + "/" if ADRS else "specs/adr/"}')
     for a in adrs:
-        fs = glob.glob(os.path.join(ROOT, 'specs/internal/adr', a + '*')) + glob.glob(os.path.join(ROOT, 'docs/adr', a + '*'))
+        fs = [f for d in ADRS for f in sorted(glob.glob(os.path.join(d, a + '*'))) if not os.path.basename(f).startswith('_')]
         if not fs: warns.append(f'{a} — UC trích nhưng không có file ADR'); continue
         t = strip_markup(rd(fs[0]) or '')
         title = next((l for l in t.split('\n') if l.startswith('# ')), f'# {a}')
@@ -146,11 +160,11 @@ if not WHY and brid:
     else: warns.append(f'{b} — UC trỏ tới nhưng br.md không có')
 
 # ── 6. architecture.md — bốn mục ──
-ar = rd(os.path.join(ROOT, 'specs/internal/architecture.md'))
+ar = rd(ARCH) if ARCH else None
 if ar:
     ars = strip_markup(ar)
     heads = ('Cấm',) if WHY else (('Cấm', 'Ranh giới', 'Nơi chạy') if BRIEF else ('Ngăn xếp', 'Nơi chạy', 'Ai gọi', 'Cấm'))
-    H('specs/internal/architecture.md' + (' — --brief: Cấm · Ranh giới · Nơi chạy' if BRIEF else ''))
+    H(rel(ARCH) + (' — --brief: Cấm · Ranh giới · Nơi chạy' if BRIEF else ''))
     for hname in heads:
         sb = sect(ars, hname)
         if sb is None:
@@ -158,11 +172,17 @@ if ar:
             continue
         if re.search(r'<[^>\n]+>', sb): warns.append(f'architecture.md ## {hname} còn placeholder <...> — chưa ai quyết')
         out.append(f'## {hname}\n' + drop_trace(sb).rstrip())
-else: warns.append('thiếu specs/internal/architecture.md')
+else: warns.append('thiếu ' + (rel(ARCH) if ARCH else 'specs/architecture.md'))
 
 # ── 7. entity + glossary có nhắc trong UC ──
 if not WHY:
-    en = rd(os.path.join(ROOT, 'specs/contexts', CTX, 'entities.md'))
+    # 7.0 (T2): mỗi entity một file — entity_cited đã lọc theo tên UC nhắc, in nguyên file (bỏ dấu vết).
+    # 6.x: một entities.md cho cả context — tách khối ## theo tên UC nhắc như trước.
+    en = None
+    if ENTS and not any('/specs/contexts/' in p for p in ENTS):
+        H(f'entities — {len(ENTS)} entity UC nhắc tên ({", ".join(os.path.basename(p)[:-3] for p in ENTS)})')
+        out.append('\n\n'.join(drop_trace(strip_markup(rd(p) or '')).rstrip() for p in ENTS))
+    elif ENTS: en = rd(ENTS[0])
     if en:
         ens = drop_trace(strip_markup(en)); blocks = re.split(r'(?m)^(?=#{2,3} )', ens)
         words = set(w.lower() for w in re.findall(r'\b[A-Z][A-Za-z]{2,}\b', drop_trace(uc)))
@@ -176,12 +196,12 @@ if not WHY:
             out.append('\n'.join(b.rstrip() for b in picked))
         else:
             H('entities.md — không tách được theo tên, in cả'); out.append(ens.rstrip())
-    gl = rd(os.path.join(ROOT, 'specs/glossary.md'))
+    gl = '\n'.join((rd(p) or '') for p in GLOS) if GLOS else None
     if gl:
         # #43: bỏ ## History và mục ## <context khác> — gate-check đòi thuật ngữ nằm dưới
         # heading '## <ctx>', nên heading bắt đầu bằng tên một context khác là của họ.
-        others = set(d for d in os.listdir(os.path.join(ROOT, 'specs/contexts'))
-                     if os.path.isdir(os.path.join(ROOT, 'specs/contexts', d)) and not d.startswith('_') and d != CTX)
+        # 7.0: OTHERS là tên các nghề khác; glossary gốc lẽ ra không có mục nghề, có thì cũng cắt.
+        others = OTHERS
         gls = drop_trace(strip_markup(gl)); kept = []; dropped = 0; skip = False
         for ln in gls.split('\n'):
             m = re.match(r'## (.*)', ln)
@@ -191,7 +211,7 @@ if not WHY:
                 if skip: dropped += 1
             elif ln.startswith('# '): skip = False
             if not skip: kept.append(ln)
-        H('specs/glossary.md' + (f' — bỏ {dropped} mục của context khác' if dropped else ''))
+        H(rel_list(GLOS) + (f' — bỏ {dropped} mục của context khác' if dropped else ''))
         out.append('\n'.join(kept).rstrip())
 
 # ── 8. brief — đọc riêng ──

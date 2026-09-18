@@ -21,7 +21,7 @@ ID="${1:-}"
 case "$ID" in UC-[0-9]*) ;; *) echo "Dùng: uc-steps.sh UC-###" >&2; exit 0;; esac
 ROOT="$(project_root)"; F="$(find_uc "$ID" "$ROOT")"
 [ -z "$F" ] && { echo "  không tìm thấy $ID"; exit 0; }
-DIR="$(dirname "$F")"; CTX="$(ctx_of "$F")"
+DIR="$(dirname "$F")"; CTX="$(owner_of "$F")"
 
 yes_() { printf '  \033[32m✓\033[0m %-2s %s\n' "$1" "$2"; }
 skip_() { printf '  \033[36m–\033[0m %-2s %s\n' "$1" "$2"; }
@@ -47,11 +47,11 @@ grep -qE '^[0-9]+\. +[^ <]' "$F"; st "②" $? "nội dung UC đã viết (Main F
 # ③ RULE + entities + glossary
 R3=1
 if grep -qE 'RULE-[0-9]+' "$F" \
-   && [ -f "$ROOT/specs/contexts/$CTX/entities.md" ] \
-   && ! grep -q '<Tên entity' "$ROOT/specs/contexts/$CTX/entities.md" 2>/dev/null \
-   && [ -f "$ROOT/specs/glossary.md" ] \
-   && ! grep -q '<thuật ngữ' "$ROOT/specs/glossary.md" 2>/dev/null; then R3=0; fi
-st "③" $R3 "RULE + entities.md + glossary.md"
+   && [ -n "$(entity_files "$F" "$ROOT")" ] \
+   && ! cat /dev/null $(entity_files "$F" "$ROOT") | grep -q '<Tên entity' 2>/dev/null \
+   && [ -n "$(glossary_files "$CTX" "$ROOT")" ] \
+   && ! cat /dev/null $(glossary_files "$CTX" "$ROOT") | grep -q '<thuật ngữ' 2>/dev/null; then R3=0; fi
+st "③" $R3 "RULE + entity + glossary"
 
 # ④ flow mermaid
 R4=1; grep -qE '^```mermaid' "$DIR/$ID.flow.md" 2>/dev/null && R4=0

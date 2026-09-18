@@ -58,8 +58,8 @@ function ghost(s) {
 # những khối đó nhắc CON-002 / ADR-001 / BR-001 làm ví dụ. Không lột thì sổ tra
 # đọc chính lời giảng thành quyết định. (Cùng bẫy đã dính ở design-check 4.0.x.)
 
-# ── CON-### : specs/br.md ───────────────────────────────────────────────────
-[ -f "$ROOT/specs/br.md" ] && strip_markup < "$ROOT/specs/br.md" | awk -v T="$TAB" "$FLD"'
+# ── CON-### : specs/br.md (6.x) · specs/*/br-###/br.md (7.0) ─────────────────
+br_text "$ROOT" | strip_markup | awk -v T="$TAB" "$FLD"'
 function flush() { if (cur != "" && !ghost(stmt)) print d T cur T "ràng buộc" T stmt T stt T rc; cur = "" }
 # BR-000 là BR MẪU của template và nó Ở LẠI VĨNH VIỄN: `/sdd-solo:intake` dặn thẳng
 # "Giữ nguyên BR-000 mẫu", `br-check.sh:11` bỏ qua nó vì cùng lý do. Không bỏ ở đây
@@ -82,8 +82,8 @@ cur != "" && /^[ \t]+- Từ:/ {
 END { flush() }
 ' >> "$REC"
 
-# ── RULE-### : specs/rules.md ───────────────────────────────────────────────
-[ -f "$ROOT/specs/rules.md" ] && strip_markup < "$ROOT/specs/rules.md" | awk -v T="$TAB" "$FLD"'
+# ── RULE-### : specs/rules.md + specs/<nghề>/rules.md ────────────────────────
+rules_text "$ROOT" | strip_markup | awk -v T="$TAB" "$FLD"'
 function flush() { if (cur != "" && !ghost(stmt)) print d T cur T "luật" T stmt T stt T ""; cur = "" }
 /^## RULE-/ {
   flush()
@@ -103,7 +103,7 @@ END { flush() }
 # Bỏ file bắt đầu bằng "_" — đó là khuôn, không phải quyết định. Chính vì khuôn
 # từng mang tên ADR-000-template.md mà `id_exists ADR-000` báo XANH SAI trong mọi
 # repo vừa scaffold, không cần ai viết sai gì cả. Đổi tên ở 4.2.0.
-for f in "$ROOT/specs/internal/adr/"*.md "$ROOT/docs/adr/"*.md; do
+for f in $(for d in $(adr_dirs "$ROOT"); do ls "$d"/*.md 2>/dev/null; done); do
   [ -f "$f" ] || continue
   case "$(basename "$f")" in _*) continue;; esac
   strip_markup < "$f" | awk -v T="$TAB" "$FLD"'
@@ -124,7 +124,7 @@ done
 # thì nâng điều cấm đó thành RULE-### hoặc ADR-###, hai thứ có ID thật.
 # (Chữ ASCII vì đây là ID, và vì cột căn theo ký tự chỉ đúng khi bash đếm — awk
 #  length() ở macOS đếm BYTE, "Cấm-1" 5 ký tự nhưng 6 byte, đủ lệch cả bảng.)
-[ -f "$ROOT/specs/internal/architecture.md" ] && strip_markup < "$ROOT/specs/internal/architecture.md" \
+[ -f "$(arch_file "$ROOT")" ] && strip_markup < "$(arch_file "$ROOT")" \
 | awk -v T="$TAB" "$FLD"'
 function flush() { if (cur != "" && !ghost(stmt)) printf "%s%s%s%s%s%s%s%s%s%s%s\n", d,T,("CAM-" n),T,"cấm",T,stmt,T,stt,T,""; cur = "" }
 /^## / { flush(); insec = ($0 ~ /^## Cấm/) ? 1 : 0; next }
@@ -155,7 +155,7 @@ for cd in "$ROOT/specs/changes/"CHG-*/ "$ROOT/changes/"CHG-*/; do
 done
 
 # ── dòng một câu : specs/internal/decisions.md ──────────────────────────────
-[ -f "$ROOT/specs/internal/decisions.md" ] && strip_markup < "$ROOT/specs/internal/decisions.md" \
+[ -f "$(decisions_file "$ROOT")" ] && strip_markup < "$(decisions_file "$ROOT")" \
 | awk -v T="$TAB" "$FLD"'
 /^-[ ]+[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][ ]/ {
   match($0, /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/); d = substr($0, RSTART, RLENGTH)
@@ -170,7 +170,7 @@ done
 TOT="$(grep -c . "$REC" 2>/dev/null)"; [ -n "$TOT" ] || TOT=0
 if [ "$TOT" = "0" ]; then
   printf 'Chưa có quyết định nào ghi lại.\n'
-  printf 'Bắt đầu ở specs/br.md (## Constraints) và specs/rules.md — hoặc chạy /sdd-solo:intake.\n'
+  printf 'Bắt đầu ở BR (## Constraints) và rules.md — hoặc chạy /sdd-solo:intake.\n'
   exit 0
 fi
 
@@ -200,7 +200,7 @@ padc() { _s="$1"; _w="$2"; while [ "${#_s}" -lt "$_w" ]; do _s="$_s "; done; pri
 UNTOUCHED=0; br_untouched "$ROOT" && UNTOUCHED=1
 
 printf '=== Sổ quyết định — %s mục ===\n' "$TOT"
-[ "$UNTOUCHED" = "1" ] && printf '!  specs/br.md còn nguyên khuôn — dòng BR-000 dưới đây là VÍ DỤ dạy việc,\n   chưa phải quyết định của dự án. Chạy /sdd-solo:intake trước.\n'
+[ "$UNTOUCHED" = "1" ] && printf '!  BR còn nguyên khuôn — dòng BR-000 dưới đây là VÍ DỤ dạy việc,\n   chưa phải quyết định của dự án. Chạy /sdd-solo:intake trước.\n'
 printf '\n'
 
 printf '%s\n' "$DATED" | grep . | while IFS="$TAB" read -r d i k s t r; do

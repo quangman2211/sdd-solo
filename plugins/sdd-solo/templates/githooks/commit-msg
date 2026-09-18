@@ -81,18 +81,25 @@ if [ "$TOUCH_CODE" = 1 ]; then
     if [ ! -f "$ROOT/.sdd/gate/$ID.ok" ]; then
       echo "✗ $ID chưa qua cổng Phase 5 (.sdd/gate/$ID.ok không có) — chạy /sdd-solo:change $ID." >&2; exit 1
     fi;;
+  # 7.0: hai bố cục — 6.x specs/rules.md · specs/br.md · specs/internal/adr; 7.0 thêm
+  # specs/<nghề>/rules.md · specs/*/br-###/br.md · specs/adr · specs/<nghề>/adr. Cùng danh
+  # sách với id_exists ở lib.sh; hook chạy bash trần nên chép, đổi một nơi thì đổi cả hai.
   RULE-*)
-    if ! grep -qE "^## $ID\b" "$ROOT/specs/rules.md" 2>/dev/null; then
-      echo "✗ $ID không có heading trong specs/rules.md." >&2; exit 1
+    if ! cat "$ROOT"/specs/rules.md "$ROOT"/specs/*/rules.md 2>/dev/null | grep -qE "^## $ID\b"; then
+      echo "✗ $ID không có heading trong specs/rules.md (hay specs/<nghề>/rules.md)." >&2; exit 1
     fi;;
   BR-*)
-    if ! grep -qE "^#{1,2} $ID\b" "$ROOT/specs/br.md" 2>/dev/null; then
-      echo "✗ $ID không có heading trong specs/br.md." >&2; exit 1
+    if ! cat "$ROOT"/specs/br.md "$ROOT"/specs/*/br-[0-9]*/br.md 2>/dev/null | grep -qE "^#{1,2} $ID\b"; then
+      echo "✗ $ID không có heading trong specs/br.md (hay specs/*/br-###/br.md)." >&2; exit 1
     fi;;
   ADR-*)
-    if ! ls "$ROOT/specs/internal/adr/$ID"* >/dev/null 2>&1 && \
-       ! ls "$ROOT/docs/adr/$ID"* >/dev/null 2>&1; then
-      echo "✗ $ID không có file trong specs/internal/adr/." >&2; exit 1
+    # `ls a b` trả lỗi nếu BẤT KỲ glob nào hỏng (bẫy #16) — hỏi từng thư mục một.
+    ADR_OK=0
+    for d in "$ROOT/specs/adr" "$ROOT"/specs/*/adr "$ROOT/specs/internal/adr" "$ROOT/docs/adr"; do
+      ls "$d/$ID"* >/dev/null 2>&1 && { ADR_OK=1; break; }
+    done
+    if [ "$ADR_OK" = 0 ]; then
+      echo "✗ $ID không có file ADR (specs/adr/ · specs/<nghề>/adr/ · specs/internal/adr/)." >&2; exit 1
     fi;;
   esac
 fi

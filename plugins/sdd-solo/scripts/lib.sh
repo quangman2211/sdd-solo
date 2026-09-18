@@ -11,22 +11,182 @@ project_root() {
   git rev-parse --show-toplevel 2>/dev/null || pwd
 }
 
-# find_uc UC-002 → in ra đường dẫn file UC-002.md (rỗng nếu không có)
-find_uc() {
-  local id="$1" root="$2"
-  find "$root/specs/contexts" -type f -path "*/use-cases/${id}-*/${id}.md" 2>/dev/null | head -1
+# ── 7.0 (#55): trục core|nghề × br-### — MỘT chỗ tra đường dẫn cho mọi script ───
+# Tới 6.6.x có 11 script tự `find`/`grep` thẳng vào `specs/contexts/<ctx>/…`,
+# `specs/br.md`, `specs/internal/…`. Đổi cây thì đổi 11 chỗ và hụt im lặng. Từ 7.0
+# mọi đường dẫn đi qua các hàm dưới đây; mỗi hàm tra bố cục 7.0 TRƯỚC rồi rơi về
+# bố cục 6.x, nên repo chưa migrate vẫn chạy y như cũ (đo bằng snapshot output).
+#
+# Bố cục 7.0 (plan 2026-09-18, T2 T3):
+#   specs/vision.md · glossary.md · rules.md · architecture.md · decisions.md · adr/   ← xuyên suốt
+#   specs/core/entities/<Entity>.md · specs/core/br-###/{br.md,evidence.md,use-cases/}  ← lõi
+#   specs/<nghề>/{glossary.md,rules.md,adr/,entities/,br-###/…}                          ← mỗi nghề
+# Bố cục 6.x: specs/br.md · specs/contexts/<ctx>/{entities.md,use-cases.md,use-cases/} · specs/internal/…
+
+# layout <root> → v7 | v6. Nhận diện bằng sự có mặt của vision.md hoặc thư mục br-###/.
+layout() {
+  [ -f "$1/specs/vision.md" ] && { printf 'v7'; return; }
+  ls -d "$1"/specs/*/br-[0-9]*/ >/dev/null 2>&1 && { printf 'v7'; return; }
+  printf 'v6'
 }
-# ctx_of <path-to-UC.md> → tên context
-ctx_of() { echo "$1" | sed -E 's#.*/specs/contexts/([^/]+)/.*#\1#'; }
+find_vision() { [ -f "$1/specs/vision.md" ] && printf '%s' "$1/specs/vision.md"; }
+
+# find_uc UC-002 <root> → đường dẫn file UC-002.md (rỗng nếu không có). 7.0 trước, 6.x sau.
+find_uc() {
+  local id="$1" root="$2" f
+  f="$(find "$root/specs" -type f -path "*/br-*/use-cases/${id}-*/${id}.md" -not -path '*/specs/changes/*' 2>/dev/null | head -1)"
+  [ -z "$f" ] && f="$(find "$root/specs/contexts" -type f -path "*/use-cases/${id}-*/${id}.md" 2>/dev/null | head -1)"
+  printf '%s' "$f"
+}
+# all_uc_files <root> → mọi file UC-###.md (bỏ .flow/.sequence/.trace), 7.0 lẫn 6.x, sort
+all_uc_files() {
+  { find "$1/specs" -type f -path '*/br-*/use-cases/UC-*/UC-*.md' -not -path '*/specs/changes/*' 2>/dev/null
+    find "$1/specs/contexts" -type f -path '*/use-cases/UC-*/UC-*.md' 2>/dev/null; } \
+  | grep -vE '\.(flow|sequence|trace)\.md$' | sort -u
+}
+# owner_of <path-to-UC.md> → `core` | tên nghề (7.0) | tên context (6.x). Thay ctx_of.
+# Đây cũng là thư mục con của uc_test_dir: tests/use-cases/<owner>/UC-###/.
+owner_of() {
+  case "$1" in
+    */specs/contexts/*) printf '%s' "$1" | sed -E 's#.*/specs/contexts/([^/]+)/.*#\1#';;
+    *) printf '%s' "$1" | sed -E 's#.*/specs/([^/]+)/.*#\1#';;
+  esac
+}
+ctx_of() { owner_of "$1"; }   # tên cũ — giữ cho bản sao .sdd/scripts/ của repo chưa update
+# br_of <path-to-UC.md> → BR-### của lát chứa UC (7.0: từ tên thư mục br-###; 6.x: từ Metadata)
+br_of() {
+  case "$1" in
+    */br-[0-9]*/use-cases/*) printf '%s' "$1" | sed -E 's#.*/br-([0-9]+)/use-cases/.*#BR-\1#';;
+    *) grep -oE 'Liên quan tới BR:\*\* *BR-[0-9]+' "$1" 2>/dev/null | grep -oE 'BR-[0-9]+' | head -1;;
+  esac
+}
+# br_dir BR-003 <root> → thư mục lát (7.0), rỗng ở 6.x
+br_dir() { ls -d "$2"/specs/*/br-"${1#BR-}"/ 2>/dev/null | head -1 | sed 's#/$##'; }
+# br_file BR-003 <root> → file chứa `# BR-003:` — 7.0: <br_dir>/br.md · 6.x: specs/br.md
+br_file() { local d; d="$(br_dir "$1" "$2")"; if [ -n "$d" ]; then printf '%s/br.md' "$d"; else printf '%s/specs/br.md' "$2"; fi; }
+# br_files <root> → mọi file br.md (7.0) hoặc specs/br.md (6.x)
+br_files() {
+  if [ "$(layout "$1")" = v7 ]; then ls "$1"/specs/*/br-[0-9]*/br.md 2>/dev/null | sort
+  else [ -f "$1/specs/br.md" ] && printf '%s\n' "$1/specs/br.md"; fi
+}
+# br_text <root> → nội dung mọi BR nối lại (cho phép quét CON trùng số giữa hai BR)
+br_text() { for f in $(br_files "$1"); do cat "$f"; printf '\n'; done; }
+# br_body BR-001 <root> — nội dung một mục BR (không gồm dòng `# BR-###:`), rỗng nếu không có
+br_body() { br_text "$2" | awk -v h="# $1:" 'index($0,h)==1{f=1;next} f&&/^# BR-/{exit} f{print}'; }
+# br_title BR-001 <root> → dòng `# BR-###: …`
+br_title() { br_text "$2" | grep -E "^# $1:" | head -1; }
+# br_ids <root> — mọi BR có trong repo
+br_ids() { br_text "$1" | grep -oE '^# BR-[0-9]+' | awk '{print $2}' | awk '!a[$0]++'; }
+# owner_of_br BR-003 <root> → core | nghề (7.0); rỗng ở 6.x
+owner_of_br() { local d; d="$(br_dir "$1" "$2")"; [ -n "$d" ] && basename "$(dirname "$d")"; }
+# evidence_file BR-003 <root> → 7.0: <br_dir>/evidence.md · 6.x: specs/br.evidence.md
+evidence_file() { local d; d="$(br_dir "$1" "$2")"; if [ -n "$d" ]; then printf '%s/evidence.md' "$d"; else printf '%s/specs/br.evidence.md' "$2"; fi; }
+# br_untouched <root> — 0 nếu chưa có BR thật nào (chỉ còn mẫu + khung trống)
+br_untouched() {
+  if [ "$(layout "$1")" = v7 ]; then
+    ! br_text "$1" | grep -E '^# BR-[0-9]+: *[^ <]' | grep -vqE '^# BR-000'
+  else grep -q '<Tên business requirement>' "$1/specs/br.md" 2>/dev/null; fi
+}
+# uc_table_file UC-### <root> → file có bảng | UC-### | … | Status |: 7.0 = br.md của lát,
+# 6.x = use-cases.md của context (#44)
+uc_table_file() {
+  local f b; f="$(find_uc "$1" "$2")"; [ -n "$f" ] || return 0
+  case "$f" in
+    */specs/contexts/*) printf '%s/specs/contexts/%s/use-cases.md' "$2" "$(owner_of "$f")";;
+    *) b="$(br_of "$f")"; [ -n "$b" ] && br_file "$b" "$2";;
+  esac
+}
+
+# rules_files <root> → specs/rules.md + specs/<nghề>/rules.md (có file nào in file đó)
+rules_files() {
+  { [ -f "$1/specs/rules.md" ] && printf '%s\n' "$1/specs/rules.md"
+    ls "$1"/specs/*/rules.md 2>/dev/null | grep -vE '/specs/(contexts|internal|changes)/'; } | awk 'NF&&!a[$0]++'
+}
+# rule_file RULE-### <root> → file có heading `## RULE-###` (rỗng nếu không có)
+rule_file() { for f in $(rules_files "$2"); do grep -qE "^## $1\b" "$f" && { printf '%s' "$f"; return; }; done; }
+# rules_text <root> → mọi rules.md nối lại
+rules_text() { for f in $(rules_files "$1"); do cat "$f"; printf '\n'; done; }
+# adr_dirs <root> → thư mục ADR đang có: specs/adr · specs/<nghề>/adr · specs/internal/adr · docs/adr
+adr_dirs() {
+  { [ -d "$1/specs/adr" ] && printf '%s\n' "$1/specs/adr"
+    ls -d "$1"/specs/*/adr 2>/dev/null | grep -vE '/specs/(contexts|changes)/'
+    [ -d "$1/docs/adr" ] && printf '%s\n' "$1/docs/adr"; } | awk 'NF&&!a[$0]++'
+}
+# adr_file ADR-### <root> → file ADR (rỗng nếu không có); bỏ khuôn `_*`
+adr_file() { for d in $(adr_dirs "$2"); do f="$(ls "$d/$1"* 2>/dev/null | grep -v '/_' | head -1)"; [ -n "$f" ] && { printf '%s' "$f"; return; }; done; }
+# arch_file · decisions_file · glossary_file <root> → đường 7.0 nếu có, không thì đường 6.x
+# (trả đường dù file chưa tồn tại, để thông điệp "thiếu <đường>" chỉ đúng chỗ)
+arch_file()      { if [ -f "$1/specs/architecture.md" ] || [ "$(layout "$1")" = v7 ]; then printf '%s/specs/architecture.md' "$1"; else printf '%s/specs/internal/architecture.md' "$1"; fi; }
+decisions_file() { if [ -f "$1/specs/decisions.md" ] || [ "$(layout "$1")" = v7 ]; then printf '%s/specs/decisions.md' "$1"; else printf '%s/specs/internal/decisions.md' "$1"; fi; }
+glossary_file()  { printf '%s/specs/glossary.md' "$1"; }
+# nghe_glossary · nghe_rules <owner> <root> → file riêng của nghề (rỗng nếu không có / là core)
+nghe_glossary() { [ "$1" != core ] && [ -f "$2/specs/$1/glossary.md" ] && printf '%s/specs/%s/glossary.md' "$2" "$1"; }
+nghe_rules()    { [ "$1" != core ] && [ -f "$2/specs/$1/rules.md" ] && printf '%s/specs/%s/rules.md' "$2" "$1"; }
+# nghe_list <root> → tên các nghề: .sdd/config nghe_paths=, không có thì dò thư mục dưới specs/
+nghe_list() {
+  local v; v="$(cfg_get nghe_paths "$1" "")"
+  [ -n "$v" ] && { printf '%s' "$v"; return; }
+  for d in "$1"/specs/*/; do
+    d="$(basename "$d")"
+    case "$d" in core|adr|changes|contexts|internal|_*) continue;; esac
+    { ls -d "$1/specs/$d"/br-[0-9]*/ >/dev/null 2>&1 || [ -f "$1/specs/$d/glossary.md" ] || [ -d "$1/specs/$d/entities" ]; } && printf '%s ' "$d"
+  done | sed 's/ *$//'
+}
+# entity_files <path-to-UC.md> <root> → file entity UC này được phép dùng:
+#   7.0: specs/core/entities/*.md + specs/<owner>/entities/*.md (bỏ README, _*) · 6.x: entities.md của context
+entity_files() {
+  local o; o="$(owner_of "$1")"
+  case "$1" in
+    */specs/contexts/*) [ -f "$2/specs/contexts/$o/entities.md" ] && printf '%s\n' "$2/specs/contexts/$o/entities.md";;
+    *) { ls "$2"/specs/core/entities/*.md 2>/dev/null
+         [ "$o" != core ] && ls "$2/specs/$o/entities/"*.md 2>/dev/null; } | grep -vE '/(README|_[^/]*)\.md$';;
+  esac
+}
+# entity_cited <path-to-UC.md> <root> → trong entity_files, file nào tên entity xuất hiện trong
+# phần hiệu lực của UC (7.0); 6.x → chính entities.md (một file chứa mọi entity của context)
+entity_cited() {
+  local live; live="$(awk '/^## (Adversarial pass|Đọc lại|History)/{t=1;next} /^## /{t=0} !t' "$1")"
+  for f in $(entity_files "$1" "$2"); do
+    case "$f" in */specs/contexts/*) printf '%s\n' "$f"; continue;; esac
+    n="$(basename "$f" .md)"
+    printf '%s' "$live" | grep -qE "(^|[^A-Za-z0-9_])$n([^A-Za-z0-9_]|$)" && printf '%s\n' "$f"
+  done
+}
+# entity_names <path-to-UC.md> <root> → tên entity có trong entity_files (7.0: tên file; 6.x: `class X` / `## X`)
+entity_names() {
+  for f in $(entity_files "$1" "$2"); do
+    case "$f" in
+      */specs/contexts/*) grep -oE '^[[:space:]]*class [A-Za-z][A-Za-z0-9_]*|^## [A-Z][A-Za-z0-9_]*' "$f" | awk '{print $NF}' | grep -vxE 'Domain|History|Entity[AB]?';;
+      *) basename "$f" .md;;
+    esac
+  done | sort -u
+}
+# glossary_files <owner> <root> → specs/glossary.md + specs/<nghề>/glossary.md (file nào có)
+glossary_files() {
+  { [ -f "$2/specs/glossary.md" ] && printf '%s\n' "$2/specs/glossary.md"
+    nghe_glossary "$1" "$2"; } | awk 'NF'
+}
+# id_exists <ID> <root> → 0 nếu ID có thật. Githook commit-msg chép logic (chạy bash trần) — cùng danh sách đường dẫn.
+id_exists() {
+  case "$1" in
+    UC-*)   [ -n "$(find_uc "$1" "$2")" ];;
+    CHG-*)  ls -d "$2/specs/changes/$1-"* >/dev/null 2>&1 || ls -d "$2/changes/$1-"* >/dev/null 2>&1;;
+    RULE-*) [ -n "$(rule_file "$1" "$2")" ];;
+    BR-*)   br_text "$2" | grep -qE "^#{1,2} $1\b";;
+    ADR-*)  [ -n "$(adr_file "$1" "$2")" ];;
+    # CON-### nằm trong ## Constraints của một BR: `- **CON-001 Technical:** …` (4.1.0)
+    CON-*)  br_text "$2" | grep -qE "^-? *\*\*$1\b";;
+    *) return 1;;
+  esac
+}
+
 # slug_of <path> → phần sau UC-###-
 slug_of() { basename "$(dirname "$1")" | sed -E 's/^UC-[0-9]+-//'; }
-
-# ── bảng use-cases.md của context (#44) ─────────────────────────────────
+# ── bảng UC (#44) ────────────────────────────────────────────────────────
 # Hai chỗ nói trạng thái của một UC: dòng **Status:** trong file UC và cột Status
-# của bảng specs/contexts/<ctx>/use-cases.md. Tới 6.0.0 pass.sh chỉ đổi chỗ thứ
-# nhất, nên /sdd-solo:state gợi "UC tiếp theo" từ bảng đọc ra một UC đã đóng.
-# Dòng bảng: | UC-### | Tên | Actor | BR-### | Status |  — ô đầu là ID, ô cuối là Status.
-uc_table_file() { f="$(find_uc "$1" "$2")"; [ -n "$f" ] && printf '%s/specs/contexts/%s/use-cases.md' "$2" "$(ctx_of "$f")"; }
+# của bảng `| UC-### | Tên | Actor | BR-### | Status |`. 6.x bảng ở
+# specs/contexts/<ctx>/use-cases.md; 7.0 ở `## Related Use Cases` của br.md lát.
+# uc_table_file (trên) trả đúng file cho cả hai — pass.sh/status.sh chỉ đi qua đó (#51).
 # uc_table_status UC-### <root> → ô Status của dòng UC trong bảng (rỗng nếu không có dòng/bảng)
 uc_table_status() {
   _t="$(uc_table_file "$1" "$2")"; [ -n "$_t" ] && [ -f "$_t" ] || return 0
@@ -48,13 +208,6 @@ find_chg() {
   [ -z "$d" ] && d="$(ls -d "$2/changes/$1-"* 2>/dev/null | head -1)"
   printf '%s' "$d"
 }
-
-# br_body BR-001 <root> — nội dung một mục BR trong specs/br.md (rỗng nếu không có)
-br_body() { awk -v h="# $1:" 'index($0,h)==1{f=1;next} f&&/^# BR-/{exit} f{print}' "$2/specs/br.md" 2>/dev/null; }
-# br_ids <root> — mọi BR có trong br.md
-br_ids() { grep -oE '^# BR-[0-9]+' "$1/specs/br.md" 2>/dev/null | awk '{print $2}'; }
-# br_untouched <root> — 0 nếu br.md chưa được đụng tới (chỉ còn mẫu + khung trống)
-br_untouched() { grep -q '<Tên business requirement>' "$1/specs/br.md" 2>/dev/null; }
 
 sha() { if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | cut -d' ' -f1; else sha256sum "$1" | cut -d' ' -f1; fi; }
 today() { date +%Y-%m-%d; }
@@ -160,7 +313,7 @@ brief_sha() { _b="$(brief_path "$1")"; [ -n "$_b" ] && [ -f "$1/$_b" ] || return
 # Ở chung một chỗ vì hai nơi dùng nó (br-check, session-start) phải rút cùng một
 # con số; bản đầu của session-start viết '[^\n]*' — trong ERE của grep đó là
 # "mọi ký tự trừ \ và n", nên đường dẫn nào có chữ 'n' là hụt, và hụt thì im.
-brief_rec_sha() { grep -oE '\*\*Nguồn brief:\*\*.*sha256 [0-9a-f]{12}' "$1/specs/br.md" 2>/dev/null \
+brief_rec_sha() { br_text "$1" | grep -oE '\*\*Nguồn brief:\*\*.*sha256 [0-9a-f]{12}' \
                   | grep -oE '[0-9a-f]{12}$' | head -1; }
 # ── nội dung THẬT hay còn là template ───────────────────────────────────
 # Một bản DUY NHẤT. Tới 4.0.0 hàm này được chép nguyên vào br-check.sh và
@@ -259,20 +412,4 @@ plugin_script() {
   # 3) cùng lắm mới quét cache, lấy version cao nhất
   find "$HOME/.claude/plugins/cache" -type f -name "$1" -path '*sdd-solo*' 2>/dev/null \
     | sort -t/ -k7 -V | tail -1
-}
-# id_exists <ID> <root> → 0 nếu ID có thật. Cùng luật với githook commit-msg
-# (hook chạy bash trần nên phải chép logic, không dùng được hàm này).
-id_exists() {
-  case "$1" in
-    UC-*)   [ -n "$(find_uc "$1" "$2")" ];;
-    CHG-*)  ls -d "$2/specs/changes/$1-"* >/dev/null 2>&1 || ls -d "$2/changes/$1-"* >/dev/null 2>&1;;
-    RULE-*) grep -qE "^## $1\b" "$2/specs/rules.md" 2>/dev/null;;
-    BR-*)   grep -qE "^#{1,2} $1\b" "$2/specs/br.md" 2>/dev/null;;
-    ADR-*)  ls "$2/specs/internal/adr/$1"* >/dev/null 2>&1 || ls "$2/docs/adr/$1"* >/dev/null 2>&1;;
-    # CON-### nằm trong ## Constraints của một BR: `- **CON-001 Technical:** …`.
-    # Tới 4.0.3 không nhánh nào cho nó, nên id_exists trả false cho MỌI CON —
-    # tức một phép kiểm ID chạy trên văn bản có CON sẽ tố oan tất cả (4.1.0).
-    CON-*)  grep -qE "^-? *\*\*$1\b" "$2/specs/br.md" 2>/dev/null;;
-    *) return 1;;
-  esac
 }

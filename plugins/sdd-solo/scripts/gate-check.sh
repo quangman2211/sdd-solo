@@ -12,8 +12,11 @@ done
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"; F="$(find_uc "$ID" "$ROOT")"
 [ "$PRE" = "1" ] && echo "Sẵn sàng adversarial — $ID" || echo "Definition of Ready — $ID"
-[ -z "$F" ] && { bad "không tìm thấy specs/contexts/*/use-cases/${ID}-*/${ID}.md"; exit 1; }
-CTX="$(ctx_of "$F")"; DIR="$(dirname "$F")"
+[ -z "$F" ] && { bad "không tìm thấy ${ID}.md — specs/*/br-*/use-cases/${ID}-*/ (7.0) hay specs/contexts/*/use-cases/${ID}-*/ (6.x)"; exit 1; }
+# 7.0: OWNER = core | <nghề> (6.x: tên context). Đường dẫn anh em đều tra qua lib.sh (#55).
+CTX="$(owner_of "$F")"; DIR="$(dirname "$F")"
+RFS="$(rules_files "$ROOT" | tr '\n' ' ')"; EFS="$(entity_cited "$F" "$ROOT" | tr '\n' ' ')"; GFS="$(glossary_files "$CTX" "$ROOT" | tr '\n' ' ')"
+EFALL="$(entity_files "$F" "$ROOT" | tr '\n' ' ')"; BRF="$(br_files "$ROOT" | tr '\n' ' ')"
 [ "$PRE" = "0" ] && info "file: ${F#$ROOT/}"
 
 # ── #48: file anh em — CẢNH BÁO, không chặn ──────────────────────────────
@@ -24,12 +27,12 @@ CTX="$(ctx_of "$F")"; DIR="$(dirname "$F")"
 # bắt sớm ở đây rẻ hơn một lượt verify (~10 phút, ~200 KB), nhưng chưa đủ chắc để chặn.
 # uc_live — file UC bỏ ba mục dấu vết (cùng luật context.sh #43). Ca thật runxops: "dải rule
 # 001–011" trong ## Đọc lại làm siblings tưởng UC trích RULE-001 → cảnh báo oan.
+entity_hint() { if [ "$(layout "$ROOT")" = v7 ]; then printf 'specs/core/entities/<Tên>.md hoặc specs/%s/entities/<Tên>.md' "$CTX"; else printf 'specs/contexts/%s/entities.md' "$CTX"; fi; }
 uc_live() { awk '/^## (Adversarial pass|Đọc lại|History)/{t=1;next} /^## /{t=0} !t' "$F"; }
 siblings() {
-  RF_="$ROOT/specs/rules.md"; EF_="$ROOT/specs/contexts/$CTX/entities.md"; GF_="$ROOT/specs/glossary.md"
-  SIB="$F $DIR/$ID.flow.md $DIR/$ID.sequence.md $RF_ $ROOT/specs/br.md $EF_ $GF_"
+  SIB="$F $DIR/$ID.flow.md $DIR/$ID.sequence.md $RFS $BRF $EFS $GFS"
   LIVE="$(uc_live)"
-  for a in $(printf '%s' "$LIVE" | grep -oE 'ADR-[0-9]+' | sort -u); do SIB="$SIB $(ls "$ROOT"/specs/internal/adr/$a* 2>/dev/null | head -1)"; done
+  for a in $(printf '%s' "$LIVE" | grep -oE 'ADR-[0-9]+' | sort -u); do SIB="$SIB $(adr_file "$a" "$ROOT")"; done
   # 1. cụm đánh dấu treo — ngoài mục dấu vết (History · Adversarial pass · Đọc lại)
   for f in $SIB; do
     [ -f "$f" ] || continue
@@ -38,18 +41,18 @@ siblings() {
     [ -n "$HITS" ] && { warn "${f#$ROOT/} còn cụm treo (chờ phiếu · đang xét lại · chưa mở):"; printf '%s\n' "$HITS" | cut -c1-110 | sed 's/^/      /'; }
   done
   # 2. entity UC nhắc tên phải có dòng **Tên** trong glossary — ba vai và code gọi cùng một tên
-  if [ -f "$EF_" ] && [ -f "$GF_" ]; then
+  if [ -n "$EFALL" ] && [ -n "$GFS" ]; then
     MISS=""
-    for e in $(grep -oE '^[[:space:]]*class [A-Za-z][A-Za-z0-9_]*|^## [A-Z][A-Za-z0-9_]*' "$EF_" | awk '{print $NF}' | grep -vxE 'Domain|History|Entity[AB]?' | sort -u); do
+    for e in $(entity_names "$F" "$ROOT"); do
       printf '%s' "$LIVE" | grep -qw "$e" || continue
       # runxops viết `- **Việc** (`WorkItem`)`: tên code đứng sau tên tiếng Việt — chỉ đòi có mặt trên một dòng thuật ngữ
-      grep -qE "^- \*\*(.*[^A-Za-z0-9_])?$e([^A-Za-z0-9_]|$)" "$GF_" || MISS="$MISS $e"
+      cat /dev/null $GFS | grep -qE "^- \*\*(.*[^A-Za-z0-9_])?$e([^A-Za-z0-9_]|$)" || MISS="$MISS $e"
     done
     [ -n "$MISS" ] && warn "entity UC nhắc tên chưa có dòng '- **Tên**' trong glossary.md:$MISS"
   fi
   # 3. RULE được trích phải ghi UC này ở 'Áp dụng cho' — chiều ngược của §4
   for r in $(printf '%s' "$LIVE" | grep -oE 'RULE-[0-9]+' | sort -u); do
-    AP="$(awk -v h="## $r" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f' "$RF_" 2>/dev/null | grep -i 'Áp dụng cho' | head -1)"
+    AP="$(awk -v h="## $r" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f' /dev/null $RFS 2>/dev/null | grep -i 'Áp dụng cho' | head -1)"
     [ -z "$AP" ] && continue
     printf '%s' "$AP" | grep -q "$ID" || warn "$r: 'Áp dụng cho' không có $ID — UC trích rule mà rule không nhận UC (#48)"
   done
@@ -102,14 +105,13 @@ if [ "$PRE" = "1" ]; then
   # Ba vai đọc hai file này làm đầu vào. Chạy khi chúng còn là template thì mô hình
   # đổi sau đó và AC phải sửa lời — chi phí thật, nhưng không đủ lớn để khoá người
   # dùng ra khỏi bước ⑦. Chặn ở đây là lặp lại đúng hình lỗi của #23. Xem #24.
-  EF="$ROOT/specs/contexts/$CTX/entities.md"
-  if [ ! -f "$EF" ]; then
-    warn "context $CTX chưa có entities.md — ba vai sẽ hỏi mà không có mô hình để đối chiếu"
-  elif grep -qE '(class|## )Entity[AB]([^A-Za-z0-9]|$)' "$EF" 2>/dev/null; then
-    warn "entities.md của $CTX còn EntityA/EntityB của template — mô hình đổi sau adversarial thì AC phải sửa lời"
+  if [ -z "$EFALL" ]; then
+    warn "$CTX chưa có entity nào ($(entity_hint)) — ba vai sẽ hỏi mà không có mô hình để đối chiếu"
+  elif cat /dev/null $EFALL | grep -qE '(class|## )Entity[AB]([^A-Za-z0-9]|$)' 2>/dev/null; then
+    warn "entity của $CTX còn EntityA/EntityB của template — mô hình đổi sau adversarial thì AC phải sửa lời"
   fi
-  grep -qE '<Thuật ngữ>|<Context A>' "$ROOT/specs/glossary.md" 2>/dev/null && \
-    warn "specs/glossary.md còn là template — ba vai và code sẽ gọi cùng một thứ bằng những tên khác nhau"
+  [ -n "$GFS" ] && cat /dev/null $GFS | grep -qE '<Thuật ngữ>|<Context A>' && \
+    warn "glossary còn là template — ba vai và code sẽ gọi cùng một thứ bằng những tên khác nhau"
   siblings
 
   echo
@@ -141,13 +143,12 @@ done
 echo "$SCR" | grep -qE 'SCR-[0-9]+-[0-9]+' || bad "chưa có SCR-###-# nào trong ## Screens"
 
 # 4. RULE trích phải có trong rules.md
-RF="$ROOT/specs/rules.md"
 for r in $(grep -oE 'RULE-[0-9]+' "$F" | sort -u); do
   # grep -c in "0" RỒI exit 1, nên "|| echo 0" tạo chuỗi hai dòng và phá cả
   # hai phép so sánh bên dưới. Đừng thêm fallback ở đây.
-  C="$(grep -cE "^## $r\b" "$RF" 2>/dev/null)"; [ -z "$C" ] && C=0
-  H="$(grep -E "^## $r\b" "$RF" 2>/dev/null | head -1)"
-  if [ "$C" = "0" ]; then bad "$r được trích nhưng không có heading trong specs/rules.md"
+  C="$(cat /dev/null $RFS 2>/dev/null | grep -cE "^## $r\b")"; [ -z "$C" ] && C=0
+  H="$(cat /dev/null $RFS 2>/dev/null | grep -E "^## $r\b" | head -1)"
+  if [ "$C" = "0" ]; then bad "$r được trích nhưng không có heading trong rules.md nào ($(printf '%s' "$RFS" | sed "s#$ROOT/##g"))"
   elif [ "$C" -gt 1 ]; then bad "$r có $C heading trong rules.md — trùng ID, sửa lại (#13)"
   elif echo "$H" | grep -q '<'; then bad "$r vẫn là placeholder của template: $H — viết rule thật hoặc bỏ trích (#13)"
   else ok "$r có trong rules.md"; fi
@@ -199,46 +200,50 @@ else bad "thiếu ${DIR#$ROOT/}/$ID.flow.md (mermaid) — hoặc $ID.bpmn nếu 
 # class EntityA/EntityB vẫn in ✓ và không warn một chữ. Một phép kiểm báo xanh
 # SAI tệ hơn không có phép kiểm: không có thì người ta còn tự nhớ. Cùng hình lỗi
 # với #11 (tiền điều kiện đo cấu trúc) và #13 (RULE placeholder). Xem #24.
-EF="$ROOT/specs/contexts/$CTX/entities.md"
-if [ ! -f "$EF" ]; then bad "thiếu specs/contexts/$CTX/entities.md"
+# 7.0 (T2): mỗi entity một file ở specs/core/entities/ + specs/<nghề>/entities/; UC dùng entity nào
+# thì file đó là "entities của UC" (entity_cited). 6.x: entities.md của context, một file cho cả.
+EF="$EFALL"
+if [ -z "$EF" ]; then bad "thiếu entity — $(entity_hint)"
 else
-  ok "context $CTX có entities.md"
-  grep -qE '(class|## )Entity[AB]([^A-Za-z0-9]|$)' "$EF" && bad "entities.md còn EntityA/EntityB của template — chưa đặt tên entity thật"
-  grep -q '<Context>' "$EF" && bad "entities.md còn tiêu đề '# Entity Model — <Context>' của template"
-  if grep -q 'stateDiagram' "$EF"; then
+  case "$EF" in */specs/contexts/*) ok "context $CTX có entities.md";; *) ok "$CTX có $(printf '%s\n' $EF | wc -l | tr -d ' ') entity ($(printf '%s\n' $EF | xargs -n1 basename | sed 's/\.md$//' | tr '\n' ' ' | sed 's/ $//'))";; esac
+  cat /dev/null $EF | grep -qE '(class|## )Entity[AB]([^A-Za-z0-9]|$)' && bad "entity còn EntityA/EntityB của template — chưa đặt tên entity thật"
+  cat /dev/null $EF | grep -q '<Context>' && bad "entity còn tiêu đề '# Entity Model — <Context>' của template"
+  if cat /dev/null $EF | grep -q 'stateDiagram'; then
     # CỐ Ý quét cả file chứ không xét từng mũi tên: chỉ cần MỘT mũi tên gắn UC
     # có thật là qua. Đừng siết thành "mọi mũi tên phải gắn UC" — có trạng thái
     # do THẾ GIỚI BÊN NGOÀI đổi chứ không do UC nào kéo. Ca thật ở runxops:
     # `đangSống --> đãSuspend` là do sàn khoá tài khoản, không UC nào gây ra.
     # Siết per-arrow sẽ ép người ta dán một UC-### giả lên đó — tức bịa, đúng
     # thứ cả quy trình này sinh ra để chặn.
-    grep -qE '\-\->.*UC-[0-9]+' "$EF" && ok "state diagram có mũi tên gắn UC có thật" \
+    cat /dev/null $EF | grep -qE '\-\->.*UC-[0-9]+' && ok "state diagram có mũi tên gắn UC có thật" \
       || bad "state diagram còn '<UC-### ...>' của template — cần ít nhất một mũi tên ghi UC có thật kéo trạng thái đó"
   else
-    warn "entities.md chưa có state diagram nào"
+    warn "entity chưa có state diagram nào"
   fi
 fi
 # glossary: trước 3.3.0 KHÔNG script nào nhắc tới nó — grep -ric glossar scripts/ ra 0.
 # Nên nó trôi im lặng suốt, trong khi CLAUDE.md của dự án bảo AI dùng đúng tên trong đó.
-GF="$ROOT/specs/glossary.md"
-if [ ! -f "$GF" ]; then warn "chưa có specs/glossary.md"
-elif grep -qE '<Thuật ngữ>|<Context A>' "$GF"; then
+GF="$GFS"
+if [ -z "$GF" ]; then warn "chưa có specs/glossary.md"
+elif cat /dev/null $GF | grep -qE '<Thuật ngữ>|<Context A>'; then
   bad "specs/glossary.md còn nguyên template — CLAUDE.md bảo dùng đúng tên trong đó, mà trong đó chưa có tên nào"
   # Nói cái gì sai và vì sao là chưa đủ: "viết glossary đi" là một trang giấy
   # trắng. Người ở bước này gần như luôn đã viết xong entities.md, và tên entity
   # chính là mẻ thuật ngữ đầu tiên — biến trang trắng thành việc chép. So với
   # dòng cảnh báo P#/X# ở §5, vốn nói luôn phải gõ gì. Xem #24.
-  ENTN="$(grep -oE '^[[:space:]]*class [A-Za-z][A-Za-z0-9_]*' "$EF" 2>/dev/null | awk '{print $2}' | sort -u | tr '\n' ' ')"
-  [ -z "$ENTN" ] && ENTN="$(grep -oE '^## [A-Z][A-Za-z0-9_]*' "$EF" 2>/dev/null | awk '{print $2}' \
-      | grep -vxE 'Domain|History|Entity' | sort -u | tr '\n' ' ')"
+  ENTN="$(entity_names "$F" "$ROOT" | tr '\n' ' ')"
   if [ -n "$ENTN" ]; then
     info "mẻ đầu có sẵn — tên entity anh đã viết: $ENTN"
   else
-    info "mẻ đầu lấy từ tên entity trong specs/contexts/$CTX/entities.md"
+    info "mẻ đầu lấy từ tên entity ($(entity_hint))"
   fi
-  info "mỗi dòng một từ, dưới heading '## $CTX':  - **Tên** — nghĩa một câu. Không nhầm với **từ gần nghĩa**."
+  if [ "$(layout "$ROOT")" = v7 ]; then
+    info "mỗi dòng một từ:  - **Tên** — nghĩa một câu. Từ xuyên suốt vào specs/glossary.md, từ riêng nghề vào specs/$CTX/glossary.md. Không nhầm với **từ gần nghĩa**."
+  else
+    info "mỗi dòng một từ, dưới heading '## $CTX':  - **Tên** — nghĩa một câu. Không nhầm với **từ gần nghĩa**."
+  fi
 else
-  GN="$(grep -cE '^- \*\*[^<]' "$GF")"; [ -z "$GN" ] && GN=0
+  GN="$(cat /dev/null $GF | grep -cE '^- \*\*[^<]')"; [ -z "$GN" ] && GN=0
   [ "$GN" -ge 1 ] && ok "glossary có $GN thuật ngữ" || bad "specs/glossary.md chưa có dòng '- **từ** — nghĩa' nào"
 fi
 
@@ -261,7 +266,7 @@ if [ -n "$SO" ]; then
     fi
     for id in $IDS; do
       case "$id" in
-        RULE-*) grep -qE "^## $id\b" "$RF" 2>/dev/null && ok "adversarial → $id có thật" || bad "adversarial khai → $id nhưng rules.md không có";;
+        RULE-*) [ -n "$(rule_file "$id" "$ROOT")" ] && ok "adversarial → $id có thật" || bad "adversarial khai → $id nhưng rules.md không có";;
         AC-*)   grep -qE "^### $id\b" "$F" && ok "adversarial → $id có thật" || bad "adversarial khai → $id nhưng UC không có";;
         E*)     grep -qE "^- +(\*\*)?$id[.:]" "$F" && ok "adversarial → $id có thật" || bad "adversarial khai → $id nhưng UC không có";;
       esac
@@ -323,7 +328,7 @@ if [ -n "$RR" ]; then
     [ -z "$ln" ] && continue
     for id in $(printf '%s' "$ln" | sed 's/.*→//' | grep -oE '(RULE-[0-9]+|AC-[0-9]+|E[0-9]+)' | sort -u); do
       case "$id" in
-        RULE-*) grep -qE "^## $id\b" "$RF" 2>/dev/null || bad "đọc lại khai → $id nhưng rules.md không có";;
+        RULE-*) [ -n "$(rule_file "$id" "$ROOT")" ] || bad "đọc lại khai → $id nhưng rules.md không có";;
         AC-*)   grep -qE "^### $id\b" "$F" || bad "đọc lại khai → $id nhưng UC không có";;
         E*)     grep -qE "^- +(\*\*)?$id[.:]" "$F" || bad "đọc lại khai → $id nhưng UC không có";;
       esac
@@ -338,7 +343,10 @@ fi
 # Lỗ còn lại, biết mà chưa xử: sửa rules.md dưới tiêu đề docs(UC-010) hay docs(RULE-###)
 # thì UC-009 không thấy — bỏ grep tiêu đề sẽ đúng nghĩa hơn nhưng làm mọi UC cùng
 # context đỏ khi ai đó sửa rules.md; chưa có ca thật để cân.
-SPECP="$F $DIR/$ID.flow.md $DIR/screens $RF $EF"
+# 7.0: pathspec gồm cả đường 6.x — commit docs($ID) trước migrate nằm ở specs/contexts/…; git log
+# không --follow nên phải kể tên cũ, không thì UC dời sang cây mới mất sạch lịch sử đọc lại (#55).
+SPECP="$F $DIR/$ID.flow.md $DIR/screens $RFS $EFS"
+[ "$(layout "$ROOT")" = v7 ] && SPECP="$SPECP specs/contexts/*/use-cases/$ID-*/$ID.md specs/contexts/*/use-cases/$ID-*/$ID.flow.md specs/contexts/*/use-cases/$ID-*/screens specs/contexts/*/entities.md specs/rules.md"
 LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- $SPECP 2>/dev/null)"
 LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- $SPECP 2>/dev/null)"
 # #49: commit đọc lại gần nhất, và "vân tay hành vi" của spec ở một revision. Ca thật runxops
@@ -349,24 +357,38 @@ LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- $SPECP 2>/dev/
 # của UC · flow.md · phát biểu RULE được trích (bỏ dòng Áp dụng cho) · mermaid của entities.md.
 # Đổi bất cứ vùng nào trong đó là đổi hành vi → đọc lại lần nữa (trọn hoặc --since).
 RH="$(git -C "$ROOT" log -1 --format=%H --grep="^docs($ID): đọc lại" -- $SPECP 2>/dev/null)"
+# Đường dẫn tra THEO REVISION: trước migrate UC ở specs/contexts/<ctx>/…, sau ở specs/<owner>/br-###/…;
+# vân tay so hai bên mốc migrate vẫn phải cùng nội dung. Vùng entities bỏ qua (info) khi hai bên
+# khác bố cục — 6.x một file cả context, 7.0 mỗi entity một file, nối lại không so được.
+tree_at()   { git -C "$ROOT" ls-tree -r --name-only "$1" 2>/dev/null; }
+layout_at() { tree_at "$1" | grep -qE '^specs/vision\.md$|^specs/[^/]+/br-[0-9]+/' && printf v7 || printf v6; }
+uc_at()     { tree_at "$1" | grep -E "/use-cases/$ID-[^/]*/$ID$2\.md\$" | head -1; }
+rules_at()  { tree_at "$1" | grep -E '^specs/rules\.md$|^specs/[^/]+/rules\.md$' | grep -vE '^specs/(contexts|internal|changes)/'; }
+entities_at() { # file entity của UC ở rev — 6.x: entities.md của context; 7.0: cùng tên file với entity_cited ở HEAD
+  _u="$(uc_at "$1" "")"; [ -n "$_u" ] || return 0
+  if [ "$(layout_at "$1")" = v6 ]; then printf '%s\n' "$_u" | sed -E 's#(specs/contexts/[^/]+)/.*#\1/entities.md#'
+  else _o="$(printf '%s' "$_u" | sed -E 's#^specs/([^/]+)/.*#\1#')"
+       for _e in $EFS; do _n="$(basename "$_e")"; tree_at "$1" | grep -E "^specs/(core|$_o)/entities/$_n\$"; done; fi
+}
 spec_fp() { # spec_fp <rev> <vùng>
-  _uc="$(git -C "$ROOT" show "$1:${F#$ROOT/}" 2>/dev/null)"
+  _uc="$(git -C "$ROOT" show "$1:$(uc_at "$1" "")" 2>/dev/null)"
   case "$2" in
     main|alt|exc|post|ac)
       case "$2" in main) _h="## Main Flow";; alt) _h="## Alternative Flows";; exc) _h="## Exceptions";; post) _h="## Postconditions";; ac) _h="## Acceptance Criteria";; esac
       printf '%s\n' "$_uc" | awk -v h="$_h" 'index($0,h)==1{f=1;next} f&&/^## /{f=0} f';;
-    flow) git -C "$ROOT" show "$1:${DIR#$ROOT/}/$ID.flow.md" 2>/dev/null;;
+    flow) _f="$(uc_at "$1" ".flow")"; [ -n "$_f" ] && git -C "$ROOT" show "$1:$_f" 2>/dev/null;;
     rules)
-      _rl="$(git -C "$ROOT" show "$1:specs/rules.md" 2>/dev/null)"
+      _rl="$(for _p in $(rules_at "$1"); do git -C "$ROOT" show "$1:$_p" 2>/dev/null; printf '\n'; done)"
       for _r in $(printf '%s' "$_uc" | grep -oE 'RULE-[0-9]+' | sort -u); do
         printf '%s\n' "$_rl" | awk -v h="## $_r" 'index($0,h)==1{f=1;print;next} f&&/^## /{f=0} f' | grep -v 'Áp dụng cho'
       done;;
-    entities) git -C "$ROOT" show "$1:specs/contexts/$CTX/entities.md" 2>/dev/null | sed -n '/^```mermaid/,/^```/p';;
+    entities) for _p in $(entities_at "$1"); do git -C "$ROOT" show "$1:$_p" 2>/dev/null | sed -n '/^```mermaid/,/^```/p'; done;;
   esac
 }
-FP_CHANGED=""
+FP_CHANGED=""; FP_SKIP=""
 if [ -n "$RH" ]; then
   for _z in main alt exc post ac flow rules entities; do
+    if [ "$_z" = entities ] && [ "$(layout_at "$RH")" != "$(layout_at HEAD)" ]; then FP_SKIP=entities; continue; fi
     [ "$(spec_fp "$RH" "$_z")" = "$(spec_fp HEAD "$_z")" ] || FP_CHANGED="$FP_CHANGED $_z"
   done
 fi
@@ -393,13 +415,14 @@ elif [ "$RRN" -eq 0 ]; then
 elif [ -n "$RH" ] && [ -z "$FP_CHANGED" ]; then
   NCH="$(git -C "$ROOT" log --format=%h "$RH..HEAD" --grep="^docs($ID)" -- $SPECP 2>/dev/null | wc -l | tr -d ' ')"
   ok "đọc lại: $RRN phát hiện có neo + đầu ra; $NCH commit spec sau đó chỉ áp chữ/nhãn — Main/Alt/Exceptions/Postconditions/AC · flow · phát biểu RULE · mermaid entities không đổi (#49)"
+  [ -n "$FP_SKIP" ] && info "lần đọc lại nằm trước migrate v7 — vùng mermaid entities không so được qua mốc đó (một file/context → một file/entity); tự soát tay nếu có đổi entity"
 else
   bad "spec đổi HÀNH VI sau lần đọc lại — commit docs($ID) mới nhất là '$LASTS' ($LAST); vùng đổi:${FP_CHANGED:- (không rõ)}"
   info "chạy lại /sdd-solo:verify $ID --since $(git -C "$ROOT" log -1 --format=%h "$RH" 2>/dev/null) — chỉ đọc phần đổi từ lần đọc lại trước; commit đọc lại mới sẽ là mốc mới"
   # #41: "đủ để sửa, thiếu để hiểu" — nói luôn thứ tự, để lần sau người ta áp phiếu TRƯỚC verify.
   info "thứ tự: áp hết phát hiện ⑦ (kể cả chữ/nhãn, file bên cạnh) → ⑧ verify → ⑨ gate, liền nhau; sửa spec sau ⑧ là chấp nhận đọc lại lần nữa"
 fi
-git -C "$ROOT" status --porcelain -- "$DIR" "$RF" 2>/dev/null | grep -q . && bad "còn thay đổi chưa commit trong spec — commit docs($ID) trước"
+git -C "$ROOT" status --porcelain -- "$DIR" $RFS 2>/dev/null | grep -q . && bad "còn thay đổi chưa commit trong spec — commit docs($ID) trước"
 
 echo
 if [ "$FAIL" -eq 0 ]; then echo "QUA CỔNG ($WARN cảnh báo)."; exit 0; else echo "KHÔNG QUA CỔNG — $FAIL lỗi, $WARN cảnh báo. Sửa rồi chạy lại."; exit 1; fi

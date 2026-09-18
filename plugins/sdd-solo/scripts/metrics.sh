@@ -45,8 +45,8 @@ UCT="$(uc_test_dir "$ROOT")"
 # không ai đang hỏi (loại sai #9): nó trộn "cái tôi đã cam kết có test chưa" với
 # "spec xây được bao nhiêu".
 tot_a=0; tot_g=0; tst_a=0; tst_g=0
-for f in $(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' -not -name '*.sequence.md' -not -name '*.flow.md' 2>/dev/null | sort); do
-  id="$(basename "$f" .md)"; ctx="$(ctx_of "$f")"
+for f in $(all_uc_files "$ROOT"); do
+  id="$(basename "$f" .md)"; ctx="$(owner_of "$f")"
   n=$(grep -cE '^### AC-[0-9]+' "$f" 2>/dev/null || true); n=${n:-0}
   t=$(find "$ROOT/$UCT/$ctx/$id" -name 'AC-*.test.*' 2>/dev/null | wc -l | tr -d ' ')
   tot_a=$((tot_a+n)); tst_a=$((tst_a+t))

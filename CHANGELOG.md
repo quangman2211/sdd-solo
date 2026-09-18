@@ -1,5 +1,35 @@
 # Changelog
 
+## 7.0.0 — 2026-09-18 (đang làm — Bước B của plan 7.0, #54 #55)
+
+**Đổi lớn:** trục `specs/contexts/<ctx>/` → `core|<nghề>` × `br-###/`, thêm tầng 0 `specs/vision.md`. Repo 6.x
+chưa migrate vẫn chạy y nguyên (đo bằng snapshot output của mọi script trên bản sao runxops 6.x: khác 0 dòng ngoài
+nhãn "③ RULE + entity + glossary"). Từng mốc ghi dưới đây; mốc chưa ghi là chưa làm.
+
+- **(1) `lib.sh` là chỗ DUY NHẤT tra đường dẫn (#55).** Tới 6.6.x có 11 script + 2 githook tự `find`/`grep` vào
+  `specs/contexts/…`, `specs/br.md`, `specs/internal/…` — đổi cây là đổi 13 chỗ, hụt thì im. Hàm mới, mỗi hàm tra
+  bố cục 7.0 trước rồi rơi về 6.x: `layout` · `find_vision` · `find_uc` (glob `specs/*/br-*/use-cases/UC-###-*/`) ·
+  `all_uc_files` · `owner_of` (core|nghề, 6.x = context; `ctx_of` giữ làm bí danh) · `br_of` · `br_dir` · `br_file` ·
+  `br_files` · `br_text` · `br_title` · `evidence_file` · `owner_of_br` · `rules_files` · `rule_file` · `rules_text` ·
+  `adr_dirs` · `adr_file` · `arch_file` · `decisions_file` · `glossary_files` · `nghe_glossary` · `nghe_rules` ·
+  `nghe_list` (config `nghe_paths=`, không có thì dò `specs/*/`) · `entity_files` · `entity_cited` · `entity_names`.
+  `br_body/br_ids/br_untouched/uc_table_file/id_exists/brief_rec_sha` đi qua các hàm đó. Bảng UC ở 7.0 là
+  `## Related Use Cases` của `br.md` lát, cùng cột `| UC | Tên | Actor | BR | Status |` — `pass.sh gate/close/deprecate`
+  và `status.sh` đọc/ghi qua `uc_table_file`, không còn ca #51 ở v7.
+  - `gate-check.sh`: entity theo T2 (mỗi entity một file; "entities của UC" = file UC nhắc tên); RULE tra
+    `specs/rules.md` + `specs/<nghề>/rules.md`; §9 pathspec kể cả đường 6.x nên commit đọc lại TRƯỚC migrate vẫn tìm
+    thấy, và `spec_fp` tra đường dẫn THEO REVISION (`git ls-tree`) — vân tay so được qua mốc migrate; riêng vùng
+    mermaid entities khác bố cục hai bên mốc thì bỏ qua kèm một dòng info (một file/context ↔ một file/entity, nối
+    lại không so được). Đo trên fixture: cổng xanh ngay sau migrate · commit nhãn qua · đổi Main Flow đỏ "vùng đổi: main".
+  - `context.sh`: python nhận danh sách file qua env từ lib (`SDD_RULES SDD_BRS SDD_ADRS SDD_ARCH SDD_ENTS SDD_GLOS
+    SDD_OTHERS`); 7.0 in nguyên file entity UC nhắc tên. `br-check` (UC nằm trong `br-###/use-cases/` là khai thuộc
+    lát) · `decisions` · `design-check` · `change-check` · `close-check` · `uc-steps` · `metrics` · `status` · `pass` ·
+    `session-start` đều qua lib.
+  - Githook `commit-msg` (chạy bash trần, chép logic): RULE/BR/ADR tra cả hai bố cục; ADR hỏi từng thư mục — bản đầu
+    `ls a b c d` chặn oan ADR-001 có thật ở runxops (bẫy #16, chính hook đã ghi chú mà vẫn dẫm). `pre-commit` nhận
+    `specs/<nghề>/rules.md` là spec.
+  - Mọi `cat $DANH_SÁCH | grep` có `/dev/null` đứng đầu — danh sách rỗng thì `cat` đọc stdin và treo cổng.
+
 ## 6.6.2 — 2026-09-18
 
 - `orchestrate` phụ lục herdr: `agent send-keys` chỉ nhận phím đặt tên, không gõ chữ — dòng "C phiên mới:

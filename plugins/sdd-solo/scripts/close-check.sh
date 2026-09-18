@@ -5,7 +5,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"; F="$(find_uc "$ID" "$ROOT")"
 echo "Definition of Done — $ID"
 [ -z "$F" ] && { bad "không tìm thấy file UC"; exit 1; }
-CTX="$(ctx_of "$F")"; SLUG="$(slug_of "$F")"
+CTX="$(owner_of "$F")"; SLUG="$(slug_of "$F")"
 [ -f "$ROOT/.sdd/gate/$ID.ok" ] && ok "đã qua cổng DoR" || bad "chưa có marker .sdd/gate/$ID.ok — chạy /sdd-solo:gate"
 # Tầng thiết kế (4.0.0). Đóng một UC mà không có design.md nghĩa là code đã viết
 # ra từ một quyết định kỹ thuật không nằm ở đâu cả — sáu tháng sau không ai đọc

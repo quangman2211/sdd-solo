@@ -5,19 +5,19 @@ echo "=== STATE.md ==="; cat "$ROOT/STATE.md" 2>/dev/null || echo "(chưa có)"
 echo; echo "=== BR (Phase 1) ==="
 BRS="$(br_ids "$ROOT")"
 if [ -z "$BRS" ]; then
-  warn "specs/br.md chưa có BR nào — chạy /sdd-solo:intake"
+  warn "chưa có BR nào — chạy /sdd-solo:intake"
 else
   for b in $BRS; do
     [ "$b" = "BR-000" ] && { printf '  %-9s %s\n' "$b" "(mẫu của template)"; continue; }
     # Khung chưa đụng tới in ra "draft" trông y hệt một BR thật đang viết dở.
-    if grep -qE "^# $b: *<" "$ROOT/specs/br.md"; then
+    if br_title "$b" "$ROOT" | grep -qE "^# $b: *<"; then
       printf '  %-9s %s\n' "$b" "(khung trống — /sdd-solo:intake)"; continue
     fi
     st="$(br_body "$b" "$ROOT" | sed -n 's/.*\*\*Status:\*\* *//p' | head -1 | awk '{print $1}')"
     printf '  %-9s %s\n' "$b" "${st:-?}"
   done
 fi
-UCN="$(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' -not -name '*.sequence.md' -not -name '*.flow.md' 2>/dev/null | wc -l | tr -d ' ')"
+UCN="$(all_uc_files "$ROOT" | wc -l | tr -d ' ')"
 if br_untouched "$ROOT"; then
   # (d) của #18 — xây trên nền chưa viết là loại sai đắt nhất vì nó ở gốc
   if [ "$UCN" -gt 0 ]; then
@@ -27,13 +27,13 @@ if br_untouched "$ROOT"; then
   fi
   # (e) của #19 — AIUP nhảy thẳng vào 'hệ thống làm gì', bỏ qua tầng 'vì sao làm'
   [ -f "$ROOT/docs/requirements.md" ] && \
-    warn "có docs/requirements.md của AIUP mà specs/br.md chưa có BR — /requirements đã đi vòng qua tầng BR. Chạy /sdd-solo:intake trước."
+    warn "có docs/requirements.md của AIUP mà BR chưa có — /requirements đã đi vòng qua tầng BR. Chạy /sdd-solo:intake trước."
 fi
 
 echo; echo "=== UC theo status ==="
 # Chỉ file UC: bỏ .flow.md · .sequence.md · .trace.md (5.0.0 sinh trace sau close) — trước
 # 6.1.0 dòng 'UC-###.flow ?' và 'UC-###.trace ?' in lẫn vào danh sách như hai UC không status.
-for f in $(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' -not -name '*.sequence.md' -not -name '*.flow.md' -not -name '*.trace.md' 2>/dev/null | sort); do
+for f in $(all_uc_files "$ROOT"); do
   id="$(basename "$f" .md)"; st="$(grep -oE '\*\*Status:\*\* *[a-z]+' "$f" | head -1 | awk '{print $2}')"
   g=""; [ -f "$ROOT/.sdd/gate/$id.ok" ] && g=" · gate ✓"
   printf '  %-8s %-12s%s\n' "$id" "${st:-?}" "$g"
@@ -44,9 +44,9 @@ for f in $(find "$ROOT/specs/contexts" -path '*/use-cases/UC-*/UC-*.md' -not -na
   # UC tiếp theo từ bảng, nên bảng lệch là gợi sai. Không có bảng/dòng thì chỉ nhắc.
   ts="$(uc_table_status "$id" "$ROOT")"
   if [ -n "$ts" ] && [ "$ts" != "$st" ]; then
-    warn "$id: file UC nói '$st' nhưng bảng use-cases.md nói '$ts' — sửa bảng cho khớp (pass.sh gate/close từ 6.1.0 tự sửa)"
+    warn "$id: file UC nói '$st' nhưng bảng UC ($(uc_table_file "$id" "$ROOT" | sed "s#$ROOT/##")) nói '$ts' — sửa bảng cho khớp (pass.sh gate/close từ 6.1.0 tự sửa)"
   elif [ -z "$ts" ] && [ -f "$(uc_table_file "$id" "$ROOT")" ]; then
-    info "$id không có dòng trong bảng use-cases.md của context"
+    info "$id không có dòng trong bảng UC ($(uc_table_file "$id" "$ROOT" | sed "s#$ROOT/##"))"
   fi
 done
 # Phase 5: change nào đang mở, đã qua cổng chưa
@@ -77,7 +77,7 @@ UT_OK=0; [ -d "$ROOT/$UCT_" ] || UT_OK=1
 # uc_test_dir chưa có ở Phase 1–2 là BÌNH THƯỜNG: chưa AC nào implement thì chưa
 # có test nào để đặt vào. Chỉ nhắc khi đã có UC implemented mà thư mục vẫn vắng.
 UT_SAY=0
-if [ "$UT_OK" = 1 ] && grep -rlE '\*\*Status:\*\* *implemented' "$ROOT/specs/contexts" >/dev/null 2>&1; then
+if [ "$UT_OK" = 1 ] && all_uc_files "$ROOT" | xargs grep -lE '\*\*Status:\*\* *implemented' >/dev/null 2>&1; then
   UT_SAY=1
 fi
 if [ "$CP_OK" = 1 ] || [ "$UT_SAY" = 1 ]; then

@@ -45,7 +45,7 @@ gate)
 
 close)
   F="$(find_uc "$ID" "$ROOT")"; [ -z "$F" ] && exit 1
-  CTX="$(ctx_of "$F")"
+  CTX="$(owner_of "$F")"
   sed -i.bak -E 's/(\*\*Status:\*\* *)(draft|reviewed)/\1implemented/' "$F" && rm -f "$F.bak"
   # 5.0.0 — dấu vết rời khỏi file đang hiệu lực. Đo ở runxops: UC-009.md 56 KB thì
   # ## Adversarial pass 11,0 + ## Đọc lại 11,3 + ## History 6,3 = 28,6 KB, và không ai
@@ -130,7 +130,7 @@ PY
     printf '  ! bảng %s không có dòng %s — thêm dòng cho /sdd-solo:state gợi đúng UC tiếp theo\n' "${T#$ROOT/}" "$ID"; fi
   [ -f "$TRACE" ] && git -C "$ROOT" add "$TRACE"
   git -C "$ROOT" commit -q --only -m "docs($ID): implemented — traceability" -- "$F" "$TR" $TF $( [ -f "$TRACE" ] && printf '%s' "$TRACE" ) || true
-  echo "ĐÃ ĐÓNG $ID. Status → implemented${TF:+ (file UC + bảng use-cases.md)} · traceability +$(grep -cE '^### AC-' "$F") dòng · commit xong."
+  echo "ĐÃ ĐÓNG $ID. Status → implemented${TF:+ (file UC + bảng UC)} · traceability +$(grep -cE '^### AC-' "$F") dòng · commit xong."
   echo "Nhớ: cập nhật STATE.md (/sdd-solo:state) trước khi đóng máy."
   ;;
 
@@ -168,14 +168,14 @@ PY
     git -C "$ROOT" rm -q --cached ".sdd/gate/$ID.ok" 2>/dev/null || true
     rm -f "$MK"; MKF=".sdd/gate/$ID.ok"
   fi
-  DEC="$ROOT/specs/internal/decisions.md"; DF=""
+  DEC="$(decisions_file "$ROOT")"; DF=""
   # Đã có dòng "Bỏ UC-###" (deprecate lần hai, hoặc ghi tay trước đó) thì không thêm dòng trùng.
   if [ -f "$DEC" ] && ! grep -qF -- "Bỏ $ID (" "$DEC"; then
     printf -- '- %s — Bỏ %s (%s). Loại: giữ %s. Chi tiết: %s\n' "$(today)" "$ID" "$REASON" "$ID" "$( [ "$BY" = "-" ] && printf 'không có UC thay thế' || printf '%s' "$BY" )" >> "$DEC"
     DF="$DEC"
   fi
   git -C "$ROOT" commit -q --only -m "docs($ID): deprecated — $REASON" -- "$F" $TF $DF $MKF || true
-  printf 'ĐÃ BỎ %s. Status -> deprecated · History v+1 · marker cổng %s · bảng use-cases.md %s · decisions.md %s · đã commit.\n' \
+  printf 'ĐÃ BỎ %s. Status -> deprecated · History v+1 · marker cổng %s · bảng UC %s · decisions.md %s · đã commit.\n' \
     "$ID" "$( [ -n "$MKF" ] && printf 'đã gỡ' || printf 'không có' )" "$( [ -n "$TF" ] && printf 'đã sửa' || printf 'không có dòng' )" "$( [ -n "$DF" ] && printf '+1 dòng' || printf 'không có file' )"
   [ "$BY" != "-" ] && printf 'Thay bằng %s — chưa có thư mục thì /sdd-solo:start %s.\n' "$BY" "$BY"
   BRP="$(grep -oE 'BR-[0-9]+' "$F" | head -1)"; BRST="$(br_body "$BRP" "$ROOT" | sed -n 's/.*\*\*Status:\*\* *//p' | head -1 | awk '{print $1}')"

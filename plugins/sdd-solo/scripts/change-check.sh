@@ -60,7 +60,7 @@ for u in $UCS; do
   else ok "$u implemented, đã qua cổng"; fi
 done
 for r in $(printf '%s' "$SC" | grep -oE 'RULE-[0-9]+' | sort -u); do
-  grep -qE "^## $r\b" "$ROOT/specs/rules.md" 2>/dev/null && ok "$r có trong rules.md" \
+  [ -n "$(rule_file "$r" "$ROOT")" ] && ok "$r có trong rules.md" \
     || bad "Scope nêu $r nhưng rules.md không có heading"
 done
 
@@ -73,9 +73,9 @@ if [ -f "$G" ]; then
   filled "$(sect "$G" "## Hướng kỹ thuật")" && ok "design.md có hướng kỹ thuật" \
     || bad "design.md ## Hướng kỹ thuật rỗng hoặc còn placeholder"
   for a in $(grep -oE 'ADR-[0-9]+' "$G" | sort -u); do
-    if ls "$ROOT/specs/internal/adr/$a"* >/dev/null 2>&1 || ls "$ROOT/docs/adr/$a"* >/dev/null 2>&1; then
+    if [ -n "$(adr_file "$a" "$ROOT")" ]; then
       ok "$a có file"
-    else bad "design.md nêu $a nhưng không có file trong specs/internal/adr/"; fi
+    else bad "design.md nêu $a nhưng không có file ADR ($(adr_dirs "$ROOT" | sed "s#$ROOT/##" | tr '\n' ' '))"; fi
   done
   grep -qE 'SCR-[0-9]+-[0-9]+' "$G" || warn "design.md chưa nêu SCR-###-# nào — change không đụng màn hình nào thật à?"
   filled "$(sect "$G" "## Rủi ro và cách lùi")" && ok "có rủi ro và cách lùi" \

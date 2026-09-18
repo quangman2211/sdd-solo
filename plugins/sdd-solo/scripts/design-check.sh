@@ -18,8 +18,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"; F="$(find_uc "$ID" "$ROOT")"
 echo "Tầng thiết kế — $ID"
 [ -z "$F" ] && { bad "không tìm thấy file UC"; exit 1; }
-DIR="$(dirname "$F")"; CTX="$(ctx_of "$F")"
-DS="$DIR/design.md"; TK="$DIR/tasks.md"; AR="$ROOT/specs/internal/architecture.md"
+DIR="$(dirname "$F")"; CTX="$(owner_of "$F")"
+DS="$DIR/design.md"; TK="$DIR/tasks.md"; AR="$(arch_file "$ROOT")"
 
 # 4.2.0: `strip_tags()` cục bộ đã bỏ — mọi chỗ dùng `strip_markup()` của lib.sh.
 # Hai hàm chỉ khác nhau ở một điểm, và đúng điểm đó gây lỗi: strip_tags bỏ THẺ,
@@ -33,7 +33,7 @@ DS="$DIR/design.md"; TK="$DIR/tasks.md"; AR="$ROOT/specs/internal/architecture.m
 
 # ── 1. architecture.md — cấp dự án ────────────────────────────────────────
 if [ ! -f "$AR" ]; then
-  bad "thiếu specs/internal/architecture.md — không có gì để design.md đối chiếu ngược lên"
+  bad "thiếu ${AR#$ROOT/} — không có gì để design.md đối chiếu ngược lên"
 else
   MISS=""
   for sec in "## Ngăn xếp" "## Nơi chạy" "## Ai gọi" "## Ranh giới" "## Cấm" "## Đã chốt từ brief"; do
