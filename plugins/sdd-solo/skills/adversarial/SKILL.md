@@ -2,13 +2,34 @@
 name: adversarial
 description: Adversarial pass ba vai đọc spec và liệt kê câu hỏi spec chưa trả lời. UC-### (bước ⑦) dùng ba vai khách cuối / vận hành / kẻ lợi dụng và hỏi về hành vi; BR-### (Phase 1) dùng ba vai người trả tiền / người vận hành mãi / người hoài nghi và hỏi về lý do tồn tại. Thay cho reviewer nghiệp vụ khi làm một mình.
 disable-model-invocation: true
-argument-hint: "UC-### | BR-###"
+argument-hint: "UC-### | BR-### [--phieu | --hoi]"
 allowed-tools: Bash Read Write Edit Grep Agent AskUserQuestion
 ---
 
 Adversarial pass cho `$1`.
 
 `$1` bắt đầu bằng `UC-` → **phần A**. Bắt đầu bằng `BR-` → **phần B**. Khác hai dạng đó thì dừng và hỏi lại.
+
+**Hai chế độ trình câu hỏi — chọn TRƯỚC khi chạy ba vai** (7.0.1, #53):
+
+| Chế độ | Khi nào | Câu hình dạng đi đâu |
+|---|---|---|
+| **hỏi** | anh gõ lệnh trong phiên của mình, không cờ · hoặc có `--hoi` | `AskUserQuestion`, một câu một lượt (bước 5) |
+| **phiếu** | có `--phieu` · hoặc lượt chạy theo **lời giao của một agent khác** (orchestrate: vai B/C, lời giao bắt đầu `Vai:` / `Lượt`) mà không có `--hoi` | một phiếu gom K1…Kn vào sổ hỏi đáp (bước 5′), **không** `AskUserQuestion` |
+
+Không chắc mình đang ở chế độ nào → **phiếu**. Phiếu chậm một lượt; câu hỏi mở trong phiên không có người thì
+treo cả lượt tới khi hết hạn — ca thật runxops (#53): adversarial chạy dưới lời giao của A mở `AskUserQuestion`,
+không ai bấm, `## Adversarial pass` không được ghi, A phải giao lại từ đầu. `--hoi` để A ép hỏi khi chính A đang ngồi
+cùng chủ dự án. Cả hai chế độ dùng chung ba vai, cùng bài kiểm hình dạng/giá trị, cùng bốn ràng buộc khi đề xuất —
+khác nhau đúng một chỗ: ai trả lời câu hình dạng, và khi nào.
+
+Sổ hỏi đáp: `notes/hoi-dap/hoi-dap.md` (cây 7.0) · `specs/internal/hoi-dap.md` (6.x). Chưa có → chép khuôn
+`${CLAUDE_PLUGIN_ROOT}/templates/skel/hoi-dap.md` (không thay được biến: `find ~/.claude/plugins -type f -name hoi-dap.md
+-path '*sdd-solo*skel*' | head -1`).
+
+**Bố cục 6.x** (chưa `migrate --layout v7`): BR ở `specs/br.md` (mục `# BR-###`), RULE ở `specs/rules.md`, entity ở
+`specs/contexts/<ctx>/entities.md`, chưa có `specs/vision.md` → bỏ phần "Không thu hẹp", nói ra là bỏ. `context.sh`,
+`gate-check.sh`, `br-check.sh` tra cả hai cây.
 
 ---
 
@@ -39,7 +60,8 @@ Exit ≠ 0 → **dừng**, in nguyên output, nói user viết xong nội dung r
 Cột "đầu ra" để `___` — **user quyết**, không tự điền. Khi user chọn, ghi kèm **ID của thứ đã tạo**:
 `→ spec: RULE-003` · `→ spec: E4, AC-5` · `→ Open Question` · `→ Out of Scope`.
 Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắt (#12).
-5. **Trình từng câu bằng `AskUserQuestion`, một câu một lượt** — không in 24 dòng liên tiếp rồi
+5. **Chế độ hỏi — trình từng câu bằng `AskUserQuestion`, một câu một lượt** (chế độ phiếu: bước 5′, nhưng đọc hết
+   bước này — phân loại, ba thứ, bốn ràng buộc áp nguyên cho phiếu) — không in 24 dòng liên tiếp rồi
    hỏi "anh chọn gì". Đây là chỗ mật độ quyết định cao nhất trong cả quy trình.
 
    **Trước khi hỏi, phân loại bằng bài kiểm hình dạng/giá trị** (xem `sdd-process`): câu đổi
@@ -114,6 +136,19 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
    - Open Question → thêm `- [ ] <câu> (quyết định tạm: <user nói>)`. User chưa có gì để nói thì `___`, và giữ nhãn nguồn `[Main 7]` trong câu để sáu tháng sau còn truy được.
    - Out of Scope → thêm vào `br.md` của lát UC thuộc về, mỗi dòng kèm đích (`→ lát ___` · `→ mở lại khi ___`). Dòng trùng một từ khoá ở `## Không thu hẹp` của `specs/vision.md` → **hỏi chủ dự án trước**, đừng tự ghi: hoặc không đưa vào Out of Scope, hoặc chủ dự án chốt `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`.
    Không được để câu nào không có đầu ra.
+
+5′. **Chế độ phiếu** — không `AskUserQuestion`, không ai được đoán thay chủ dự án.
+   - Câu đổi **giá trị** (ngưỡng · thời hạn · enum): như chế độ hỏi — `→ Open Question` kèm quyết định tạm `___`.
+   - Câu đổi **hình dạng** (actor · nguồn dữ liệu · quyền · thứ tự bước) và câu đụng `## Không thu hẹp`: gom **một
+     phiếu** cuối sổ hỏi đáp theo khuôn của sổ — `### #<n> · từ: spec · việc: $1 · <ngày>`, mỗi câu một `K#` với
+     `Câu` · `Đã tra` (**nguyên văn** chỗ nhãn trỏ tới, như điểm a) · `Nếu chọn sai thì` · `Agent nghiêng về` (mỗi
+     hướng kèm cái mất — điểm b; câu đổi giá trị nghiệp vụ thì không nghiêng). Để trống `Trả lời (R)` và `Duyệt`.
+   - Trong UC: đầu ra `→ Chưa quyết — Open Question (phiếu #<n> K#)`, và thêm vào `## Open Questions`
+     `- [ ] <câu> [nhãn nguồn] (quyết định tạm: ___ · phiếu #<n> K#)`. **Không** sửa Main/Alt/E#/AC/RULE theo
+     hướng mình nghiêng — áp phiếu là việc của lượt sau, đọc phần `Cho: spec` khi R/chủ dự án đã trả lời.
+   - Sổ **không** nằm trong commit bước 6: dưới orchestrate A commit sổ (R/B không commit sổ); chạy tay thì commit
+     riêng `chore(sdd): sổ hỏi đáp — phiếu #<n>`. Báo cuối lượt: số phiếu, số `K#`, số Open Question mới.
+   Không được để câu nào không có đầu ra — `Chưa quyết — Open Question (phiếu …)` là một đầu ra.
 6. Kết thúc: `git add specs/ && git commit -m "docs($1): spec vN — sau adversarial pass"`. Commit này là mốc để `/sdd-solo:gate` biết spec vừa đổi hôm nay.
 7. STATE.md: `Đang làm: $1 · bước ⑧ — chờ đọc lại bằng đầu chưa neo`. Nói với user bước tiếp là
    **`/sdd-solo:verify $1`** — subagent đọc lại, ghi `## Đọc lại`, commit riêng; xong là chạy cổng được.
@@ -144,7 +179,7 @@ Còn dòng ✗ → **dừng**, in output, bảo user viết xong BR rồi chạy
    - **Người sẽ phải vận hành nó mãi** — **câu bắt buộc đầu tiên (#47): *"v1 xong, anh mở cái gì lên để làm việc mỗi ngày? tự đổi được gì mà không cần dev?"*** — trả lời quyết In Scope trước khi cắt phạm vi (BR-003 runxops bị lật vì không ai hỏi); rồi: ai chịu trách nhiệm khi nó hỏng lúc 2 giờ sáng? cái gì trong Out of Scope hôm nay sẽ thành ticket tuần sau?
    - **Người hoài nghi** — dòng `**Vì sao vẫn xây:**` trong Background nói gì? nếu nó ghi *"chưa có lý do"* thì **bắt đầu từ đó**: đã cân phương án không-phần-mềm nào chưa, cân xong chưa? có cách nào đạt Goal mà **không xây gì** không? BR này có thật là một BR, hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do?
 
-   Vai thứ ba là vai quan trọng nhất và không có ở tầng UC. *"BR: xây dashboard theo dõi đơn hàng"* không phải BR — đó là giải pháp; BR thật nằm ở câu hỏi *vì sao cần theo dõi*. Nếu vai này kết luận BR đang là giải pháp viết ngược thì **dừng, nói rõ BR sẽ co từ gì thành gì, hỏi chủ dự án, rồi mới viết lại** — đừng ghi nó thành một Open Question rồi đi tiếp, và cũng đừng tự viết lại trước khi chủ dự án nghe được cái mất. Viết lại một BR là thu hẹp nó; người duy nhất được quyết thu hẹp là chủ dự án.
+   Vai thứ ba là vai quan trọng nhất và không có ở tầng UC. *"BR: xây dashboard theo dõi đơn hàng"* không phải BR — đó là giải pháp; BR thật nằm ở câu hỏi *vì sao cần theo dõi*. Nếu vai này kết luận BR đang là giải pháp viết ngược thì **dừng, nói rõ BR sẽ co từ gì thành gì, hỏi chủ dự án, rồi mới viết lại** — đừng ghi nó thành một Open Question rồi đi tiếp, và cũng đừng tự viết lại trước khi chủ dự án nghe được cái mất. Viết lại một BR là thu hẹp nó; người duy nhất được quyết thu hẹp là chủ dự án. Chế độ phiếu: một phiếu riêng `K1` = *"BR co từ ___ thành ___, mất ___"*, đầu ra mọi câu còn lại `Chưa quyết`, commit bước 7 **không** kèm History v+1 — rồi dừng lượt.
 
    **Mọi vai đều phải đối chiếu `## Không thu hẹp`.** Câu nào dẫn tới việc bỏ bớt một điều nằm trong đó thì vai phải nói ra rằng nó đang đụng vào tầng 0, và câu hỏi đi thẳng tới chủ dự án ở bước 5 — không phải một `Open Question` để đó.
 
@@ -156,7 +191,7 @@ Còn dòng ✗ → **dừng**, in output, bảo user viết xong BR rồi chạy
 - Vai người sẽ vận hành nó mãi: ...
 - Vai người hoài nghi: ...
 ```
-5. Trình từng câu bằng `AskUserQuestion`, **cùng ba thứ và bốn ràng buộc như phần A bước 5** —
+5. Chế độ hỏi: trình từng câu bằng `AskUserQuestion`; chế độ phiếu: như phần A bước 5′ — **cùng ba thứ và bốn ràng buộc như phần A bước 5** —
    ngữ cảnh là trích dẫn nguyên văn mục BR mà nhãn trỏ tới (`[Background]` · `[CON-002]` ·
    `[Success Metrics]`), mỗi lựa chọn kèm cái mất, và `Chưa quyết` luôn hiện sẵn.
    Bốn đầu ra hợp lệ, không có "để đó":
@@ -186,6 +221,11 @@ Còn dòng ✗ → **dừng**, in output, bảo user viết xong BR rồi chạy
 
    Chủ dự án chưa gật → **không ghi History, không commit**. Đó không phải chờ cho lịch sự: `## History`
    là chỗ khai rằng phiên bản này đã được chốt.
+
+   **Chế độ phiếu:** ở bước 5 không được áp phiếu nào đổi `## In Scope` / `## Out of Scope` / `## Đã loại khỏi
+   brief` — chúng thành `K#` trong phiếu, đầu ra `Chưa quyết`. Nên `br-scope-diff.sh` phải **rỗng**; nó in dòng nào
+   thì đó là phép co mình vừa tự áp — hoàn lại (`git checkout -- <br.md>` rồi áp lại phần không đụng phạm vi), đừng
+   ghi History. Diff rỗng → ghi History v+1 *"sau adversarial pass — phiếu #<n> chờ chủ dự án"* và đi tiếp bước 7.
 7. Chạy lại `br-check.sh $1`, rồi `git add specs/ && git commit -m "docs($1): BR sau adversarial pass"`.
 8. STATE.md: `Đang làm: $1 · Phase 1 xong`. `Việc tiếp theo: /sdd-solo:start UC-### cho UC đầu tiên trong ## Related Use Cases của lát`.
 

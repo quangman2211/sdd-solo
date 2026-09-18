@@ -9,7 +9,8 @@
 #   ② src/core/**  KHÔNG import từ src/<nghề>/ (đường tương đối `../<nghề>/`, tuyệt đối `src/<nghề>/`,
 #      hay alias `@/<nghề>/`).
 #   Trừ: specs/vision.md (bảng Nghề và lát kể tên BR của nghề là việc của nó) · specs/decisions.md (một sổ
-#   cho cả dự án) · specs/traceability.md (script sinh) · *.trace.md · evidence.md · file dưới notes/.
+#   cho cả dự án) · specs/traceability.md (script sinh) · *.trace.md · evidence.md · file dưới notes/ ·
+#   và trong mọi file: mục vết `## History` · `## Adversarial pass` · `## Đọc lại` (7.0.1).
 #
 # Mặc định quét cả repo → in từng chỗ, exit 1 nếu có. `--staged` chỉ xét file đang stage (githook
 # pre-commit.d/20-layer-boundary dùng — chỉ chặn vi phạm MỚI, không bắt repo vừa migrate phải sạch
@@ -64,8 +65,17 @@ HITS=0; ENTW=0
 for f in $LIST; do
   [ -f "$ROOT/$f" ] || continue
   if is_root_spec "$f"; then
-    # bỏ khối <!-- --> và dòng trong ``` — trích dẫn ví dụ trong lời giảng không phải trích thật
-    BODY="$(strip_markup < "$ROOT/$f" | awk '/^```/{c=!c; next} !c')"
+    # bỏ khối <!-- --> và dòng trong ``` — trích dẫn ví dụ trong lời giảng không phải trích thật.
+    # 7.0.1 (R phiếu #71, P-13): bỏ cả mục VẾT — `## History` · `## Adversarial pass` · `## Đọc lại`, tới heading
+    # `## ` kế. Luật sổ cấm sửa dòng History, nên một glossary/ADR gốc có History cũ nhắc RULE nghề sẽ đỏ mỗi lần
+    # ai chạm file — cùng loại với *.trace.md / evidence.md đã miễn theo file. Dòng bị bỏ in thành dòng trống để
+    # số dòng in ra vẫn đúng số dòng trong file.
+    BODY="$(strip_markup < "$ROOT/$f" | awk '
+      /^## (History|Adversarial pass|Đọc lại)[[:space:]]*$/ { v=1; print ""; next }
+      /^## / { v=0 }
+      /^```/ { c=!c; print ""; next }
+      (c || v) { print ""; next }
+      { print }')"
     H=""; [ -n "$IDRE" ] && H="$(printf '%s\n' "$BODY" | grep -nwE "($IDRE)" | head -5)"
     if [ -n "$H" ]; then
       HITS=$((HITS+1))

@@ -29,40 +29,35 @@ F0="$(git -C "$ROOT" log --reverse --format=%ct --grep="^feat($ID)" 2>/dev/null 
 if [ -z "$F0" ]; then warn "chưa có commit feat($ID) — commit code trước khi close"
 elif [ -n "$D0" ] && [ "$D0" -lt "$F0" ]; then ok "docs($ID) đứng trước feat($ID)"; else bad "feat($ID) không có docs($ID) đứng trước"; fi
 # rule ngầm: số literal trong code của UC.
-# Slug có thể là THƯ MỤC (src/domain/<slug>/index.js) hoặc FILE (src/domain/<slug>.js).
-# Chỉ tìm thư mục thì với phần lớn dự án bước này không bao giờ chạy mà DoD vẫn xanh.
-CP="$(code_paths "$ROOT")"
-# Gộp MỌI đường dẫn khớp, không head -1. Thư mục rỗng cạnh file thật (git mv
-# để lại đúng như vậy — git không theo dõi thư mục rỗng) từng thắng file thật
-# và biến DoD thành "sạch, 0 cảnh báo".
-SDS=""
+# TẬP FILE CODE CỦA UC — hai nguồn cộng lại (7.0.1, P-15):
+#  ① file trong code_paths mà các commit không-merge có `(UC-###)` ở tiêu đề đã chạm, còn tồn tại, không phải test.
+#     Bố cục 7.0 đặt code theo KHÁI NIỆM (src/core/domain/session/, web/, deploy/) chứ không theo slug UC; tới
+#     7.0.0 chỉ có nguồn ② nên UC-024 runxops đỏ "đã có feat nhưng không đọc được file code nào" dù 17/17 AC có
+#     test. Commit đã mang ID vì githook bắt — đó là liên kết UC → code duy nhất máy tin được.
+#  ② theo slug: thư mục (src/domain/<slug>/) hoặc file (src/domain/<slug>.js). Gộp MỌI đường dẫn khớp, không
+#     head -1 — thư mục rỗng cạnh file thật (git mv để lại) từng thắng file thật và biến DoD thành "sạch".
+CP="$(code_paths "$ROOT")"; TPS="$(test_paths "$ROOT") $UCT"
+in_paths() { local x; for x in $2; do x="${x%/}"; [ "$x" = . ] && return 0; case "$1" in "$x"/*|"$x") return 0;; esac; done; return 1; }
+CFILES="$(git -C "$ROOT" log --no-merges --format='@@%s' --name-only 2>/dev/null \
+  | awk -v t="($ID)" '/^@@/ { k = index($0, t) > 0; next } k && NF && !a[$0]++' \
+  | while IFS= read -r f; do
+      [ -f "$ROOT/$f" ] || continue
+      in_paths "$f" "$CP" || continue
+      in_paths "$f" "$TPS" && continue
+      printf '%s\n' "$f"
+    done | grep -vE '\.(test|spec)\.')"   # không `case` ở đây: bash 3.2 không parse `pat)` trong $( )
+NC1="$(printf '%s\n' "$CFILES" | grep -c .)"
 for d in $CP; do
   [ -d "$ROOT/$d" ] || continue
-  SDS="$SDS $(cd "$ROOT" && find "$d" -type d -name "$SLUG" 2>/dev/null)"
-  SDS="$SDS $(cd "$ROOT" && find "$d" -type f -name "$SLUG.*" 2>/dev/null)"
+  CFILES="$CFILES
+$(cd "$ROOT" && { find "$d" -type d -name "$SLUG" -exec find {} -type f \; ; find "$d" -type f -name "$SLUG.*"; } 2>/dev/null | grep -vE '\.(test|spec)\.')"
 done
-SDS="$(printf '%s' "$SDS" | tr ' ' '\n' | awk 'NF&&!a[$0]++')"
+CFILES="$(printf '%s\n' "$CFILES" | awk 'NF&&!a[$0]++')"
 # Đếm file THẬT SỰ đọc được. 0 file = "không biết", không phải "sạch".
-NF_=0
-if [ -n "$SDS" ]; then
-  NF_="$(cd "$ROOT" && find $SDS -type f 2>/dev/null | grep -vcE '\.(test|spec)\.' )"
-fi
+NF_="$(printf '%s\n' "$CFILES" | grep -c .)"
 if [ "$NF_" -gt 0 ]; then
-  # Lọc theo NGỮ CẢNH, không theo độ dài chữ số. Bản 1.6.0 dùng {2,} nên quét
-  # sạch luôn ngưỡng nghiệp vụ một chữ số — mà đó là loại phổ biến nhất:
-  # graceDays: 7 · maxRetries: 3 · otpLength: 6 · maxDevices: 1. Xem #9.
-  # KHÔNG lọc chuỗi: pattern vốn không khớp số nằm sau dấu nháy, và thà dương
-  # tính giả — đây là bước ngồi soi cùng user, không phải cổng chặn.
-  # Nhánh thứ hai '[0-9]+ *\* *[0-9]+' bắt chuỗi nhân giữa hai HẰNG SỐ:
-  # 15 * 60 * 1000 · 24 * 60 * 60 · 1024 * 1024. Bản trước không bắt (toán tử
-  # nhân không nằm trong nhóm đầu), mà đó gần như luôn là một khoảng thời gian
-  # hoặc kích thước — tức tham số nghiệp vụ. Không nới sang '+' '-': 'i + 1'
-  # nhiều vô kể, còn 'số * số' thì hầu như không bao giờ là biến đếm.
-  # Khối awk loại hai dạng nhiễu đo được trên code thật (3.0.1): '+= 1' lọt vì
-  # có dấu '=' ngay trước số, và tham số chỉ số chuỗi 'substring(0, 8)' cùng họ
-  # với '[0]' đã loại. Dòng nào có chuỗi 'số * số' thì GIỮ trước khi xét hai
-  # luật đó — 'timeout += 30 * 60 * 1000' là tham số nghiệp vụ, không phải đếm.
-  L="$(cd "$ROOT" && grep -rnE '([=<>!]=?|:|,|\() *[0-9]+\b|[0-9]+ *\* *[0-9]+' $SDS 2>/dev/null \
+  info "code của $ID: $NF_ file — $NC1 do commit ($ID) chạm, $((NF_-NC1)) thêm theo slug $SLUG"
+  L="$(cd "$ROOT" && printf '%s\n' "$CFILES" | tr '\n' '\0' | xargs -0 grep -HnE '([=<>!]=?|:|,|\() *[0-9]+\b|[0-9]+ *\* *[0-9]+' 2>/dev/null \
        | grep -vE '\.(test|spec)\.[a-z]+:|RULE-|CON-|ADR-' \
        | grep -vE '\[[0-9]+\]' \
        | grep -vE '\b(i|j|k|n|idx|index)\b *[=<>!]=? *[0-9]+' \
@@ -71,20 +66,25 @@ if [ "$NF_" -gt 0 ]; then
                 if ($0 ~ /(substring|substr|slice|splice|padStart|padEnd|charAt|repeat|toFixed)\(/) next
                 print }' \
        | grep -vE 'v?[0-9]+\.[0-9]+\.[0-9]+' \
-       | head -8)"
+       | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|/\*|\*|#|--)')"   # dòng chỉ là chú thích: tập theo commit kéo cả .sh/.sql, chú thích không phải luật
   if [ -n "$L" ]; then
-    warn "số literal cần soi (phải trích RULE/CON hoặc giải thích):"; echo "$L" | sed 's/^/      /'
+    # Không cắt lặng lẽ (P-15): tới 7.0.0 in head -8 và không nói còn bao nhiêu. Tập lớn → số đếm + file đủ.
+    LN_="$(printf '%s\n' "$L" | grep -c .)"
+    LOUT="$(git -C "$ROOT" rev-parse --absolute-git-dir 2>/dev/null)/sdd/literal-$ID.txt"
+    mkdir -p "$(dirname "$LOUT")" 2>/dev/null && printf '%s\n' "$L" > "$LOUT" || LOUT=""
+    warn "$LN_ dòng số literal cần soi (phải trích RULE/CON hoặc giải thích)$( [ "$LN_" -gt 8 ] && printf ' — 8 dòng đầu dưới đây')${LOUT:+; đủ ở $LOUT}:"
+    printf '%s\n' "$L" | head -8 | sed 's/^/      /'
     # Spec đã đánh dấu chỗ trống mà code đã điền số — rule ngầm đắt nhất.
     if grep -qiE '(Open Question|Câu hỏi mở)' "$F" 2>/dev/null && grep -qE '^[[:space:]]*[-*] \[ \]' "$F" 2>/dev/null; then
       warn "$ID còn Open Question chưa đóng mà code đã có số — soi hai chỗ này với nhau"
     fi
   else
-    ok "không thấy số literal lạ trong $NF_ file của $SLUG"
+    ok "không thấy số literal lạ trong $NF_ file code của $ID"
   fi
 elif [ -n "$F0" ]; then
-  bad "đã có feat($ID) nhưng không đọc được file code nào cho $SLUG trong: $CP — sửa .sdd/config hoặc đặt tên file/thư mục theo slug"
+  bad "đã có feat($ID) nhưng không đọc được file code nào: không commit ($ID) nào chạm file trong $CP, và không có thư mục/file tên $SLUG — sửa code_paths ở .sdd/config"
 else
-  warn "chưa tìm thấy code của $SLUG trong: $CP — chưa soi được rule ngầm"
+  warn "chưa tìm thấy code của $ID trong: $CP — chưa soi được rule ngầm"
 fi
 grep -qE '^- v[0-9]+ ' "$F" && ok "History có dòng" || bad "History rỗng"
 git -C "$ROOT" status --porcelain 2>/dev/null | grep -q . && warn "còn thay đổi chưa commit"

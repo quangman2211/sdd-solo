@@ -123,6 +123,9 @@ UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn �
    ở mọi tầng). Câu *treo được* (đổi giá trị, xem bảng trên) thì không hỏi — ghi thẳng Open
    Question kèm quyết định tạm. Câu mở ("khổ gì?", "ai khổ?") không có lựa chọn thì vẫn hỏi
    bằng lời; luật này là cho câu **chọn giữa các hướng**.
+   **Trừ khi không có người ở đầu kia** (7.0.1, #53): phiên chạy theo lời giao của agent khác (orchestrate),
+   `/sdd-solo:adversarial --phieu`, và `/sdd-solo:verify` (không bao giờ hỏi) — câu đi vào phiếu của sổ hỏi đáp
+   hoặc dòng `Chưa quyết`, không `AskUserQuestion`. Hỏi mà không ai bấm thì lượt treo tới hết hạn.
 2. Khi user trả lời → nhắc ghi vào spec + commit `docs(UC-###)` trước khi code tiếp.
 3. Không viết code cho UC khi `.sdd/gate/UC-###.ok` chưa có, hoặc khi thư mục UC chưa có `design.md`.
 4. Dùng đúng tên trong `specs/glossary.md` (gốc) và `specs/<nghề>/glossary.md` của nghề đang làm. Từ trùng chữ mà khác nghĩa thì glossary nghề ghi "Không nhầm với …" — đọc cả hai trước khi đặt tên class, hàm, test.

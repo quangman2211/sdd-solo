@@ -71,6 +71,11 @@ từ lượt hiện tại. Không tham số → in bảng vai (§2) và hỏi us
    `glossary.md`/`rules.md` (gốc hay của cùng một nghề); đổi tên lớn không song song với việc code nào.
 7. **Không bao giờ giao cho agent:** đặt số/ngưỡng/giá · câu chốt hình dạng UC · `gate`/`close` · push/deploy/xoá.
    Đó là L3 của `hoi-dap.md`, và là việc A hỏi chủ dự án.
+8. **Agent con không được mở `AskUserQuestion`** — không ai ở đó để bấm, lượt treo tới hết hạn (#53). Lời giao chạy
+   `/sdd-solo:adversarial` ghi **`--phieu`**: câu hình dạng thành một phiếu K1…Kn cuối `hoi-dap.md`, UC/BR ghi
+   `Chưa quyết — Open Question (phiếu #n K#)`; A commit sổ rồi giao R. `/sdd-solo:verify` từ 7.0.1 không bao giờ hỏi
+   — mọi `F#` chưa bác thành `Chưa quyết (… · đề xuất: …)` và vẫn commit, không cần cờ. A đang ngồi cùng chủ dự án
+   mà muốn hỏi thẳng thì chạy adversarial trong **phiên của A** với `--hoi`, không giao.
 
 ## 3. Khuôn lời giao
 

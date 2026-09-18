@@ -3,13 +3,26 @@ name: verify
 description: Đọc lại tài liệu bằng subagent chưa bị neo để tìm chỗ spec tự mâu thuẫn hoặc khai điều không có thật. UC-### là bước ⑧ — cửa duy nhất của cổng DoR từ 6.0.0; CHG-### là cửa của cổng Phase 5; không tham số là quét cả cây specs/. Dùng khi sắp qua cổng, hoặc khi tài liệu vừa đổi nhiều và cần biết còn chỗ nào nói ngược nhau.
 disable-model-invocation: true
 argument-hint: "[UC-### | CHG-###] [--since <commit>] [--no-commit]"
-allowed-tools: Bash Read Write Edit Grep Glob Agent AskUserQuestion
+allowed-tools: Bash Read Write Edit Grep Glob Agent
 ---
 
 Verify pass cho `$1`.
 
 Có `UC-###` → **phần A** (bước ⑧). Có `CHG-###` → **phần A** với năm khác biệt ở **A′**. Có `--since` → **A″**
 (chỉ đọc phần đổi từ lần đọc lại trước). Không tham số → **phần B** (quét cây).
+
+**Verify không bao giờ hỏi** (7.0.1, #53). Không `AskUserQuestion`, ở mọi phần, dù ai gọi. Mỗi `F#` ra một trong
+hai đầu ra agent tự ghi được — bác kèm lý do, hoặc `Chưa quyết` kèm câu hỏi và đề xuất — rồi **ghi + commit**.
+Người quyết đọc `## Đọc lại` sau và trả lời trong hội thoại; áp câu trả lời là một lượt spec, đọc lại nó là
+`--since`. Vì sao: ca thật runxops, verify chạy trong phiên agent con (vai C / lời giao của A) mở `AskUserQuestion`
+— không ai ở đó để bấm, lượt treo tới khi hết hạn và `## Đọc lại` không được ghi. Tới 7.0.0 skill có nhánh "không
+có người trả lời thì đừng hỏi", nhưng agent không biết chắc mình đang ở nhánh nào; một luật không có nhánh thì
+không đoán sai được.
+
+**Bố cục:** mọi đường dẫn dưới đây viết theo cây 7.0. Repo 6.x (chưa `migrate --layout v7`): UC ở
+`specs/contexts/<ctx>/use-cases/`, BR ở `specs/br.md`, RULE ở `specs/rules.md`, entity ở
+`specs/contexts/<ctx>/entities.md`, sổ và vết ở `specs/internal/`. `context.sh` tra cả hai cây — dùng nó thay vì tự
+nhặt file.
 
 **Vì sao skill này tồn tại:** người viết không đọc được cái mình vừa viết — mắt đọc *ý định*, không
 đọc *chữ*. Bước ⑦ đã giải đúng nhu cầu đó bằng session mới cho ba vai. Bước ⑧ cần **cùng một thứ**,
@@ -22,7 +35,8 @@ hơn vẫn là cửa được đi.
 
 ## A. `/sdd-solo:verify UC-###` — bước ⑧
 
-1. Tìm UC: `find specs -path "*/br-*/use-cases/$1-*/$1.md"`. Không có → dừng, báo.
+1. Tìm UC: `find specs -path "*/use-cases/$1-*/$1.md" -not -path '*/_template/*'` (7.0: `specs/<core|nghề>/br-###/use-cases/`;
+   6.x: `specs/contexts/<ctx>/use-cases/`). Không có → dừng, báo.
 2. Kiểm đã chạy bước ⑦ chưa: mục `## Adversarial pass` phải có nội dung thật. Chưa có → dừng, bảo
    chạy `/sdd-solo:adversarial $1` trước. Đọc lại trước khi soi là đọc lại một bản sắp đổi.
 3. **Chạy verify bằng subagent riêng** (Agent tool). Đây là chỗ không được rút gọn: subagent
@@ -52,29 +66,34 @@ hơn vẫn là cửa được đi.
    lệnh đo lại** — đó là loại sai #7, và nó là loại duy nhất không thể phát hiện bằng cách đọc.
    Không có lệnh đo trong spec thì bản thân việc thiếu đó **đã là một phát hiện**; đừng tự bịa
    lệnh rồi coi như đã đối chiếu.
-4. Trình từng `F#` bằng `AskUserQuestion`, **một phát hiện một lượt**, kèm **nguyên văn cả hai chỗ
-   đang cãi nhau** như subagent đã trích. Bốn đầu ra hợp lệ:
-   - → sửa spec (kèm ID chỗ sửa: `UC-009 Main 7` · `RULE-001` · `AC-6`)
-   - → `Open Question` kèm quyết định tạm
-   - → `không phải lỗi vì <lý do>` — **bác phải rẻ**, một dòng là đủ; nhưng **lý do phải được ghi
-     lại**, để lần chạy sau không moi lại đúng câu đó
-   - → `Chưa quyết` — luôn hiện sẵn
+4. **Đối chiếu từng `F#` — agent chính làm, không hỏi ai** (#53). Đọc nguyên văn cả hai chỗ đang cãi nhau như
+   subagent đã trích, rồi ghi **một** trong hai đầu ra:
+   - → `không phải lỗi vì <lý do>` — chỉ khi lý do **truy được trong repo** (dòng spec, ADR, commit) mà hai chỗ
+     kia không nói ngược. **Bác phải rẻ**, một dòng là đủ; nhưng **lý do phải được ghi lại**, để lần chạy sau
+     không moi lại đúng câu đó.
+   - → `Chưa quyết (chờ chủ dự án: <câu hỏi một dòng> · đề xuất: <ID chỗ sửa>: <chữ mới>)` — mọi thứ còn lại, kể cả
+     sửa chữ/nhãn hiển nhiên. Đề xuất là **một** cách sửa cụ thể có ID (`UC-009 Main 7` · `RULE-001` · `AC-6`), để
+     chủ dự án trả lời bằng *"áp F3 F5, F7 thì …"* thay vì đọc lại từ đầu. Câu đổi hình dạng hay giá trị nghiệp
+     vụ: đề xuất ghi `___` kèm hai hướng và cái mất của mỗi hướng — không chọn hộ.
 
-   **Không có người trả lời** — lượt chạy theo lời giao của agent điều phối, hoặc user đã bảo *"tự chạy,
-   đừng hỏi"* — thì **không mở `AskUserQuestion`** (nó sẽ treo lượt vô hạn). Agent chính tự đối chiếu
-   nguyên văn hai phía của từng `F#`: bác được → `→ không phải lỗi vì <lý do>`; bác không được → `→ Chưa
-   quyết (chờ <ai>: <câu hỏi một dòng>)`. Cả hai đều là đầu ra hợp lệ của cổng, và **vẫn ghi + commit** ở
-   bước 5–7. Người quyết đọc `## Đọc lại` sau; sửa spec theo đó là một lượt verify nữa (`--since`, #49).
+   Không có đầu ra thứ ba. `→ sửa spec` và `→ Open Question` là đầu ra của **lượt áp** sau khi chủ dự án trả
+   lời (ghi đè đuôi dòng `F#` đó, rồi `--since`), không phải của lượt đọc.
+
 5. Ghi vào mục `## Đọc lại` của file UC, **đúng dạng này vì cổng đọc nó bằng máy**:
 ```
 ## Đọc lại
 - Ngày chạy: YYYY-MM-DD · Đầu chưa neo: subagent
-- F1 <phát hiện> [neo: Main 7 · RULE-003] → sửa UC-009 Main 7
+- F1 <phát hiện> [neo: Main 7 · RULE-003] → Chưa quyết (chờ chủ dự án: <câu một dòng> · đề xuất: UC-009 Main 7: <chữ mới>)
 - F2 <phát hiện> [neo: AC-6] → không phải lỗi vì <lý do>
 ```
+   (Sau lượt áp, F1 thành `→ sửa UC-009 Main 7`.) Cổng kiểm ID có thật sau `→` ở mọi dòng **trừ** dòng `→ Chưa
+   quyết` — đề xuất được phép trỏ tới AC/RULE chưa tạo.
    Cổng đòi **ít nhất một** dòng `F#` có **cả `[neo: ...]` lẫn đầu ra khác `___`**. Đó là toàn bộ
    chốt chống khai gian: bịa một dòng như vậy tốn đúng bằng đọc thật.
-6. Sửa những chỗ user chọn sửa. **Rồi QUÉT LẠI CẢ CÂY trước khi commit — bắt buộc, không bỏ:**
+6. **Lượt đọc không sửa spec** — không ai chọn gì trong lượt này. Chủ dự án trả lời các dòng `Chưa quyết` →
+   **lượt áp**: sửa spec theo câu trả lời, ghi lại đuôi dòng `F#` (`→ sửa UC-009 Main 7` · `→ Open Question` ·
+   `→ không phải lỗi vì`), rồi `/sdd-solo:verify $1 --since`. Ở lượt áp, **QUÉT LẠI CẢ CÂY trước khi commit — bắt
+   buộc, không bỏ:**
 
 ```bash
 # với MỖI con số / quyết định vừa đổi, tìm giá trị CŨ trên cả cây
@@ -113,7 +132,9 @@ git add specs/ && git commit -m "docs($1): đọc lại — <n> phát hiện, <m
    Có `--no-commit` → **vẫn ghi** `## Đọc lại` ở bước 5 (đó là sản phẩm của lượt), chỉ bỏ commit này; nói
    rõ với user: cổng ⑨ **chưa mở** cho tới khi chính commit đó tồn tại và là commit spec mới nhất. Không có
    cờ nào bỏ được bước 5.
-8. Nói với user: giờ chạy `/sdd-solo:gate $1` được ngay. Nếu lần đọc này không ra dòng `F#` nào có
+8. Nói với user: in **danh sách `Chưa quyết`** — mỗi dòng một `F#`, câu hỏi, đề xuất — để anh trả lời một lượt;
+   `Chưa quyết` là đầu ra hợp lệ của cổng, nên giờ chạy `/sdd-solo:gate $1` được ngay, nhưng cổng qua với câu
+   chưa trả lời là nợ anh tự nhận. Nếu lần đọc này không ra dòng `F#` nào có
    đầu ra thật thì cổng **không mở** — từ 6.0.0 không còn cửa qua đêm để rơi về. Nói thẳng điều đó,
    và nói luôn cái đúng phải làm: *"không thấy gì"* là bằng chứng yếu (Giới hạn 3) — mở rộng phạm vi
    (rule UC *không* trích, `sequence.md`, entities, số liệu đo lại) rồi chạy lại, chứ **không** bịa
@@ -178,11 +199,12 @@ Dùng khi tài liệu vừa đổi nhiều và cần biết còn chỗ nào nói
    **mỗi agent vẫn phải thấy cả hai phía** của cặp nó soi, nếu không nó chỉ đọc được một nửa cuộc cãi.
    Thêm một phép soi chỉ có ở cây 7.0: **gốc `specs/*.md`, `specs/adr/` và `specs/core/` có trích ID của
    nghề nào không** — `bash .sdd/scripts/layer-check.sh` đếm bằng máy, rẻ hơn đọc.
-3. Trình từng `F#` như phần A bước 4.
+3. Đối chiếu từng `F#` như phần A bước 4 — không hỏi.
 4. Ghi kết quả vào `notes/soat/verify-<YYYY-MM-DD>.md` (vết quá trình, ngoài `specs/`): phạm vi đã đọc, từng `F#` kèm nguyên
    văn hai phía, đầu ra. **Cả những dòng bị bác cũng ghi, kèm lý do bác** — đó là thứ làm lần chạy
    sau rẻ đi, và là thứ duy nhất còn lại sau khi đóng terminal.
-5. Sửa những chỗ user chọn, rồi `git commit -m "docs: verify pass <ngày> — <n> phát hiện"`.
+5. `git add notes/soat/ && git commit -m "docs: verify pass <ngày> — <n> phát hiện"` (6.x: `specs/internal/`), rồi in
+   danh sách `Chưa quyết` như phần A bước 8. Sửa spec theo câu trả lời là một lượt riêng.
 
 ---
 

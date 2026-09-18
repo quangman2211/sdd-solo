@@ -80,7 +80,9 @@ if [ "$PRE" = "1" ]; then
     # template là đúng lịch, không phải chưa điền. Không bỏ qua thì --pre đỏ,
     # adversarial từ chối chạy, và không có đường nào ra: muốn qua bước ⑦ phải
     # điền trước một mục chỉ tồn tại sau bước ⑦.
-    /^## Đọc lại/ { dl=1; oq=0; next }
+    # 7.0.1 (#52): ## Adversarial pass cùng loại — nó là ĐẦU RA của chính bước ⑦ mà --pre canh cửa; lượt thứ
+    # hai trở đi (câu cũ còn đầu ra ___, vai mới chưa chạy) thì --pre đỏ vì chính mục nó sắp điền.
+    /^## (Đọc lại|Adversarial pass)/ { dl=1; oq=0; next }
     /^## / { oq=0; dl=0 }
     {
       if (dl) next
@@ -332,6 +334,9 @@ RR="$(rr_lines "$F")"; RRN=0
 if [ -n "$RR" ]; then
   while IFS= read -r ln; do
     [ -z "$ln" ] && continue
+    # 7.0.1 (#53): `→ Chưa quyết (… · đề xuất: thêm AC-9)` là ĐỀ XUẤT chờ chủ dự án, không phải lời khai đã sửa —
+    # ID trong đó được phép chưa tồn tại. Verify không hỏi nữa nên mọi dòng chưa bác đều có dạng này.
+    case "$ln" in *"→ Chưa quyết"*) continue;; esac
     for id in $(printf '%s' "$ln" | sed 's/.*→//' | grep -oE '(RULE-[0-9]+|AC-[0-9]+|E[0-9]+)' | sort -u); do
       case "$id" in
         RULE-*) [ -n "$(rule_file "$id" "$ROOT")" ] || bad "đọc lại khai → $id nhưng rules.md không có";;

@@ -138,12 +138,18 @@ deprecate)
   # #45: bỏ UC cho tử tế — năm việc rời nhau (Status · History · marker · bảng · decisions) thì
   # một việc luôn bị bỏ sót. Ca thật runxops: UC-009/UC-012 deprecated bằng tay, marker cổng còn
   # nguyên (githook vẫn cho feat(UC-009)), History/decisions ghi tay, STATE ghi nợ nhiều ngày.
-  F="$(find_uc "$ID" "$ROOT")"; [ -z "$F" ] && exit 1
+  # 7.0.1 (#51): UC chỉ có dòng trong bảng (dự kiến rồi bỏ, chưa từng có file) — vẫn phải sửa bảng + decisions;
+  # tới 7.0.0 nhánh này exit 1 im lặng và bảng cứ nói draft mãi.
+  F="$(find_uc "$ID" "$ROOT")"
+  if [ -z "$F" ] && [ -z "$(uc_table_file "$ID" "$ROOT")" ]; then
+    printf '✗ %s không có file UC lẫn dòng trong bảng UC nào — ID sai?\n' "$ID" >&2; exit 1
+  fi
   shift 2; BY="-"; REASON=""
   while [ $# -gt 0 ]; do case "$1" in --by) BY="${2:--}"; shift 2;; *) REASON="$REASON $1"; shift;; esac; done
   REASON="$(printf '%s' "$REASON" | sed 's/^ *//')"
   [ -z "$REASON" ] && { echo "Dùng: pass.sh deprecate UC-### [--by UC-###] <lý do>" >&2; exit 2; }
   case "$BY" in UC-[0-9]*|-) ;; *) echo "--by phải là UC-### hoặc -" >&2; exit 2;; esac
+  if [ -n "$F" ]; then
   sed -i.bak -E 's/(\*\*Status:\*\* *)(draft|reviewed|implemented)/\1deprecated/' "$F" && rm -f "$F.bak"
   sed -i.bak -E "s/(\*\*Last updated:\*\* *).*/\1$(today)/" "$F" && rm -f "$F.bak"
   python3 - "$F" "$(today)" "$REASON" "$BY" <<'PY'
@@ -160,6 +166,7 @@ else:
     s = s.rstrip('\n') + '\n\n## History\n' + line + '\n'
 io.open(f, 'w', encoding='utf-8').write(s)
 PY
+  fi
   T="$(uc_table_file "$ID" "$ROOT")"; TF=""
   if uc_table_set "$ID" deprecated "$ROOT"; then TF="$T"; else
     printf '  ! bảng %s không có dòng %s\n' "${T#$ROOT/}" "$ID"; fi
@@ -174,11 +181,12 @@ PY
     printf -- '- %s — Bỏ %s (%s). Loại: giữ %s. Chi tiết: %s\n' "$(today)" "$ID" "$REASON" "$ID" "$( [ "$BY" = "-" ] && printf 'không có UC thay thế' || printf '%s' "$BY" )" >> "$DEC"
     DF="$DEC"
   fi
-  git -C "$ROOT" commit -q --only -m "docs($ID): deprecated — $REASON" -- "$F" $TF $DF $MKF || true
+  git -C "$ROOT" commit -q --only -m "docs($ID): deprecated — $REASON" -- $F $TF $DF $MKF || true
+  [ -z "$F" ] && printf '%s chưa có file UC — chỉ sửa bảng UC và decisions.md, không có History/Status để ghi.\n' "$ID"
   printf 'ĐÃ BỎ %s. Status -> deprecated · History v+1 · marker cổng %s · bảng UC %s · decisions.md %s · đã commit.\n' \
     "$ID" "$( [ -n "$MKF" ] && printf 'đã gỡ' || printf 'không có' )" "$( [ -n "$TF" ] && printf 'đã sửa' || printf 'không có dòng' )" "$( [ -n "$DF" ] && printf '+1 dòng' || printf 'không có file' )"
   [ "$BY" != "-" ] && printf 'Thay bằng %s — chưa có thư mục thì /sdd-solo:start %s.\n' "$BY" "$BY"
-  BRP="$(grep -oE 'BR-[0-9]+' "$F" | head -1)"; BRST="$(br_body "$BRP" "$ROOT" | sed -n 's/.*\*\*Status:\*\* *//p' | head -1 | awk '{print $1}')"
+  BRP="$(grep -oE 'BR-[0-9]+' ${F:-/dev/null} | head -1)"; [ -z "$BRP" ] && [ -n "$TF" ] && BRP="$(grep -oE '^# BR-[0-9]+' "$TF" | head -1 | tr -d '# ')"; BRST="$(br_body "$BRP" "$ROOT" | sed -n 's/.*\*\*Status:\*\* *//p' | head -1 | awk '{print $1}')"
   if [ -n "$BRP" ] && [ "$BRST" != "deprecated" ]; then
     echo "Nhớ: ## Related Use Cases của $BRP và STATE.md còn trỏ $ID thì sửa tay (/sdd-solo:state)."
   else

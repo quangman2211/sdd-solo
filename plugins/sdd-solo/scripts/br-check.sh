@@ -84,7 +84,11 @@ if [ "$V7" = 1 ]; then
     # (a) **Lát:** <nghề> · <tên lát> — nghề phải là thư mục chứa BR, tên lát phải có ở bảng ## Nghề và lát
     LAT="$(printf '%s' "$B" | grep -oE '^- \*\*Lát:\*\* *.*' | head -1 | sed 's/^- \*\*Lát:\*\* *//')"
     LN="$(printf '%s' "$LAT" | awk -F' · ' '{print $1}' | sed 's/[[:space:]]*$//')"
-    LT="$(printf '%s' "$LAT" | awk -F' · ' '{ $1=""; sub(/^ · /,""); print }' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/ — .*//')"
+    # Tên lát = mọi thứ sau tiền tố nghề ĐẦU TIÊN. Tới 7.0.0 dựng bằng awk -F' · ' '{$1=""…}' — awk ghép lại các
+    # trường bằng OFS (dấu cách), nên lát tên có ' · ' bên trong mất dấu chấm giữa và đỏ oan (runxops: 'core · đăng
+    # nhập · app quản lý (console)' → 'đăng nhập app quản lý (console)'). Cắt đúng một tiền tố, không tách trường.
+    LT=""; case "$LAT" in *" · "*) LT="${LAT#* · }";; esac
+    LT="$(printf '%s' "$LT" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/ — .*//')"
     OWN="$(owner_of_br "$ID" "$ROOT")"
     VT="$(awk '/^## Nghề và lát/{f=1;next} f&&/^## /{exit} f' "$VF" | grep -E '^\|' | grep -vE '^\|[- |]*\|$')"
     if [ -z "$LAT" ]; then

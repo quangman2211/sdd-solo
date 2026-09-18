@@ -1,6 +1,65 @@
 # Changelog
 
-## 7.0.0 — 2026-09-18 (đang làm — Bước B của plan 7.0, #54 #55)
+## 7.0.1 — 2026-09-19
+
+Chín lỗi gặp khi chạy 7.0.0 trên runxops thật (Bước C) — gộp một bản vá như peer điều phối giao. Thử trên bản sao
+runxops **trước** migrate (6.x) và **sau** migrate (7.0): snapshot output mọi script 7.0.0 ↔ 7.0.1 chỉ khác ở
+close-check (P-15) và một dòng đếm của `gate-check --pre` (#52). Fixture mới (repo giả 7.0 + bản sao 6.x): 17/17 xanh
+trên 7.0.1, 3/17 trên 7.0.0 — ba cái xanh sẵn là các ca "phải đỏ".
+
+- **#53 — verify không bao giờ hỏi; adversarial có chế độ phiếu.** Chạy dưới lời giao của agent khác, cả hai mở
+  `AskUserQuestion`: không ai bấm, lượt treo tới hết hạn, `## Adversarial pass` / `## Đọc lại` không được ghi.
+  - `/sdd-solo:verify` bỏ `AskUserQuestion` hẳn (khỏi `allowed-tools`). Mỗi `F#` ra một trong hai đầu ra agent tự
+    ghi: `→ không phải lỗi vì <lý do truy được>` hoặc `→ Chưa quyết (chờ chủ dự án: <câu> · đề xuất: <ID>: <chữ mới>)`
+    — rồi ghi + commit như cũ. Lượt đọc không sửa spec; sửa theo câu trả lời là lượt áp, đọc lại bằng `--since`.
+    Tới 7.0.0 có nhánh "không có người thì đừng hỏi", nhưng agent không biết chắc mình ở nhánh nào.
+  - `gate-check`: dòng `→ Chưa quyết` ở `## Đọc lại` không bị kiểm ID có thật — đề xuất được trỏ tới AC/RULE chưa
+    tạo. Dòng khai `→ sửa AC-9` mà AC-9 không có vẫn đỏ. `Chưa quyết` vẫn là đầu ra hợp lệ của cổng (như 6.x).
+  - `/sdd-solo:adversarial … [--phieu | --hoi]`. **phiếu** (`--phieu`, hoặc chạy theo lời giao của agent khác, hoặc
+    không chắc): câu hình dạng thành một phiếu `K1…Kn` cuối sổ hỏi đáp (`notes/hoi-dap/hoi-dap.md`; 6.x
+    `specs/internal/hoi-dap.md`; chưa có thì chép khuôn), UC/BR ghi `→ Chưa quyết — Open Question (phiếu #n K#)`,
+    không áp hướng mình nghiêng; tầng BR không áp phiếu nào đổi phạm vi, nên `br-scope-diff` phải rỗng trước
+    History. **hỏi** (mặc định khi chủ dự án tự gõ, hoặc `--hoi`): như cũ. `orchestrate` luật 8: lời giao chạy
+    adversarial ghi `--phieu`; `sdd-process` 1b thêm ngoại lệ "không có người ở đầu kia".
+  - Hai skill ghi rõ đường dẫn 6.x (UC ở `specs/contexts/`, BR ở `specs/br.md`, sổ ở `specs/internal/`); verify
+    bước 1 tìm UC ở cả hai cây (tới 7.0.0 chỉ glob `*/br-*/use-cases/`).
+- **#56 — migrate sửa cả đường dẫn không có tiền tố `uc_test_dir`.** Test dời nghề còn được import tương đối
+  (`'../use-cases/orders/UC-014/fakes.js'`, `'../../../use-cases/intake/UC-012/…'`); 7.0.0 chỉ thay chuỗi đầy đủ
+  `tests/use-cases/<ctx>/UC-###` nên bỏ sót — runxops phải sửa tay import trong `tests/` và `src/`. Giờ thêm mẫu
+  `<đuôi uc_test_dir>/<ctx>/UC-###` chặn biên hai đầu (`UC-014` không ăn vào `UC-0140`); quét thêm đuôi
+  `.tsx .jsx .mjs .cjs .mts .cts .py`. Đo trên bản sao 6.x: 11 import tương đối ở 8 file ngoài `uc_test_dir` đổi sang `use-cases/ebay/…`, file đích
+  đều có thật; mọi file sửa in ở "File đã sửa đường dẫn".
+- **#57 — migrate để index trống, in hai lệnh add theo ranh giới `.sdd/config`.** 7.0.0 kết bằng `git add -A` cả
+  `specs/` lẫn `tests/` → commit kế bị pre-commit chặn "trộn spec và code", gỡ bằng tay dễ kéo theo file lạ. Giờ
+  `git reset -q` cuối lượt; in (a) `git add -A -- specs notes .sdd/config .sdd/manifest <file khác đã sửa>` và (b)
+  `git add -A -- <uc_test_dir> <file code/test đã sửa>`, cả hai `chore(sdd): …` (commit-msg cho `chore(sdd)` qua kể cả
+  khi đụng code — không cần bịa ID). Danh sách tường minh: file untracked có từ trước (runxops: `example.md`) không bị
+  cuốn vào. Đo: hai lệnh chạy qua hook 6.x của bản sao, commit (a) 0 file code/test, commit (b) 0 file spec.
+- **#51 — `pass.sh deprecate` UC chỉ có dòng trong bảng.** UC dự kiến rồi bỏ, chưa từng có file → 7.0.0 exit 1 im
+  lặng, bảng nói `draft` mãi. `uc_table_file` giờ tìm bảng có dòng đó khi không có file UC (br.md của mọi lát; 6.x
+  `use-cases.md` mọi context); deprecate sửa bảng + thêm dòng decisions + commit, in "chưa có file UC — chỉ sửa bảng".
+  Không có file lẫn dòng bảng → `✗ … ID sai?`, exit 1.
+- **#52 — `gate-check --pre` bỏ qua `## Adversarial pass`** như đã bỏ `## Đọc lại`. Lượt adversarial thứ hai (câu cũ
+  còn `___`, vai mới chưa chạy) bị chính mục nó sắp điền chặn.
+- **Tên lát có ` · ` bên trong** (runxops: `core · đăng nhập · app quản lý (console)`, `ebay · (cũ) gán khoá sản phẩm ·
+  agent hỏi số liệu`). `br-check` dựng tên lát bằng `awk -F' · ' '{$1=""…}'` — awk ghép lại bằng dấu cách, mất dấu
+  chấm giữa, đỏ oan "không có trong bảng Nghề và lát". Giờ `${LAT#* · }`: cắt đúng một tiền tố nghề.
+- **layer-check bỏ qua mục vết** `## History` · `## Adversarial pass` · `## Đọc lại` (tới heading `## ` kế), ở cả ba chế
+  độ (R phiếu #71, chủ dự án uỷ quyền). Luật sổ cấm sửa dòng History, nên glossary/rules/7 ADR gốc có History cũ nhắc
+  ID nghề đỏ mỗi lần ai chạm file — cùng loại với `*.trace.md`/`evidence.md` đã miễn theo file. Dòng bỏ in thành
+  dòng trống: số dòng in ra giờ là số dòng thật (7.0.0 lệch vì xoá dòng trong khối ```). Fixture: ADR gốc History
+  trích `RULE-012` → xanh; thêm dòng Decision trích `RULE-012` → đỏ, chỉ đúng dòng 4.
+- **P-13 — gate-check "UC ở core trích ID của nghề"** gọi layer-check nên hết đếm mục vết theo luôn. runxops bản sao:
+  UC-024 hết ba hit ở Adversarial pass / Đọc lại; vẫn đỏ vì thân còn trích `BR-003`/`UC-014` (nợ thật).
+- **P-15 — close-check tìm code của UC theo commit, không chỉ theo slug.** Bố cục 7.0 đặt code theo khái niệm
+  (`src/core/{domain,use-cases,adapters}/session/`, `web/`, `deploy/`) → UC-024 runxops đỏ "đã có feat nhưng không
+  đọc được file code nào" dù 17/17 AC có test. Tập file = file trong `code_paths` mà commit không-merge có `(UC-###)`
+  **ở tiêu đề** đã chạm, còn tồn tại, không phải test (`test_paths` · `uc_test_dir` · `*.test.*`/`*.spec.*`); cộng
+  đường cũ theo slug. Số literal: in số đếm, 8 dòng đầu, danh sách đủ ở `.git/sdd/literal-UC-###.txt` (không cắt lặng
+  lẽ; trong `.git/` nên không làm bẩn cây); bỏ dòng chỉ là chú thích (`//` `/*` `*` `#` `--`) vì tập theo commit kéo
+  cả `.sh`/`.sql`. Bản sao runxops: UC-009 45 file · UC-012 63 · UC-014 95 (7.0.0: chỉ thư mục slug).
+
+## 7.0.0 — 2026-09-18 (Bước B của plan 7.0, #54 #55)
 
 **Đổi lớn:** trục `specs/contexts/<ctx>/` → `core|<nghề>` × `br-###/`, thêm tầng 0 `specs/vision.md`. Repo 6.x
 chưa migrate vẫn chạy y nguyên (đo bằng snapshot output của mọi script trên bản sao runxops 6.x: khác 0 dòng ngoài

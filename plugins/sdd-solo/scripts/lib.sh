@@ -90,7 +90,14 @@ br_untouched() {
 # uc_table_file UC-### <root> → file có bảng | UC-### | … | Status |: 7.0 = br.md của lát,
 # 6.x = use-cases.md của context (#44)
 uc_table_file() {
-  local f b; f="$(find_uc "$1" "$2")"; [ -n "$f" ] || return 0
+  local f b t; f="$(find_uc "$1" "$2")"
+  if [ -z "$f" ]; then
+    # 7.0.1 (#51): UC chỉ có dòng trong bảng, chưa từng có file (UC dự kiến rồi bỏ) → tìm bảng có dòng đó
+    for t in $(br_files "$2") $(ls "$2"/specs/contexts/*/use-cases.md 2>/dev/null); do
+      grep -qE "^\| *$1 *\|" "$t" && { printf '%s' "$t"; return 0; }
+    done
+    return 0
+  fi
   case "$f" in
     */specs/contexts/*) printf '%s/specs/contexts/%s/use-cases.md' "$2" "$(owner_of "$f")";;
     *) b="$(br_of "$f")"; [ -n "$b" ] && br_file "$b" "$2";;

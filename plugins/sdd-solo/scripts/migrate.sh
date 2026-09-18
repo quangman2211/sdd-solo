@@ -52,9 +52,11 @@ if [ -n "$LAYOUT" ]; then
   echo "=== Dời sang bố cục 7.0 — core|nghề × br-### ==="
   [ "$DRY" = "1" ] && info "--dry-run: KHÔNG đụng đĩa, chỉ in ra sẽ làm gì"
   info "map: ${MAPF#$ROOT/}"
-  python3 - "$ROOT" "$DRY" "$MAPF" "${TPLD:+$TPLD/skel}" "${TPLD:+$TPLD/project}" "$(uc_test_dir "$ROOT")" "$(today)" <<'PY'
+  python3 - "$ROOT" "$DRY" "$MAPF" "${TPLD:+$TPLD/skel}" "${TPLD:+$TPLD/project}" "$(uc_test_dir "$ROOT")" "$(today)" "$(code_paths "$ROOT")" "$(test_paths "$ROOT")" <<'PY'
 import sys, re, io, os, glob, subprocess, shutil
-ROOT, DRY, MAPP, SKEL, TPL, UCT, TODAY = sys.argv[1:8]; DRY = DRY == "1"
+ROOT, DRY, MAPP, SKEL, TPL, UCT, TODAY, CODEP, TESTP = sys.argv[1:10]; DRY = DRY == "1"
+CODEP, TESTP = CODEP.split(), TESTP.split()
+def under(f, ps): return any(p in ('.', './') or f == p.rstrip('/') or f.startswith(p.rstrip('/') + '/') for p in ps)
 os.chdir(ROOT)
 def rd(p):
     try: return io.open(p, encoding='utf-8').read()
@@ -316,12 +318,22 @@ for c in CTXS:
     brs = sorted(set(x['br'] for x in UCS.values() if x['ctx'] == c))
     if len(brs) == 1: REPL.append((f'specs/contexts/{c}/use-cases.md', f'{br_dir(brs[0])}/br.md'))
 REPL.sort(key=lambda t: -len(t[0]))
+# #56 (7.0.1): test dời nghề còn được trích KHÔNG có tiền tố uc_test_dir — import tương đối từ code/harness
+# (`../use-cases/orders/UC-014/fakes`), đường dẫn trong vitest/jest config. REPL chỉ biết `tests/use-cases/…` nguyên
+# chữ nên bỏ sót: runxops Bước C phải sửa tay import của src/. Đuôi = tên thư mục cuối của uc_test_dir, chặn biên
+# hai đầu để `UC-014` không ăn vào `UC-0140` và `my-use-cases/` không khớp.
+RREPL = []
+UCTAIL = os.path.basename(UCT.rstrip('/'))
+for o, nw in MOVED:
+    if o.startswith(UCT.rstrip('/') + '/') and nw.startswith(UCT.rstrip('/') + '/'):
+        a, b = o[len(UCT.rstrip('/')) + 1:], nw[len(UCT.rstrip('/')) + 1:]
+        RREPL.append((re.compile(r'(?<![\w.-])' + re.escape(f'{UCTAIL}/{a}') + r'(?![\w-])'), f'{UCTAIL}/{b}'))
 AMBIG = ['specs/br.md', 'specs/br.evidence.md', 'specs/contexts/', 'specs/internal/']
 FILES = []
 for dp, dn, fn in os.walk('.'):
     dn[:] = [d for d in dn if d not in ('.git', 'node_modules', '.speckit', 'dist') and not (dp == '.' and d == '.sdd')]
     for f in fn:
-        if re.search(r'\.(md|json|ya?ml|ts|js|sh|txt)$', f): FILES.append(os.path.join(dp, f)[2:])
+        if re.search(r'\.(md|json|ya?ml|[cm]?[tj]sx?|py|sh|txt)$', f): FILES.append(os.path.join(dp, f)[2:])
 FILES.append('.sdd/config'); FILES.append('CLAUDE.md')
 # brief nguồn KHÔNG sửa: br-check/session-start so sha của nó với dòng `Nguồn brief:` — đổi một byte là "brief đã đổi kể từ lần nạp"
 BRIEF = (re.search(r'(?m)^brief_path=(.*)$', rd('.sdd/config') or '') or [None, ''])[1].strip()
@@ -346,6 +358,7 @@ for dst, src in sorted(cands.items()):
     if t is None: continue
     t2 = t
     for o, nw in REPL: t2 = t2.replace(o, nw)
+    for rx, nw in RREPL: t2 = rx.sub(nw, t2)
     if t2 != t: write(dst, t2); TOUCH.append(dst)
     left = sum(t2.count(a) for a in AMBIG)
     if left: LEFT[dst] = left
@@ -375,8 +388,20 @@ if not DRY:
             if os.path.isdir(dp) and not os.listdir(dp): os.rmdir(dp)
         d = f'specs/contexts/{c}'
         if os.path.isdir(d) and os.listdir(d): NEED.append((f'specs/contexts/{c}/ còn file không thuộc khuôn — xem và dời tay', d))
-    for pth in ['specs', 'notes', UCT, '.sdd/config', '.sdd/manifest']:
-        if os.path.exists(pth): subprocess.run(['git', 'add', '-A', pth], check=False)
+    # #57 (7.0.1): KHÔNG để index đã stage. Tới 7.0.0 script `git add -A` cả specs lẫn tests → commit kế trộn spec +
+    # test và pre-commit chặn ("trộn spec và code"); người gỡ bằng tay dễ kéo luôn file lạ đang stage. git mv/add ở trên
+    # chỉ để git theo được đổi tên; trả index về HEAD, in hai lệnh add theo đúng ranh giới .sdd/config.
+    subprocess.run(['git', 'reset', '-q'], check=False)
+def intracked(p): return subprocess.run(['git', 'ls-tree', '-d', '--name-only', 'HEAD', p], capture_output=True, text=True).stdout.strip() != '' or subprocess.run(['git', 'ls-files', '--error-unmatch', p], capture_output=True).returncode == 0
+CT = CODEP + TESTP + [UCT]
+ADD_A, ADD_B = [], []
+for pth in ['specs', 'notes', '.sdd/config', '.sdd/manifest']:
+    if os.path.exists(pth) or intracked(pth): ADD_A.append(pth)
+for f in sorted(set(TOUCH)):
+    if under(f, ['specs', 'notes', '.sdd']): continue
+    (ADD_B if under(f, CT) else ADD_A).append(f)
+if os.path.exists(UCT) or intracked(UCT):
+    if any(o.startswith(UCT.rstrip('/') + '/') for o, nw in MOVED): ADD_B = [UCT] + [f for f in ADD_B if not under(f, [UCT])]
 # ── báo cáo ───────────────────────────────────────────────────────────────
 print(f'\n=== {"SẼ dời" if DRY else "Đã dời"} ({len(MOVED)}) ===')
 for o, nw in MOVED: print(f'  {o}\n      → {nw}')
@@ -390,8 +415,15 @@ for i, (w, p) in enumerate(NEED, 1): print(f'  {i:2}. {w}\n      @ {p}')
 print()
 if DRY: print('--dry-run: chưa đụng đĩa. Chạy lại không có --dry-run để làm thật.')
 else:
-    print('Chưa commit — script cố ý không commit hộ. Đọc git status, làm các mục CẦN TAY (hoặc để sau), rồi:')
-    print("  git add -A && git commit -m 'chore(sdd): migrate bố cục 7.0 — core|nghề × br-###, tầng 0 vision.md'")
+    q = lambda xs: ' '.join("'" + x.replace("'", "'\\''") + "'" if re.search(r'[^\w./@:+-]', x) else x for x in xs)
+    print('Chưa commit, index để trống — script cố ý không stage/commit hộ. Đọc git status, làm các mục CẦN TAY (hoặc để sau),')
+    print('rồi HAI commit tách theo ranh giới .sdd/config (pre-commit chặn spec + code/test trong một commit):')
+    print(f"  git add -A -- {q(ADD_A)} && git commit -m 'chore(sdd): migrate bố cục 7.0 — core|nghề × br-###, tầng 0 vision.md'")
+    if ADD_B:
+        print(f"  git add -A -- {q(ADD_B)} && git commit -m 'chore(sdd): migrate 7.0 — dời test UC theo nghề, sửa đường dẫn trong code/test'")
+    else:
+        print('  (không có test dời hay file code/test nào phải sửa — một commit là đủ)')
+    print('  File khác đang untracked/đã sửa trước khi migrate KHÔNG nằm trong hai lệnh trên — cố ý.')
     print('Sau đó: /sdd-solo:init --update (khuôn mới, dọn khuôn cũ) · /sdd-solo:status · gate-check từng UC đang mở.')
 PY
   exit $?
