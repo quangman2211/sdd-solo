@@ -8,7 +8,9 @@ Repo này là **plugin Claude Code** (đồng thời là marketplace một plugi
 plugins/sdd-solo/
   .claude-plugin/plugin.json         version
   skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · role · phieu · queue · numbers · state · status
-  skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
+  skills/<name>/references/*.md      nhánh loại trừ nhau, chỉ đọc khi cần (8.1): adversarial uc-layer|br-layer ·
+                                     intake interview-mode|brief-conversion · verify tree-sweep · orchestrate herdr-traps
+  skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh) — KHÔNG tách
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
   scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3) · mermaid.sh (vỏ của parser mermaid, 7.5) · numbers.sh (gom ô `___` còn nợ số, 8.0)
   scripts/kw.tsv                     **bảng từ khoá tài liệu song ngữ** (7.7) — bash và node đọc chung
@@ -94,6 +96,20 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   đường rẻ nhất luôn là điền bừa, tức là đúng cái thất bại mà luật kia sinh ra để chặn. `numbers.sh` in tất cả
   một lượt, phân loại **theo cấu trúc chứ không theo tên mục** (ô trống đứng một mình trong ô bảng = tham số),
   kèm dòng `blocks:` nói UC nào đang chờ. Không thêm luật mới, không chặn gì: đây là bảng việc, không phải cổng.
+- **Nhánh loại trừ nhau của skill nằm ở `skills/<tên>/references/`, không nằm trong `SKILL.md`** (8.1.0). Cơ chế là
+  *progressive disclosure* của Claude Code, đã kiểm ở `skill-creator` của Anthropic: **metadata luôn trong ngữ cảnh →
+  `SKILL.md` nạp trọn mỗi lần skill chạy → file trong `references/` chỉ đọc khi cần** ("Claude reads only the relevant
+  reference file"). Lý do đo được: `adversarial` có 87% thân là hai tầng UC/BR loại trừ nhau, `intake` 60% là hai chế
+  độ — mỗi lượt chạy nạp cả nhánh nó không bao giờ dùng. Sau khi tách: `adversarial BR-###` **−49%**, `intake` −27%,
+  `adversarial UC-###` −25% byte mỗi lượt.
+  Ba luật khi tách: ① router phải **mệnh lệnh và nêu đường dẫn đầy đủ** `${CLAUDE_PLUGIN_ROOT}/skills/<tên>/references/…`
+  kèm đường lùi `find ~/.claude/plugins …`, đúng khuôn skill đã dùng cho script — đọc hụt là mất trắng luật, không phải
+  chậm hơn. ② tách xong phải **xoá hẳn** khỏi thân, không để hai bản. ③ ca 51 giữ hai chiều: file được nhắc phải có thật,
+  file có thật phải được nhắc. Bẻ chiều nào ca 51 cũng đỏ đúng chiều đó.
+  **KHÔNG tách** khi skill là một mạch tuyến tính (`design`: 7 bước, ai chạy cũng qua đủ) hay khi payload CHÍNH LÀ khối
+  kiến thức (`sdd-process`: model tự gọi nó *vì* muốn khối đó — tách ra là bắt đọc hai lần). Và **không rút ngắn
+  `description`**: tài liệu nói mọi thông tin "khi nào dùng" phải nằm ở đó và nên viết "hơi thúc", vì Claude có xu hướng
+  *bỏ sót* skill chứ không phải gọi thừa. Cả 18 mô tả cộng lại mới ~1.500 token, cắt ở đó là đổi đúng thứ đang có tác dụng.
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 
@@ -165,6 +181,9 @@ python/grep quanh chữ có dấu (đo được: 126 dòng lệch ở `context.s
 
 ## Khi viết skill
 - Skill lệnh: `disable-model-invocation: true`, có `argument-hint`, gọi script qua `${CLAUDE_PLUGIN_ROOT}/scripts/…` và kèm fallback `find ~/.claude/plugins -name <script> -path '*sdd-solo*'`.
+- **Skill có hai nhánh loại trừ nhau thì nhánh đi vào `references/`, thân giữ router** (8.1.0, xem Ranh giới). Router
+  là một bảng `<điều kiện> | <file> | <nó chứa gì>`, nói "read exactly one, now", và nêu đủ đường dẫn + đường lùi.
+  Thêm/đổi tên file trong `references/` thì ca 51 bắt cả hai chiều — đừng sửa ca cho khớp, sửa router.
 - Skill không được tự sửa spec thay user trừ khi user bảo; không đề xuất viết code ở các bước spec.
 - **Skill viết bằng tiếng Anh** (7.8.0), và mở đầu bằng dòng `Reply in whatever language the user writes in; keep
   file names, IDs and slugs in English.` — plugin là tiếng Anh, còn giọng trả lời đi theo ngôn ngữ user gõ.

@@ -1,5 +1,56 @@
 # Changelog
 
+## 8.1.0 — 2026-09-23
+
+**Nhánh loại trừ nhau của skill ra `references/`.** Kế hoạch ghi "rút gọn sáu skill nặng". Đo trước thì tiền đề
+ấy **sai**: 157 KB skill, trong đó chỉ 4–11% là văn hậu nghiệm (và nó gánh việc — nó ngăn model "cải tiến" mất
+một luật), 2,3% là trùng lặp giữa skill, còn lại là chỉ dẫn. Cắt chữ để đạt một con số dòng là cắt mất hành vi.
+
+Cái đo được lại là chuyện khác hẳn: **các skill nặng vì chứa những nhánh loại trừ nhau, và mỗi lượt chạy nạp
+hết cả hai.** `adversarial` có **87%** thân là tầng UC (12,1 KB) cộng tầng BR (7,0 KB) — một lượt dùng đúng một
+tầng. `intake` **60%** là chế độ phỏng vấn (6,6 KB) cộng chế độ chuyển brief (7,4 KB). Phụ lục herdr của
+`orchestrate` (2,5 KB) tự nó ghi *"not a dependency"*.
+
+**Cơ chế đã kiểm, không suy đoán.** `skill-creator` của Anthropic nói rõ ba mức nạp: *metadata* luôn trong ngữ
+cảnh → *`SKILL.md` body* nạp trọn mỗi lần skill chạy → *bundled resources* đọc khi cần, và với thư mục
+`references/`: **"Claude reads only the relevant reference file."** Mười mấy skill chính thức trên máy đang dùng
+đúng mẫu này. Nên đây là mẫu có sẵn của nền tảng, không phải sáng chế của plugin.
+
+| Lượt chạy | trước | sau | |
+|---|---|---|---|
+| `adversarial BR-###` | 21.955 B | 11.192 B | **−49%** |
+| `intake` (phỏng vấn) | 23.277 B | 17.099 B | −27% |
+| `adversarial UC-###` | 21.955 B | 16.470 B | −25% |
+| `intake <brief>` | 23.277 B | 17.823 B | −23% |
+| `orchestrate` (không chạy herdr) | 20.738 B | 18.810 B | −9% |
+| `verify UC-###` | 20.363 B | 18.915 B | −7% |
+| `verify` (quét cây) | 20.363 B | 21.078 B | **+4%** |
+
+Dòng cuối tăng thật, và nó là một đánh đổi có chủ ý: phần A của `verify` (vòng đọc lại một ID) **ở lại trong
+thân** vì đó là lượt chạy thường xuyên; chỉ nhánh quét cây — hiếm — ra file riêng. Lượt hiếm cõng thêm 715 B
+để lượt thường bớt 1.448 B. Ghi ra đây chứ không giấu: một bảng chỉ toàn dấu trừ là một bảng đã bị chọn lọc.
+
+**Ba luật khi tách**, vì hỏng ở đây hỏng im lặng — `SKILL.md` vẫn hợp lệ, `plugin validate` vẫn xanh, chỉ là
+model được bảo đọc một file không có, hoặc một file có thật mà không ai bảo đọc (luật biến mất):
+① router phải **mệnh lệnh**, nêu đủ `${CLAUDE_PLUGIN_ROOT}/skills/<tên>/references/…` kèm đường lùi
+`find ~/.claude/plugins …` — đúng khuôn skill đã dùng cho script từ 1.0.0; đọc hụt là mất trắng luật, không
+phải chạy chậm hơn. ② tách xong **xoá hẳn** khỏi thân, không để hai bản trôi. ③ ca 51 giữ **cả hai chiều**.
+
+**Hai chỗ cố tình KHÔNG tách**, và đây là phần khó hơn phần tách:
+- `design` (139 dòng) là một mạch tuyến tính bảy bước — ai chạy cũng qua đủ, không có nhánh nào để cắt.
+- `sdd-process` (21 KB, skill **model tự gọi**) — nó là *kiến thức nền*, và model gọi nó chính **vì** muốn khối
+  kiến thức ấy. Tách ra là bắt đọc router rồi đọc tiếp: tệ hơn, không tốt hơn. Cám dỗ ở đây là tách file to nhất.
+- Và **không rút ngắn `description`** — đó là thứ duy nhất nạp ở MỌI phiên (18 mô tả ≈ 1.500 token), nhưng tài
+  liệu nói mọi thông tin "khi nào dùng" phải nằm ở đó và nên viết *hơi thúc*, vì Claude có xu hướng **bỏ sót**
+  skill chứ không phải gọi thừa. Cắt ở đó là đổi đúng thứ đang có tác dụng lấy 750 token.
+
+**Ca 51** kiểm năm điều: mọi `references/*.md` được nhắc đều có thật · mọi file có thật đều được nhắc · router
+nêu đủ đường dẫn và đường lùi · mọi `SKILL.md` dưới 500 dòng (ngưỡng của `skill-creator`) · phần đã dời không
+còn sót trong thân. Kiểm ngược lại phép kiểm: đổi tên một file → đỏ ở chiều "thiếu"; thêm một file lạc → đỏ ở
+chiều "mồ côi"; khôi phục → xanh lại.
+
+Bộ test: **51 ca · 248 xanh · 0 đỏ**. Không đụng script, không đụng khuôn, không đổi một luật nào của cổng.
+
 ## 8.0.1 — 2026-09-23
 
 **Lỗi chặn phát hành của 8.0.0: `UC-###.trace.md` không nằm trong pathspec spec của `gate-check`.** Từ 8.0.0
