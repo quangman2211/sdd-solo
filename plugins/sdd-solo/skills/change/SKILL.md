@@ -30,6 +30,6 @@ Phase 5 is only for a change that makes **an old AC no longer true** on an alrea
 ```
 The script sets `Status: applying`, writes `.sdd/gate/$1.ok`, and commits `docs($1): change reviewed — Phase 5 gate passed`. Without that marker the githook blocks every code commit tagged `($1)`.
 5. STATE.md: `Working on: $1 · past the Phase 5 gate — applying`. `Next: test for the new AC (red first) → change the domain → the old ACs that were kept are still green`.
-6. Remind the user: an AC marked `REMOVED` is **not deleted** from the baseline at archive time — it is marked `deprecated` with a date. And the last task in `tasks.md` is the archive: merge the delta into `specs/`, the UC's `## History` v+1, commit `chore($1): archive`.
+6. Remind the user: an AC marked `REMOVED` is **not deleted** from the baseline at archive time — it is marked `deprecated` with a date. And the last task in `tasks.md` is the archive: merge the delta into `specs/`, the UC's `## History` v+1 in `UC-###.trace.md`, commit `chore($1): archive`.
 
 There is no skip flag.

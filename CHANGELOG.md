@@ -1,5 +1,24 @@
 # Changelog
 
+## 8.0.1 — 2026-09-23
+
+**Lỗi chặn phát hành của 8.0.0: `UC-###.trace.md` không nằm trong pathspec spec của `gate-check`.** Từ 8.0.0
+vòng đọc lại ghi CHỈ vào file cạnh, nên commit của `/sdd-solo:verify` trên repo đã migrate chạm **đúng một
+file** — và file đó không có trong `SPECP`, nên `glog` không thấy commit ấy. Cổng hoặc bỏ qua nó (lọt qua cửa
+vân tay "sau đọc lại chỉ sửa chữ nghĩa"), hoặc không tìm thấy commit đọc lại nào cả.
+
+**Vì sao mọi phép đo của 8.0.0 vẫn xanh.** Phép đo là so verdict trước/sau trên một repo THẬT — và trong một
+repo thật chưa từng tồn tại một commit chỉ chạm `UC-###.trace.md`, vì trước 8.0.0 file đó không phải chỗ ghi.
+Một lỗi chỉ xuất hiện ở trạng thái mà lịch sử chưa có thì so sánh lịch sử không bao giờ thấy. Nên ca 50 dựng
+đúng trạng thái đó: migrate, viết một vòng đọc lại vào file cạnh, commit **chỉ** file ấy, rồi đòi cổng nhận ra
+nó là commit đọc lại. Bỏ bản vá đi thì 2/4 phép đo của ca này đỏ.
+
+- `SPECP` thêm `$ID.trace.md` ở cả hai nhánh bố cục (7.0 và 6.x).
+- `verify` nói rõ commit gồm những file nào: file cạnh, cộng mọi file spec vòng ấy thật sự có sửa.
+- `adversarial` · `change`: `## History` v+1 ghi ở `UC-###.trace.md` — ba chỗ còn nói như trước 8.0.0.
+
+Bộ test: **50 ca · 240 xanh · 0 đỏ**.
+
 ## 8.0.0 — 2026-09-23
 
 **Dấu vết ra khỏi thân UC · trần vòng đọc lại · gom câu hỏi số.** Ba thay đổi, một nguyên nhân chung đo được

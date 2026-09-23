@@ -127,7 +127,7 @@ An empty `→ spec` claim cannot be checked, and `gate-check` will catch it (#12
 
    For each option the user picks:
    - spec → fix it in the right place (add an E#, an AC, edit the RULE in `rules.md`, add a Screens row), then
-     `## History` v+1 recording "after the ___ role's adversarial pass".
+     `## History` v+1 **in `UC-###.trace.md`** recording "after the ___ role's adversarial pass".
 
      **If the fix changes the ORDER of the steps — a half-done fix here is caught by no check.**
      Swap the content of two steps while keeping the numbers and every step still exists, every number is still
@@ -252,7 +252,7 @@ Any ✗ line → **stop**, print the output, tell the user to finish the BR and 
      `→ reopen when ___`
    - → a new `CON-###` in `## Constraints`
 
-6. **"What was gained and what was lost" — before writing `## History` v+1, required, never skipped.**
+6. **"What was gained and what was lost" — before writing `## History` v+1 (in the trail file), required, never skipped.**
 
    Once the step 5 tickets are applied but `## History` is **not** yet written, run:
 

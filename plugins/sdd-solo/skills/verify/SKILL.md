@@ -137,9 +137,12 @@ grep -rn '<old value>' specs/ scripts/ *.md
 
 7. Then commit **on its own, with exactly this subject** — the gate recognises it by this:
 ```bash
-git commit --only -m "docs($1): re-read — <n> findings, <m> to fix" -- <the UC-###.md file (or proposal.md)>
+git commit --only -m "docs($1): re-read — <n> findings, <m> to fix" -- <UC-###.trace.md (or proposal.trace.md)> [<UC-###.md and any rules.md you actually changed>]
 ```
    (A project writing in Vietnamese commits `docs($1): đọc lại — …`; the gate accepts both.)
+   Since 8.0.0 the `## Re-read` section lives in the trail file, so this commit usually touches **only** that file —
+   name it explicitly, and name every other spec file this round actually changed. `UC-###.trace.md` is a spec path
+   to the gate (8.0.1), so a commit touching nothing else is still recognised as the re-read commit.
    With `--no-commit` → **still write** `## Re-read` at step 5 (that is the round's product), only skip this commit;
    say clearly to the user that gate ⑨ **stays shut** until that commit exists and is the newest spec commit. No flag
    skips step 5.

@@ -449,10 +449,15 @@ fi
 # red with "BEHAVIOUR changed (unclear)". The pattern must reach git intact: glog turns off shell globbing (with the repo as
 # cwd the shell would expand the pattern into the current path, exactly the trap being avoided).
 if [ "$(layout "$ROOT")" = v7 ]; then
-  SPECP="specs/*/br-*/use-cases/$ID-*/$ID.md specs/*/br-*/use-cases/$ID-*/$ID.flow.md specs/*/br-*/use-cases/$ID-*/screens $RFS $EFS specs/contexts/*/use-cases/$ID-*/$ID.md specs/contexts/*/use-cases/$ID-*/$ID.flow.md specs/contexts/*/use-cases/$ID-*/screens specs/contexts/*/entities.md specs/rules.md"
+  SPECP="specs/*/br-*/use-cases/$ID-*/$ID.md specs/*/br-*/use-cases/$ID-*/$ID.trace.md specs/*/br-*/use-cases/$ID-*/$ID.flow.md specs/*/br-*/use-cases/$ID-*/screens $RFS $EFS specs/contexts/*/use-cases/$ID-*/$ID.md specs/contexts/*/use-cases/$ID-*/$ID.trace.md specs/contexts/*/use-cases/$ID-*/$ID.flow.md specs/contexts/*/use-cases/$ID-*/screens specs/contexts/*/entities.md specs/rules.md"
 else
-  SPECP="$F $DIR/$ID.flow.md $DIR/screens $RFS $EFS"
+  SPECP="$F $(trace_of "$F") $DIR/$ID.flow.md $DIR/screens $RFS $EFS"
 fi
+# 8.0.1: $ID.trace.md IS a spec path. From 8.0.0 the re-read is written there and nowhere else, so a verify commit
+# on a migrated repo touches only that file — and with it missing from the pathspec `glog` returns nothing, §9 reads
+# "there is no docs(UC-###) commit yet", and THE GATE CAN NEVER OPEN. It is invisible to a before/after comparison
+# of an existing repo (no such commit exists yet in one), which is exactly why it needed its own test: case 50 writes
+# a re-read into the trail, commits only that file, and demands the gate see it.
 glog() { set -f; git -C "$ROOT" log "$@" -- $SPECP 2>/dev/null; set +f; }
 LAST="$(glog -1 --format=%cs --grep="^docs($ID)")"
 LASTS="$(glog -1 --format=%s --grep="^docs($ID)")"
