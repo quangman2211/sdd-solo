@@ -1,5 +1,43 @@
 # Changelog
 
+## 8.2.0 — 2026-09-24
+
+Hai mục runxops ghi trong ngày, **cả hai không chặn gì** — đều là chỗ cơ chế vai 7.2/7.3 thiếu một nửa.
+
+### P-48 — `--worktree` có lượt đi, không có lượt về
+
+`role.sh --worktree` dựng worktree cộng nhánh `<V>.nhanh`, và tới 8.1.1 không có lệnh ngược nào; chuỗi chuẩn
+§4 của `orchestrate` kết ở `/sdd-solo:close` rồi hết. Đo ở runxops 24/09: **4 workspace + 18 nhánh**
+`code/`·`test/` của UC-016…030 còn sót sau close, và **chủ dự án tự phát hiện** — không phép kiểm nào hỏi.
+
+`role.sh --don UC-### [--dry-run]`: gỡ các worktree của UC đó theo `<V>.nhanh`, `worktree prune`, xoá các nhánh
+tương ứng. Cộng một dòng "dọn làn" ở cuối §4 và một dòng ở `references/herdr-traps.md`: **`/exit` không đóng
+pane** — nó kết phiên và trả pane về shell, pane vẫn còn; ai mở pane thì người ấy đóng, plugin không cấp runner.
+
+**Không có `--force`, và đó là cả thiết kế.** `git worktree remove` từ chối worktree còn file chưa commit hoặc
+chưa theo dõi; `git branch -d` từ chối nhánh chưa hợp nhất. Hai lời từ chối ấy được giữ nguyên và **nêu tên**,
+rồi lệnh thoát 1. Một cái làn không xoá được là một cái làn còn thứ gì đó trong đó — đó là việc phải nhìn, không
+phải chướng ngại phải vượt. Nhánh không có `*` trong mẫu (vai spec giữ `main`) thì không bao giờ bị đụng.
+
+### P-47 — lời giao coi mọi vai là vai ÁP, kể cả vai TRẢ LỜI
+
+`role.sh R <phiếu>` in mục 1 *"áp đúng phần Cho: R"* và mục 3 rỗng. Lý do đơn giản đến mức dễ bỏ qua: **R là
+vai viết ra `Cho:`**, nên lúc R nhận việc thì phiếu chưa có `Cho:` nào để áp. A phải viết tay mọi lời giao cho R.
+
+Vai có `<V>.commit=khong` giờ nhận **khuôn trả lời**: xếp mức từng `K` L0–L3 · tra nguồn `file:line` (không nguồn
+thì không phải L0) · viết ô `Trả lời (R):` cộng một dòng `Cho:` mỗi vai · **không commit** (A commit) ·
+`KETQUA neo=<file phiếu>` chứ không phải hash. Mục 3 liệt kê các khối `**K#**` của phiếu, rơi về dòng `Câu:` khi
+phiếu chỉ có một câu. Mục 2 trỏ thêm sổ hỏi để tra bảng bốn mức. Và một câu nói thẳng: **L3 thì R không quyết** —
+soạn 2–4 lựa chọn cho chủ dự án, luôn kèm "Chưa quyết — ghi Open Question".
+
+Công tắc là `commit=khong`, **không phải chữ R**: plugin giữ cơ chế, repo giữ tên vai (7.2) — một repo gọi trọng
+tài là gì cũng được. Vai `commit=co` nhận đúng khuôn áp như cũ, có ca kiểm giữ chiều đó.
+
+### Test
+
+Hai ca mới, cả hai đã kiểm là **đỏ trên 8.1.1** trước khi sửa (7/8 và 6/8 phép đỏ, trên một worktree ở `HEAD`):
+`54-loi-giao-tra-loi` · `55-don-lan`. Bộ test: **55 ca · 280 PASS · 0 FAIL**.
+
 ## 8.1.1 — 2026-09-24
 
 Hai lỗi runxops gặp trong ngày, ghi ở `notes/sdd-solo-issues.md` mục **P-46** và **P-45**.

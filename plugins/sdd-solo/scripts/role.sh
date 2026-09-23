@@ -5,6 +5,7 @@
 #   role.sh --xem                       the current role (SDD_ROLE → the worktree marker → the branch pattern) + the write/deny areas
 #   role.sh --worktree <role> [UC-###]  create a worktree for the role on a branch from <V>.nhanh, set the marker, remind about merging main
 #   role.sh <role> <ticket file> [--luot N]  print the SIX-PART BRIEF from a ticket — no free-form string accepted
+#   role.sh --don UC-### [--dry-run]     clean the lanes of one UC: remove its role worktrees, prune, delete its <V>.nhanh branches
 #   role.sh --ketqua <key> ket=xong|chan|do neo=<hash|marker|file> [kiem=…] [hoi=…] [con=…]
 #                                       write one KETQUA line into $(git-common-dir)/sdd-ketqua/<key>.txt — shared by every worktree
 #   role.sh --ketqua <key>              read it
@@ -18,7 +19,7 @@
 # `git rev-parse --git-path sdd-role` returns a path private to each worktree, outside git and independent of the branch.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"
-usage() { sed -n '3,14p' "$0" | sed 's/^# \{0,3\}//'; exit 2; }
+usage() { sed -n '3,15p' "$0" | sed 's/^# \{0,3\}//'; exit 2; }
 [ $# -eq 0 ] && usage
 RF="$(roles_file "$ROOT")"
 
@@ -73,6 +74,46 @@ case "$1" in
   ok "worktree $D · branch $BR · role marker $V"
   info "the hooks in a worktree are the branch copy from when it was split — open a round with: git -C $D merge main"
   info "committing there: git commit --only -m '<type>(ID): …' -- <file> ; the hook adds the trailer 'Vai: $V'"
+  ;;
+--don)
+  # 8.2.0 (P-48): the reverse of --worktree. Measured at runxops on 2026-09-24: 4 workspaces and 18 code/ · test/
+  # branches of UC-016…030 were still there after close, and the owner found them, not a check. --worktree had no
+  # opposite and the standard sequence in orchestrate §4 ended at /sdd-solo:close.
+  #
+  # It never forces. `git worktree remove` refuses a worktree with uncommitted or untracked files, and `git branch -d`
+  # refuses a branch that is not merged — both refusals are kept and reported, because the thing being cleaned up is
+  # the only copy of somebody work. There is no --force here, on purpose: a lane you cannot delete is a lane with
+  # something in it, and that is a fact to look at, not an obstacle to get past.
+  need_roles; U="$2"; shift 2 2>/dev/null || shift $#
+  DRY=0; for a in "$@"; do case "$a" in --dry-run) DRY=1;; esac; done
+  case "$U" in UC-[0-9]*|CHG-[0-9]*) ;; *) bad "role.sh --don takes a UC-### (or CHG-###): role.sh --don UC-012 [--dry-run]"; exit 2;; esac
+  LU="$(printf '%s' "$U" | tr 'A-Z' 'a-z')"
+  N=0; LEFT=0
+  for v in $(role_list "$ROOT"); do
+    P="$(role_branch "$v" "$ROOT")"; [ -n "$P" ] || continue
+    # A pattern with no `*` is one branch shared by every UC (spec keeps main) — cleaning "the lane of this UC"
+    # must not delete it.
+    case "$P" in *\**) ;; *) continue;; esac
+    BR="$(printf '%s' "$P" | sed "s#\*#$LU#")"
+    D="$(git -C "$ROOT" worktree list --porcelain 2>/dev/null | awk -v b="branch refs/heads/$BR" '/^worktree /{p=substr($0,10)} $0==b{print p; exit}')"
+    HAS=0; git -C "$ROOT" show-ref --verify --quiet "refs/heads/$BR" && HAS=1
+    [ -z "$D" ] && [ "$HAS" = 0 ] && continue
+    N=$((N+1))
+    if [ -n "$D" ]; then
+      if [ "$DRY" = 1 ]; then info "would remove the worktree $D (role $v, branch $BR)"
+      elif git -C "$ROOT" worktree remove "$D" 2>/dev/null; then ok "worktree removed: $D (role $v)"
+      else bad "cannot remove the worktree $D — it has uncommitted or untracked files; look at it, commit or throw them away, then run --don again"; LEFT=$((LEFT+1)); continue; fi
+    fi
+    if [ "$HAS" = 1 ]; then
+      if [ "$DRY" = 1 ]; then info "would delete the branch $BR (role $v)"
+      elif git -C "$ROOT" branch -d "$BR" >/dev/null 2>&1; then ok "branch deleted: $BR (role $v, merged)"
+      else warn "branch $BR kept — not merged into $(git -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null). Merge it, or delete it yourself with: git branch -D $BR"; LEFT=$((LEFT+1)); fi
+    fi
+  done
+  [ "$DRY" = 1 ] || git -C "$ROOT" worktree prune
+  if [ "$N" = 0 ]; then info "$U has no lane to clean — no worktree and no <role>.nhanh branch of this UC"; exit 0; fi
+  [ "$LEFT" != 0 ] && exit 1
+  exit 0
   ;;
 --ketqua)
   K="$2"; shift 2
@@ -167,6 +208,8 @@ EOS
   PF="$2"; LUOT="1"; shift 2
   while [ $# -gt 0 ]; do case "$1" in --luot) LUOT="$2"; shift 2;; *) shift;; esac; done
   [ -f "$PF" ] || { bad "role.sh <role> takes ONE TICKET FILE, not a free-form string — the expensive part of a brief is the anchor, and the anchor only exists in a ticket ('$PF' is not a file)"; exit 1; }
+  export SDD_COMMIT="$(role_may_commit "$V" "$ROOT" && echo co || echo khong)"
+  export SDD_HOIDAP="$(hoi_dap_file "$ROOT" | sed "s#^$ROOT/##")"
   export SDD_V="$V" SDD_VN="$(role_name "$V" "$ROOT")" SDD_DENY="$(role_deny "$V" "$ROOT")" SDD_CHECKS="$(role_checks "$V" "$ROOT")" SDD_BRANCH="$(role_branch "$V" "$ROOT")" SDD_LUOT="$LUOT" SDD_ROOT="$ROOT"
   # the reading pack: every ID on the ticket first line → a path through lib (no find/grep straight at specs/)
   HDR="$(grep -m1 -E '^###? *#[0-9]+' "$PF")"

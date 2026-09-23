@@ -164,6 +164,11 @@ spec ‖ D ‖ T — the three roles apply AT THE SAME TIME, each reading exactl
 C full review — a fresh session, the whole branch, measuring a migration into an empty DB too (green numbers on an already-migrated cluster prove nothing)
 D runs the five self-review questions (.sdd/checklists/self-review.md) — three of the four items became work at runxops, do not skip it
 merge code/uc-### → main (A or the owner) → /sdd-solo:close (the owner, never an agent)
+clean the lanes  — bash .sdd/scripts/role.sh --don UC-### : removes the role worktrees of this UC, prunes, deletes its
+                   <role>.nhanh branches. It never forces: a worktree with uncommitted files or an unmerged branch is
+                   KEPT and named, which is the one report you want here. Run it right after close — measured at
+                   runxops on 2026-09-24, skipping it left 4 workspaces and 18 code/ · test/ branches of UC-016…030
+                   behind, and the owner found them, not a check. `--dry-run` first if you want to see the list.
 ```
 One `C → R → spec ‖ D ‖ T` loop was roughly 35–45 minutes at runxops. The last three roles always go out together
 because they only need the ticket's text, not each other.
