@@ -1,5 +1,37 @@
 # Changelog
 
+## 7.1.0 — 2026-09-23
+
+Bộ test cho script — việc (1) trong bản đánh giá 10 ngày của runxops (`notes/sdd-solo-danh-gia-2026-09-23.md`): 73 bản
+phát hành trước đó không bản nào có test, người dùng làm QA thay cho repo. **Không đổi hành vi** — bản này chỉ thêm
+`tests/` ở gốc repo plugin (không phát vào dự án). Từ đây phát hành khi `bash tests/run.sh` không FAIL.
+
+- `tests/run.sh` + `tests/lib.sh`: runner bash 3.2, mỗi ca một file `tests/cases/NN-<slug>.sh`, repo giả 7.0 dựng bằng
+  `scaffold.sh` thật + `tests/fixtures/v7/` (một nghề · một lát · `UC-001` đã adversarial + đọc lại, qua cổng xanh), bốn
+  commit có ngày cố định để §9 so được. Bốn kết quả: PASS · FAIL (chặn phát hành) · **XFAIL** (lỗi còn mở — ca mô tả
+  hành vi đúng mà bản này chưa có) · **XPASS** (lỗi đã hết, đổi ca sang `chk`). Kịch bản smoke 1.0.0 (hook chặn code
+  trước cổng · chặn trộn spec+code · cho qua sau cổng · gate-pass · close nén vết) giờ là ca 08 · 09.
+- `tests/snap.sh`: chụp đầu ra mọi script trên một repo thật để `diff -r` trước/sau — cách kiểm "không hồi quy" mà
+  CHANGELOG 7.0.0 mô tả, giờ là một lệnh.
+- 29 ca · 42 phép đo hồi quy xanh (7.0.1: #51 #52 #53 P-13 P-15, lát có ·, layer-check, I-4 context bỏ vết).
+- **Đã biết — 18 lỗi còn mở, 21 phép đo XFAIL**, mỗi lỗi một ca, sửa ở 7.4.0 (đợt vá) hoặc 7.5.0 (parser) rồi đổi sang `chk`:
+  - cổng xanh oan / đỏ oan ở `--pre`: **P-18** `<…>` trong `## History` · **P-38** thẻ HTML trong nháy mã · **P-43** `___`
+    trích tham số RULE còn trống · **P-30** `--pre` không soi `## Screens`.
+  - cổng đầy đủ: **P-38b** ô `**E1**` / ô gộp `E1 · E2` trượt phép "E# có màn hình" · **P-17** cảnh báo `E<số>` bắt cả chữ
+    ngoài khối mermaid · **P-37** `case *"→ Chưa quyết"*` miễn cả dòng nên đuôi sống `→ sửa AC-9` thoát kiểm ID (nợ tự khai
+    7.0.1) · **P-35** sửa thân RULE bằng `docs(RULE-###)` sau đọc lại vẫn xanh im lặng · **P-31** đổi thư mục UC → §9 mất mốc
+    đọc lại, đỏ "vùng đổi: (không rõ)" · **P-16** UC implemented + `docs(UC-###)` sau đóng → đỏ §9 (hai hình: đã nén → "chưa
+    đọc lại", chưa nén → "đổi HÀNH VI").
+  - `lib.sh`: **P-20** `rr_count` đếm `→ Chưa quyết` là có đầu ra.
+  - githook: **P-42** `pre-commit` chặn commit merge chở spec + code của `main`.
+  - tầng BR / ranh giới: **P-22** một UC ở hai bảng Related Use Cases không đỏ · **P-24** `layer-check` không đo `CON-###` ·
+    **P-25** `br-check` đếm dấu chấm cả đoạn khai nguồn dưới câu Goal.
+  - khác: **P-40** `pass.sh close` không nén mục vết có `<hash>` · **P-23** `context.sh` không nhận `BR-###` · **I-8**
+    `design-check` coi `<core|nghề>` trong nháy mã là placeholder · **P-10** sau cổng không script nào so lại vân tay.
+- Không có ca cho: P-32 (parser mermaid — 7.5.0), P-21 · P-29 · P-26 · P-33 (cấp số phiếu, commit qua stage chung, bàn giao —
+  cơ chế chưa có, đến 7.2.0 kèm ca), P-39b (`[chặn]` là quy ước riêng của runxops, plugin chưa có — 8.0.0 trần vòng),
+  P-41 (lỗi `$1` ở thân skill, không phải script).
+
 ## 7.0.1 — 2026-09-19
 
 Chín lỗi gặp khi chạy 7.0.0 trên runxops thật (Bước C) — gộp một bản vá như peer điều phối giao. Thử trên bản sao
