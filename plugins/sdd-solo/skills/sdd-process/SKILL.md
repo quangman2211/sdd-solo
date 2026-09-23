@@ -111,7 +111,7 @@ Bài kiểm một câu: *nếu câu trả lời ngược lại với giả đị
 UC có `Status: implemented` **và** thay đổi làm một AC cũ không còn đúng. Tạo `specs/changes/CHG-###-slug/` (proposal, delta ADDED/MODIFIED/REMOVED, design, tasks); baseline trong `specs/` chỉ đổi khi archive. Thêm AC mới không phá AC cũ → vẫn là Phase 3, History v+1.
 
 ## Quy tắc cho bạn (AI) trong repo này
-- **Cần bối cảnh của một UC thì chạy `${CLAUDE_PLUGIN_ROOT}/scripts/context.sh UC-###`**, không tự đi nhặt file. Nó in đúng phần đang hiệu lực + đúng những RULE/CON/ADR UC trích (5.0.0); `--why` khi chỉ cần biết UC do cái gì quyết định. Ba mục `## Adversarial pass` · `## Đọc lại` · `## History` là dấu vết — không phải đầu vào để viết code.
+- **Cần bối cảnh của một UC thì chạy `${CLAUDE_PLUGIN_ROOT}/scripts/context.sh UC-###`**, không tự đi nhặt file. Nó in đúng phần đang hiệu lực + đúng những RULE/CON/ADR UC trích (5.0.0); `--why` khi chỉ cần biết UC do cái gì quyết định; `context.sh BR-###` (7.4) cho bối cảnh một lát: mục quyết định của BR, dòng của lát ở vision.md, RULE/ADR nó trích. Ba mục `## Adversarial pass` · `## Đọc lại` · `## History` là dấu vết — không phải đầu vào để viết code.
 1. Gặp số, ngưỡng, enum, quyền mà spec chưa nói → dừng, hỏi. Không chọn mặc định.
 1b. **Câu cần người quyết thì hiện bằng công cụ `AskUserQuestion`, không kết tin nhắn bằng văn
    xuôi** (5.2.0, #36). Đo ở runxops một ngày: bốn câu "chốt trước" viết thành bullet cuối tin

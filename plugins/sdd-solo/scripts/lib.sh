@@ -237,6 +237,23 @@ rr_count() {
       if (o != "") n++
     } END { print n + 0 }'
 }
+# 7.4 (P-20): rr_undecided (stdin) → bao nhiêu dòng F# có đầu ra là "→ Chưa quyết". Vẫn là đầu ra hợp lệ của cổng
+# (7.0.1 #53: verify không hỏi, cổng mở với câu chưa trả lời là nợ chủ dự án tự nhận) — nhưng cổng phải NÓI RA con số,
+# không thì "11 phát hiện có neo + đầu ra" ở trạng thái chưa quyết gì và ở trạng thái đã quyết hết xanh y hệt nhau
+# (CHG-002 runxops: phải đổi tay 11 đuôi thành "Đã quyết" người đọc mới biết).
+rr_undecided() { grep -c '→ *Chưa quyết' 2>/dev/null || true; }
+# rr_tail (stdin, một dòng) → ĐUÔI SỐNG của dòng F#: chữ sau mũi tên CUỐI, sau khi bỏ mọi `…` và (…) (lồng nhau).
+# Thân F# hay chép nguyên lỗi cổng hay đuôi cũ vào nháy mã / ngoặc — "`✗ đọc lại khai → E4 …`" (UC-027 F74 runxops),
+# "(→ Chưa quyết cũ …)" (P-37) — mũi tên trong đó không phải đầu ra của dòng. Không có mũi tên → in rỗng.
+rr_tail() {
+  awk '{
+    t = $0
+    gsub(/`[^`]*`/, "", t)
+    while (match(t, /\([^()]*\)/)) t = substr(t, 1, RSTART - 1) substr(t, RSTART + RLENGTH)
+    n = 0; while ((i = index(t, "→")) > 0) { t = substr(t, i + 3); n++ }
+    if (n) print t
+  }'
+}
 
 # ── version ─────────────────────────────────────────────────────────────
 CLAUDE_PLUGINS_DIR="$HOME/.claude/plugins"
@@ -521,4 +538,46 @@ plugin_file() {
 hoi_dap_file() {
   if [ -f "$1/notes/hoi-dap/hoi-dap.md" ] || [ ! -f "$1/specs/internal/hoi-dap.md" ]; then printf '%s/notes/hoi-dap/hoi-dap.md' "$1"
   else printf '%s/specs/internal/hoi-dap.md' "$1"; fi
+}
+
+# ── 7.4 — vân tay hành vi của UC ở một revision (#49; dùng chung gate-check §9 · close-check P-10) ──────────
+# Vùng: main alt exc post ac (mục của UC) · flow (file .flow.md) · rules (phát biểu RULE được trích, bỏ Áp dụng cho)
+# · entities (khối mermaid của entity UC nhắc). Đường dẫn tra THEO REVISION: UC có thể đã dời thư mục (git mv,
+# migrate 6.x → 7.0) giữa hai mốc; so nội dung, không so đường dẫn (P-31).
+fp_tree()   { git -C "$1" ls-tree -r --name-only "$2" 2>/dev/null; }
+fp_layout() { fp_tree "$1" "$2" | grep -qE '^specs/vision\.md$|^specs/[^/]+/br-[0-9]+/' && printf v7 || printf v6; }
+fp_uc()     { fp_tree "$1" "$3" | grep -E "/use-cases/$2-[^/]*/$2$4\.md\$" | head -1; }   # <root> <id> <rev> <đuôi: "" | .flow>
+fp_rules()  { fp_tree "$1" "$2" | grep -E '^specs/rules\.md$|^specs/[^/]+/rules\.md$' | grep -vE '^specs/(contexts|internal|changes)/'; }
+fp_entities() { # <root> <id> <rev> <efs ở HEAD> — 6.x: entities.md của context; 7.0: cùng tên file với entity_cited ở HEAD
+  local u o e n
+  u="$(fp_uc "$1" "$2" "$3" "")"; [ -n "$u" ] || return 0
+  if [ "$(fp_layout "$1" "$3")" = v6 ]; then printf '%s\n' "$u" | sed -E 's#(specs/contexts/[^/]+)/.*#\1/entities.md#'
+  else o="$(printf '%s' "$u" | sed -E 's#^specs/([^/]+)/.*#\1#')"
+       for e in $4; do n="$(basename "$e")"; fp_tree "$1" "$3" | grep -E "^specs/(core|$o)/entities/$n\$"; done; fi
+}
+spec_fp() { # spec_fp <root> <id> <rev> <vùng> [efs]
+  local root="$1" id="$2" rev="$3" z="$4" efs="$5" uc h f rl r p
+  uc="$(git -C "$root" show "$rev:$(fp_uc "$root" "$id" "$rev" "")" 2>/dev/null)"
+  case "$z" in
+    main|alt|exc|post|ac)
+      case "$z" in main) h="## Main Flow";; alt) h="## Alternative Flows";; exc) h="## Exceptions";; post) h="## Postconditions";; ac) h="## Acceptance Criteria";; esac
+      printf '%s\n' "$uc" | awk -v h="$h" 'index($0,h)==1{f=1;next} f&&/^## /{f=0} f';;
+    flow) f="$(fp_uc "$root" "$id" "$rev" ".flow")"; [ -n "$f" ] && git -C "$root" show "$rev:$f" 2>/dev/null;;
+    rules)
+      rl="$(for p in $(fp_rules "$root" "$rev"); do git -C "$root" show "$rev:$p" 2>/dev/null; printf '\n'; done)"
+      for r in $(printf '%s' "$uc" | grep -oE 'RULE-[0-9]+' | sort -u); do
+        printf '%s\n' "$rl" | awk -v h="## $r" 'index($0,h)==1{f=1;print;next} f&&/^## /{f=0} f' | grep -v 'Áp dụng cho'
+      done;;
+    entities) for p in $(fp_entities "$root" "$id" "$rev" "$efs"); do git -C "$root" show "$rev:$p" 2>/dev/null | sed -n '/^```mermaid/,/^```/p'; done;;
+  esac
+}
+# fp_changed <root> <id> <rev1> <rev2> [efs] → in các vùng khác nhau (cách nhau dấu cách, có dấu cách đầu);
+# đặt FP_SKIP=entities khi hai mốc khác bố cục (6.x một file/context · 7.0 một file/entity — nối lại không so được).
+fp_changed() {
+  local z out=""; FP_SKIP=""
+  for z in main alt exc post ac flow rules entities; do
+    if [ "$z" = entities ] && [ "$(fp_layout "$1" "$3")" != "$(fp_layout "$1" "$4")" ]; then FP_SKIP=entities; continue; fi
+    [ "$(spec_fp "$1" "$2" "$3" "$z" "$5")" = "$(spec_fp "$1" "$2" "$4" "$z" "$5")" ] || out="$out $z"
+  done
+  printf '%s' "$out"
 }

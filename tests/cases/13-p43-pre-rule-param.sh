@@ -2,4 +2,4 @@
 nr p43
 rep "$UC1" 'Then:  một tin báo được gửi' 'Then:  một tin báo được gửi trong ___ phút theo RULE-001'
 S gate-check.sh --pre UC-001
-xfail P-43 "--pre miễn ___ trích tham số RULE còn trống (được exit $R)" '[ $R = 0 ]'
+chk "P-43 · --pre miễn ___ trích tham số RULE còn trống (được exit $R)" '[ $R = 0 ]'

@@ -152,8 +152,9 @@ fi
 # xanh mọi dòng, đỏ mỗi "mới hôm nay". Đổi hành vi đã giao cho khách thì càng phải có
 # một lần đọc đã xảy ra: /sdd-solo:verify CHG-### ghi ## Đọc lại vào proposal.md,
 # commit riêng, và commit đó phải là commit docs(CHG) mới nhất trong thư mục change.
-RR="$(rr_lines "$P")"; RRN=0
-[ -n "$RR" ] && RRN="$(printf '%s\n' "$RR" | rr_count)"
+RR="$(rr_lines "$P")"; RRN=0; RRU=0
+[ -n "$RR" ] && { RRN="$(printf '%s\n' "$RR" | rr_count)"; RRU="$(printf '%s\n' "$RR" | rr_undecided)"; }
+[ -z "$RRU" ] && RRU=0
 LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- "$D" 2>/dev/null)"
 LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- "$D" 2>/dev/null)"
 RRC=0; case "$LASTS" in "docs($ID): đọc lại"*) RRC=1;; esac
@@ -162,6 +163,9 @@ elif [ "$LASTS" = "docs($ID): change reviewed — qua cổng Phase 5" ]; then
   ok "docs($ID) mới nhất là commit của change-pass — đã qua cổng trước đó"
 elif [ "$RRN" -gt 0 ] && [ "$RRC" = 1 ]; then
   ok "đọc lại bằng đầu chưa neo: $RRN phát hiện có neo + đầu ra, commit riêng là commit mới nhất của $ID"
+  # 7.4 (P-20, ca gốc CHG-002): nói ra bao nhiêu dòng còn "→ Chưa quyết" — cổng xanh như nhau ở hai trạng thái thì
+  # người đọc phải đổi tay 11 đuôi mới biết cái nào đã quyết.
+  [ "$RRU" -gt 0 ] && warn "$RRU/$RRN phát hiện còn '→ Chưa quyết (chờ chủ dự án …)' — cổng mở là nợ anh tự nhận (#53); trả lời rồi đổi đuôi thành '→ Đã quyết: …'"
 elif [ "$RRN" -eq 0 ]; then
   bad "chưa đọc lại bằng đầu chưa neo — proposal.md không có ## Đọc lại với dòng F# đủ [neo: ...] + đầu ra khác ___"
   info "/sdd-solo:verify $ID (subagent đọc proposal + delta + UC baseline, ghi F#, commit riêng)"

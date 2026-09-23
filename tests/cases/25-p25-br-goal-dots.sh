@@ -4,4 +4,4 @@ rep specs/orders/br-001/br.md '<Một câu. Tránh "tối ưu", "cải thiện",
 
 *Nguồn: chủ dự án chốt 2026-01-01. Đo tay. Ba lần.*'
 S br-check.sh BR-001
-xfail P-25 "không cảnh báo dấu chấm khi câu Goal là một câu, phần sau là khai nguồn" '! has "dấu chấm"'
+chk "P-25 · không cảnh báo dấu chấm khi câu Goal là một câu, phần sau là khai nguồn" '! has "dấu chấm"'

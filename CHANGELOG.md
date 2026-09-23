@@ -1,5 +1,73 @@
 # Changelog
 
+## 7.4.0 — 2026-09-23
+
+Đợt vá 18 lỗi còn mở của bản đánh giá runxops (`notes/sdd-solo-issues.md`, P-## · I-8), theo kế hoạch 2026-09-23 sau
+7.1–7.3. Mỗi lỗi đã có ca `xfail` từ 7.1.0; bản này sửa script rồi đổi 20 phép đo sang `chk` — **42 ca · 164 xanh · 0 FAIL ·
+0 XFAIL**. Thứ tự theo giá phải trả: **cổng xanh oan / đỏ oan trước** (đỏ oan thì bị học cách phớt lờ, rồi kéo theo cả dòng
+đỏ thật), rồi hụt kiểm, rồi tiện ích. Không có cờ bỏ qua nào được thêm; hai chỗ luật đổi nghĩa (P-16, P-20) ghi rõ dưới.
+
+**Cổng đỏ oan** (gate-check):
+- **P-18** `--pre` không đếm `<...>` trong `## History` — sổ chỉ-thêm, ghi cả lời cảnh báo có `E<số>`.
+- **P-38** `--pre` bỏ chữ trong nháy mã trước khi tìm placeholder (`<tr>` là tên thẻ HTML, không phải chỗ chưa điền).
+- **P-43** `--pre` miễn `___` trên dòng trích một RULE mà chính rule đó còn tham số `___` ở rules.md — số chưa quyết nằm ở
+  rule, UC chỉ chép lại chỗ trống; chặn thì lối thoát duy nhất là bịa số vào UC trước khi rule có số. In `info` đếm số chỗ.
+- **P-38b** bảng Screens: ô đầu `**E1**` (in đậm) và `E1 · E2` (ô gộp) đều tính là "E# có màn hình" — so nguyên từ trên ô
+  đầu thay vì regex `| E1` sát mép.
+- **P-17** cảnh báo "id node dạng E<số>" chỉ xét TRONG khối ```` ```mermaid ```` — ghi chú văn xuôi dưới sơ đồ không phải id.
+- **P-31** pathspec §9 là MẪU `specs/*/br-*/use-cases/UC-###-*/…` (tắt glob của shell bằng `set -f` khi gọi git), không phải
+  đường hiện tại — UC vừa `git mv` sang lát khác giữ nguyên lịch sử đọc lại thay vì đỏ "đổi HÀNH VI (không rõ)".
+- **P-16** UC đã `implemented`: mốc so của §9 là **commit đóng** (`docs(UC-###): implemented — traceability`), không phải
+  lần đọc lại (đã nén còn một dòng). Sau đóng mà vùng hành vi không đổi → ✓ "§9 không áp"; đổi → ✗ chỉ sang Phase 5
+  (`/sdd-solo:change`) thay vì chỉ sang verify. Đây là đổi nghĩa: cổng DoR không còn đòi UC đã đóng "đọc lại lần nữa".
+- **I-8** design-check bỏ nháy mã trước khi tìm `<...>` ở architecture.md — `tests/use-cases/<core|nghề>/UC-###/` là quy
+  ước đường dẫn, không phải chỗ chưa quyết.
+- **P-25** br-check chỉ đếm dấu chấm của CÂU Goal — bỏ dòng khai nguồn (`*Nguồn: …*`, in nghiêng, blockquote, chú thích).
+- **P-42** githook `pre-commit` cho qua commit **merge** (có `MERGE_HEAD`) chở cả spec lẫn code của nhánh kia — hai bên đã
+  tách ở nhánh gốc; chặn thì worktree `code/uc-###` không merge được `main`. Cần `init --update` để nhận.
+
+**Cổng xanh oan / hụt kiểm:**
+- **P-30** `--pre` cũng soi bảng Screens (hàm `screens_check` dùng chung với cổng đầy đủ) — thiếu dòng E# đỏ ngay ở ⑦,
+  không đợi ⑨.
+- **P-37** `## Đọc lại`: kiểm ID trên ĐUÔI SỐNG của dòng F# — chữ sau mũi tên cuối, sau khi bỏ `…` và `(…)` lồng nhau
+  (`rr_tail` ở lib) — thay cho `case *"→ Chưa quyết"*` miễn cả dòng. Đuôi sống `→ sửa AC-9` núp trước cụm trích `(→ Chưa
+  quyết …)` giờ bị kiểm; ngược lại mũi tên trong trích dẫn (UC-027 F74 runxops chép nguyên `✗ … → E4 …` của cổng) không
+  còn là đầu ra — đo trên runxops: 0 dòng đỏ mới, 6 dòng đỏ oan của bản nháp đầu biến mất.
+- **P-35** §9 so vân tay TRƯỚC khi tin "commit đọc lại là commit spec mới nhất" — `docs(RULE-###)` sửa phát biểu rule không
+  mang tên UC nên tiêu đề vẫn là đọc lại mà hành vi đã đổi; câu báo nêu commit chạm spec gần nhất bất kể tiêu đề.
+- **P-10** close-check so vân tay hành vi từ commit gate-pass tới HEAD (`fp_changed`) — sửa AC sau cổng bằng
+  `docs(UC-###)` thì marker cổng còn mà điều nó chứng nhận không còn; ✗ kèm lệnh `verify --since <gate>` rồi gate lại.
+  UC đã `implemented`/`deprecated` chỉ **cảnh báo** (vết lịch sử — đo runxops: 10/12 UC đã đóng có vùng đổi sau cổng,
+  chặn thì close-check đỏ trên thứ đã đóng). Hàm vân tay (`spec_fp` · `fp_changed` · `fp_uc` …) dời từ gate-check sang
+  `lib.sh` để hai cổng dùng chung.
+- **P-22** br-check ✗ khi một UC có ở `## Related Use Cases` của hai BR — một UC thuộc một lát; lát kia trỏ bằng
+  `**Upstream UC:**` của UC, không kê vào bảng.
+- **P-24** layer-check gom cả `CON-###` của lát nghề (`- **CON-### …:**` trong `specs/<nghề>/br-*/br.md`) vào ID nghề;
+  trừ số cũng có ở gốc/core và bỏ BR-000 mẫu (khuôn có sẵn CON-001..003, không phải của ai).
+- **P-20** cổng nói ra bao nhiêu dòng `## Đọc lại` còn `→ Chưa quyết`: `rr_undecided` ở lib, gate-check và change-check
+  in `! k/n phát hiện còn '→ Chưa quyết' — cổng mở là nợ anh tự nhận`. **Không đổi luật #53 (7.0.1)**: Chưa quyết vẫn là
+  đầu ra hợp lệ, cổng vẫn mở — chỉ hết chuyện ✓ giống hệt nhau ở "đã quyết hết" và "chưa quyết gì" (CHG-002 phải đổi tay
+  11 đuôi mới biết). Đề nghị gốc của P-20 (không tính là đầu ra) sẽ đóng cổng với mọi lượt verify không hỏi — ngược
+  quyết định chủ dự án ở 7.0.1, nên không làm.
+
+**Tiện ích:**
+- **P-40** `pass.sh close` nén dấu vết dù thân có `<hash>`, `<label for="…">`, chữ trong nháy mã — khuôn thật là
+  `YYYY-MM-DD`, `Ngày chạy: ___`, và `<...>` còn lại sau khi bỏ nháy mã và thẻ dạng HTML (tên ASCII + thuộc tính).
+- **P-23** `context.sh BR-###`: bối cảnh một lát — mục quyết định của BR (không Background, in cỡ KB của nó), dòng của
+  lát ở `vision.md`, RULE/ADR BR trích, architecture, entity/glossary BR nhắc; `--why` · `--brief` như UC. 6.x lấy đúng
+  mục `# BR-###:` trong `specs/br.md`.
+
+Đo trên hai bản sao runxops (snapshot `tests/snap.sh`, 7.3.0 ↔ 7.4.0 — lần này khác là chủ ý, mỗi dòng khác quy được về một
+mục trên): bản 7.0 (15 UC · 5 BR) 54/135 file khác, bản 6.x chưa migrate 17/49. `--pre`: 7 UC (7.0) + 2 UC (6.x) từ đỏ
+thành xanh (P-18 · P-38 · P-43), 1 UC đỏ thêm vì thiếu dòng E# ở Screens (P-30). `br-check`: 5/5 BR (7.0) và 3/3 (6.x)
+đỏ P-22 — 27 cặp UC ở hai bảng, đúng ca runxops đã ghi (UC-016…024 ở `core/br-004` lẫn `ebay/br-003`). `layer-check`:
++7 file gốc/core trích `CON-###` của nghề (P-24). `close-check`: 10 UC đã đóng giữ ĐÓNG ĐƯỢC (cảnh báo P-10, không
+chặn); 1 UC 6.x còn mở đỏ P-10 thật. `gate-check` UC implemented: 9 chỗ "đổi HÀNH VI sau khi đóng — vùng: rules" (P-16
+chỉ sang Phase 5) thay cho ✓ "commit đóng" cũ; 3 dòng "chưa đọc lại" oan biến mất. Verdict cổng đầy đủ của mọi UC còn
+mở không đổi.
+
+Còn mở, chưa có ca: P-32 parser mermaid (7.5.0) · P-39b `[chặn]` trần vòng (8.0.0) · P-41 lỗi `$1` ở thân skill (xem 7.1.0).
+
 ## 7.3.0 — 2026-09-23
 
 Đội agent, phần hai — nốt các mục (5) đến (7) của kế hoạch 2026-09-23. Cùng nguyên tắc 7.2: plugin giữ cơ chế, repo giữ

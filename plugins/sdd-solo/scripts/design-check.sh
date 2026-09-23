@@ -60,7 +60,9 @@ else
   # scaffold. Lần thứ ba cùng một bẫy (4.0.1, 4.0.x, giờ 4.2.0) — chú thích không
   # bao giờ là placeholder, nên lọc phải bỏ CẢ KHỐI chứ không bỏ từng dòng mở.
   # strip_markup giữ nguyên số dòng (97→97, đã đo) nên `grep -n` vẫn trỏ đúng file gốc.
-  PH="$(strip_markup < "$AR" | grep -nE '<[^>]+>' | grep -vE '^[0-9]+:>' \
+  # 7.4 (I-8): `<core|nghề>` trong nháy mã là QUY ƯỚC đường dẫn (tests/use-cases/<core|nghề>/UC-###/), không phải chỗ
+  # chưa quyết — bỏ nháy mã trước khi tìm; số dòng giữ nguyên vì sed chỉ xoá trong dòng.
+  PH="$(strip_markup < "$AR" | sed -E 's/`[^`]*`//g' | grep -nE '<[^>]+>' | grep -vE '^[0-9]+:>' \
         | grep -vE '^[0-9]+:[[:space:]]*(<!--|```)' | head -6)"
   if [ -n "$PH" ]; then
     bad "architecture.md còn placeholder <...> — chưa ai quyết, không phải đã quyết là không có:"

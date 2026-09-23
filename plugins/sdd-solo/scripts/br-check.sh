@@ -163,7 +163,9 @@ SM="$(sec '## Success Metrics')"
 if ! filled "$G"; then bad "## Goal rỗng hoặc còn placeholder"
 else
   ok "## Goal có nội dung"
-  DOTS="$(printf '%s' "$G" | grep -o '\.' | wc -l | tr -d ' ')"
+  # 7.4 (P-25): chỉ đếm dấu chấm của CÂU GOAL — dòng khai nguồn (*Nguồn: …*, in nghiêng, blockquote, chú thích) dưới
+  # câu Goal là ghi chú, không phải câu thứ hai.
+  DOTS="$(printf '%s' "$G" | grep -vE '^[[:space:]]*(\*|_|>|<!--|Nguồn)' | grep -o '\.' | wc -l | tr -d ' ')"
   [ "$DOTS" -gt 1 ] && warn "## Goal có $DOTS dấu chấm — Goal nên gói trong MỘT câu"
   V="$(printf '%s' "$G" | grep -oiE 'tối ưu|cải thiện|nâng cao|tốt hơn|hiệu quả|hiện đại hoá' | head -1)"
   if [ -n "$V" ]; then
@@ -250,6 +252,13 @@ RU="$(sec '## Related Use Cases')"
 for u in $(printf '%s' "$RU" | grep -oE 'UC-[0-9]+' | sort -u); do
   [ -n "$(find_uc "$u" "$ROOT")" ] && ok "$u đã có file" \
     || warn "$u chưa tồn tại — bình thường ở Phase 1, tạo bằng /sdd-solo:start $u"
+  # 7.4 (P-22): một UC ở bảng Related Use Cases của HAI lát — lát nào chủ? Tới 7.3 không phép kiểm nào đỏ; ca thật
+  # runxops: UC nằm ở hai bảng, /sdd-solo:state gợi hai lát cùng một việc. Lát kia nhắc bằng Upstream UC, không kê bảng.
+  OTH=""
+  for b in $(br_ids "$ROOT" | grep -vx "$ID" | grep -v '^BR-000$'); do
+    br_body "$b" "$ROOT" | sed -n '/^## Related Use Cases/,/^## /p' | grep -qE "$u([^0-9]|$)" && OTH="$OTH $b"
+  done
+  [ -n "$OTH" ] && bad "$u có ở ## Related Use Cases của 2 bảng BR trở lên ($ID$OTH) — một UC thuộc một lát; lát kia trỏ bằng '**Upstream UC:**' của UC, không kê vào bảng"
 done
 # Chiều ngược thì ĐỎ: UC đã khai thuộc BR này mà BR không nhận là trôi thật, và
 # luôn sửa được. Cùng bài học hai chiều của #12, #15, #17.

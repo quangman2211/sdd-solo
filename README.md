@@ -129,6 +129,7 @@ Script dừng ngay từ đầu nếu working tree bẩn hoặc nếu cây cũ v�
 bash .sdd/scripts/migrate.sh --evidence BR-001 --dry-run      # xem trước, rồi chạy thật
 bash .sdd/scripts/decisions.sh                                 # dự án đã quyết gì
 bash .sdd/scripts/context.sh UC-### --why                      # UC này do cái gì quyết định
+bash .sdd/scripts/context.sh BR-###                            # bối cảnh một lát: quyết định của BR + dòng vision + RULE/ADR (7.4)
 ```
 
 `init --update` xoá file khuôn cũ **chỉ khi anh chưa sửa tay** (sha khớp manifest); đã sửa thì giữ và báo.

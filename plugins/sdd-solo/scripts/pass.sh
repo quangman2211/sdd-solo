@@ -72,7 +72,12 @@ def replace(name, summary):
     if not body.strip(): return                              # rỗng — không có gì để dời
     # Còn là KHUÔN (YYYY-MM-DD, <...>) thì không phải dấu vết — không dời. Bắt được
     # vì chạy close trên một UC khuôn trống: nó "dời 3 mục" toàn placeholder.
-    if re.search(r'YYYY-MM-DD|<[^>\n]+>', body): return
+    # 7.4 (P-40): `<hash>`, `<label for="np-go">`, chữ trong nháy mã là NỘI DUNG (thân F# chép commit/HTML), không phải
+    # khuôn — tới 7.3 mọi <...> đều bị coi là khuôn nên ## Đọc lại có một chữ <hash> không bao giờ được dời (UC-014).
+    # Khuôn thật: YYYY-MM-DD · Ngày chạy: ___ · <...> còn lại sau khi bỏ nháy mã và thẻ dạng HTML (tên ASCII + thuộc tính).
+    t = re.sub(r'`[^`\n]*`', '', body)
+    t = re.sub(r"</?[A-Za-z][A-Za-z0-9-]*(\s+[A-Za-z_:-]+(=(\"[^\"]*\"|'[^']*'|[^\s>]+))?)*\s*/?>", '', t)
+    if re.search(r'YYYY-MM-DD|Ngày chạy:\s*_|<[^>\n]+>', t): return
     moved.append((name, body.rstrip('\n') + '\n'))
     s = s[:m.start(1)] + summary + '\n\n' + s[m.end(1):]
 def date_in(body):

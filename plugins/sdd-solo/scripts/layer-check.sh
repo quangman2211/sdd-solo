@@ -36,6 +36,12 @@ NIDS="$(for n in $NGHE; do
   ls -d "$ROOT/specs/$n"/br-[0-9]*/ 2>/dev/null | sed -E 's#.*/br-([0-9]+)/$#BR-\1#'
   ls -d "$ROOT/specs/$n"/br-[0-9]*/use-cases/UC-[0-9]*/ 2>/dev/null | sed -E 's#.*/(UC-[0-9]+)-[^/]*/$#\1#'
 done | sort -u)"
+# 7.4 (P-24): CON-### sống trong br.md của lát (`- **CON-001 Technical:**`) — lát của nghề thì CON là của nghề. Trừ số
+# cũng có ở gốc/core (CON đánh số theo BR nên trùng số là thường; trùng thì không quy được cho ai, bỏ qua).
+NCON="$(for n in $NGHE; do cat /dev/null "$ROOT/specs/$n"/br-[0-9]*/br.md 2>/dev/null | grep -oE '\*\*CON-[0-9]+' | tr -d '*'; done | sort -u)"
+CCON="$(cat /dev/null "$ROOT"/specs/core/br-[0-9]*/br.md "$ROOT/specs/br.md" 2>/dev/null | awk '/^# BR-000:/{s=1;next} /^# BR-/{s=0} !s' | grep -oE '\*\*CON-[0-9]+' | tr -d '*' | sort -u)"   # bỏ BR-000 mẫu: CON-001..003 của khuôn không phải của ai
+NCON="$(printf '%s\n' "$CCON" | awk 'NR==FNR{a[$0];next} NF && !($0 in a)' - <(printf '%s\n' "$NCON"))"
+NIDS="$(printf '%s\n%s\n' "$NIDS" "$NCON" | awk 'NF' | sort -u)"
 NENT="$(for n in $NGHE; do
   ls "$ROOT/specs/$n/entities/"*.md 2>/dev/null | xargs -n1 basename 2>/dev/null | sed 's/\.md$//' | grep -vE '^(README|_.*)$'
 done | sort -u)"

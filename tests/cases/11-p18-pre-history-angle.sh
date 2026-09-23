@@ -2,4 +2,4 @@
 nr p18
 app "$UC1" "- v3 (2026-01-07, anh): ghi lại cảnh báo id node dạng E<số> của cổng"
 S gate-check.sh --pre UC-001
-xfail P-18 "--pre không đếm <...> trong ## History (được exit $R)" '[ $R = 0 ]'
+chk "P-18 · --pre không đếm <...> trong ## History (được exit $R)" '[ $R = 0 ]'

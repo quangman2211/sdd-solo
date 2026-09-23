@@ -10,10 +10,10 @@ s = s.replace('## Ngăn xếp\n', '## Ngăn xếp\nNode 20. Test: `tests/use-cas
 s = s.replace('## Nơi chạy\n', '## Nơi chạy\nServer mình dựng.\n')
 s = s.replace('## Ai gọi\n', '## Ai gọi\nCron mỗi phút.\n')
 s = s.replace('K["<ai gọi>"] --> A["<lối vào: CLI · API · MCP>"]', 'K["cron"] --> A["CLI"]').replace('P1["Port: <tên>"] --> X1["Adapter: <thứ thật bên ngoài>"]', 'P1["Port: Notify"] --> X1["Adapter: Telegram"]')
-s = s.replace('## Cấm\n', '## Cấm\n- không gọi API sàn — vì tài khoản cá nhân\n  - Từ: 2026-01-01 · Trạng thái: active\n')
+s = re.sub(r'(?ms)^## Cấm\n.*?(?=^## )', '## Cấm\n- không gọi API sàn — vì tài khoản cá nhân\n  - Từ: 2026-01-01 · Trạng thái: active\n\n', s)   # cả lời giảng + dòng ví dụ của khuôn
 s = s.replace('## Đã chốt từ brief\n', '## Đã chốt từ brief\n- không có\n')
 io.open(p, 'w', encoding='utf-8').write(s)
 PY
 printf '# Design UC-001\n\n## Ngăn xếp\nNode\n' > "$UCD/design.md"
 S design-check.sh UC-001
-xfail I-8 "architecture.md có \`<core|nghề>\` trong nháy mã không bị coi là placeholder" '! has "architecture.md còn placeholder"'
+chk "I-8 · architecture.md có \`<core|nghề>\` trong nháy mã không bị coi là placeholder" '! has "architecture.md còn placeholder"'

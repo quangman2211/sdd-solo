@@ -7,6 +7,23 @@ echo "Definition of Done — $ID"
 [ -z "$F" ] && { bad "không tìm thấy file UC"; exit 1; }
 CTX="$(owner_of "$F")"; SLUG="$(slug_of "$F")"
 [ -f "$ROOT/.sdd/gate/$ID.ok" ] && ok "đã qua cổng DoR" || bad "chưa có marker .sdd/gate/$ID.ok — chạy /sdd-solo:gate"
+# 7.4 (P-10): marker cổng nói "spec ĐÃ ĐƯỢC đọc lại ở commit X". Sửa AC sau X bằng docs(UC-###) thì marker vẫn còn mà
+# điều nó chứng nhận không còn — tới 7.3 không script nào so lại. Vân tay §9 của gate-check (lib: fp_changed) so từ
+# commit gate-pass tới HEAD: Main/Alt/Exceptions/Postconditions/AC · flow · phát biểu RULE · mermaid entities.
+GH="$(git -C "$ROOT" log -1 --format=%H --grep="^docs($ID): spec reviewed — qua cổng DoR" 2>/dev/null)"
+if [ -n "$GH" ]; then
+  CHG="$(fp_changed "$ROOT" "$ID" "$GH" HEAD "$(entity_cited "$F" "$ROOT" | tr '\n' ' ')")"
+  ST="$(grep -oE '\*\*Status:\*\* *[a-z]+' "$F" | head -1 | awk '{print $2}')"
+  if [ -z "$CHG" ]; then ok "vân tay hành vi không đổi kể từ commit qua cổng"
+  elif [ "$ST" = implemented ] || [ "$ST" = deprecated ]; then
+    # UC đã đóng: đổi sau cổng là vết lịch sử (Phase 5, rule sửa cho UC khác) — không còn gì để verify lại. Đo runxops
+    # 7.4: 10/12 UC implemented có vùng đổi; chặn thì close-check đỏ trên thứ đã đóng, và đỏ oan thì bị học cách phớt lờ.
+    warn "UC $ST — spec đổi vùng hành vi sau commit qua cổng ($CHG ); vết lịch sử, không áp lại cổng"
+  else
+    bad "spec đổi HÀNH VI sau khi qua cổng — vùng:$CHG (vân tay §9, #49); marker cổng không còn đúng với spec hiện tại"
+    info "/sdd-solo:verify $ID --since $(git -C "$ROOT" log -1 --format=%h "$GH" 2>/dev/null) rồi /sdd-solo:gate lại — gate-pass tạo mốc mới"
+  fi
+fi
 # Tầng thiết kế (4.0.0). Đóng một UC mà không có design.md nghĩa là code đã viết
 # ra từ một quyết định kỹ thuật không nằm ở đâu cả — sáu tháng sau không ai đọc
 # lại được VÌ SAO nó dựng như thế, và "chưa bàn" trông y hệt "đã bàn rồi quên ghi".

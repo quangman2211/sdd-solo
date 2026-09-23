@@ -58,6 +58,18 @@ siblings() {
   done
 }
 
+# ── mỗi E# có dòng trong bảng Screens — dùng ở cả --pre (7.4, P-30) lẫn cổng đầy đủ ────
+# Chỉ xét Ô ĐẦU của mỗi dòng bảng, so nguyên từ: `**E1**` (in đậm) và `E1 · E2` (ô gộp) đều tính (P-38b);
+# tới 7.3 regex đòi `| E1` sát mép nên hai dạng đó đỏ oan "E1 chưa có dòng".
+SCR="$(sed -n '/^## Screens/,/^## /p' "$F")"
+screens_check() {
+  local n
+  for n in $(grep -oE '^- +(\*\*)?E[0-9]+' "$F" | grep -oE '[0-9]+' | sort -un); do
+    printf '%s\n' "$SCR" | grep -E '^\|' | awk -F'|' '{print $2}' | grep -qwE "E$n" \
+      && ok "E$n có màn hình" || bad "E$n chưa có dòng trong bảng ## Screens"
+  done
+}
+
 # ── --pre: cổng trước bước ⑦ ──────────────────────────────────────────────
 # Bốn tiền điều kiện cũ ở skills/adversarial đo CẤU TRÚC nên template rỗng qua
 # hết: 4 dòng Main Flow đánh số, 2 AC, 2 E#, 3 dòng Screens — mà cả file còn 23
@@ -67,6 +79,7 @@ if [ "$PRE" = "1" ]; then
   A="$(grep -cE '^### AC-[0-9]+' "$F")"; [ "$A" -ge 1 ] && ok "$A AC" || bad "chưa có AC nào"
   E="$(grep -cE '^- +(\*\*)?E[0-9]+[.:]' "$F")"; [ "$E" -ge 1 ] && ok "$E exception" || bad "chưa có E# nào"
   grep -qE 'SCR-[0-9]+-[0-9]+' "$F" && ok "bảng Screens có SCR-###-#" || bad "bảng Screens chưa có SCR nào"
+  screens_check
 
   # Đây mới là chốt thật: còn placeholder nghĩa là chưa ai viết nội dung.
   # NGOẠI LỆ: '___' nằm trong ## Open Questions là hợp lệ. Bản trước tính nó là
@@ -82,17 +95,41 @@ if [ "$PRE" = "1" ]; then
     # điền trước một mục chỉ tồn tại sau bước ⑦.
     # 7.0.1 (#52): ## Adversarial pass cùng loại — nó là ĐẦU RA của chính bước ⑦ mà --pre canh cửa; lượt thứ
     # hai trở đi (câu cũ còn đầu ra ___, vai mới chưa chạy) thì --pre đỏ vì chính mục nó sắp điền.
-    /^## (Đọc lại|Adversarial pass)/ { dl=1; oq=0; next }
+    # 7.4 (P-18): ## History là sổ chỉ-thêm, ghi cả lời cảnh báo có `E<số>` — không phải chỗ chưa điền.
+    /^## (Đọc lại|Adversarial pass|History)/ { dl=1; oq=0; next }
     /^## / { oq=0; dl=0 }
     {
       if (dl) next
-      ang = ($0 ~ /<[^>]+>/); us = ($0 ~ /___/)
+      # 7.4 (P-38): chữ trong nháy mã là chữ thật (`<tr>` tên thẻ HTML), không phải placeholder.
+      t = $0; gsub(/`[^`]*`/, "", t)
+      ang = (t ~ /<[^>]+>/); us = (t ~ /___/)
       if (!ang && !us) next
       if ($0 ~ /^[[:space:]]*<!--/) next
       if ($0 ~ /Ngày chạy|đầu ra/) next
       if (oq && !ang) next
       printf "%d:%s\n", NR, $0
     }' "$F")"
+  # 7.4 (P-43): '___' trong thân UC mà cùng dòng trích một RULE có tham số còn ___ ở rules.md là TRUNG THỰC —
+  # số chưa quyết nằm ở rule, UC chỉ chép lại chỗ trống đó. Chặn ở đây thì lối thoát duy nhất là bịa số vào UC
+  # trước khi rule có số (ca runxops: AC trích RULE-### `phút` = ___). '<...>' vẫn đỏ.
+  RULE_BLANK=""
+  for r in $(cat /dev/null $RFS 2>/dev/null | grep -oE '^## RULE-[0-9]+' | awk '{print $2}' | sort -u); do
+    awk -v h="## $r" 'index($0,h)==1{f=1;print;next} f&&/^## /{f=0} f' /dev/null $RFS 2>/dev/null | grep -q '___' && RULE_BLANK="$RULE_BLANK $r "
+  done
+  PHK=""; PHX=""
+  while IFS= read -r l; do
+    [ -z "$l" ] && continue
+    if printf '%s' "$l" | grep -q '___' && ! printf '%s' "$l" | grep -qE '<[^>]+>'; then
+      rid="$(printf '%s' "$l" | grep -oE 'RULE-[0-9]+' | head -1)"
+      if [ -n "$rid" ] && printf '%s' "$RULE_BLANK" | grep -q " $rid "; then PHX="$PHX
+$l"; continue; fi
+    fi
+    PHK="$PHK
+$l"
+  done <<< "$PHALL"
+  PHALL="$PHK"
+  PXN="$(printf '%s\n' "$PHX" | awk 'NF' | wc -l | tr -d ' ')"
+  [ "$PXN" -gt 0 ] && info "$PXN chỗ ___ trích tham số RULE còn trống ($(printf '%s' "$RULE_BLANK" | tr -s ' ' | sed 's/^ //; s/ $//')) — hợp lệ; điền ở rules.md rồi UC theo"
   PN="$(printf '%s\n' "$PHALL" | awk 'NF' | wc -l | tr -d ' ')"
   if [ "$PN" -gt 0 ]; then
     bad "còn $PN chỗ chưa điền — adversarial pass trên spec rỗng là vô ích:"
@@ -137,11 +174,8 @@ EN="$(grep -cE '^- +(\*\*)?E[0-9]+[.:]' "$F")"; AN="$(grep -cE '^### AC-[0-9]+' 
 if [ "$AN" -ge 1 ] && [ "$AN" -ge $((EN+1)) ]; then ok "AC: $AN · Exceptions: $EN (≥ E# + 1)"; else bad "AC: $AN · Exceptions: $EN — cần ≥ 1 AC cho Main + 1 cho mỗi E#"; fi
 grep -qE '^Given:' "$F" && grep -qE '^When:' "$F" && grep -qE '^Then:' "$F" && ok "AC dạng Given/When/Then" || bad "AC chưa có Given/When/Then"
 
-# 3. mỗi E# có dòng trong bảng Screens
-SCR="$(sed -n '/^## Screens/,/^## /p' "$F")"
-for n in $(grep -oE '^- +(\*\*)?E[0-9]+' "$F" | grep -oE '[0-9]+' | sort -un); do
-  echo "$SCR" | grep -qE "^\|[[:space:]]*E$n([^0-9]|$)" && ok "E$n có màn hình" || bad "E$n chưa có dòng trong bảng ## Screens"
-done
+# 3. mỗi E# có dòng trong bảng Screens (hàm screens_check ở đầu file — dùng chung với --pre)
+screens_check
 echo "$SCR" | grep -qE 'SCR-[0-9]+-[0-9]+' || bad "chưa có SCR-###-# nào trong ## Screens"
 
 # 4. RULE trích phải có trong rules.md
@@ -188,7 +222,8 @@ if [ -f "$FL" ]; then
   done
   # id node dạng E<số> không còn giả mạo được nhãn, nhưng vẫn khó đọc cho người.
   # Không bắt X#([E1: ...]) — ở đó E1 đứng trước dấu hai chấm, không phải id.
-  grep -qE '(^|[[:space:]])E[0-9]+ *[[({]' "$FL" \
+  # 7.4 (P-17): chỉ xét TRONG khối ```mermaid — ghi chú văn xuôi dưới sơ đồ nhắc "E1 (…)" không phải id node.
+  awk '/^```/{c=!c;next} c' "$FL" | grep -qE '(^|[[:space:]])E[0-9]+ *[[({]' \
     && warn "$ID.flow.md đặt id node dạng E<số> — dễ đọc nhầm thành ngoại lệ; dùng P# cho node kết thường, X# cho node kết của ngoại lệ"
 elif [ -f "$BP" ]; then
   ok "$ID.bpmn (đường cũ — .flow.md mermaid đếm được E#, cân nhắc chuyển)"
@@ -324,8 +359,9 @@ if [ -n "$OQ" ]; then echo "$OQ" | grep -vqi 'quyết định tạm' && bad "Ope
 # sau khi đọc lại thì đọc lại lần nữa, bất kể ngày. Đọc mà không thấy gì thì cổng
 # không mở — chủ ý: một lần đọc bằng đầu chưa neo trên spec cỡ UC mà không ra một
 # phát hiện nào (kể cả bị bác "không phải lỗi vì") là phạm vi đọc quá hẹp.
-RR="$(rr_lines "$F")"; RRN=0
-[ -n "$RR" ] && RRN="$(printf '%s\n' "$RR" | rr_count)"
+RR="$(rr_lines "$F")"; RRN=0; RRU=0
+[ -n "$RR" ] && { RRN="$(printf '%s\n' "$RR" | rr_count)"; RRU="$(printf '%s\n' "$RR" | rr_undecided)"; }
+[ -z "$RRU" ] && RRU=0
 # Lời khai trong ## Đọc lại phải kèm ID CÓ THẬT — y hệt luật của §7 cho
 # adversarial (#12). Ca thật (runxops): một dòng F# khai '→ sửa RULE-007' sau khi
 # người sửa đã đổi lại mã; thân sửa xong, còn CHỖ GHI LẠI VIỆC SỬA thì không —
@@ -336,8 +372,13 @@ if [ -n "$RR" ]; then
     [ -z "$ln" ] && continue
     # 7.0.1 (#53): `→ Chưa quyết (… · đề xuất: thêm AC-9)` là ĐỀ XUẤT chờ chủ dự án, không phải lời khai đã sửa —
     # ID trong đó được phép chưa tồn tại. Verify không hỏi nữa nên mọi dòng chưa bác đều có dạng này.
-    case "$ln" in *"→ Chưa quyết"*) continue;; esac
-    for id in $(printf '%s' "$ln" | sed 's/.*→//' | grep -oE '(RULE-[0-9]+|AC-[0-9]+|E[0-9]+)' | sort -u); do
+    # 7.4 (P-37): chỉ xét ĐUÔI SỐNG — chữ sau mũi tên cuối, bỏ (…) và `…` (rr_tail). Tới 7.3 `case *"→ Chưa quyết"*`
+    # miễn cả dòng, nên đuôi sống "→ sửa AC-9" núp trước một cụm trích "(→ Chưa quyết …)" thoát kiểm; ngược lại mũi tên
+    # trong trích dẫn "`✗ … → E4 …`" không phải đầu ra. Đuôi là "Chưa quyết …" thì ID trong đó là đề xuất, được phép chưa có.
+    tl="$(printf '%s\n' "$ln" | rr_tail)"
+    [ -z "$tl" ] && continue
+    case "$tl" in *"Chưa quyết"*) continue;; esac
+    for id in $(printf '%s' "$tl" | grep -oE '(RULE-[0-9]+|AC-[0-9]+|E[0-9]+)' | sort -u); do
       case "$id" in
         RULE-*) [ -n "$(rule_file "$id" "$ROOT")" ] || bad "đọc lại khai → $id nhưng rules.md không có";;
         AC-*)   grep -qE "^### $id\b" "$F" || bad "đọc lại khai → $id nhưng UC không có";;
@@ -356,10 +397,18 @@ fi
 # context đỏ khi ai đó sửa rules.md; chưa có ca thật để cân.
 # 7.0: pathspec gồm cả đường 6.x — commit docs($ID) trước migrate nằm ở specs/contexts/…; git log
 # không --follow nên phải kể tên cũ, không thì UC dời sang cây mới mất sạch lịch sử đọc lại (#55).
-SPECP="$F $DIR/$ID.flow.md $DIR/screens $RFS $EFS"
-[ "$(layout "$ROOT")" = v7 ] && SPECP="$SPECP specs/contexts/*/use-cases/$ID-*/$ID.md specs/contexts/*/use-cases/$ID-*/$ID.flow.md specs/contexts/*/use-cases/$ID-*/screens specs/contexts/*/entities.md specs/rules.md"
-LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- $SPECP 2>/dev/null)"
-LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- $SPECP 2>/dev/null)"
+# 7.4 (P-31): đường UC trong pathspec là MẪU `specs/*/br-*/use-cases/ID-*/…`, không phải đường hiện tại — git log
+# không --follow, UC vừa `git mv` sang lát khác thì mọi commit đọc lại ở đường cũ biến mất và cổng đỏ "đổi HÀNH VI
+# (không rõ)". Mẫu phải tới tay git nguyên vẹn: glog tắt glob của shell (cwd là repo thì shell nở mẫu thành đường
+# hiện tại, đúng cái bẫy đang tránh).
+if [ "$(layout "$ROOT")" = v7 ]; then
+  SPECP="specs/*/br-*/use-cases/$ID-*/$ID.md specs/*/br-*/use-cases/$ID-*/$ID.flow.md specs/*/br-*/use-cases/$ID-*/screens $RFS $EFS specs/contexts/*/use-cases/$ID-*/$ID.md specs/contexts/*/use-cases/$ID-*/$ID.flow.md specs/contexts/*/use-cases/$ID-*/screens specs/contexts/*/entities.md specs/rules.md"
+else
+  SPECP="$F $DIR/$ID.flow.md $DIR/screens $RFS $EFS"
+fi
+glog() { set -f; git -C "$ROOT" log "$@" -- $SPECP 2>/dev/null; set +f; }
+LAST="$(glog -1 --format=%cs --grep="^docs($ID)")"
+LASTS="$(glog -1 --format=%s --grep="^docs($ID)")"
 # #49: commit đọc lại gần nhất, và "vân tay hành vi" của spec ở một revision. Ca thật runxops
 # UC-014: sáu lần đọc lại (19 → 23 → 11 → 7 → 7 → 10) vì mỗi đợt áp chữ/nhãn ở file bên cạnh
 # cũng kéo theo một lượt verify trọn (~200 KB, ~10 phút). Chủ dự án chốt: chỉ MÂU THUẪN HAI CHỖ
@@ -367,71 +416,59 @@ LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- $SPECP 2>/dev/
 # sau lần đọc lại NẾU vân tay hành vi không đổi: Main/Alternative/Exceptions/Postconditions/AC
 # của UC · flow.md · phát biểu RULE được trích (bỏ dòng Áp dụng cho) · mermaid của entities.md.
 # Đổi bất cứ vùng nào trong đó là đổi hành vi → đọc lại lần nữa (trọn hoặc --since).
-RH="$(git -C "$ROOT" log -1 --format=%H --grep="^docs($ID): đọc lại" -- $SPECP 2>/dev/null)"
-# Đường dẫn tra THEO REVISION: trước migrate UC ở specs/contexts/<ctx>/…, sau ở specs/<owner>/br-###/…;
-# vân tay so hai bên mốc migrate vẫn phải cùng nội dung. Vùng entities bỏ qua (info) khi hai bên
-# khác bố cục — 6.x một file cả context, 7.0 mỗi entity một file, nối lại không so được.
-tree_at()   { git -C "$ROOT" ls-tree -r --name-only "$1" 2>/dev/null; }
-layout_at() { tree_at "$1" | grep -qE '^specs/vision\.md$|^specs/[^/]+/br-[0-9]+/' && printf v7 || printf v6; }
-uc_at()     { tree_at "$1" | grep -E "/use-cases/$ID-[^/]*/$ID$2\.md\$" | head -1; }
-rules_at()  { tree_at "$1" | grep -E '^specs/rules\.md$|^specs/[^/]+/rules\.md$' | grep -vE '^specs/(contexts|internal|changes)/'; }
-entities_at() { # file entity của UC ở rev — 6.x: entities.md của context; 7.0: cùng tên file với entity_cited ở HEAD
-  _u="$(uc_at "$1" "")"; [ -n "$_u" ] || return 0
-  if [ "$(layout_at "$1")" = v6 ]; then printf '%s\n' "$_u" | sed -E 's#(specs/contexts/[^/]+)/.*#\1/entities.md#'
-  else _o="$(printf '%s' "$_u" | sed -E 's#^specs/([^/]+)/.*#\1#')"
-       for _e in $EFS; do _n="$(basename "$_e")"; tree_at "$1" | grep -E "^specs/(core|$_o)/entities/$_n\$"; done; fi
-}
-spec_fp() { # spec_fp <rev> <vùng>
-  _uc="$(git -C "$ROOT" show "$1:$(uc_at "$1" "")" 2>/dev/null)"
-  case "$2" in
-    main|alt|exc|post|ac)
-      case "$2" in main) _h="## Main Flow";; alt) _h="## Alternative Flows";; exc) _h="## Exceptions";; post) _h="## Postconditions";; ac) _h="## Acceptance Criteria";; esac
-      printf '%s\n' "$_uc" | awk -v h="$_h" 'index($0,h)==1{f=1;next} f&&/^## /{f=0} f';;
-    flow) _f="$(uc_at "$1" ".flow")"; [ -n "$_f" ] && git -C "$ROOT" show "$1:$_f" 2>/dev/null;;
-    rules)
-      _rl="$(for _p in $(rules_at "$1"); do git -C "$ROOT" show "$1:$_p" 2>/dev/null; printf '\n'; done)"
-      for _r in $(printf '%s' "$_uc" | grep -oE 'RULE-[0-9]+' | sort -u); do
-        printf '%s\n' "$_rl" | awk -v h="## $_r" 'index($0,h)==1{f=1;print;next} f&&/^## /{f=0} f' | grep -v 'Áp dụng cho'
-      done;;
-    entities) for _p in $(entities_at "$1"); do git -C "$ROOT" show "$1:$_p" 2>/dev/null | sed -n '/^```mermaid/,/^```/p'; done;;
-  esac
-}
+# 7.4: hàm vân tay (spec_fp · fp_changed) dời sang lib.sh — close-check dùng chung (P-10).
+RH="$(glog -1 --format=%H --grep="^docs($ID): đọc lại")"
 FP_CHANGED=""; FP_SKIP=""
-if [ -n "$RH" ]; then
-  for _z in main alt exc post ac flow rules entities; do
-    if [ "$_z" = entities ] && [ "$(layout_at "$RH")" != "$(layout_at HEAD)" ]; then FP_SKIP=entities; continue; fi
-    [ "$(spec_fp "$RH" "$_z")" = "$(spec_fp HEAD "$_z")" ] || FP_CHANGED="$FP_CHANGED $_z"
-  done
-fi
+[ -n "$RH" ] && FP_CHANGED="$(fp_changed "$ROOT" "$ID" "$RH" HEAD "$EFS")"
+# commit gần nhất chạm spec, BẤT KỂ tiêu đề — để câu báo "đổi HÀNH VI" chỉ đúng commit (docs(RULE-###) sửa phát biểu
+# rule không mang tên UC, P-35).
+LASTANY="$(glog -1 --format='%s (%cs)')"
 # Phải dùng `case`, KHÔNG dùng ${LASTS#docs($ID): ...}: dấu ngoặc đơn trong
 # pattern của phép bóc tiền tố làm nó không khớp gì cả, im lặng — đo được:
 # chuỗi trả về y nguyên chuỗi vào, nên điều kiện luôn sai và cửa không bao
 # giờ mở. Cùng họ với bẫy `ls a b` (#16): hỏng lặng lẽ, không báo lỗi.
 RRC=0; case "$LASTS" in "docs($ID): đọc lại"*) RRC=1;; esac
-if [ -z "$LAST" ]; then bad "chưa có commit docs($ID) — /sdd-solo:adversarial kết thúc bằng commit này"
-elif [ "$LASTS" = "docs($ID): implemented — traceability" ]; then
-  # 5.0.0: UC đã đóng — pass.sh close nén ## Đọc lại còn một dòng và commit. Chạy lại
-  # gate-check sau đó không được đỏ: cửa đã qua rồi, và đỏ oan thì bị học cách phớt lờ.
-  ok "docs($ID) mới nhất là commit đóng UC — đã qua cổng và đã đóng"
+# 7.4 (P-20): nói ra bao nhiêu phát hiện còn "→ Chưa quyết" — đầu ra hợp lệ (7.0.1 #53) nhưng cổng mở với chúng là nợ
+# chủ dự án tự nhận; ✓ không được giống hệt nhau ở "đã quyết hết" và "chưa quyết gì".
+rr_warn() { [ "$RRU" -gt 0 ] && warn "$RRU/$RRN phát hiện còn '→ Chưa quyết (chờ chủ dự án …)' — cổng mở là nợ anh tự nhận (#53); trả lời rồi đổi đuôi thành '→ Đã quyết: …' hoặc sửa spec + verify --since"; return 0; }
+if [ "$ST" = implemented ]; then
+  # 7.4 (P-16): UC đã đóng — mốc so là COMMIT ĐÓNG, không phải lần đọc lại (## Đọc lại đã nén còn một dòng, so với
+  # nó thì mọi commit docs sau đóng đều đỏ "chưa đọc lại"/"đổi HÀNH VI" oan). §0 đã đỏ vì status; ở đây chỉ nói thêm
+  # spec sau đóng có đổi hành vi không — có thì đó là việc của Phase 5, không phải của cổng này.
+  CH="$(glog -1 --format=%H --grep="^docs($ID): implemented — traceability")"
+  if [ -n "$CH" ]; then
+    CHG="$(fp_changed "$ROOT" "$ID" "$CH" HEAD "$EFS")"
+    if [ -z "$CHG" ]; then ok "sau commit đóng UC, spec chỉ đổi ngoài vùng hành vi — §9 không áp cho UC đã implemented"
+    else bad "spec đổi HÀNH VI sau khi đóng UC — vùng:$CHG; UC implemented đổi hành vi đi qua Phase 5 (/sdd-solo:change), không sửa thẳng"; fi
+  else info "UC implemented không có commit đóng của pass.sh close — §9 không áp"; fi
+elif [ "$ST" = deprecated ]; then info "UC deprecated — §9 không áp"
+elif [ -z "$LAST" ]; then bad "chưa có commit docs($ID) — /sdd-solo:adversarial kết thúc bằng commit này"
 elif [ "$LASTS" = "docs($ID): spec reviewed — qua cổng DoR" ]; then
   # Commit spec mới nhất do chính gate-pass tạo, không phải người sửa spec. Không có
   # nhánh này thì hành động qua cổng tự phá điều kiện qua cổng (#7). Sửa spec THẬT sau
   # khi qua cổng sinh commit khác tiêu đề → rơi xuống nhánh cuối, phải đọc lại.
   ok "docs($ID) mới nhất là commit của gate-pass — đã qua cổng trước đó"
-elif [ "$RRN" -gt 0 ] && [ "$RRC" = 1 ]; then
-  ok "đọc lại bằng đầu chưa neo: $RRN phát hiện có neo + đầu ra, commit riêng là commit spec mới nhất (#27, #38)"
 elif [ "$RRN" -eq 0 ]; then
   bad "chưa đọc lại bằng đầu chưa neo — ## Đọc lại không có dòng F# nào đủ [neo: ...] + đầu ra khác ___"
   info "/sdd-solo:verify $ID (subagent đọc lại, ghi F#, commit riêng). Từ 6.0.0 không còn cửa qua đêm."
-elif [ -n "$RH" ] && [ -z "$FP_CHANGED" ]; then
-  NCH="$(git -C "$ROOT" log --format=%h "$RH..HEAD" --grep="^docs($ID)" -- $SPECP 2>/dev/null | wc -l | tr -d ' ')"
-  ok "đọc lại: $RRN phát hiện có neo + đầu ra; $NCH commit spec sau đó chỉ áp chữ/nhãn — Main/Alt/Exceptions/Postconditions/AC · flow · phát biểu RULE · mermaid entities không đổi (#49)"
-  [ -n "$FP_SKIP" ] && info "lần đọc lại nằm trước migrate v7 — vùng mermaid entities không so được qua mốc đó (một file/context → một file/entity); tự soát tay nếu có đổi entity"
-else
-  bad "spec đổi HÀNH VI sau lần đọc lại — commit docs($ID) mới nhất là '$LASTS' ($LAST); vùng đổi:${FP_CHANGED:- (không rõ)}"
+elif [ -n "$RH" ] && [ -n "$FP_CHANGED" ]; then
+  # 7.4 (P-35): so vân tay TRƯỚC khi tin "commit đọc lại là commit spec mới nhất" — commit docs(RULE-###) sửa phát
+  # biểu rule không mang tên UC nên LASTS vẫn là đọc lại, mà hành vi đã đổi.
+  bad "spec đổi HÀNH VI sau lần đọc lại — commit chạm spec mới nhất là '$LASTANY'; vùng đổi:$FP_CHANGED"
   info "chạy lại /sdd-solo:verify $ID --since $(git -C "$ROOT" log -1 --format=%h "$RH" 2>/dev/null) — chỉ đọc phần đổi từ lần đọc lại trước; commit đọc lại mới sẽ là mốc mới"
   # #41: "đủ để sửa, thiếu để hiểu" — nói luôn thứ tự, để lần sau người ta áp phiếu TRƯỚC verify.
   info "thứ tự: áp hết phát hiện ⑦ (kể cả chữ/nhãn, file bên cạnh) → ⑧ verify → ⑨ gate, liền nhau; sửa spec sau ⑧ là chấp nhận đọc lại lần nữa"
+elif [ "$RRC" = 1 ]; then
+  ok "đọc lại bằng đầu chưa neo: $RRN phát hiện có neo + đầu ra, commit riêng là commit spec mới nhất (#27, #38)"
+  rr_warn
+elif [ -n "$RH" ]; then
+  NCH="$(glog --format=%h "$RH..HEAD" --grep="^docs($ID)" | wc -l | tr -d ' ')"
+  ok "đọc lại: $RRN phát hiện có neo + đầu ra; $NCH commit spec sau đó chỉ áp chữ/nhãn — Main/Alt/Exceptions/Postconditions/AC · flow · phát biểu RULE · mermaid entities không đổi (#49)"
+  [ -n "$FP_SKIP" ] && info "lần đọc lại nằm trước migrate v7 — vùng mermaid entities không so được qua mốc đó (một file/context → một file/entity); tự soát tay nếu có đổi entity"
+  rr_warn
+else
+  bad "spec đổi HÀNH VI sau lần đọc lại — commit docs($ID) mới nhất là '$LASTS' ($LAST); không tìm thấy commit 'docs($ID): đọc lại' để so vân tay"
+  info "chạy /sdd-solo:verify $ID — commit đọc lại mới sẽ là mốc"
 fi
 git -C "$ROOT" status --porcelain -- "$DIR" $RFS 2>/dev/null | grep -q . && bad "còn thay đổi chưa commit trong spec — commit docs($ID) trước"
 

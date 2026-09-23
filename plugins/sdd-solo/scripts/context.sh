@@ -27,11 +27,22 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"
 ID=""; WHY=0; BRIEF=0
-for a in "$@"; do case "$a" in --why) WHY=1;; --brief) BRIEF=1;; UC-[0-9]*) ID="$a";; esac; done
-[ -z "$ID" ] && { echo "Dùng: context.sh UC-### [--why | --brief]" >&2; exit 2; }
-F="$(find_uc "$ID" "$ROOT")"
-[ -z "$F" ] && { printf '  \033[31m✗\033[0m không tìm thấy file %s\n' "$ID" >&2; exit 1; }
-CTX="$(owner_of "$F")"; DIR="$(dirname "$F")"
+for a in "$@"; do case "$a" in --why) WHY=1;; --brief) BRIEF=1;; UC-[0-9]*|BR-[0-9]*) ID="$a";; esac; done
+[ -z "$ID" ] && { echo "Dùng: context.sh <UC-###|BR-###> [--why | --brief]" >&2; exit 2; }
+# 7.4 (P-23): BR-### — bối cảnh của một LÁT: mục quyết định của BR (không Background), dòng của lát ở vision.md,
+# RULE/ADR BR trích, architecture, entity/glossary BR nhắc. Cùng python, cùng luật cắt dấu vết; khác ở chỗ chủ thể
+# là br.md thay vì UC-###.md. 6.x: specs/br.md chứa nhiều BR — chỉ lấy mục của ID.
+case "$ID" in
+  BR-*)
+    F="$(br_file "$ID" "$ROOT")"
+    { [ -f "$F" ] && [ -n "$(br_title "$ID" "$ROOT")" ]; } || { printf '  \033[31m✗\033[0m không tìm thấy %s trong %s\n' "$ID" "${F#$ROOT/}" >&2; exit 1; }
+    CTX="$(owner_of_br "$ID" "$ROOT")";;
+  *)
+    F="$(find_uc "$ID" "$ROOT")"
+    [ -z "$F" ] && { printf '  \033[31m✗\033[0m không tìm thấy file %s\n' "$ID" >&2; exit 1; }
+    CTX="$(owner_of "$F")";;
+esac
+DIR="$(dirname "$F")"
 BP="$(brief_path "$ROOT")"; BS=""; [ -n "$BP" ] && BS="$(brief_sha "$ROOT" 2>/dev/null)"
 # 7.0 (#55): mọi đường dẫn nguồn tra ở lib.sh rồi đưa vào python qua env, mỗi dòng một file —
 # python không tự biết bố cục. 6.x: rules.md · br.md · internal/{adr,architecture.md} ·
@@ -39,7 +50,7 @@ BP="$(brief_path "$ROOT")"; BS=""; [ -n "$BP" ] && BS="$(brief_sha "$ROOT" 2>/de
 # entities/<Tên>.md mà UC nhắc tên (entity_cited). OTHERS = tên context/nghề KHÁC, để cắt khỏi glossary.
 export SDD_RULES="$(rules_files "$ROOT")" SDD_BRS="$(br_files "$ROOT")" SDD_ADRS="$(adr_dirs "$ROOT")"
 export SDD_ARCH="$(arch_file "$ROOT")" SDD_ENTS="$(entity_cited "$F" "$ROOT")" SDD_GLOS="$(glossary_files "$CTX" "$ROOT")"
-if [ "$(layout "$ROOT")" = v7 ]; then OTHERS="$(nghe_list "$ROOT" | tr ' ' '\n' | grep -vx "$CTX")"
+if [ "$(layout "$ROOT")" = v7 ]; then OTHERS="$(nghe_list "$ROOT" | tr ' ' '\n' | grep -vx "${CTX:-core}")"
 else OTHERS="$(ls -d "$ROOT"/specs/contexts/*/ 2>/dev/null | xargs -n1 basename | grep -v '^_' | grep -vx "$CTX")"; fi
 export SDD_OTHERS="$OTHERS"
 
@@ -84,10 +95,26 @@ def drop_trace(s):
         keep.append(ln)
     return '\n'.join(keep)
 def H(t): srcs.append((t, len(out))); out.append(f'\n════ {t} ════')
-uc = rd(F); design = rd(os.path.join(os.path.dirname(F), 'design.md')) or ''
+IS_BR = ID.startswith('BR-')
+uc = rd(F); design = '' if IS_BR else (rd(os.path.join(os.path.dirname(F), 'design.md')) or '')
+
+# ── 0. BR-### (7.4, P-23): chủ thể là một lát — mục quyết định của BR + dòng ở vision.md ──
+if IS_BR:
+    bm = re.search(r'(?ms)^# ' + re.escape(ID) + r':([^\n]*)\n(.*?)(?=^# BR-|\Z)', strip_markup(uc or ''))
+    uc = bm.group(2) if bm else ''
+    if not WHY and bm:
+        H(f'{ID}:{bm.group(1)} — quyết định (không Background)')
+        for hname in ('Goal', 'In Scope', 'Out of Scope', 'Success Metrics', 'Constraints', 'Related Use Cases', 'Đã loại khỏi brief', 'Open Questions'):
+            sb = sect(uc, hname)
+            if sb and sb.strip(): out.append(f'## {hname}\n' + drop_trace(sb).rstrip())
+        bg = sect(uc, 'Background')
+        if bg and bg.strip(): out.append(f'(## Background: {len(bg.encode())/1024:.1f} KB chứng cứ — đọc {rel(F)} khi cần)')
+        vis = rd(os.path.join(ROOT, 'specs', 'vision.md'))
+        rows = [l for l in (vis or '').split('\n') if l.startswith('|') and re.search(r'\b' + ID + r'\b', l)]
+        if rows: H('specs/vision.md — dòng của lát'); out.extend(rows)
 
 # ── 1. UC — mọi mục trừ ba mục dấu vết; Open Questions chỉ giữ câu còn mở ──
-if not WHY:
+if not WHY and not IS_BR:
     H(f'{ID}.md — phần đang hiệu lực')
     out.append(drop_trace(uc).rstrip())
     fl = rd(os.path.join(os.path.dirname(F), f'{ID}.flow.md'))
@@ -96,7 +123,7 @@ if not WHY:
 # ── 2-4. ID UC (và design.md) trích ──
 cited = drop_trace(uc) + '\n' + design
 rules = sorted(set(re.findall(r'\bRULE-[0-9]+[a-z]?\b', cited)))
-cons  = sorted(set(re.findall(r'\bCON-[0-9]+\b', cited)))
+cons  = [] if IS_BR else sorted(set(re.findall(r'\bCON-[0-9]+\b', cited)))   # BR: CON nằm ngay ## Constraints ở trên
 adrs  = sorted(set(re.findall(r'\bADR-[0-9]+\b', cited)))
 
 rl = '\n'.join((rd(p) or '') for p in RULES)
@@ -148,7 +175,7 @@ if adrs:
         out.append(f'{title}\nStatus: {st}\n{dec}')
 
 # ── 5. BR cha — quyết định, không chứng cứ ──
-brid = re.search(r'\bBR-[0-9]+\b', uc)
+brid = None if IS_BR else re.search(r'\bBR-[0-9]+\b', uc)
 if not WHY and brid:
     b = brid.group(0)
     body = re.search(r'(?ms)^# ' + re.escape(b) + r':([^\n]*)\n(.*?)(?=^# BR-|\Z)', brs)

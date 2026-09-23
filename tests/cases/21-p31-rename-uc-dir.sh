@@ -9,4 +9,4 @@ rep "$UC1" '- **Liên quan tới BR:** BR-001' '- **Liên quan tới BR:** BR-00
 app "$UC1" "- v3 (2026-01-06, anh): về nhà br-002"
 cm "docs(UC-001): về nhà br-002" 2026-01-06
 S gate-check.sh UC-001
-xfail P-31 "đổi thư mục UC không bị đọc là đổi HÀNH VI (được exit $R)" '! has "spec đổi HÀNH VI"'
+chk "P-31 · đổi thư mục UC không bị đọc là đổi HÀNH VI (được exit $R)" '! has "spec đổi HÀNH VI"'

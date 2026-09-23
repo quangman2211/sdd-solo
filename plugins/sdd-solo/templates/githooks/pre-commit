@@ -18,7 +18,10 @@ notool() { if [ -n "$TRE" ]; then grep -vE "$TRE"; else cat; fi; }
 SPEC=0; CODE=0
 echo "$STAGED" | grep -vE '/_template/' | grep -qE '^specs/.*UC-[0-9]+\.md$|^specs/([^/]+/)?rules\.md$' && SPEC=1
 echo "$STAGED" | grep -vE 'README\.md$' | notool | grep -qE "$RE" && CODE=1
-if [ "$SPEC" = 1 ] && [ "$CODE" = 1 ]; then
+# 7.4 (P-42): commit MERGE (MERGE_HEAD có) chở cả spec lẫn code của nhánh kia — hai bên đã tách ở nhánh gốc, đây
+# không phải người trộn. Chặn thì worktree code/uc-### không merge được main sau khi main có commit spec + code.
+MERGING=0; [ -f "$(git rev-parse --git-path MERGE_HEAD 2>/dev/null)" ] && MERGING=1
+if [ "$SPEC" = 1 ] && [ "$CODE" = 1 ] && [ "$MERGING" = 0 ]; then
   echo "✗ Commit đang trộn spec (specs/) và code ($CP $TP). Tách: commit docs(UC-###) trước, rồi feat(UC-###)." >&2
   exit 1
 fi

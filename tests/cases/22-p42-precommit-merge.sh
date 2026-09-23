@@ -13,4 +13,4 @@ git merge -q master >/dev/null 2>&1; MR=$?
 chk "merge có xung đột (git merge exit $MR)" '[ $MR != 0 ] && [ -f "$(git rev-parse --git-path MERGE_HEAD)" ]'
 printf 'bc\n' > STATE.md; git add STATE.md
 git commit -q -m "Merge master vào code/uc-001" 2>"$W/hookerr.txt"; R=$?
-xfail P-42 "pre-commit cho qua commit merge chở spec + code của main (được exit $R)" '[ $R = 0 ]'
+chk "P-42 · pre-commit cho qua commit merge chở spec + code của main (được exit $R)" '[ $R = 0 ]'
