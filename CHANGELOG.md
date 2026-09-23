@@ -1,5 +1,45 @@
 # Changelog
 
+## 7.5.0 — 2026-09-23
+
+Parser mermaid (**P-32**) — bốn chỗ đọc sơ đồ bằng `grep` từng dòng đổi sang đọc bằng một parser thật. Ca gốc, đo được:
+17/88 khối mermaid của runxops **không render được** (trình đọc hiện chữ đỏ thay cho hình) mà mọi cổng vẫn xanh, kể cả
+trên UC đã `implemented`.
+
+- **`scripts/mermaid.py` + `scripts/mermaid.sh`** — tách khối ```` ```mermaid ````, parse flowchart (14 hình, nhãn node,
+  nhãn cạnh, id), sequence · state · class; bốn chế độ `--lint` · `--edges` · `--nodes` · `--states` (thêm `--kinds`,
+  `--json`). Đây là file python **duy nhất** trong `scripts/`; `mermaid.sh` là vỏ bash, không có `python3` thì exit 0 im
+  lặng và mọi chỗ gọi rơi về đường `grep` của 7.4 — một phép kiểm không chạy được không bao giờ thành một phép kiểm đỏ.
+- **Luật lint đo bằng mermaid thật, không đoán.** Ground truth: `mermaid.parse` + `getDiagramFromText` (mermaid v11 qua
+  jsdom, node 25) chạy trên 88 khối thật của runxops (bản 7.0 và bản 6.x) cộng một ma trận **27 ký tự × 13 ngữ cảnh**.
+  Kết quả đối chiếu cuối: **17/17 khối vỡ bắt được, 0/71 khối lành báo oan**. Năm mã:
+  · `MMD-E01` nhãn node/cạnh flowchart chưa bọc nháy kép mà có `( ) [ ] { } |`
+  · `MMD-E02` nháy kép lồng trong nhãn đã bọc nháy kép (và nháy mở không đóng)
+  · `MMD-E03` dấu `;` trong lời sequenceDiagram (message · Note · alt/else/opt · participant as) hoặc nhãn quan hệ class
+  · `MMD-E04` dấu `;` trong nhãn stateDiagram — **mất chữ im lặng**: parse qua, nhưng đo trên
+    `core/entities/Account.md` của runxops thì **4/4 quan hệ về nhãn rỗng** và mermaid sinh 5 state rác (`;` `hôm` `nay`
+    `seed` `SQL)`). grep vẫn thấy chữ `UC-016` và vẫn in ✓, trong khi sơ đồ người đọc thấy không còn một chữ nào.
+  · `MMD-E05` dấu `:` thứ hai trong note stateDiagram / nhãn quan hệ classDiagram
+  Đo được là **vô hại** nên KHÔNG báo: `;` trong nhãn flowchart (nhãn giữ nguyên) · `#` · `,` · `·` · `→` · `<br/>` ·
+  nháy đơn · `%%` trong nháy · `[VIỆC LỖI]` bên trong nhãn đã bọc nháy kép.
+- **Bốn chỗ gọi:** `gate-check` §5 (nhãn cạnh E# và id node lấy từ parser, cộng lint `flow` · `sequence` · UC ·
+  `screens/README`) · `gate-check` §6 (state diagram "có mũi tên gắn UC" đọc **nhãn mermaid hiểu được**, không grep
+  dòng — đây là chỗ `MMD-E04` từng cho ✓ giả) · `br-check` §7 (lint mọi khối của `br.md`, Impact Map vỡ thì cả mục
+  thành chữ đỏ) · `uc-steps` ④ ("đã vẽ" nghĩa là **vẽ ra được**). `lib.sh` thêm `mmd` · `mmd_ok` · `mmd_lint`.
+- `scaffold.sh` chép `mermaid.py` + `mermaid.sh` vào `.sdd/scripts/` (cần `init --update` ở dự án), kẻo cổng chạy ở CI
+  rơi về grep im lặng.
+- Giá: `gate-check` trên UC lớn nhất của runxops (UC-025) 4,85 s → 5,44 s — thêm ~0,6 s cho một lượt cổng.
+
+Đo trên hai bản sao runxops (snapshot 7.4.0 ↔ 7.5.0): bản 7.0 **18/135** file đầu ra khác, bản 6.x **6/49** — và
+**không một verdict nào đổi** (mọi `QUA CỔNG` / `KHÔNG QUA CỔNG` / `ĐỦ ĐIỀU KIỆN` giữ nguyên ở cả hai bản). Cái khác
+là các dòng ✗ mới chỉ đúng file và dòng có sơ đồ vỡ, trên những UC vốn đã đỏ. Lint toàn cây: bản 7.0 có 7 `MMD-E01` ·
+25 `MMD-E03` · 10 `MMD-E04`, bản 6.x có 18 `MMD-E03` · 5 `MMD-E04` — nợ thật, sửa rẻ (đổi `;` thành `·` hoặc `—`, bọc
+nhãn trong `"…"`). Khuôn và fixture của chính plugin: 0 lỗi.
+
+Bộ test: ca 43, 11 phép đo mới (lint bắt ngoặc chưa bọc nháy · bọc nháy thì qua · `;` ở sequence · `--edges` không nhặt
+chữ trong nhãn node · `--nodes` in id + hình + nhãn · cổng đỏ khi flow vỡ · cổng đỏ khi `;` xoá nhãn state · **không có
+`python3` thì cổng vẫn qua, không đỏ oan** · scaffold chép parser). 43 ca · 175 xanh · 0 FAIL.
+
 ## 7.4.0 — 2026-09-23
 
 Đợt vá 18 lỗi còn mở của bản đánh giá runxops (`notes/sdd-solo-issues.md`, P-## · I-8), theo kế hoạch 2026-09-23 sau

@@ -130,6 +130,7 @@ bash .sdd/scripts/migrate.sh --evidence BR-001 --dry-run      # xem trước, r�
 bash .sdd/scripts/decisions.sh                                 # dự án đã quyết gì
 bash .sdd/scripts/context.sh UC-### --why                      # UC này do cái gì quyết định
 bash .sdd/scripts/context.sh BR-###                            # bối cảnh một lát: quyết định của BR + dòng vision + RULE/ADR (7.4)
+bash .sdd/scripts/mermaid.sh --lint specs/**/*.md              # sơ đồ nào không render được (7.5)
 ```
 
 `init --update` xoá file khuôn cũ **chỉ khi anh chưa sửa tay** (sha khớp manifest); đã sửa thì giữ và báo.

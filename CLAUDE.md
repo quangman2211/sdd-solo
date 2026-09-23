@@ -10,7 +10,7 @@ plugins/sdd-solo/
   skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · role · phieu · queue · state · status
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
-  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3)
+  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3) · mermaid.sh + **mermaid.py** (parser + lint khối mermaid, 7.5 — file python DUY NHẤT trong scripts/)
   templates/project/                 19 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16; 7.2–7.3: + .sdd/roles · notes/hang-doi.md · notes/uy-quyen.md)
   templates/skel/                    khuôn use-case/ · br/ · nghe/ · entity.md · change/ · hoi-dap.md · hoi-vai.md — skill/script copy khi tạo, KHÔNG rơi vào dự án
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
@@ -53,6 +53,11 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   là "chưa cài" và chép đè — trên repo vừa migrate, `specs/architecture.md` thật (dời từ `internal/`) bị thay bằng khuôn
   trong im lặng. Giờ: không dòng manifest mà file đã có → `.new` + cảnh báo; `migrate --layout v7` đổi tên đường dẫn
   trong manifest cho file khuôn vừa dời để lần `init --update` sau vẫn phân biệt được "chưa sửa" với "đã sửa".
+- **Luật lint mermaid đo bằng mermaid thật, không đoán** (7.5). `mermaid.py` chỉ báo những gì đã kiểm bằng
+  `mermaid.parse` + `getDiagramFromText` (node 25, jsdom) trên 88 khối thật của runxops cộng ma trận 27 ký tự ×
+  13 ngữ cảnh: 17/17 khối vỡ bắt được, 0 khối lành báo oan. Thêm luật mới thì thêm bằng cách ĐO lại, không bằng
+  suy đoán từ tài liệu mermaid — nới tay ở đây là đổi đỏ oan lấy hụt đỏ thật. Không có `python3` thì mọi chỗ gọi
+  rơi về đường grep của bản trước: một phép kiểm không chạy được không bao giờ được thành một phép kiểm đỏ.
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 

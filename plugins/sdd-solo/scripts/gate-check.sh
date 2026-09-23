@@ -208,7 +208,10 @@ if [ -f "$FL" ]; then
   # một node kết đặt tên E1([Đăng nhập được]) — tức một kết thúc THÀNH CÔNG —
   # làm cổng tin rằng đường lỗi E1 đã được vẽ, trong khi nhánh ngoại lệ thật
   # không còn nhãn nào. ✓ giả, và sai về đúng phía nguy hiểm. Xem #17.
-  LBL="$(grep -E '(-->|==>|-\.->|--x|--o)' "$FL" 2>/dev/null | grep -oE '\|[^|]*\|')"
+  # 7.5 (P-32): nhãn cạnh lấy từ PARSER (mermaid.py --edges) — nó biết đâu là nhãn, đâu là tên node, đâu là
+  # chữ trong nháy kép. Không có python3 thì rơi về grep của bản trước (đường lùi, không đỏ oan).
+  if mmd_ok; then LBL="$(mmd --edges "$FL")"
+  else LBL="$(grep -E '(-->|==>|-\.->|--x|--o)' "$FL" 2>/dev/null | grep -oE '\|[^|]*\|')"; fi
   # chiều xuôi: E# khai trong UC phải có một mũi tên mang nhãn đó
   for e in $(grep -oE '^- +(\*\*)?E[0-9]+' "$F" | grep -oE 'E[0-9]+' | sort -u); do
     printf '%s' "$LBL" | grep -qE "(^|[^A-Za-z0-9])$e([^0-9]|$)" && ok "$e có nhánh trong flow" \
@@ -223,8 +226,18 @@ if [ -f "$FL" ]; then
   # id node dạng E<số> không còn giả mạo được nhãn, nhưng vẫn khó đọc cho người.
   # Không bắt X#([E1: ...]) — ở đó E1 đứng trước dấu hai chấm, không phải id.
   # 7.4 (P-17): chỉ xét TRONG khối ```mermaid — ghi chú văn xuôi dưới sơ đồ nhắc "E1 (…)" không phải id node.
-  awk '/^```/{c=!c;next} c' "$FL" | grep -qE '(^|[[:space:]])E[0-9]+ *[[({]' \
-    && warn "$ID.flow.md đặt id node dạng E<số> — dễ đọc nhầm thành ngoại lệ; dùng P# cho node kết thường, X# cho node kết của ngoại lệ"
+  # 7.5 (P-32): parser trả thẳng cột id, không còn đoán bằng regex "id đứng trước dấu mở hình".
+  if mmd_ok; then
+    ENID="$(mmd --nodes "$FL" | awk -F'\t' '$1 ~ /^E[0-9]+$/ {print $1}' | sort -u | tr '\n' ' ')"
+  else
+    ENID="$(awk '/^```/{c=!c;next} c' "$FL" | grep -oE '(^|[[:space:]])E[0-9]+ *[[({]' | grep -oE 'E[0-9]+' | sort -u | tr '\n' ' ')"
+  fi
+  [ -n "$ENID" ] \
+    && warn "$ID.flow.md đặt id node dạng E<số> ($ENID) — dễ đọc nhầm thành ngoại lệ; dùng P# cho node kết thường, X# cho node kết của ngoại lệ"
+  # Sơ đồ KHÔNG RENDER ĐƯỢC thì không ai đọc lại được nó, và mọi phép đếm ở trên đếm trên một thứ không tồn tại.
+  # Đo: 17/88 khối mermaid của runxops vỡ mà cổng vẫn xanh (P-32). Lint cả flow · sequence · UC · screens/README.
+  mmd_lint "$FL" "$DIR/$ID.sequence.md" "$F" "$DIR/screens/README.md" \
+    || bad "sơ đồ mermaid ở trên không render được (mermaid.py --lint) — sửa rồi chạy lại; sơ đồ vỡ là sơ đồ không ai đọc"
 elif [ -f "$BP" ]; then
   ok "$ID.bpmn (đường cũ — .flow.md mermaid đếm được E#, cân nhắc chuyển)"
   [ -f "$BP.svg" ] || warn "chưa export $ID.bpmn.svg"
@@ -252,8 +265,21 @@ else
     # `đangSống --> đãSuspend` là do sàn khoá tài khoản, không UC nào gây ra.
     # Siết per-arrow sẽ ép người ta dán một UC-### giả lên đó — tức bịa, đúng
     # thứ cả quy trình này sinh ra để chặn.
-    cat /dev/null $EF | grep -qE '\-\->.*UC-[0-9]+' && ok "state diagram có mũi tên gắn UC có thật" \
-      || bad "state diagram còn '<UC-### ...>' của template — cần ít nhất một mũi tên ghi UC có thật kéo trạng thái đó"
+    # 7.5 (P-32): đọc NHÃN mermaid hiểu được, không grep dòng. Một dấu ; trong nhãn làm mermaid mất TRẮNG nhãn
+    # của CẢ sơ đồ (đo trên runxops core/entities/Account.md: 4/4 quan hệ về rỗng, 5 state rác) — grep vẫn thấy
+    # "UC-016" và vẫn in ✓, trong khi sơ đồ người đọc thấy không còn chữ nào.
+    if mmd_ok; then
+      STUC="$(for _e in $EF; do mmd --states "$_e"; done | awk -F'\t' '$3 ~ /UC-[0-9]+/' | head -1)"
+      if [ -n "$STUC" ]; then ok "state diagram có mũi tên gắn UC có thật (nhãn parse được)"
+      elif cat /dev/null $EF | grep -qE '\-\->.*UC-[0-9]+'; then
+        bad "state diagram có chữ UC-### nhưng mermaid KHÔNG đọc ra nhãn nào mang UC — nhãn đang bị mất khi render:"
+        mmd_lint $EF || true
+      else bad "state diagram còn '<UC-### ...>' của template — cần ít nhất một mũi tên ghi UC có thật kéo trạng thái đó"; fi
+    else
+      cat /dev/null $EF | grep -qE '\-\->.*UC-[0-9]+' && ok "state diagram có mũi tên gắn UC có thật" \
+        || bad "state diagram còn '<UC-### ...>' của template — cần ít nhất một mũi tên ghi UC có thật kéo trạng thái đó"
+    fi
+    mmd_lint $EF || bad "sơ đồ mermaid của entity không render được — sửa rồi chạy lại"
   else
     warn "entity chưa có state diagram nào"
   fi

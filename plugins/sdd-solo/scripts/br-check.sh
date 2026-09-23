@@ -244,6 +244,9 @@ else
   printf '%s' "$IM" | grep -qE '\-\.->' && ok "Impact Map có nhánh ngoài scope" \
     || bad "Impact Map không có nhánh '-.->' nào — mọi thứ đều nối về Goal thì chưa map, chỉ là danh sách việc"
 fi
+# 7.5 (P-32): mọi khối mermaid của br.md phải render được — Impact Map vỡ thì cả mục thành chữ đỏ, mà br-check
+# tới 7.4 chỉ đếm dấu mũi tên nên vẫn ✓.
+mmd_lint "$(br_file "$ID" "$ROOT")" || bad "sơ đồ mermaid trong br.md không render được — sửa rồi chạy lại"
 
 # 8. Related Use Cases — hai chiều.
 # Chiều xuôi CHỈ cảnh báo: ở Phase 1 thì UC chưa tồn tại là chuyện bình thường,

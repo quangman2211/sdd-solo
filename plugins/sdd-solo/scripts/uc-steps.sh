@@ -54,7 +54,12 @@ if grep -qE 'RULE-[0-9]+' "$F" \
 st "③" $R3 "RULE + entity + glossary"
 
 # ④ flow mermaid
-R4=1; grep -qE '^```mermaid' "$DIR/$ID.flow.md" 2>/dev/null && R4=0
+# 7.5 (P-32): "đã vẽ" nghĩa là VẼ RA ĐƯỢC — khối có mà mermaid không parse nổi thì bước ④ chưa xong.
+R4=1
+if grep -qE '^```mermaid' "$DIR/$ID.flow.md" 2>/dev/null; then
+  R4=0
+  if mmd_ok && [ -n "$(mmd --lint "$DIR/$ID.flow.md")" ]; then R4=1; fi
+fi
 [ "$R4" = 1 ] && [ -f "$DIR/$ID.bpmn" ] && R4=0
 st "④" $R4 "flow đã vẽ"
 

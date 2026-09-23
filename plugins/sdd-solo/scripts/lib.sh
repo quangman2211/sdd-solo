@@ -216,6 +216,27 @@ find_chg() {
   printf '%s' "$d"
 }
 
+# ── 7.5 — mermaid qua parser, không qua grep (P-32) ───────────────────────
+# mmd <--lint|--edges|--nodes|--states|--kinds> <file…> — in đầu ra của mermaid.py.
+# mmd_ok → 0 khi chạy được (có python3 + mermaid.py cạnh lib.sh). Không chạy được thì MỌI chỗ gọi
+# phải rơi về đường grep của bản trước: một phép kiểm không chạy được không bao giờ thành một phép kiểm đỏ.
+SDD_LIBDIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+mmd_ok() { command -v python3 >/dev/null 2>&1 && [ -f "$SDD_LIBDIR/mermaid.py" ]; }
+mmd() { local m="$1"; shift; mmd_ok || return 0; python3 "$SDD_LIBDIR/mermaid.py" "$m" "$@"; }
+# mmd_lint <file…> — in các dòng lỗi qua bad(), trả 1 nếu có. Bỏ file không tồn tại.
+mmd_lint() {
+  local f ff="" out
+  for f in "$@"; do [ -f "$f" ] && ff="$ff $f"; done
+  [ -n "$ff" ] || return 0
+  mmd_ok || return 0
+  out="$(mmd --lint $ff)" || true
+  [ -n "$out" ] || return 0
+  printf '%s\n' "$out" | while IFS= read -r l; do
+    printf '  \033[31m✗\033[0m %s\n' "$(printf '%s' "$l" | sed "s#^$ROOT/##" | cut -c1-200)"
+  done
+  return 1
+}
+
 sha() { if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | cut -d' ' -f1; else sha256sum "$1" | cut -d' ' -f1; fi; }
 today() { date +%Y-%m-%d; }
 
