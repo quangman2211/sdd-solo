@@ -9,12 +9,14 @@
 #                                          KETQUA ket=xong (role.sh --ketqua); đủ thì mục lục → "đã áp", commit
 #   phieu.sh muc-luc                       soát: số trùng · số nhảy · file không có dòng · dòng không có file. exit 1 nếu có
 #   phieu.sh list [--mo]                   in mục lục; --mo: phiếu chưa "đã áp"/"đóng"
+#   phieu.sh hoi <vai> "<câu một dòng>"    (7.3) mở mục HỎI-<V>n trong notes/hoi-dap/hoi-<V>.md theo khuôn bốn ô có địa chỉ
+#                                          (chép templates/skel/hoi-vai.md khi chưa có sổ); số = max + 1. Kiểm: hoi-check.sh <V>
 #
 # Vì sao: runxops trùng số phiếu BỐN lần trong một ngày (P-21) — chọn số lúc bắt đầu viết, tạo file lúc viết xong, khoảng
 # giữa đủ cho vai khác lấy mất số. Đóng phiếu chép TỔNG của R thay vì đếm trên file → đuôi phiếu rơi (P-33).
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"
-CMD="${1:-}"; [ -z "$CMD" ] && { sed -n '3,12p' "$0" | sed 's/^# \{0,3\}//'; exit 2; }
+CMD="${1:-}"; [ -z "$CMD" ] && { sed -n '3,14p' "$0" | sed 's/^# \{0,3\}//'; exit 2; }
 HD="$(hoi_dap_file "$ROOT")"; PD="$(dirname "$HD")/phieu"
 rel() { printf '%s' "${1#$ROOT/}"; }
 
@@ -126,5 +128,20 @@ list)
   if [ "$2" = --mo ]; then grep -E '^\| *#[0-9]+ \|' "$HD" | grep -vE '\| *(đã áp|đóng) *\|[^|]*\| *$'
   else grep -E '^\| *#[0-9]+ \|' "$HD"; fi | cut -c1-160
   ;;
-*) sed -n '3,12p' "$0" | sed 's/^# \{0,3\}//'; exit 2;;
+hoi)
+  V="$2"; CAU="$3"; [ -n "$V" ] && [ -n "$CAU" ] || { echo "dùng: phieu.sh hoi <vai> \"<câu một dòng>\"" >&2; exit 2; }
+  HF="$(dirname "$HD")/hoi-$V.md"; mkdir -p "$(dirname "$HF")"
+  if [ ! -f "$HF" ]; then
+    sk="$(plugin_file templates/skel/hoi-vai.md "$(dirname "$HERE")")"
+    if [ -n "$sk" ]; then sed "s/<V>/$V/g; s/<tên vai>/$(role_name "$V" "$ROOT")/" "$sk" | sed '/^### HỎI-/,$d' > "$HF"
+    else printf '# HỎI từ vai %s\n\n' "$V" > "$HF"; fi
+    ok "tạo $(rel "$HF") từ khuôn"
+  fi
+  N=$(( $(grep -oE "^### HỎI-$V[0-9]+" "$HF" | grep -oE '[0-9]+$' | sort -n | tail -1 | awk '{print $1+0}') + 1 ))
+  { printf '\n### HỎI-%s%s · %s — %s\n' "$V" "$N" "$CAU" "$(today)"
+    printf -- '- **Nguồn:** <file:mục đã tra>\n- **Chặn không:** <chặn | không chặn> — <vì sao>\n- **Đang làm gì trong lúc chờ:** <…>\n- **Việc cho spec khi trả lời:** <…>\n- **Trả lời (A/R):** · **đích:**\n'; } >> "$HF"
+  printf 'HỎI-%s%s %s\n' "$V" "$N" "$(rel "$HF")"
+  info "điền bốn ô rồi commit: git commit --only -m 'docs(<ID>): HỎI-$V$N — <câu>' -- $(rel "$HF") ; kiểm: hoi-check.sh $V"
+  ;;
+*) sed -n '3,14p' "$0" | sed 's/^# \{0,3\}//'; exit 2;;
 esac

@@ -8,6 +8,13 @@ allowed-tools: Bash Read Write Edit Grep Glob AskUserQuestion
 
 Thiết kế cho `$1`.
 
+**Chế độ phiếu (7.3) — khi chạy dưới lời giao của agent khác** (lời giao mở đầu `Vai:`/`Lượt`, hoặc
+`bash .sdd/scripts/role.sh --xem` ra một vai không phải điều phối, hoặc không chắc có người ở đầu kia): **không mở
+`AskUserQuestion`** — không ai bấm, lượt treo tới hết hạn (#53). Mỗi câu lẽ ra hỏi user thành một phiếu:
+`bash .sdd/scripts/phieu.sh new "<việc>" <vai>` với Câu · Đã tra · Nếu chọn sai thì · Agent nghiêng về; chỗ phụ thuộc
+câu đó để `___` + quyết định tạm; rồi **DỪNG** và kết bằng `role.sh --ketqua <khoá> ket=chan hoi=#<n>`. Chủ dự án tự
+gõ lệnh này trong phiên của mình thì hỏi như thường.
+
 **Vì sao bước này thuộc về sdd-solo chứ không thuê ngoài:** năm tầng yêu cầu (Hướng · BR · UC · Entity · AC)
 trả lời *đi về đâu · vì sao làm lát này · ai làm gì · khái niệm nào · biết đúng bằng cách nào*. **Không tầng nào trả lời
 *dựng bằng gì · chạy ở đâu · ai gọi*.** Trước 4.0.0 câu đó rơi vào một công cụ ngoài, và công cụ ấy

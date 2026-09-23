@@ -114,5 +114,36 @@ fi
 # Bản .sdd/scripts/ cũ chưa có uc-steps.sh — im, đừng gãy cả status vì một mục thêm.
 if [ -n "$UCNOW" ] && [ -f "$HERE/uc-steps.sh" ]; then echo; bash "$HERE/uc-steps.sh" "$UCNOW"; fi
 
+# 7.3 — đội agent: chỉ nói khi repo có sổ. Hai phép kiểm của uỷ quyền chạy ở đây, KHÔNG ở cổng DoR hay githook: cổng đo
+# chất lượng yêu cầu, không đo phối hợp. (1) mọi DỪNG-<tên> trong hàng đợi phải có tên khai ở ## Điểm dừng; (2) dòng Sổ
+# trỏ #n hay decisions thì specs/decisions.md phải có dòng khớp — không thì A quyết xong mà quyết định vô hình với mọi
+# phiên sau (đo runxops: 90 dòng Sổ, 81 ô Duyệt trống).
+UY="$ROOT/notes/uy-quyen.md"; HQ="$ROOT/notes/hang-doi.md"
+if [ -f "$UY" ] || [ -f "$HQ" ]; then
+  echo; echo "=== Đội agent (7.3) ==="
+  if [ -f "$HQ" ]; then
+    for nm in $(grep -oE '\| *DỪNG-[^ |]+' "$HQ" | sed 's/.*DỪNG-//' | sort -u); do
+      if [ -f "$UY" ] && grep -qE "^\| *$nm *\|" "$UY"; then ok "DỪNG-$nm có khai ở uy-quyen.md"
+      else bad "hàng đợi có DỪNG-$nm nhưng notes/uy-quyen.md ## Điểm dừng không khai tên đó"; fi
+    done
+    NX="$(bash "$HERE/queue.sh" board 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'xong mà Neo trống|nghi-chết' | head -5)"
+    [ -n "$NX" ] && printf '%s\n' "$NX" | sed 's/^ *//' | while IFS= read -r l; do warn "$l"; done
+  fi
+  if [ -f "$UY" ]; then
+    DEC="$(decisions_file "$ROOT")"
+    grep -E '^\| *[0-9]{4}-[0-9]{2}-[0-9]{2} *\|' "$UY" | while IFS= read -r row; do
+      ref="$(printf '%s' "$row" | awk -F'|' '{print $6}')"
+      for n in $(printf '%s' "$ref" | grep -oE '#[0-9]+'); do
+        grep -qF -- "$n" "$DEC" 2>/dev/null || warn "Sổ uỷ quyền trỏ phiếu $n nhưng $(basename "$DEC") không có dòng nào nhắc $n — quyết định vô hình với phiên sau"
+      done
+      printf '%s' "$ref" | grep -qi decisions && ! printf '%s' "$ref" | grep -qE '#[0-9]+' && {
+        d="$(printf '%s' "$row" | awk -F'|' '{print $2}' | tr -d ' ')"
+        grep -qE "^- *$d" "$DEC" 2>/dev/null || warn "Sổ uỷ quyền ngày $d nói 'decisions' nhưng $(basename "$DEC") không có dòng ngày đó"; }
+    done
+    grep -qE '^<Chủ dự án viết' "$UY" && info "uy-quyen.md ## Phạm vi còn khuôn — điều phối KHÔNG quyết câu L3 nào cho tới khi chủ dự án viết"
+  fi
+  for hf in "$ROOT"/notes/hoi-dap/hoi-[A-Z]*.md; do [ -f "$hf" ] && bash "$HERE/hoi-check.sh" "$hf" 2>&1 | grep -E '✗|!' | head -3; done
+fi
+
 # version: hỏi GitHub tối đa 3s, nhớ 24h. Chỉ nói khi lệch.
 V="$("$HERE/version-check.sh" --remote 2>&1)" || { echo; echo "$V"; }

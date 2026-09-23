@@ -1,5 +1,51 @@
 # Changelog
 
+## 7.3.0 — 2026-09-23
+
+Đội agent, phần hai — nốt các mục (5) đến (7) của kế hoạch 2026-09-23. Cùng nguyên tắc 7.2: plugin giữ cơ chế, repo giữ
+chính sách; không có sổ thì im lặng. Đo bằng `tests/` (ca 38–42, 41 phép đo mới; 42 ca · 139 xanh · 0 FAIL) và snapshot
+đầu ra mọi script trên hai bản sao runxops (6.x chưa migrate · 7.0) khác 0 dòng so với 7.0.1.
+
+- **Sổ hỏi có địa chỉ cho vai code/test** — `templates/skel/hoi-vai.md` bốn ô (nguồn · chặn không · đang làm gì trong
+  lúc chờ · việc cho spec khi trả lời) + ô `Trả lời (A/R)` · `đích:`. `phieu.sh hoi <V> "<câu>"` mở mục `HỎI-<V>n` (chép
+  khuôn khi chưa có sổ, số = max + 1). `hoi-check.sh <V> [--lich-su]`: bốn ô không còn khuôn · `Chặn không` là chặn |
+  không chặn · đã trả lời phải có đích · **cổng UC-### đã mở mà đích trỏ thân UC (không phải design.md/decisions.md,
+  không nói AC đổi) → ✗** — đó là luật 6 của runxops thành phép đo (UC-025: 25 câu HỎI, mỗi câu kéo một lượt sửa UC
+  rồi một lượt verify) · số HỎI trùng/nhảy · `--lich-su` bắt commit sửa dòng `### HỎI-` đã có (sổ chỉ-thêm). Chạy ở
+  `status.sh`, không ở githook (hoi-D.md runxops 3.309 dòng). Đây là thứ điều phối runxops chọn nếu chỉ được đưa một
+  thứ vào plugin — hôm nay là 421 mục hỏi trong hai sổ không khuôn.
+- **Sổ uỷ quyền có khuôn** — `templates/project/notes/uy-quyen.md`: Phạm vi (chủ dự án viết; còn khuôn thì điều phối
+  không quyết câu L3 nào) · Thứ tự nguồn · Điểm dừng có tên (năm dòng mẫu S1–S5 từ runxops, đổi tuỳ ý) · Sổ. Hai phép
+  kiểm ở `status.sh` mục "Đội agent", **không** ở cổng DoR (cổng đo chất lượng yêu cầu, không đo phối hợp): mọi
+  `DỪNG-<tên>` trong hàng đợi phải có tên ở bảng Điểm dừng; dòng Sổ trỏ `#n` thì `specs/decisions.md` phải có dòng nhắc
+  `#n` — không thì điều phối quyết xong mà quyết định vô hình với mọi phiên sau (runxops: 147 phiếu L3, chủ dự án thật
+  sự được hỏi ~6 lần, 90 lần A quyết thay, 81 ô Duyệt trống).
+- **Hàng đợi trong git — `notes/hang-doi.md` + `queue.sh add|next|take|done|stop|board|list`.** Bảng markdown cột cố
+  định (tiền lệ `uc_table_status`/`uc_table_set`): khoá · làn · vai · cần (nhiều khoá) · trạng thái (tập đóng: chờ · đang ·
+  xong · bỏ · `DỪNG-<tên>`) · neo · ghi chú; bảng `## Làn` có sức chứa. `next` in việc phát được ngay (mọi cần đã xong, làn
+  còn chỗ) — điều phối hỏi máy, không hỏi trí nhớ. **Chỉ điều phối ở checkout chính ghi**: `add|take|done|stop` từ chối ở
+  worktree phụ (git-dir ≠ git-common-dir); agent chỉ ghi KETQUA; `done` đọc KETQUA, đòi `ket=xong` + neo rồi mới ghi dòng
+  — xung đột ghi biến mất thay vì phải xử lý. Worktree phụ đọc bản `main` qua `git show`. `xong` không neo là đỏ ở `board`
+  (tám việc xong giả lúc hết hạn mức 22:16). Việc `đang` quá hạn (90 phút, `--qua-han`) chỉ cắm cờ `nghi-chết` để điều phối
+  đi nhìn — **không tự đổi trạng thái** (bài học bỏ cửa qua đêm, 6.0.0). Mỗi lần ghi một commit `--only`. Thay cho `q.sh`
+  88 dòng trong scratchpad runxops (mất là dựng lại) và bảng giao việc sinh mỗi phút không commit. Plugin không cấp runner.
+- **`session-start.sh` theo vai** — worktree có dấu vai (hay `SDD_ROLE`) thì hook bơm **hợp đồng vai** (được ghi · cấm ·
+  cách commit · kiểm · luật phiếu/KETQUA) + **việc đang giao** cho vai đó từ hàng đợi + KETQUA đã ghi, thay cho đoạn văn
+  viết cho một người ngồi gõ; worktree phụ kèm "sau main N commit — git merge main" và marker cổng main có mà nhánh
+  chưa (hook, marker, `.sdd/version` ở worktree là bản của nhánh nó). Vai điều phối nhận thêm `queue.sh board` + STATE.
+  Hook đã chạy lại mỗi `/clear` (matcher `startup|resume|clear`) — đúng nhịp "mỗi việc một phiên": phiên vừa xoá tự biết
+  mình là ai. Chữa hai trong ba sự cố lặp của điều phối: quên `/clear`, quên đặt lệnh chờ.
+- **Bốn skill còn hỏi có chế độ phiếu** — `start` · `design` · `intake` · `deprecate`: chạy dưới lời giao của agent khác
+  (hoặc `role.sh --xem` ra vai không phải điều phối) → không `AskUserQuestion`, mỗi câu thành `phieu.sh new`, `___` +
+  quyết định tạm, DỪNG, `role.sh --ketqua … ket=chan hoi=#n` (khuôn `adversarial --phieu` 7.0.1). `close` · `gate` nói
+  rõ không giao agent. Skill mới `/sdd-solo:queue`; `orchestrate` §1 setup + §4 trỏ hàng đợi, sổ hỏi, uỷ quyền.
+- Scaffold `KEEP` + `queue.sh hoi-check.sh`; `templates/project/notes/` hai khuôn. Ba phép đo chỉ đọc trên bản sao
+  runxops trước khi phát hành (kế hoạch): `role.sh --kiem-lich-su HEAD~300..HEAD` với bộ vai mẫu → **15/466 commit**
+  không vai nào được ghi đủ (3%, phần lớn `docs(UC-###)` chở cả test hay HỎI-T); `role.sh B` qua **208 phiếu**: 0 lỗi,
+  11 lời giao còn `___`, 36 không tách được dòng riêng của B (đưa cả khối), 2 gói đọc có đường dẫn không tồn tại;
+  `phieu.sh muc-luc` bắt **#178 trùng** cả ở mục lục lẫn tên file — P-21 lần thứ năm, lần này máy thấy trước người.
+- Còn lại của kế hoạch: 7.4.0 đợt vá lỗi cũ (18 XFAIL) · 7.5.0 parser · 8.0.0 dời dấu vết, trần vòng, gom số · 8.1.0 rút skill.
+
 ## 7.2.0 — 2026-09-23
 
 Đội agent, phần một (kế hoạch 2026-09-23 sau phỏng vấn điều phối runxops): sdd-solo viết cho một dev + một AI, runxops

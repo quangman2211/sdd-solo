@@ -36,8 +36,12 @@ từ lượt hiện tại. Không tham số → in bảng vai (§2) và hỏi us
    `bash .sdd/scripts/role.sh --kiem-lich-su` (chỉ đọc, 300 commit) rồi mới bật `nhanh-vai`. Bản cũ
    `pre-commit.d/10-role-boundary.sh` (theo nhánh) còn thì `git rm`, kẻo hai mảnh cùng chặn. Hook nằm trong git, worktree
    chỉ thấy nó sau khi `merge main`.
-4. Commit `chore(sdd): orchestrate setup — hoi-dap.md + .sdd/roles`.
-5. Hỏi user bằng `AskUserQuestion` **hai câu**: (a) quyền tự quyết của R — *tới L2 (Recommended, runxops chốt) ·
+4. (7.3) `notes/hang-doi.md` (hàng đợi, chỉ A ghi qua `queue.sh`) và `notes/uy-quyen.md` (uỷ quyền + điểm dừng có tên) —
+   `init --update` chép khuôn. Đọc `uy-quyen.md` cùng chủ dự án: **Phạm vi** do chủ dự án viết (còn khuôn thì A không
+   quyết câu L3 nào), sửa tên điểm dừng cho đúng repo. `status.sh` kiểm: mọi `DỪNG-<tên>` trong hàng đợi phải có tên ở
+   bảng Điểm dừng; dòng Sổ trỏ `#n` thì `decisions.md` phải có dòng khớp.
+5. Commit `chore(sdd): orchestrate setup — hoi-dap.md + .sdd/roles + hang-doi.md + uy-quyen.md`.
+6. Hỏi user bằng `AskUserQuestion` **hai câu**: (a) quyền tự quyết của R — *tới L2 (Recommended, runxops chốt) ·
    tới L1 · chỉ L0*; (b) có vai Q (QA e2e) ngay không — *bật khi compose/deploy chạy được (Recommended) · bật ngay ·
    không có*. Ghi hai câu trả lời vào đầu `hoi-dap.md` (dòng *Quyền tự quyết mặc định*) và `decisions.md`.
 
@@ -142,6 +146,15 @@ merge code/uc-### → main (A hoặc chủ dự án) → /sdd-solo:close (chủ 
 ```
 Một vòng `C → R → spec ‖ D ‖ T` ≈ 35–45 phút ở runxops. Ba vai cuối luôn phát cùng lúc vì họ chỉ cần chữ của
 phiếu, không cần nhau.
+
+**Hàng đợi (7.3):** `queue.sh add <khoá> <làn> <vai> --can "<khoá trước>"` · `queue.sh next` in việc phát được ngay (mọi
+Cần đã xong, làn còn chỗ) — A hỏi máy, không hỏi trí nhớ · `queue.sh take <khoá>` khi phát · `queue.sh done <khoá>` chỉ khi
+có KETQUA `ket=xong` + neo · `queue.sh stop <khoá> <tên dừng>` với tên ở `uy-quyen.md` · `queue.sh board` là bảng giao việc
+(việc quá hạn chỉ cắm cờ `nghi-chết`, A đi nhìn, không tự đổi trạng thái). Agent không ghi bảng; worktree phụ đọc bản
+`main`. Mỗi lượt của A kết thúc bằng **một lệnh chờ nền hoặc một điểm dừng có tên** — không có trạng thái thứ ba.
+**Sổ hỏi có địa chỉ:** D/T mở câu bằng `phieu.sh hoi D "<câu>"` (bốn ô: nguồn · chặn không · đang làm gì trong lúc chờ ·
+việc cho spec khi trả lời); A trả lời vào ô `Trả lời (A/R)` + `đích:` (design.md · decisions.md), **không sửa lời hỏi**;
+thân UC chỉ mở lại khi một AC đổi — `hoi-check.sh D` đỏ khi cổng đã mở mà đích trỏ thân UC.
 
 **Sau mỗi lượt, A làm đúng bốn việc:** (1) đọc `git log` của nhánh + khối báo cuối của agent (không tin bản đọc màn
 hình cho kết quả dài); (2) kiểm ranh giới bằng máy (§2 luật 2); (3) commit sổ agent không được commit

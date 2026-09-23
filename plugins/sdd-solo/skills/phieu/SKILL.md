@@ -2,7 +2,7 @@
 name: phieu
 description: Phiếu hỏi đáp có khoá số (7.2) — cấp số kế tiếp bằng máy (khoá nguyên tử chung mọi worktree, commit dòng giữ chỗ ngay), đóng phiếu đếm F#/K# trên file và đòi KETQUA từng vai, soát mục lục. Dùng khi agent cần mở phiếu mới, khi điều phối đóng phiếu, hoặc khi nghi mục lục lệch.
 disable-model-invocation: true
-argument-hint: "new \"<việc>\" <từ-vai> [slug] | close <n> | muc-luc | list [--mo]"
+argument-hint: "new \"<việc>\" <từ-vai> [slug] | close <n> | muc-luc | list [--mo] | hoi <vai> \"<câu>\""
 allowed-tools: Bash Read
 ---
 
@@ -23,6 +23,8 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/phieu.sh" $ARGUMENTS
   trong `Cho:` phải có `KETQUA ket=xong` (`role.sh --ketqua`) — thiếu → đỏ. Đủ thì mục lục → `đã áp`, commit.
 - `muc-luc` — số trùng · số nhảy · file không dòng · dòng không file. Chạy chỉ đọc trên sổ hiện có trước khi tin nó.
 - `list [--mo]` — in mục lục; `--mo` chỉ phiếu chưa `đã áp`/`đóng`.
+- `hoi <vai> "<câu>"` (7.3) — mở mục `HỎI-<V>n` trong `notes/hoi-dap/hoi-<V>.md` theo khuôn bốn ô có địa chỉ (nguồn ·
+  chặn không · đang làm gì trong lúc chờ · việc cho spec khi trả lời) + ô `Trả lời (A/R)` · `đích:`. Kiểm: `hoi-check.sh <V>`.
 
 Không tự viết thân phiếu thay agent; không xếp mức L0–L3 (việc của R); không hỏi user bằng `AskUserQuestion` khi chạy
 dưới lời giao — phiếu chính là câu hỏi.

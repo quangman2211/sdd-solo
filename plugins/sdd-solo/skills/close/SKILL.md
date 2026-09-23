@@ -8,6 +8,8 @@ allowed-tools: Bash Read Edit
 
 Đóng `$1`.
 
+**Không giao agent:** `close` là việc của chủ dự án (orchestrate §2 luật 7). Chạy dưới lời giao của agent khác → dừng, ghi KETQUA `ket=chan hoi=-` nói rõ "close là việc của chủ dự án".
+
 1. Chạy self-review 5 câu cùng user trước (từ `.sdd/checklists/self-review.md`), đặc biệt câu 5 *"AI quyết hay mình quyết?"* — nếu có quyết định kỹ thuật đáng nhớ, append một dòng vào `specs/decisions.md` (gốc) theo format trong file.
 2. Chạy và in output:
 ```bash

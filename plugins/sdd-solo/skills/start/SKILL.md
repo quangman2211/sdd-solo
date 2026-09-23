@@ -8,6 +8,13 @@ allowed-tools: Bash Read Write Edit Glob Grep AskUserQuestion
 
 Tạo khung cho use case `$1`.
 
+**Chế độ phiếu (7.3) — khi chạy dưới lời giao của agent khác** (lời giao mở đầu `Vai:`/`Lượt`, hoặc
+`bash .sdd/scripts/role.sh --xem` ra một vai không phải điều phối, hoặc không chắc có người ở đầu kia): **không mở
+`AskUserQuestion`** — không ai bấm, lượt treo tới hết hạn (#53). Mỗi câu lẽ ra hỏi user thành một phiếu:
+`bash .sdd/scripts/phieu.sh new "<việc>" <vai>` với Câu · Đã tra · Nếu chọn sai thì · Agent nghiêng về; chỗ phụ thuộc
+câu đó để `___` + quyết định tạm; rồi **DỪNG** và kết bằng `role.sh --ketqua <khoá> ket=chan hoi=#<n>`. Chủ dự án tự
+gõ lệnh này trong phiên của mình thì hỏi như thường.
+
 Khuôn nằm trong plugin: `${CLAUDE_PLUGIN_ROOT}/templates/skel/` (không thay được biến: `find ~/.claude/plugins -type d -name skel -path '*sdd-solo*' | head -1`). Từ 5.0.0 khuôn không còn được chép vào
 `.sdd/templates/` của dự án — chỉ skill đọc khuôn, mà skill chỉ chạy khi có plugin, nên bản sao trong dự án
 là 13 file không ai đụng tới (đo ở runxops: nguyên byte sau nhiều tuần).

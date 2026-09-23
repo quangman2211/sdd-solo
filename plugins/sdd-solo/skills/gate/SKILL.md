@@ -8,6 +8,8 @@ allowed-tools: Bash Read
 
 Cổng DoR cho `$1`.
 
+**Không giao agent:** `gate` là việc của chủ dự án (orchestrate §2 luật 7). Chạy dưới lời giao của agent khác → chỉ chạy `gate-check` và báo kết quả, không chạy `pass.sh gate`.
+
 1. Chạy và in nguyên output:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/gate-check.sh" $1

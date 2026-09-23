@@ -8,6 +8,13 @@ allowed-tools: Bash Read Edit AskUserQuestion
 
 Bỏ `$1`.
 
+**Chế độ phiếu (7.3) — khi chạy dưới lời giao của agent khác** (lời giao mở đầu `Vai:`/`Lượt`, hoặc
+`bash .sdd/scripts/role.sh --xem` ra một vai không phải điều phối, hoặc không chắc có người ở đầu kia): **không mở
+`AskUserQuestion`** — không ai bấm, lượt treo tới hết hạn (#53). Mỗi câu lẽ ra hỏi user thành một phiếu:
+`bash .sdd/scripts/phieu.sh new "<việc>" <vai>` với Câu · Đã tra · Nếu chọn sai thì · Agent nghiêng về; chỗ phụ thuộc
+câu đó để `___` + quyết định tạm; rồi **DỪNG** và kết bằng `role.sh --ketqua <khoá> ket=chan hoi=#<n>`. Chủ dự án tự
+gõ lệnh này trong phiên của mình thì hỏi như thường.
+
 **Vì sao có lệnh này (#45):** ở runxops chủ dự án chọn viết lại UC-009 và UC-012 — đặt `Status: deprecated` bằng tay,
 nhưng `.sdd/gate/UC-009.ok` và `UC-012.ok` vẫn còn (githook vẫn cho commit `feat(UC-009)`), `status.sh` không nói gì,
 History và `decisions.md` ghi tay và quên, STATE ghi nợ nhiều ngày. Bốn việc rời nhau thì một việc luôn bị bỏ sót.
