@@ -40,7 +40,7 @@ fi
 RV="$(role_current "$ROOT")"
 if [ -n "$RV" ] && [ -n "$(roles_file "$ROOT")" ] && role_known "$RV" "$ROOT"; then
   RN="$(role_name "$RV" "$ROOT")"
-  QB=""; [ -x "$HD/queue.sh" ] && [ -f "$ROOT/notes/hang-doi.md" ] && QB="$(bash "$HD/queue.sh" list 2>/dev/null | grep -E "^\| *[a-z0-9][a-z0-9._-]* *\|" | awk -F'|' -v v="$RV" '{a=$4; b=$6; gsub(/^ +| +$/,"",a); gsub(/^ +| +$/,"",b)} a==v && (b=="đang" || b=="chờ")' | cut -c1-160 | tr '\n' ';')"
+  QB=""; [ -x "$HD/queue.sh" ] && [ -f "$ROOT/notes/hang-doi.md" ] && QB="$(bash "$HD/queue.sh" list 2>/dev/null | grep -E "^\| *[a-z0-9][a-z0-9._-]* *\|" | awk -F'|' -v v="$RV" -v re="^($(kw q_active)|$(kw q_wait))\$" '{a=$4; b=$6; gsub(/^ +| +$/,"",a); gsub(/^ +| +$/,"",b)} a==v && b ~ re' | cut -c1-160 | tr '\n' ';')"
   KQ=""; for kf in "$(ketqua_dir "$ROOT")"/$(printf '%s' "$RV" | tr 'A-Z' 'a-z')-*.txt; do [ -f "$kf" ] && KQ="$KQ $(basename "$kf" .txt)=$(tail -1 "$kf" | grep -oE 'ket=[a-z]+' | cut -d= -f2)"; done
   LAG=""; MB="$(git -C "$ROOT" show-ref --verify --quiet refs/heads/main && echo main || echo master)"
   if [ "$(cd "$ROOT" && git rev-parse --git-dir)" != "$(cd "$ROOT" && git rev-parse --git-common-dir)" ]; then
@@ -48,7 +48,7 @@ if [ -n "$RV" ] && [ -n "$(roles_file "$ROOT")" ] && role_known "$RV" "$ROOT"; t
     MG="$(git -C "$ROOT" ls-tree --name-only "$MB:.sdd/gate/" 2>/dev/null | sed 's/\.ok$//' | while read -r g; do [ -f "$ROOT/.sdd/gate/$g.ok" ] || printf '%s ' "$g"; done)"
     [ -n "$MG" ] && LAG="$LAG Marker cổng $MB có mà nhánh này chưa: $MG"
   fi
-  case "$RN" in *"điều phối"*) ISA=1;; *) ISA=0;; esac
+  if printf '%s' "$RN" | grep -qiE "$(kw coordinator)"; then ISA=1; else ISA=0; fi
   CTX="[sdd-solo v$VER] Phiên này là VAI $RV · $RN (dấu vai theo worktree). Được ghi: $(role_paths "$RV" "$ROOT"). KHÔNG ghi: $(role_deny "$RV" "$ROOT"). Commit: $(role_may_commit "$RV" "$ROOT" && printf '<type>(ID) kê đích danh file (git commit --only -- <file>), hook thêm đuôi Vai: %s' "$RV" || printf 'KHÔNG — điều phối commit thay'). Kiểm trước commit: $(role_checks "$RV" "$ROOT"). Luật: làm ĐÚNG việc trong lời giao, đọc đúng gói đọc, không đọc sổ điều phối; gặp điều spec chưa nói (số · enum · quyền · hình dạng) → bash .sdd/scripts/phieu.sh new \"<việc>\" $RV (hoặc phieu.sh hoi $RV \"<câu>\") rồi DỪNG — không AskUserQuestion, không đoán, không nhắn agent khác; không push. Kết lượt: bash .sdd/scripts/role.sh --ketqua <khoá> ket=xong neo=<hash> TRƯỚC khi báo, rồi báo ≤ 10 dòng mở đầu bằng chính dòng KETQUA.${LAG} Việc đang giao cho vai này (notes/hang-doi.md): ${QB:-không có dòng nào}. KETQUA đã ghi:${KQ:- chưa có}.${VC:+ CẢNH BÁO lệch version: $VC}"
   if [ "$ISA" = 1 ]; then
     CTX="$CTX

@@ -98,7 +98,7 @@ case "$1" in
   [ -n "$RF" ] || exit 0
   [ -f "$(cd "$ROOT" && git rev-parse --git-path MERGE_HEAD)" ] && exit 0
   V="$SDD_ROLE"
-  if [ -z "$V" ] && [ "$1" = --commit ] && [ -f "$2" ]; then V="$(grep -E '^Vai: *[A-Za-z0-9_-]+ *$' "$2" | head -1 | sed 's/^Vai: *//; s/ *$//')"; fi
+  if [ -z "$V" ] && [ "$1" = --commit ] && [ -f "$2" ]; then V="$(grep -E "^($(kw c_role)): *[A-Za-z0-9_-]+ *\$" "$2" | head -1 | sed -E "s/^($(kw c_role)): *//; s/ *\$//")"; fi
   [ -z "$V" ] && V="$(role_current "$ROOT")"
   REQ="$(role_required "$ROOT")"
   if [ -z "$V" ]; then
@@ -115,12 +115,15 @@ EOS
     else warn "vai $V: commit chạm ngoài vùng ghi — chỉ nhắc (vai_bat_buoc=khong; bật chặn: vai_bat_buoc=nhanh-vai trong .sdd/roles)"; fi
   fi
   # đuôi Vai: — kênh duy nhất git ghi lại được; `git log --grep '^Vai: '` đo mức tuân thủ
-  if [ "$1" = --commit ] && [ -f "$2" ] && ! grep -qE '^Vai: ' "$2"; then printf '\nVai: %s\n' "$V" >> "$2"; fi
+  if [ "$1" = --commit ] && [ -f "$2" ] && ! grep -qE "^($(kw c_role)): " "$2"; then printf '\n%s: %s\n' "$(kw_w c_role "$ROOT")" "$V" >> "$2"; fi
   exit 0
   ;;
 --kiem-lich-su)
   need_roles; RANGE="${2:-HEAD~300..HEAD}"
   N=0; NONE=0; VIO=0; LIST=""
+  # đuôi vai đọc CẢ HAI vế (kw c_role) — git chỉ nhận một khoá mỗi %(trailers:key=…), nên một atom mỗi vế,
+  # và giá trị ra sau tiền tố ASCII '##' để phân biệt với dòng tên file của --name-only
+  TFMT=""; for k in $(kw c_role | tr '|' ' '); do TFMT="$TFMT%(trailers:key=$k,valueonly=true)"; done
   # mỗi commit không-merge: file chạm + đuôi Vai nếu có → vai nào được ghi ĐỦ mọi file
   while IFS= read -r line; do
     case "$line" in
@@ -137,12 +140,12 @@ EOS
   $H $S — khai Vai: $TV nhưng vai đó không được ghi đủ";; esac; fi
         fi
         H="$(printf '%s' "$line" | cut -c3-9)"; S="$(printf '%s' "$line" | cut -c11- | cut -c1-70)"; TV=""; FILES="";;
-      "Vai: "*) TV="${line#Vai: }";;
+      "##"*) TV="${line#\#\#}";;
       "") ;;
       *) FILES="$FILES $line";;
     esac
   done <<EOS
-$(git -C "$ROOT" log --no-merges --format='@@%h %s%n%(trailers:key=Vai,valueonly=false)' --name-only $RANGE 2>/dev/null)
+$(git -C "$ROOT" log --no-merges --format="@@%h %s%n##$TFMT" --name-only $RANGE 2>/dev/null)
 @@
 EOS
   echo "Luật vùng ghi của .sdd/roles chạy qua $N commit ($RANGE)"

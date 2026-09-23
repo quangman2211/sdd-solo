@@ -8,6 +8,7 @@
 // Dùng: hoi.mjs <file sổ> <mã vai> <root>   · exit 1 nếu có ✗
 import fs from 'node:fs';
 import path from 'node:path';
+import { kw, kwl, kwW } from './kw.mjs';
 
 const [, , file, V, root] = process.argv;
 const s = fs.readFileSync(file, 'utf8');
@@ -16,40 +17,43 @@ const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const out = (kind, m) => process.stdout.write(
   (kind === 'bad' ? '  \x1b[31m✗\x1b[0m ' : kind === 'warn' ? '  \x1b[33m!\x1b[0m ' : '  \x1b[32m✓\x1b[0m ') + m + '\n');
 
-const FIELDS = ['Nguồn', 'Chặn không', 'Đang làm gì trong lúc chờ', 'Việc cho spec khi trả lời'];
-const blocks = s.split(/^(?=### HỎI-)/m);
+// 7.7.0: bốn ô bắt buộc tra qua bảng — sổ hỏi viết tiếng Anh phải kiểm được như sổ tiếng Việt.
+// FIELDS giữ TÊN từ khoá, mẫu dựng từ kw() nên nhận cả hai vế; tên in ra dùng kw_w theo doc_lang.
+const FIELDS = ['source', 'blocking', 'waiting', 'specwork'];
+const ASK = kw('ask');
+const blocks = s.split(new RegExp('^(?=### (?:' + ASK + ')-)', 'm'));
 const nums = [];
 let bad = 0, warn = 0;
 
 for (const b of blocks) {
-  const m = new RegExp('^### HỎI-' + esc(V) + '(\\d+)[ ·]').exec(b);
+  const m = new RegExp('^### (?:' + ASK + ')-' + esc(V) + '(\\d+)[ ·]').exec(b);
   if (!m) continue;
   const n = Number(m[1]);
   nums.push(n);
   const tag = `HỎI-${V}${n}`;
   for (const fl of FIELDS) {
-    const mm = new RegExp('\\*\\*' + esc(fl) + ':\\*\\*\\s*(.*)').exec(b);
+    const mm = new RegExp(kwl(fl).source + '\\s*(.*)').exec(b);
     const val = mm ? mm[1].trim() : '';
     if (!val || /^<[^>]*>\s*$/.test(val) || val === '-' || val === '___') {
-      out('bad', `${tag}: ô "${fl}" trống hoặc còn khuôn`); bad++;
+      out('bad', `${tag}: ô "${kwW(fl)}" trống hoặc còn khuôn`); bad++;
     }
   }
-  const okChan = /\*\*Chặn không:\*\*\s*(chặn|không chặn)\b/.exec(b);
-  if (!okChan && /\*\*Chặn không:\*\*/.test(b)) {
+  const okChan = new RegExp(kwl('blocking').source + '\\s*(?:' + kw('blockvals') + ')(?![\\p{L}\\p{N}_])', 'u').exec(b);
+  if (!okChan && kwl('blocking').test(b)) {
     out('bad', `${tag}: "Chặn không" phải bắt đầu bằng chặn | không chặn`); bad++;
   }
-  const ans = /\*\*Trả lời \(A\/R\):\*\*\s*(.*)/.exec(b);
+  const ans = new RegExp(kwl('answer').source + '\\s*(.*)').exec(b);
   const ansv = ans ? ans[1].trim() : '';
-  const ansvCore = ansv.replace(/·\s*\*\*đích:\*\*.*$/, '').trim();
+  const ansvCore = ansv.replace(new RegExp('·\\s*' + kwl('target').source + '.*$'), '').trim();
   if (ansvCore && !/^<[^>]*>$/.test(ansvCore)) {
-    const d = /\*\*đích:\*\*\s*(.*)/.exec(b);
+    const d = new RegExp(kwl('target').source + '\\s*(.*)').exec(b);
     const dv = d ? d[1].trim() : '';
     if (!dv || /^<[^>]*>$/.test(dv)) {
       out('bad', `${tag}: đã trả lời mà không có đích: (design.md · decisions.md · UC-### AC-# khi AC đổi)`); bad++;
     } else {
       const uc = /\bUC-\d+\b/.exec(dv);
       if (uc && !dv.includes('design.md') && !dv.includes('decisions')
-          && !/\bAC-?\d*\b|AC đổi|History/.test(dv)
+          && !new RegExp('\\bAC-?\\d*\\b|' + kw('acchanged') + '|History').test(dv)
           && fs.existsSync(path.join(root, '.sdd/gate', uc[0] + '.ok'))) {
         out('bad', `${tag}: cổng ${uc[0]} đã mở mà đích trỏ vào thân UC (${dv.slice(0, 50)}) — sau cổng trả lời ở design.md/decisions.md; thân UC chỉ mở khi một AC đổi`);
         bad++;

@@ -41,6 +41,13 @@ function fld(s, name,   i, rest, j) {
   sub(/^[ \t]+/, "", rest); sub(/[ \t]+$/, "", rest)
   return rest
 }
+# fldk(): như fld nhưng nhận THÂN alternation của kw() (`Từ|From`) — thử từng vế, lấy vế
+# nào có mặt trên dòng. Nhờ nó một ô con viết bằng tiếng Anh vào sổ tra y như tiếng Việt.
+function fldk(s, k,   i, n, a, r) {
+  n = split(k, a, "|")
+  for (i = 1; i <= n; i++) { r = fld(s, a[i] ":"); if (r != "") return r }
+  return ""
+}
 function nodate(d) { return (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) ? d : "0000-00-00" }
 # ghost(): dòng còn là KHUÔN, chưa phải quyết định. Bỏ nó đi là bắt buộc, không
 # phải cho gọn — một sổ tra liệt kê chính lời giảng trong khuôn thành "quyết định
@@ -59,7 +66,8 @@ function ghost(s) {
 # đọc chính lời giảng thành quyết định. (Cùng bẫy đã dính ở design-check 4.0.x.)
 
 # ── CON-### : specs/br.md (6.x) · specs/*/br-###/br.md (7.0) ─────────────────
-br_text "$ROOT" | strip_markup | awk -v T="$TAB" "$FLD"'
+br_text "$ROOT" | strip_markup | awk -v T="$TAB" \
+  -v SINCE="$(kw since)" -v STATE="$(kw state)" -v REVIEWON="$(kw reviewon)" "$FLD"'
 function flush() { if (cur != "" && !ghost(stmt)) print d T cur T "ràng buộc" T stmt T stt T rc; cur = "" }
 # BR-000 là BR MẪU của template và nó Ở LẠI VĨNH VIỄN: `/sdd-solo:intake` dặn thẳng
 # "Giữ nguyên BR-000 mẫu", `br-check.sh:11` bỏ qua nó vì cùng lý do. Không bỏ ở đây
@@ -76,14 +84,15 @@ function flush() { if (cur != "" && !ghost(stmt)) print d T cur T "ràng buộc"
   d = "0000-00-00"; stt = ""; rc = ""
   next
 }
-cur != "" && /^[ \t]+- Từ:/ {
-  d = nodate(fld($0, "Từ:")); stt = fld($0, "Trạng thái:"); rc = fld($0, "Kiểm lại:"); next
+cur != "" && $0 ~ ("^[ \t]+- (" SINCE "):") {
+  d = nodate(fldk($0, SINCE)); stt = fldk($0, STATE); rc = fldk($0, REVIEWON); next
 }
 END { flush() }
 ' >> "$REC"
 
 # ── RULE-### : specs/rules.md + specs/<nghề>/rules.md ────────────────────────
-rules_text "$ROOT" | strip_markup | awk -v T="$TAB" "$FLD"'
+rules_text "$ROOT" | strip_markup | awk -v T="$TAB" \
+  -v STMT="$(kw statement)" -v SINCE="$(kw since)" "$FLD"'
 function flush() { if (cur != "" && !ghost(stmt)) print d T cur T "luật" T stmt T stt T ""; cur = "" }
 /^## RULE-/ {
   flush()
@@ -93,8 +102,8 @@ function flush() { if (cur != "" && !ghost(stmt)) print d T cur T "luật" T stm
   next
 }
 /^## / { flush(); next }
-cur != "" && /\*\*Phát biểu:\*\*/ { s = $0; sub(/^.*\*\*Phát biểu:\*\*[ ]*/, "", s); if (!ghost(s)) stmt = s; next }
-cur != "" && /\*\*Từ:\*\*/        { s = $0; sub(/^.*\*\*Từ:\*\*[ ]*/, "", s);        d = nodate(s); next }
+cur != "" && $0 ~ ("\\*\\*(" STMT "):\\*\\*")  { s = $0; sub("^.*\\*\\*(" STMT "):\\*\\*[ ]*", "", s);  if (!ghost(s)) stmt = s; next }
+cur != "" && $0 ~ ("\\*\\*(" SINCE "):\\*\\*") { s = $0; sub("^.*\\*\\*(" SINCE "):\\*\\*[ ]*", "", s); d = nodate(s); next }
 cur != "" && /\*\*Status:\*\*/    { s = $0; sub(/^.*\*\*Status:\*\*[ ]*/, "", s);    if (!ghost(s)) stt = s; next }
 END { flush() }
 ' >> "$REC"
@@ -125,16 +134,17 @@ done
 # (Chữ ASCII vì đây là ID, và vì cột căn theo ký tự chỉ đúng khi bash đếm — awk
 #  length() ở macOS đếm BYTE, "Cấm-1" 5 ký tự nhưng 6 byte, đủ lệch cả bảng.)
 [ -f "$(arch_file "$ROOT")" ] && strip_markup < "$(arch_file "$ROOT")" \
-| awk -v T="$TAB" "$FLD"'
+| awk -v T="$TAB" -v FORB="$(kwh forbidden)" \
+  -v SINCE="$(kw since)" -v STATE="$(kw state)" "$FLD"'
 function flush() { if (cur != "" && !ghost(stmt)) printf "%s%s%s%s%s%s%s%s%s%s%s\n", d,T,("CAM-" n),T,"cấm",T,stmt,T,stt,T,""; cur = "" }
-/^## / { flush(); insec = ($0 ~ /^## Cấm/) ? 1 : 0; next }
+/^## / { flush(); insec = ($0 ~ FORB) ? 1 : 0; next }
 insec && /^-[ ]/ {
   flush(); n++; cur = "y"
   stmt = $0; sub(/^-[ ]*/, "", stmt)
   d = "0000-00-00"; stt = ""
   next
 }
-cur != "" && /^[ \t]+- Từ:/ { d = nodate(fld($0, "Từ:")); stt = fld($0, "Trạng thái:"); next }
+cur != "" && $0 ~ ("^[ \t]+- (" SINCE "):") { d = nodate(fldk($0, SINCE)); stt = fldk($0, STATE); next }
 END { flush() }
 ' >> "$REC"
 

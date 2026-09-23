@@ -8,6 +8,7 @@
 //   table.mjs setcell <file> <khoá> <cột>=<giá trị>…   sửa ô của dòng có ô đầu là khoá (cột: tên đã khai dưới)
 //   table.mjs mark <file> <n> <giá trị>     đặt ô thứ 5 của dòng "| #n |" (trạng thái phiếu)
 import fs from 'node:fs';
+import { kw, kwW } from './kw.mjs';
 
 const [, , cmd, file, ...rest] = process.argv;
 const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -23,17 +24,18 @@ switch (cmd) {
     const row = rest[0];
     let s = read(file);
     const rows = [...s.matchAll(/^\| *#\d+ \|.*$/gm)];
-    const HEAD = '| # | Việc |';
+    // 7.7.0: đầu bảng mục lục nhận cả hai thứ tiếng; bảng MỚI ghi theo doc_lang.
+    const HEADRE = new RegExp('^\\| *# *\\| *(?:' + kw('work') + ') *\\|', 'm');
     if (rows.length) {
       const i = rows[rows.length - 1].index + rows[rows.length - 1][0].length;
       s = s.slice(0, i) + '\n' + row + s.slice(i);
-    } else if (s.includes(HEAD)) {
-      const at = s.indexOf(HEAD);
+    } else if (HEADRE.test(s)) {
+      const at = HEADRE.exec(s).index;
       const m = /^\|---\|.*$/m.exec(s.slice(at));
       const i = at + m.index + m[0].length;
       s = s.slice(0, i) + '\n' + row + s.slice(i);
     } else {
-      s = s.replace(/\n+$/, '') + '\n\n| # | Việc | Từ | Ngày | Trạng thái | File |\n'
+      s = s.replace(/\n+$/, '') + `\n\n| # | ${kwW('work')} | ${kwW('since')} | ${kwW('date')} | ${kwW('state')} | ${kwW('file')} |\n`
         + '|---|---|---|---|---|---|\n' + row + '\n';
     }
     write(file, s);

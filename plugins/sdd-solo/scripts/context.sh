@@ -53,6 +53,7 @@ export SDD_ARCH="$(arch_file "$ROOT")" SDD_ENTS="$(entity_cited "$F" "$ROOT")" S
 if [ "$(layout "$ROOT")" = v7 ]; then OTHERS="$(nghe_list "$ROOT" | tr ' ' '\n' | grep -vx "${CTX:-core}")"
 else OTHERS="$(ls -d "$ROOT"/specs/contexts/*/ 2>/dev/null | xargs -n1 basename | grep -v '^_' | grep -vx "$CTX")"; fi
 export SDD_OTHERS="$OTHERS"
+export SDD_DOC_LANG="$(doc_lang "$ROOT")"   # 7.7.0: ngôn ngữ GHI; bảng từ khoá js đọc thẳng kw.tsv
 
 need_node "context.sh"
 node "$HERE/js/context.mjs" "$ROOT" "$F" "$ID" "$CTX" "$WHY" "$BP" "$BS" "$BRIEF"

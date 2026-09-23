@@ -36,8 +36,8 @@ if [ ! -f "$AR" ]; then
   bad "thiếu ${AR#$ROOT/} — không có gì để design.md đối chiếu ngược lên"
 else
   MISS=""
-  for sec in "## Ngăn xếp" "## Nơi chạy" "## Ai gọi" "## Ranh giới" "## Cấm" "## Đã chốt từ brief"; do
-    grep -q "^$sec" "$AR" || MISS="$MISS '$sec'"
+  for k in stack runswhere callers boundaries forbidden settledbrief; do
+    grep -qE "$(kwh "$k")" "$AR" || MISS="$MISS '## $(kw_w "$k")'"
   done
   if [ -n "$MISS" ]; then bad "architecture.md thiếu mục:$MISS"
   else ok "architecture.md có đủ sáu mục"; fi
@@ -100,9 +100,9 @@ else
   # trôi chảy. Không phép kiểm nào bắt được vì không phép kiểm nào đọc hai
   # nguồn cùng lúc. Thứ làm nó lộ ra là động tác CHÉP NGUYÊN VĂN.
   CAM="$(printf '%s\n' "$(cat "$AR")" | strip_markup /dev/stdin \
-         | awk 'index($0,"## Cấm")==1{f=1;next} f&&/^## /{exit} f{print}')"
+         | awk -v re="$(kwh forbidden)" '$0 ~ re {f=1;next} f&&/^## /{exit} f{print}')"
   NOQ="$(printf '%s\n' "$CAM" | grep -nE '(RULE|ADR|BR|CHG|CON)-[0-9]+' \
-         | grep -vE 'nguyên văn' | head -5)"
+         | grep -vE "$(kw verbatim)" | head -5)"
   if [ -n "$NOQ" ]; then
     warn "## Cấm: có dòng nêu nguồn mà không trích nguyên văn — không đối chiếu ngược lên nguồn được:"
     printf '%s\n' "$NOQ" | sed 's/^/      /'
@@ -116,17 +116,18 @@ if [ ! -f "$DS" ]; then
 else
   ok "có design.md"
   DMISS=""
-  for sec in "## Tóm tắt" "## Bối cảnh kỹ thuật" "## Đối chiếu architecture.md" "## Đối chiếu brief" "## Cấu trúc code" "## Rủi ro"; do
-    grep -q "^$sec" "$DS" || DMISS="$DMISS '$sec'"
+  for k in summary techcontext vsarch vsbrief codestruct risks; do
+    grep -qE "$(kwh "$k")" "$DS" || DMISS="$DMISS '## $(kw_w "$k")'"
   done
   if [ -n "$DMISS" ]; then bad "design.md thiếu mục:$DMISS"
   else ok "design.md có đủ mục bắt buộc"; fi
 
   # Hai mục đối chiếu KHÔNG được rỗng. Một tiêu đề trống trông y hệt một lượt
   # đối chiếu đã làm và không thấy gì — mà hai thứ đó khác nhau hoàn toàn.
-  for sec in "## Đối chiếu architecture.md" "## Đối chiếu brief"; do
-    if grep -q "^$sec" "$DS"; then
-      BODY="$(awk -v h="$sec" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}' "$DS" \
+  for k in vsarch vsbrief; do
+    HRE="$(kwh "$k")"; sec="## $(kw_w "$k")"
+    if grep -qE "$HRE" "$DS"; then
+      BODY="$(awk -v re="$HRE" '$0 ~ re {f=1;next} f&&/^## /{exit} f{print}' "$DS" \
               | grep -vE '^[[:space:]]*$' | grep -vE '^[[:space:]]*<!--')"
       if [ -z "$BODY" ]; then
         bad "$sec rỗng — mục trống và 'đã đối chiếu, khớp' trông giống hệt nhau"
@@ -175,7 +176,7 @@ fi
 # ── 4. giả định triển khai của UC vs architecture.md — CẢNH BÁO ───────────
 # Máy không đọc được nghĩa, nên đây chỉ là lời nhắc đối chiếu bằng mắt. Cho nó
 # đỏ là hứa một phép kiểm không làm được — đúng loại "báo xanh sai" ngược dấu.
-GD="$(grep -E '^\*\*Giả định triển khai:\*\*' "$F" | head -1)"
+GD="$(grep -E "^$(kwl implassum)" "$F" | head -1)"
 if [ -n "$GD" ] && [ -f "$AR" ]; then
   info "đối chiếu bằng mắt: $GD"
   info "  với ## Ngăn xếp / ## Nơi chạy / ## Ai gọi của architecture.md — máy không đọc được nghĩa"

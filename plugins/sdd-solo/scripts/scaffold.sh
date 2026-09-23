@@ -233,6 +233,7 @@ for f in $KEEP; do
 done
 # 7.6.0: js/ — mã node của plugin (mermaid.mjs · mermaid-real.mjs …). Chép cả thư mục, cùng lý do như
 # KEEP: cổng phải chạy được ở CI và trên máy người clone, nơi không có plugin.
+[ -f "$PLUGIN/scripts/kw.tsv" ] && cp "$PLUGIN/scripts/kw.tsv" "$ROOT/.sdd/scripts/kw.tsv"
 if [ -d "$PLUGIN/scripts/js" ]; then
   mkdir -p "$ROOT/.sdd/scripts/js"
   for f in "$PLUGIN/scripts/js/"*.mjs; do [ -f "$f" ] && cp "$f" "$ROOT/.sdd/scripts/js/"; done

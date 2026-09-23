@@ -24,15 +24,15 @@ ensure_hd() {
   [ -f "$HD" ] && return 0
   local sk; sk="$(plugin_file templates/skel/hoi-dap.md "$(dirname "$HERE")")"
   mkdir -p "$(dirname "$HD")"
-  if [ -n "$sk" ]; then cp "$sk" "$HD"; else printf '# Hỏi đáp giữa các agent\n\n## Phiếu\n' > "$HD"; fi
-  grep -q '^| # | Việc |' "$HD" || printf '\n| # | Việc | Từ | Ngày | Trạng thái | File |\n|---|---|---|---|---|---|\n' >> "$HD"
+  if [ -n "$sk" ]; then cp "$sk" "$HD"; else printf '# Hỏi đáp giữa các agent\n\n## %s\n' "$(kw_w ticket "$ROOT")" > "$HD"; fi
+  grep -qE "^\\| # \\| ($(kw work)) \\|" "$HD" || printf '\n| # | Việc | Từ | Ngày | Trạng thái | File |\n|---|---|---|---|---|---|\n' >> "$HD"
   ok "tạo $(rel "$HD") từ khuôn"
 }
 # số lớn nhất đang có — ba nguồn, để an toàn giữa các worktree chưa merge
 max_n() {
   { grep -oE '^\| *#[0-9]+' "$HD" 2>/dev/null | grep -oE '[0-9]+'
     ls "$PD" 2>/dev/null | grep -oE '^[0-9]+'
-    git -C "$ROOT" log --all --format=%s 2>/dev/null | grep -oiE 'phi[eế]u #[0-9]+' | grep -oE '[0-9]+'
+    git -C "$ROOT" log --all --format=%s 2>/dev/null | grep -oiE "($(kw c_ticket))[0-9]+" | grep -oE '[0-9]+'
   } | sort -n | tail -1
 }
 slugify() { node "$HERE/js/util.mjs" slug "$1" 2>/dev/null; }
@@ -49,8 +49,8 @@ new)
   F="$PD/$NNN-$SL.md"; TD="$(today)"
   { printf '### #%s · từ: %s · việc: %s · %s\n' "$N" "$TU" "$VIEC" "$TD"
     printf 'Câu: <một câu>\nĐã tra: <file:dòng, …>\nNếu chọn sai thì: <hậu quả>\nAgent nghiêng về: <lựa chọn + vì sao>\n\n'
-    printf '**Trả lời (R):** <mức L0–L3> · <câu trả lời>\nNguồn / lý do: <file:dòng hoặc lý do>\nCho: <mỗi vai một dòng: - **B:** … · - **D:** … · - **T:** …>\nDuyệt:\n'; } > "$F"
-  ROW="| #$N | $VIEC | $TU | $TD | mở | [$NNN-$SL.md](phieu/$NNN-$SL.md) |"
+    printf '**Trả lời (R):** <mức L0–L3> · <câu trả lời>\nNguồn / lý do: <file:dòng hoặc lý do>\n%s: <mỗi vai một dòng: - **B:** … · - **D:** … · - **T:** …>\n%s:\n' "$(kw_w forwhom "$ROOT")" "$(kw_w approve "$ROOT")"; } > "$F"
+  ROW="| #$N | $VIEC | $TU | $TD | $(kw_w q_open "$ROOT") | [$NNN-$SL.md](phieu/$NNN-$SL.md) |"
   node "$HERE/js/table.mjs" addrow "$HD" "$ROW"
   git -C "$ROOT" add "$F" "$HD" 2>/dev/null
   git -C "$ROOT" commit -q --only -m "chore(sdd): phiếu #$N giữ chỗ — $VIEC" -- "$F" "$HD" 2>/dev/null \
@@ -66,7 +66,7 @@ close)
   NF="$(grep -cE '^(- |\| *)F[0-9]+\b' "$F")"; NK="$(grep -cE '^(- |\| *)K[0-9]+\b' "$F")"
   info "trên file: $NF dòng F# · $NK dòng K#"
   ROW="$(grep -E "^\| *#$N \|" "$HD" | head -1)"
-  CLAIM="$(printf '%s\n%s' "$ROW" "$(head -5 "$F")" | grep -oE '[0-9]+ (phát hiện|K\b|câu)' | head -1 | grep -oE '^[0-9]+')"
+  CLAIM="$(printf '%s\n%s' "$ROW" "$(head -5 "$F")" | grep -oE "[0-9]+ ($(kw findings)|K\b|$(kw questions))" | head -1 | grep -oE '^[0-9]+')"
   if [ -n "$CLAIM" ]; then
     GOT="$NF"; [ "$NK" -gt "$NF" ] && GOT="$NK"
     if [ "$CLAIM" = "$GOT" ]; then ok "số tự khai $CLAIM khớp số đếm trên file"
@@ -78,15 +78,16 @@ close)
   # mỗi vai có việc trong Cho: → cần KETQUA ket=xong
   ID="$(grep -m1 -E '^###? *#' "$F" | grep -oE '\b(UC|BR|CHG)-[0-9]+\b' | head -1 | tr 'A-Z' 'a-z')"
   MISS=0
-  for v in $(sed -n '/^Cho:/,/^Duyệt:/p' "$F" | grep -oE '^- \*\*[A-Z]( ?[·,] ?[A-Z])*' | sed 's/^- \*\*//' | tr '·,' '  '); do
-    sed -n '/^Cho:/,/^Duyệt:/p' "$F" | grep -E "^- \*\*([^*]*[ ·,/])?$v([ ·,/:(]|$)" | grep -qi 'không có việc' && continue
+  CHO="/^($(kw forwhom)):/,/^($(kw approve)):/p"
+  for v in $(sed -nE "$CHO" "$F" | grep -oE '^- \*\*[A-Z]( ?[·,] ?[A-Z])*' | sed 's/^- \*\*//' | tr '·,' '  '); do
+    sed -nE "$CHO" "$F" | grep -E "^- \*\*([^*]*[ ·,/])?$v([ ·,/:(]|$)" | grep -qiE "$(kw nowork)" && continue
     role_known "$v" "$ROOT" 2>/dev/null || [ -z "$(roles_file "$ROOT")" ] || continue
     k="$(ls "$(ketqua_dir "$ROOT")"/"$(printf '%s' "$v" | tr 'A-Z' 'a-z')-${ID:-*}-p$N"*.txt 2>/dev/null | head -1)"
     if [ -n "$k" ] && grep -q 'ket=xong' "$k"; then ok "vai $v có KETQUA xong ($(basename "$k"))"
     else bad "vai $v có việc trong Cho: nhưng chưa có KETQUA ket=xong (role.sh --ketqua $(printf '%s' "$v" | tr 'A-Z' 'a-z')-${ID:-<id>}-p$N …)"; MISS=1; fi
   done
   if [ "$FAIL" -eq 0 ]; then
-    node "$HERE/js/table.mjs" mark "$HD" "$N" "đã áp"
+    node "$HERE/js/table.mjs" mark "$HD" "$N" "$(kw_w applied "$ROOT")"
     git -C "$ROOT" commit -q --only -m "chore(sdd): phiếu #$N đã áp — $NF F# · $NK K# đếm trên file" -- "$HD" 2>/dev/null || true
     echo "ĐÃ ĐÓNG #$N — mục lục → đã áp."
   else
@@ -108,7 +109,7 @@ muc-luc)
   ;;
 list)
   [ -f "$HD" ] || { info "chưa có $(rel "$HD")"; exit 0; }
-  if [ "$2" = --mo ]; then grep -E '^\| *#[0-9]+ \|' "$HD" | grep -vE '\| *(đã áp|đóng) *\|[^|]*\| *$'
+  if [ "$2" = --mo ]; then grep -E '^\| *#[0-9]+ \|' "$HD" | grep -vE "\\| *($(kw applied)|$(kw closed)) *\\|[^|]*\\| *\$"
   else grep -E '^\| *#[0-9]+ \|' "$HD"; fi | cut -c1-160
   ;;
 hoi)
@@ -116,15 +117,16 @@ hoi)
   HF="$(dirname "$HD")/hoi-$V.md"; mkdir -p "$(dirname "$HF")"
   if [ ! -f "$HF" ]; then
     sk="$(plugin_file templates/skel/hoi-vai.md "$(dirname "$HERE")")"
-    if [ -n "$sk" ]; then sed "s/<V>/$V/g; s/<tên vai>/$(role_name "$V" "$ROOT")/" "$sk" | sed '/^### HỎI-/,$d' > "$HF"
+    if [ -n "$sk" ]; then sed "s/<V>/$V/g; s/<tên vai>/$(role_name "$V" "$ROOT")/" "$sk" | sed -E "/^### ($(kw ask))-/,\$d" > "$HF"
     else printf '# HỎI từ vai %s\n\n' "$V" > "$HF"; fi
     ok "tạo $(rel "$HF") từ khuôn"
   fi
-  N=$(( $(grep -oE "^### HỎI-$V[0-9]+" "$HF" | grep -oE '[0-9]+$' | sort -n | tail -1 | awk '{print $1+0}') + 1 ))
-  { printf '\n### HỎI-%s%s · %s — %s\n' "$V" "$N" "$CAU" "$(today)"
-    printf -- '- **Nguồn:** <file:mục đã tra>\n- **Chặn không:** <chặn | không chặn> — <vì sao>\n- **Đang làm gì trong lúc chờ:** <…>\n- **Việc cho spec khi trả lời:** <…>\n- **Trả lời (A/R):** · **đích:**\n'; } >> "$HF"
-  printf 'HỎI-%s%s %s\n' "$V" "$N" "$(rel "$HF")"
-  info "điền bốn ô rồi commit: git commit --only -m 'docs(<ID>): HỎI-$V$N — <câu>' -- $(rel "$HF") ; kiểm: hoi-check.sh $V"
+  N=$(( $(grep -oE "^### ($(kw ask))-$V[0-9]+" "$HF" | grep -oE '[0-9]+$' | sort -n | tail -1 | awk '{print $1+0}') + 1 ))
+  A="$(kw_w ask "$ROOT")"
+  { printf '\n### %s-%s%s · %s — %s\n' "$A" "$V" "$N" "$CAU" "$(today)"
+    printf -- '- **%s:** <file:mục đã tra>\n- **%s:** <chặn | không chặn> — <vì sao>\n- **%s:** <…>\n- **%s:** <…>\n- **%s:** · **%s:**\n' "$(kw_w source "$ROOT")" "$(kw_w blocking "$ROOT")" "$(kw_w waiting "$ROOT")" "$(kw_w specwork "$ROOT")" "$(kw_w answer "$ROOT" | tr -d '\\\\')" "$(kw_w target "$ROOT")"; } >> "$HF"
+  printf '%s-%s%s %s\n' "$A" "$V" "$N" "$(rel "$HF")"
+  info "điền bốn ô rồi commit: git commit --only -m 'docs(<ID>): $A-$V$N — <câu>' -- $(rel "$HF") ; kiểm: hoi-check.sh $V"
   ;;
 *) sed -n '3,14p' "$0" | sed 's/^# \{0,3\}//'; exit 2;;
 esac

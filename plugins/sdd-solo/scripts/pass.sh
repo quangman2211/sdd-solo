@@ -37,7 +37,7 @@ gate)
   T="$(uc_table_file "$ID" "$ROOT")"; TF=""
   if uc_table_set "$ID" reviewed "$ROOT"; then TF="$T"; else
     printf '  ! bảng %s không có dòng %s — thêm dòng cho /sdd-solo:state gợi đúng UC tiếp theo\n' "${T#$ROOT/}" "$ID"; fi
-  git -C "$ROOT" commit -q --only -m "docs($ID): spec reviewed — qua cổng DoR" -- "$F" $TF || true
+  git -C "$ROOT" commit -q --only -m "docs($ID): spec reviewed — $(kw_w c_dor "$ROOT")" -- "$F" $TF || true
   mark "$ID"
   printf 'QUA CỔNG. Status -> reviewed · marker .sdd/gate/%s.ok · đã commit.\n' "$ID"
   printf 'Bước tiếp: /sdd-solo:design %s — thiết kế trước khi viết dòng code đầu tiên.\n' "$ID"
@@ -108,8 +108,8 @@ deprecate)
   fi
   DEC="$(decisions_file "$ROOT")"; DF=""
   # Đã có dòng "Bỏ UC-###" (deprecate lần hai, hoặc ghi tay trước đó) thì không thêm dòng trùng.
-  if [ -f "$DEC" ] && ! grep -qF -- "Bỏ $ID (" "$DEC"; then
-    printf -- '- %s — Bỏ %s (%s). Loại: giữ %s. Chi tiết: %s\n' "$(today)" "$ID" "$REASON" "$ID" "$( [ "$BY" = "-" ] && printf 'không có UC thay thế' || printf '%s' "$BY" )" >> "$DEC"
+  if [ -f "$DEC" ] && ! grep -qE -- "($(kw dropped)) $ID \(" "$DEC"; then
+    printf -- '- %s — %s %s (%s). Loại: giữ %s. Chi tiết: %s\n' "$(today)" "$(kw_w dropped "$ROOT")" "$ID" "$REASON" "$ID" "$( [ "$BY" = "-" ] && printf 'không có UC thay thế' || printf '%s' "$BY" )" >> "$DEC"
     DF="$DEC"
   fi
   git -C "$ROOT" commit -q --only -m "docs($ID): deprecated — $REASON" -- $F $TF $DF $MKF || true
@@ -130,7 +130,7 @@ change)
   P="$D/proposal.md"
   need_node "pass.sh"
   node "$HERE/js/pass.mjs" change "$P" "$(today)"
-  git -C "$ROOT" commit -q --only -m "docs($ID): change reviewed — qua cổng Phase 5" -- "$P" || true
+  git -C "$ROOT" commit -q --only -m "docs($ID): change reviewed — $(kw_w c_p5 "$ROOT")" -- "$P" || true
   mark "$ID"
   printf 'QUA CỔNG PHASE 5. Status -> applying · marker .sdd/gate/%s.ok · đã commit.\n' "$ID"
   echo "Bước tiếp: viết test cho AC mới (đỏ trước) rồi sửa code. Commit code gắn ($ID)."

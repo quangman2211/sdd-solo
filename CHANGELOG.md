@@ -1,5 +1,62 @@
 # Changelog
 
+## 7.7.0 — 2026-09-23
+
+**Từ khoá tài liệu thành song ngữ.** Khuôn của plugin sẽ sinh ra tài liệu tiếng Anh (7.8.0), nhưng repo đang viết
+tiếng Việt phải qua cổng y hệt như trước — nên bản này tách *từ khoá* ra khỏi *chỗ khớp*: mọi chỗ script đọc vào
+NỘI DUNG tài liệu đi qua một bảng, không viết thẳng chuỗi tiếng Việt vào `grep`/`sed`/`awk` nữa.
+
+- **`scripts/kw.tsv`** — bảng bốn cột: tên · kiểu dùng · tiếng Việt · tiếng Anh. `kiểu dùng` nói từ khoá đứng ở
+  đâu trong tài liệu (`head` `## X` · `label` `**X:**` · `cell` ô bảng · `raw` nguyên văn · `group` nhiều dạng chỉ
+  để đọc · `commit` mảnh tiêu đề commit · `write` chỉ để ghi). Bash đọc qua `kw` · `kwh` · `kwl` · `kw_w` (lib.sh),
+  node qua `js/kw.mjs` — **cùng một file**, không bơm bảng qua biến môi trường: quên một `export` là hụt im lặng,
+  đọc chung một file thì không có chỗ nào để quên. `scaffold` chép `kw.tsv` và `js/` sang `.sdd/scripts/` như mọi
+  script khác, nên cổng vẫn chạy được ở CI và trên máy người clone repo.
+- **Hướng GHI theo `doc_lang`** (`.sdd/config`, mặc định `vi`). Chỗ script ĐỌC nhận cả hai thứ tiếng; chỗ script
+  GHI ra file hay ra commit dùng `kw_w`, một vế theo dự án. `scaffold` ghi `doc_lang=en` khi tạo `.sdd/config`
+  MỚI, nên dự án đang chạy không đổi một byte còn dự án mới thì tiếng Anh từ đầu. Phía node đọc qua
+  `SDD_DOC_LANG`, và `lib.sh` export biến đó **một chỗ duy nhất** ở cuối file thay vì ở từng script gọi `node`:
+  quên một chỗ thì file đó ghi tiếng Việt trong repo khai `en` và không phép kiểm nào đỏ, vì chiều ĐỌC nhận cả hai.
+- Kiểu `write` có mặt vì vế tiếng Việt của vài từ khoá là chữ thường trong văn xuôi — `vai` · `anh` · `đã đóng`.
+  Chúng vẫn ghi ra được theo `doc_lang`, nhưng bộ test không đổi chúng: đổi thô thì bản tiếng Anh hỏng vì một lý
+  do không liên quan gì tới cổng, và phép đo mất nghĩa.
+- **githook không cần bảng** — soi hết `templates/githooks/`: 0 chỗ khớp chữ tiếng Việt, chúng chỉ khớp
+  `feat(UC-###)`. Một chỗ ít hơn phải giữ đồng bộ.
+
+**Vì sao KHÔNG đổi hẳn sang tiếng Anh, kể cả khi muốn.** Lịch sử git bất biến. runxops có 50 commit subject tiếng
+Việt mà `gate-check` §9 grep vào chính chúng (`docs(UC-###): đọc lại`); bỏ vế tiếng Việt là mọi UC đã đóng mất
+bằng chứng đọc lại, và không `migrate` nào chữa được — file thì viết lại được, commit thì không. Vế tiếng Việt ở
+lại vĩnh viễn: đó là chủ ý, không phải nợ.
+
+**Phép đo — ca 45, và nó là loại phép đo mà bộ test cũ không có.** Ca này chép repo, viết lại MỌI từ khoá sang vế
+tiếng Anh theo đúng bảng (đổi theo vị trí cấu trúc, không thay chuỗi thô — `Từ` · `mở` · `câu` là từ tiếng Việt
+thường gặp trong văn xuôi), rồi đòi cổng cho **cùng verdict, cùng số ✗, cùng số ✓**. Chỗ nào còn viết thẳng chuỗi
+tiếng Việt thì CHỈ ca này đỏ — bản tiếng Việt vẫn xanh, nên mọi phép đo khác vẫn xanh trong khi spec tiếng Anh rớt
+cổng. Bảng là nguồn duy nhất, nên thêm một dòng vào `kw.tsv` là ca 45 tự phủ luôn: thêm từ khoá mà quên định
+tuyến một chỗ khớp thì nó đỏ. Ca so verdict của **bảy** lệnh: `gate-check` (đủ và `--pre`) · `uc-steps` ·
+`br-check` · `decisions.sh` · `close-check` · `layer-check`; `decisions.sh` so SỐ DÒNG chứ không so chữ, vì thân
+quyết định vừa bị đổi sang tiếng Anh — cái phải giống là đếm được bao nhiêu, và trước khi định tuyến nó là
+190 → 173, mất 17 quyết định không một dòng đỏ.
+
+**Hai lỗi ca 45 bắt được ngay trong chính bản này**, cả hai đều thuộc loại "mẫu hụt im lặng":
+
+- `kwl()` phía node trả nhóm BẮT (`(vi|en)`). `.source` của nó được nối vào một mẫu lớn hơn, nên nhóm lạc đó đẩy
+  số thứ tự của mọi nhóm sau — `hoi.mjs` đọc `mm[1]` ra chính từ khoá thay vì giá trị ô, và **phép kiểm bốn ô của
+  sổ hỏi đọc ô trống nào cũng thành "có điền"**. Hai mẫu `kwh`/`kwl` chuyển sang nhóm không bắt.
+- `rr_count` khớp `[neo: …]` bằng chữ. Định tuyến nó bằng `-v nb="…\\[…\\]"` thì `awk -v` xử lý escape của chuỗi
+  TRƯỚC máy regex, `\\]` tới nơi còn `\]` và mẫu hụt — bản **tiếng Việt** đang xanh thành đỏ "chưa đọc lại". Viết
+  ngoặc vuông bằng `[[]` và `[]]`: trong ngoặc vuông không còn escape nào để nuốt. Đây là cửa duy nhất mở cổng
+  Phase 5, nên hụt ở đây là hụt đắt nhất trong file.
+
+Khảo sát trước khi sửa (hai lượt soi độc lập, vì máy quét bằng regex bỏ sót): **96 chỗ DOC + 11 chỗ COMMIT** trong
+`scripts/*.sh`, **38 DOC + 3 COMMIT + 26 chỗ GHI** trong `scripts/js/*.mjs`. Máy quét hụt `decisions.sh` trọn vẹn
+(nó đọc `Từ:` `Trạng thái:` `Kiểm lại:` `Phát biểu:` của cả bốn nguồn — spec tiếng Anh sẽ cho sổ tra quyết định
+RỖNG mà không một dòng đỏ), và mọi danh sách tên mục viết bằng mảng hằng thay vì regex (`context.mjs` 5 tên mục
+của architecture.md, `hoi.mjs` 4 nhãn ô bắt buộc).
+
+Không hồi quy: snapshot đầu ra mọi script trên hai bản sao runxops (bố cục 7.0 và 6.x) — **0 dòng khác**.
+Bộ test: 45 ca · 205 xanh.
+
 ## 7.6.0 — 2026-09-23
 
 Mã nguồn của plugin **bỏ python, chạy bằng node**. Tới 7.5.0 plugin là hai ngôn ngữ: 4.953 dòng bash cộng **1.193 dòng

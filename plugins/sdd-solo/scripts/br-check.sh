@@ -69,6 +69,8 @@ if [ -n "$BP" ]; then
 fi
 
 sec() { printf '%s' "$B" | awk -v h="$1" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}'; }
+# secre — như sec nhưng nhận MẪU (kwh <tên>), cho tiêu đề mục có hai thứ tiếng
+secre() { printf '%s' "$B" | awk -v re="$1" '$0 ~ re {f=1;next} f&&/^## /{exit} f{print}'; }
 # nonempty/filled dùng bản chung ở lib.sh (4.0.1)
 
 # ── 7.0: tầng 0 — BR tự nhận là một lát, và không co lại điều vision.md cấm co ──
@@ -82,7 +84,7 @@ if [ "$V7" = 1 ]; then
     warn "chưa có specs/vision.md — tầng 0 chưa viết; BR không có gì để tự nhận lát (/sdd-solo:intake bước 0)"
   else
     # (a) **Lát:** <nghề> · <tên lát> — nghề phải là thư mục chứa BR, tên lát phải có ở bảng ## Nghề và lát
-    LAT="$(printf '%s' "$B" | grep -oE '^- \*\*Lát:\*\* *.*' | head -1 | sed 's/^- \*\*Lát:\*\* *//')"
+    LAT="$(printf '%s' "$B" | grep -oE "^- $(kwl slice) *.*" | head -1 | sed -E "s/^- $(kwl slice) *//")"
     LN="$(printf '%s' "$LAT" | awk -F' · ' '{print $1}' | sed 's/[[:space:]]*$//')"
     # Tên lát = mọi thứ sau tiền tố nghề ĐẦU TIÊN. Tới 7.0.0 dựng bằng awk -F' · ' '{$1=""…}' — awk ghép lại các
     # trường bằng OFS (dấu cách), nên lát tên có ' · ' bên trong mất dấu chấm giữa và đỏ oan (runxops: 'core · đăng
@@ -90,7 +92,7 @@ if [ "$V7" = 1 ]; then
     LT=""; case "$LAT" in *" · "*) LT="${LAT#* · }";; esac
     LT="$(printf '%s' "$LT" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/ — .*//')"
     OWN="$(owner_of_br "$ID" "$ROOT")"
-    VT="$(awk '/^## Nghề và lát/{f=1;next} f&&/^## /{exit} f' "$VF" | grep -E '^\|' | grep -vE '^\|[- |]*\|$')"
+    VT="$(awk -v re="$(kwh craftslice)" '$0 ~ re {f=1;next} f&&/^## /{exit} f' "$VF" | grep -E '^\|' | grep -vE '^\|[- |]*\|$')"
     if [ -z "$LAT" ]; then
       bad "thiếu dòng '- **Lát:** <nghề> · <tên lát>' trong ## Metadata — BR nào cũng phải tự nhận là một lát ở specs/vision.md"
     elif ! nonempty "$LT" || printf '%s' "$LT" | grep -qE '^___$|<'; then
@@ -104,7 +106,7 @@ if [ "$V7" = 1 ]; then
     fi
     # (b) Out of Scope không được chứa từ khoá của ## Không thu hẹp — trừ khi chủ dự án chốt có ngày
     OOS="$(sec '## Out of Scope' | grep -E '^[[:space:]]*[-*] ')"
-    KEYS="$(awk '/^## Không thu hẹp/{f=1;next} f&&/^## /{exit} f' "$VF" | grep -E '^[[:space:]]*[-*] ' | sed -E 's/^[[:space:]]*[-*] *//' \
+    KEYS="$(awk -v re="$(kwh nonarrow)" '$0 ~ re {f=1;next} f&&/^## /{exit} f' "$VF" | grep -E '^[[:space:]]*[-*] ' | sed -E 's/^[[:space:]]*[-*] *//' \
            | awk '{ if (match($0, /\*\*[^*]+\*\*/)) print substr($0, RSTART+2, RLENGTH-4); else print }' | grep -vE '^<|^___$' | awk 'NF')"
     if [ -n "$KEYS" ] && [ -n "$OOS" ]; then
       HITN=0
@@ -114,7 +116,7 @@ if [ "$V7" = 1 ]; then
         [ -n "$H" ] || continue
         while IFS= read -r ln; do
           [ -n "$ln" ] || continue
-          if printf '%s' "$ln" | grep -qE 'cố ý thu hẹp — chủ dự án chốt [0-9]{4}-[0-9]{2}-[0-9]{2}'; then
+          if printf '%s' "$ln" | grep -qE "($(kw narrowed)) [0-9]{4}-[0-9]{2}-[0-9]{2}"; then
             info "Out of Scope thu hẹp '$k' có chủ ý (chủ dự án chốt): $(printf '%s' "$ln" | cut -c1-90)"
           else
             HITN=$((HITN+1))
@@ -132,7 +134,7 @@ EOF_K
       warn "specs/vision.md ## Không thu hẹp chưa có điều nào (dạng '- **từ khoá** — giải thích') — không có gì để giữ BR khỏi co"
     fi
     # Out of Scope mỗi dòng nói nó đi đâu — cảnh báo (khuôn 7.0 bảo thế; chưa đủ ca thật để chặn)
-    NOD_OOS="$(printf '%s\n' "$OOS" | grep -vE '→|cố ý thu hẹp' | grep -vE '<[^>]+>' | grep -c .)"
+    NOD_OOS="$(printf '%s\n' "$OOS" | grep -vE "→|$(kw narrow)" | grep -vE '<[^>]+>' | grep -c .)"
     [ "$NOD_OOS" -gt 0 ] && warn "$NOD_OOS dòng Out of Scope chưa nói đi đâu — thêm '→ lát ___' hoặc '→ mở lại khi ___' (hoặc 'cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD')"
   fi
 fi
@@ -147,12 +149,12 @@ filled "$BG" && ok "## Background có nội dung" || bad "## Background rỗng h
 # được việc xây thứ không cần tồn tại — nhưng trả lời "chưa nghĩ tới" chỉ thành một
 # Open Question, mà Open Question không chặn gì. BR chưa chứng minh được lý do tồn
 # tại đi qua cổng y hệt BR đã chứng minh xong. Cảnh báo, không đỏ. Xem #22.
-printf '%s' "$BG" | grep -qE '\*\*Vì sao vẫn xây:\*\*' \
+printf '%s' "$BG" | grep -qE "$(kwl whybuild)" \
   && ok "Background có dòng 'Vì sao vẫn xây'" \
   || warn "Background chưa có dòng '**Vì sao vẫn xây:**' — chưa ai chứng minh phần mềm này cần tồn tại; đây là chỗ vai hoài nghi sẽ bấu vào"
 # #46: BR chuyển từ brief phải có lời của người trả tiền, không chỉ lời của agent viết brief.
-if printf '%s' "$(sec '## Metadata')" | grep -qiE 'Nguồn:\*\* *brief'; then
-  printf '%s' "$BG" | grep -qE '\*\*Khổ gì, vì sao rơi:\*\*' \
+if printf '%s' "$(sec '## Metadata')" | grep -qiE "($(kw source)):\*\* *brief"; then
+  printf '%s' "$BG" | grep -qE "$(kwl pain)" \
     && ok "Background có dòng 'Khổ gì, vì sao rơi' (hỏi bằng lời, #46)" \
     || warn "BR chuyển từ brief mà Background chưa có dòng '**Khổ gì, vì sao rơi:**' — intake từ brief phải hỏi user bằng lời trước khi điền Goal/In Scope (#46); brief không thay được câu trả lời đó"
 fi
@@ -165,9 +167,9 @@ else
   ok "## Goal có nội dung"
   # 7.4 (P-25): chỉ đếm dấu chấm của CÂU GOAL — dòng khai nguồn (*Nguồn: …*, in nghiêng, blockquote, chú thích) dưới
   # câu Goal là ghi chú, không phải câu thứ hai.
-  DOTS="$(printf '%s' "$G" | grep -vE '^[[:space:]]*(\*|_|>|<!--|Nguồn)' | grep -o '\.' | wc -l | tr -d ' ')"
+  DOTS="$(printf '%s' "$G" | grep -vE "^[[:space:]]*(\*|_|>|<!--|$(kw source))" | grep -o '\.' | wc -l | tr -d ' ')"
   [ "$DOTS" -gt 1 ] && warn "## Goal có $DOTS dấu chấm — Goal nên gói trong MỘT câu"
-  V="$(printf '%s' "$G" | grep -oiE 'tối ưu|cải thiện|nâng cao|tốt hơn|hiệu quả|hiện đại hoá' | head -1)"
+  V="$(printf '%s' "$G" | grep -oiE "$(kw vague)" | head -1)"
   if [ -n "$V" ]; then
     if printf '%s' "$SM" | grep -qE '[0-9]'; then
       ok "Goal có từ mơ hồ '$V' nhưng Success Metrics có số — chấp nhận"
@@ -186,7 +188,7 @@ else
   while IFS= read -r ln; do
     printf '%s' "$ln" | grep -qE '^[[:space:]]*[-*] ' || continue
     N=$((N+1))
-    M="$(printf '%s' "$ln" | sed -n 's/.*đo qua: *//p' | sed 's/[)·].*//' | tr -d '_ ')"
+    M="$(printf '%s' "$ln" | sed -nE "s/.*($(kw measuredby)): *//p" | sed 's/[)·].*//' | tr -d '_ ')"
     if [ -z "$M" ]; then
       bad "metric thiếu cách đo: $(printf '%s' "$ln" | cut -c1-58)"
     fi
@@ -267,7 +269,7 @@ done
 # luôn sửa được. Cùng bài học hai chiều của #12, #15, #17.
 for uf in $(all_uc_files "$ROOT"); do
   # 7.0: UC nằm trong br-###/use-cases/ của lát là khai thuộc lát đó — không cần dòng Metadata
-  { [ "$(br_of "$uf")" = "$ID" ] || grep -qE "Liên quan tới BR:.*$ID([^0-9]|$)" "$uf"; } || continue
+  { [ "$(br_of "$uf")" = "$ID" ] || grep -qE "($(kw relbr)):.*$ID([^0-9]|$)" "$uf"; } || continue
   uid="$(basename "$uf" .md)"
   printf '%s' "$RU" | grep -qE "$uid([^0-9]|$)" \
     || bad "$uid khai thuộc $ID nhưng ## Related Use Cases của $ID không liệt kê nó"
@@ -277,8 +279,8 @@ done
 # Luật 4 của intake trước 3.2.2 chỉ bảo "in danh sách" nên sản phẩm của nó sống
 # trong lời nói: đóng terminal là mất. Luật không để lại dấu vết trong file thì
 # không kiểm được, và cái gì không kiểm được thì cuối cùng sẽ trôi. Xem #21.
-if printf '%s' "$B" | grep -qiE '\*\*Nguồn:\*\*.*brief'; then
-  DR="$(sec '## Đã loại khỏi brief')"
+if printf '%s' "$B" | grep -qiE "$(kwl source).*brief"; then
+  DR="$(secre "$(kwh droppedbrief)")"
   if filled "$DR" && printf '%s' "$DR" | grep -qE '^[[:space:]]*[-*] .*—'; then
     ok "có ## Đã loại khỏi brief"
     # ĐỊA CHỈ CHUYỂN TIẾP MÀ KHÔNG CÓ GÌ ĐI GIAO (#34). Một dòng ghi "thuộc
@@ -291,21 +293,21 @@ if printf '%s' "$B" | grep -qiE '\*\*Nguồn:\*\*.*brief'; then
     # `→ chuyển: <đích>` (mục kiến trúc). Không đích là hoãn vào hư không — plan 7.0 §1: ba thứ bị loại khỏi
     # BR-003 không ai biết chúng thuộc lát nào. Ở 6.x vẫn chỉ cảnh báo như cũ (khối dưới).
     if [ "$V7" = 1 ]; then
-      NOD7="$(printf '%s' "$DR" | grep -E '^[[:space:]]*[-*] ' | grep -vE '→ *(lát|mở lại khi|chuyển)' | grep -vE '^[[:space:]]*[-*] *<' | grep -c .)"
+      NOD7="$(printf '%s' "$DR" | grep -E '^[[:space:]]*[-*] ' | grep -vE "→ *($(kw dest))" | grep -vE '^[[:space:]]*[-*] *<' | grep -c .)"
       if [ "$NOD7" -gt 0 ]; then
         bad "$NOD7 dòng ## Đã loại khỏi brief không có đích — mỗi dòng thêm '→ lát <tên lát>' hoặc '→ mở lại khi <điều kiện>' (hay '→ chuyển: <đích>' nếu là mục kiến trúc)"
-        printf '%s' "$DR" | grep -E '^[[:space:]]*[-*] ' | grep -vE '→ *(lát|mở lại khi|chuyển)' | head -3 | cut -c1-110 | sed 's/^/      /'
+        printf '%s' "$DR" | grep -E '^[[:space:]]*[-*] ' | grep -vE "→ *($(kw dest))" | head -3 | cut -c1-110 | sed 's/^/      /'
       else
         ok "mọi dòng ## Đã loại khỏi brief đều có đích (lát · mở lại khi · chuyển)"
       fi
     fi
-    FWD="$(printf '%s' "$DR" | grep -iE 'speckit-plan|/plan|design\.md|architecture|kiến trúc|ADR|Phase 5|sau này|để sau|tầng thiết kế')"
+    FWD="$(printf '%s' "$DR" | grep -iE "speckit-plan|/plan|design\.md|ADR|Phase 5|$(kw deferarch)")"
     if [ "$V7" = 0 ] && [ -n "$FWD" ]; then
-      NOD="$(printf '%s\n' "$FWD" | grep -vE '→ *(chuyển|đích)' | grep -c .)"
+      NOD="$(printf '%s\n' "$FWD" | grep -vE "→ *($(kw fwddest))" | grep -c .)"
       if [ "$NOD" -gt 0 ]; then
         warn "$NOD mục hoãn sang bước sau mà không ghi ĐÍCH — không cơ chế nào tự chuyển chúng đi"
         info "mỗi dòng như vậy thêm '→ chuyển: <đích có thật>' (ADR-###, CHG-###, Open Question, hoặc một dòng trong plan.md)"
-        printf '%s\n' "$FWD" | grep -vE '→ *(chuyển|đích)' | head -3 | sed 's/^/      /'
+        printf '%s\n' "$FWD" | grep -vE "→ *($(kw fwddest))" | head -3 | sed 's/^/      /'
       else
         ok "mọi mục hoãn đều ghi đích chuyển tiếp"
       fi
@@ -318,7 +320,7 @@ fi
 # 10. adversarial pass — CẢNH BÁO, không đỏ. Phase 1 mềm hơn Phase 3: BR viết xong
 # đã dùng được để mở UC; ba vai là bước làm nó chắc, không phải điều kiện tồn tại.
 AP="$(sec '## Adversarial pass')"
-printf '%s' "$AP" | grep -qE 'Ngày chạy: *[0-9]{4}-[0-9]{2}-[0-9]{2}' \
+printf '%s' "$AP" | grep -qE "($(kw rundate)): *[0-9]{4}-[0-9]{2}-[0-9]{2}" \
   && ok "adversarial pass đã chạy" \
   || warn "chưa chạy /sdd-solo:adversarial $ID — ba vai tầng BR hay bắt ra 'đây là giải pháp viết ngược thành lý do'"
 
@@ -363,11 +365,11 @@ fi
 # ghi vN mới nhất. Ba vai chạy trên v1 mà BR đã sang v3 thì câu đắt nhất của tầng này
 # ("đây có thật là BR không") được hỏi trên một văn bản không còn tồn tại. Chỉ nói ra.
 HV="$(sec '## History' | grep -oE '^- v[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -1)"
-AV="$(printf '%s' "$AP" | grep -oE 'trên v[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -1)"
+AV="$(printf '%s' "$AP" | grep -oE "($(kw onv))[0-9]+" | grep -oE '[0-9]+' | sort -n | tail -1)"
 if [ -n "$HV" ] && [ -n "$AV" ] && [ "$AV" -lt "$HV" ]; then
   warn "ba vai chạy trên v$AV, BR đã là v$HV — hai vai kia chưa đọc bản hiện tại; chạy lại hay ghi rõ vì sao không"
 elif [ -n "$HV" ] && [ -z "$AV" ]; then
-  AD="$(printf '%s' "$AP" | grep -oE 'Ngày chạy: *[0-9-]+' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)"
+  AD="$(printf '%s' "$AP" | grep -oE "($(kw rundate)): *[0-9-]+" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)"
   HD="$(sec '## History' | grep -oE '\(20[0-9]{2}-[0-9]{2}-[0-9]{2}\)' | tr -d '()' | sort | tail -1)"
   [ -n "$AD" ] && [ -n "$HD" ] && [ "$AD" \< "$HD" ] && warn "adversarial chạy $AD, History sửa tới $HD — ba vai chưa đọc bản sau; ghi 'trên vN' vào Ngày chạy để đo được"
 fi
@@ -377,7 +379,7 @@ fi
 # thì đó không còn là "đã cân nhắc và chưa quyết được" — đó là "không có gì để
 # cân". Đo được thì nói ra, đừng im lặng. Xem #25.
 OQL="$(sec '## Open Questions' | grep -cE '^[[:space:]]*- \[ \]')"; [ -z "$OQL" ] && OQL=0
-OQE="$(sec '## Open Questions' | grep -cE 'quyết định tạm: *_{2,}')"; [ -z "$OQE" ] && OQE=0
+OQE="$(sec '## Open Questions' | grep -cE "($(kw interim)): *_{2,}")"; [ -z "$OQE" ] && OQE=0
 if [ "$OQL" -ge 3 ] && [ "$OQE" -gt $((OQL/2)) ]; then
   warn "$OQE/$OQL câu treo có 'quyết định tạm' rỗng — quá nửa. Câu nào chưa có gì để cân thì nó chưa phải câu hỏi đã chín; /sdd-solo:adversarial $ID sẽ trình từng câu kèm ngữ cảnh."
 elif [ "$OQL" -gt 0 ]; then

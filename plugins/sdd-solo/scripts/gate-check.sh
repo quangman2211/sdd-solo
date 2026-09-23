@@ -28,7 +28,7 @@ EFALL="$(entity_files "$F" "$ROOT" | tr '\n' ' ')"; BRF="$(br_files "$ROOT" | tr
 # uc_live — file UC bỏ ba mục dấu vết (cùng luật context.sh #43). Ca thật runxops: "dải rule
 # 001–011" trong ## Đọc lại làm siblings tưởng UC trích RULE-001 → cảnh báo oan.
 entity_hint() { if [ "$(layout "$ROOT")" = v7 ]; then printf 'specs/core/entities/<Tên>.md hoặc specs/%s/entities/<Tên>.md' "$CTX"; else printf 'specs/contexts/%s/entities.md' "$CTX"; fi; }
-uc_live() { awk '/^## (Adversarial pass|Đọc lại|History)/{t=1;next} /^## /{t=0} !t' "$F"; }
+uc_live() { awk -v re="^## ($(kw trace))" '$0 ~ re {t=1;next} /^## /{t=0} !t' "$F"; }
 siblings() {
   SIB="$F $DIR/$ID.flow.md $DIR/$ID.sequence.md $RFS $BRF $EFS $GFS"
   LIVE="$(uc_live)"
@@ -36,8 +36,8 @@ siblings() {
   # 1. cụm đánh dấu treo — ngoài mục dấu vết (History · Adversarial pass · Đọc lại)
   for f in $SIB; do
     [ -f "$f" ] || continue
-    HITS="$(awk '/^#{1,6} (History|Adversarial pass|Đọc lại)/{t=1;next} /^#{1,6} /{t=0} !t' "$f" \
-            | grep -nE 'chờ phiếu|đang xét lại|\(chưa mở\)' | grep -vE '^[0-9]+:[[:space:]]*[-*] \[x\]' | head -3)"
+    HITS="$(awk -v re="^#{1,6} ($(kw trace))" '$0 ~ re {t=1;next} /^#{1,6} /{t=0} !t' "$f" \
+            | grep -nE "$(kw hanging)" | grep -vE '^[0-9]+:[[:space:]]*[-*] \[x\]' | head -3)"
     [ -n "$HITS" ] && { warn "${f#$ROOT/} còn cụm treo (chờ phiếu · đang xét lại · chưa mở):"; printf '%s\n' "$HITS" | cut -c1-110 | sed 's/^/      /'; }
   done
   # 2. entity UC nhắc tên phải có dòng **Tên** trong glossary — ba vai và code gọi cùng một tên
@@ -52,7 +52,7 @@ siblings() {
   fi
   # 3. RULE được trích phải ghi UC này ở 'Áp dụng cho' — chiều ngược của §4
   for r in $(printf '%s' "$LIVE" | grep -oE 'RULE-[0-9]+' | sort -u); do
-    AP="$(awk -v h="## $r" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f' /dev/null $RFS 2>/dev/null | grep -i 'Áp dụng cho' | head -1)"
+    AP="$(awk -v h="## $r" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f' /dev/null $RFS 2>/dev/null | grep -iE "$(kw appliesto)" | head -1)"
     [ -z "$AP" ] && continue
     printf '%s' "$AP" | grep -q "$ID" || warn "$r: 'Áp dụng cho' không có $ID — UC trích rule mà rule không nhận UC (#48)"
   done
@@ -87,7 +87,7 @@ if [ "$PRE" = "1" ]; then
   # bị chặn, và lối thoát duy nhất là BỊA một giá trị — đúng thứ cả tầng BR sinh ra
   # để chặn. §8 dưới cho qua, br-check chỉ cảnh báo; chỉ nhánh này chặn.
   # '<...>' thì vẫn đỏ ở mọi chỗ, kể cả trong Open Questions. Xem #23.
-  PHALL="$(awk '
+  PHALL="$(awk -v TRACE="$(kwh trace)" -v SKIPPH="$(kw rundate)|$(kw output)" '
     /^## Open Questions/ { oq=1; dl=0; next }
     # ## Đọc lại là mục của bước ⑧, mà nhánh này chạy ở bước ⑦ — nó CÒN NGUYÊN
     # template là đúng lịch, không phải chưa điền. Không bỏ qua thì --pre đỏ,
@@ -96,7 +96,7 @@ if [ "$PRE" = "1" ]; then
     # 7.0.1 (#52): ## Adversarial pass cùng loại — nó là ĐẦU RA của chính bước ⑦ mà --pre canh cửa; lượt thứ
     # hai trở đi (câu cũ còn đầu ra ___, vai mới chưa chạy) thì --pre đỏ vì chính mục nó sắp điền.
     # 7.4 (P-18): ## History là sổ chỉ-thêm, ghi cả lời cảnh báo có `E<số>` — không phải chỗ chưa điền.
-    /^## (Đọc lại|Adversarial pass|History)/ { dl=1; oq=0; next }
+    $0 ~ TRACE { dl=1; oq=0; next }
     /^## / { oq=0; dl=0 }
     {
       if (dl) next
@@ -105,7 +105,7 @@ if [ "$PRE" = "1" ]; then
       ang = (t ~ /<[^>]+>/); us = (t ~ /___/)
       if (!ang && !us) next
       if ($0 ~ /^[[:space:]]*<!--/) next
-      if ($0 ~ /Ngày chạy|đầu ra/) next
+      if ($0 ~ SKIPPH) next
       if (oq && !ang) next
       printf "%d:%s\n", NR, $0
     }' "$F")"
@@ -149,7 +149,7 @@ $l"
   elif cat /dev/null $EFALL | grep -qE '(class|## )Entity[AB]([^A-Za-z0-9]|$)' 2>/dev/null; then
     warn "entity của $CTX còn EntityA/EntityB của template — mô hình đổi sau adversarial thì AC phải sửa lời"
   fi
-  [ -n "$GFS" ] && cat /dev/null $GFS | grep -qE '<Thuật ngữ>|<Context A>' && \
+  [ -n "$GFS" ] && cat /dev/null $GFS | grep -qE "$(kw ph_term)|<Context A>" && \
     warn "glossary còn là template — ba vai và code sẽ gọi cùng một thứ bằng những tên khác nhau"
   siblings
 
@@ -288,7 +288,7 @@ fi
 # Nên nó trôi im lặng suốt, trong khi CLAUDE.md của dự án bảo AI dùng đúng tên trong đó.
 GF="$GFS"
 if [ -z "$GF" ]; then warn "chưa có specs/glossary.md"
-elif cat /dev/null $GF | grep -qE '<Thuật ngữ>|<Context A>'; then
+elif cat /dev/null $GF | grep -qE "$(kw ph_term)|<Context A>"; then
   bad "specs/glossary.md còn nguyên template — CLAUDE.md bảo dùng đúng tên trong đó, mà trong đó chưa có tên nào"
   # Nói cái gì sai và vì sao là chưa đủ: "viết glossary đi" là một trang giấy
   # trắng. Người ở bước này gần như luôn đã viết xong entities.md, và tên entity
@@ -319,9 +319,9 @@ if [ "$CTX" = core ] && [ -f "$HERE/layer-check.sh" ]; then
 fi
 
 # 7. adversarial pass có nội dung
-AP="$(sed -n '/^## Adversarial pass/,/^## /p' "$F")"
-if echo "$AP" | grep -qE 'Ngày chạy: *[0-9]{4}-[0-9]{2}-[0-9]{2}'; then ok "adversarial pass đã chạy"; else bad "mục ## Adversarial pass chưa có 'Ngày chạy: YYYY-MM-DD'"; fi
-echo "$AP" | grep -qE '<câu hỏi|→ xử lý ở đâu>' && bad "adversarial pass còn placeholder"
+AP="$(awk -v re="$(kwh adversarial)" '$0 ~ re {t=1;next} /^## /{t=0} t' "$F")"
+if echo "$AP" | grep -qE "($(kw rundate)): *[0-9]{4}-[0-9]{2}-[0-9]{2}"; then ok "adversarial pass đã chạy"; else bad "mục ## Adversarial pass chưa có 'Ngày chạy: YYYY-MM-DD'"; fi
+echo "$AP" | grep -qE "$(kw ph_advq)" && bad "adversarial pass còn placeholder"
 # Lời khai "→ spec" phải kèm ID có thật, nếu không thì không ai kiểm được là
 # đã thực hiện hay chưa — chính adversarial pass bắt ra chỗ này. Xem #12.
 SO="$(echo "$AP" | grep -E '→ *spec' || true)"
@@ -346,7 +346,7 @@ fi
 # 7b. Ba vai chạy rồi mà đa số câu chưa có đầu ra thì adversarial pass mới xong
 # một nửa: đã HỎI nhưng chưa QUYẾT. Đo được (#25 đo 21/24 trên ca thật), nên nói.
 AQ="$(printf '%s' "$AP" | grep -cE '^[[:space:]]*- Q[0-9]+')"; [ -z "$AQ" ] && AQ=0
-AE="$(printf '%s' "$AP" | grep -cE 'đầu ra: *_{2,}')"; [ -z "$AE" ] && AE=0
+AE="$(printf '%s' "$AP" | grep -cE "($(kw output)): *_{2,}")"; [ -z "$AE" ] && AE=0
 if [ "$AQ" -ge 3 ] && [ "$AE" -gt $((AQ/2)) ]; then
   warn "$AE/$AQ câu adversarial còn 'đầu ra: ___' — đã hỏi nhưng chưa quyết. Chạy lại /sdd-solo:adversarial $ID để nó trình từng câu kèm ngữ cảnh và lựa chọn."
 fi
@@ -358,7 +358,7 @@ fi
 # mới lộ ra sản phẩm là server remote, ba câu trong Main Flow không thi hành
 # được, phải mở cổng ra sửa. Cổng không quyết hộ được kiến trúc — nhưng bắt NÓI
 # RA giả định thì rẻ, và đúng ca đó đã bị bắt.
-if grep -qE '^\*\*Giả định triển khai:\*\* *[^ <]' "$F"; then
+if grep -qE "^$(kwl implassum) *[^ <]" "$F"; then
   ok "có **Giả định triển khai:** — ghi rõ ngăn xếp/nơi chạy/ai gọi"
 else
   warn "UC chưa ghi '**Giả định triển khai:** <chạy ở đâu · ai gọi · ngăn xếp>' — Main Flow đang đứng trên một giả định chưa ai viết ra"
@@ -367,7 +367,7 @@ fi
 
 # 8. open questions phải có quyết định tạm
 OQ="$(sed -n '/^## Open Questions/,/^## /p' "$F" | grep -E '^- \[ \]')"
-if [ -n "$OQ" ]; then echo "$OQ" | grep -vqi 'quyết định tạm' && bad "Open Question chưa có (quyết định tạm: ...)" || ok "Open Questions có quyết định tạm"; fi
+if [ -n "$OQ" ]; then echo "$OQ" | grep -vqiE "$(kw interim)" && bad "Open Question chưa có (quyết định tạm: ...)" || ok "Open Questions có quyết định tạm"; fi
 
 # 9. commit docs + đọc lại bằng đầu chưa neo
 #
@@ -403,7 +403,7 @@ if [ -n "$RR" ]; then
     # trong trích dẫn "`✗ … → E4 …`" không phải đầu ra. Đuôi là "Chưa quyết …" thì ID trong đó là đề xuất, được phép chưa có.
     tl="$(printf '%s\n' "$ln" | rr_tail)"
     [ -z "$tl" ] && continue
-    case "$tl" in *"Chưa quyết"*) continue;; esac
+    case "$tl" in *"$(kw_w undecided)"*) continue;; esac
     for id in $(printf '%s' "$tl" | grep -oE '(RULE-[0-9]+|AC-[0-9]+|E[0-9]+)' | sort -u); do
       case "$id" in
         RULE-*) [ -n "$(rule_file "$id" "$ROOT")" ] || bad "đọc lại khai → $id nhưng rules.md không có";;
@@ -443,7 +443,7 @@ LASTS="$(glog -1 --format=%s --grep="^docs($ID)")"
 # của UC · flow.md · phát biểu RULE được trích (bỏ dòng Áp dụng cho) · mermaid của entities.md.
 # Đổi bất cứ vùng nào trong đó là đổi hành vi → đọc lại lần nữa (trọn hoặc --since).
 # 7.4: hàm vân tay (spec_fp · fp_changed) dời sang lib.sh — close-check dùng chung (P-10).
-RH="$(glog -1 --format=%H --grep="^docs($ID): đọc lại")"
+RH="$(glog -1 -E --format=%H --grep="^docs\($ID\): ($(kw c_reread))")"
 FP_CHANGED=""; FP_SKIP=""
 [ -n "$RH" ] && FP_CHANGED="$(fp_changed "$ROOT" "$ID" "$RH" HEAD "$EFS")"
 # commit gần nhất chạm spec, BẤT KỂ tiêu đề — để câu báo "đổi HÀNH VI" chỉ đúng commit (docs(RULE-###) sửa phát biểu
@@ -453,7 +453,7 @@ LASTANY="$(glog -1 --format='%s (%cs)')"
 # pattern của phép bóc tiền tố làm nó không khớp gì cả, im lặng — đo được:
 # chuỗi trả về y nguyên chuỗi vào, nên điều kiện luôn sai và cửa không bao
 # giờ mở. Cùng họ với bẫy `ls a b` (#16): hỏng lặng lẽ, không báo lỗi.
-RRC=0; case "$LASTS" in "docs($ID): đọc lại"*) RRC=1;; esac
+RRC=0; printf '%s' "$LASTS" | grep -qE "^docs\($ID\): ($(kw c_reread))" && RRC=1
 # 7.4 (P-20): nói ra bao nhiêu phát hiện còn "→ Chưa quyết" — đầu ra hợp lệ (7.0.1 #53) nhưng cổng mở với chúng là nợ
 # chủ dự án tự nhận; ✓ không được giống hệt nhau ở "đã quyết hết" và "chưa quyết gì".
 rr_warn() { [ "$RRU" -gt 0 ] && warn "$RRU/$RRN phát hiện còn '→ Chưa quyết (chờ chủ dự án …)' — cổng mở là nợ anh tự nhận (#53); trả lời rồi đổi đuôi thành '→ Đã quyết: …' hoặc sửa spec + verify --since"; return 0; }
@@ -461,7 +461,7 @@ if [ "$ST" = implemented ]; then
   # 7.4 (P-16): UC đã đóng — mốc so là COMMIT ĐÓNG, không phải lần đọc lại (## Đọc lại đã nén còn một dòng, so với
   # nó thì mọi commit docs sau đóng đều đỏ "chưa đọc lại"/"đổi HÀNH VI" oan). §0 đã đỏ vì status; ở đây chỉ nói thêm
   # spec sau đóng có đổi hành vi không — có thì đó là việc của Phase 5, không phải của cổng này.
-  CH="$(glog -1 --format=%H --grep="^docs($ID): implemented — traceability")"
+  CH="$(glog -1 -E --format=%H --grep="^docs\($ID\): implemented — traceability")"
   if [ -n "$CH" ]; then
     CHG="$(fp_changed "$ROOT" "$ID" "$CH" HEAD "$EFS")"
     if [ -z "$CHG" ]; then ok "sau commit đóng UC, spec chỉ đổi ngoài vùng hành vi — §9 không áp cho UC đã implemented"
@@ -469,13 +469,13 @@ if [ "$ST" = implemented ]; then
   else info "UC implemented không có commit đóng của pass.sh close — §9 không áp"; fi
 elif [ "$ST" = deprecated ]; then info "UC deprecated — §9 không áp"
 elif [ -z "$LAST" ]; then bad "chưa có commit docs($ID) — /sdd-solo:adversarial kết thúc bằng commit này"
-elif [ "$LASTS" = "docs($ID): spec reviewed — qua cổng DoR" ]; then
+elif printf '%s' "$LASTS" | grep -qE "^docs\($ID\): spec reviewed — ($(kw c_dor))$"; then
   # Commit spec mới nhất do chính gate-pass tạo, không phải người sửa spec. Không có
   # nhánh này thì hành động qua cổng tự phá điều kiện qua cổng (#7). Sửa spec THẬT sau
   # khi qua cổng sinh commit khác tiêu đề → rơi xuống nhánh cuối, phải đọc lại.
   ok "docs($ID) mới nhất là commit của gate-pass — đã qua cổng trước đó"
 elif [ "$RRN" -eq 0 ]; then
-  bad "chưa đọc lại bằng đầu chưa neo — ## Đọc lại không có dòng F# nào đủ [neo: ...] + đầu ra khác ___"
+  bad "chưa đọc lại bằng đầu chưa neo — ## Đọc lại / ## Re-read không có dòng F# nào đủ [neo: ...] + đầu ra khác ___"
   info "/sdd-solo:verify $ID (subagent đọc lại, ghi F#, commit riêng). Từ 6.0.0 không còn cửa qua đêm."
 elif [ -n "$RH" ] && [ -n "$FP_CHANGED" ]; then
   # 7.4 (P-35): so vân tay TRƯỚC khi tin "commit đọc lại là commit spec mới nhất" — commit docs(RULE-###) sửa phát

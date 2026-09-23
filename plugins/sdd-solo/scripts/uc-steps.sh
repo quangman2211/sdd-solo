@@ -70,14 +70,14 @@ st "⑤" $R5 "màn hình (Claude Design)" "không có file nào trong screens/"
 nom_ "⑥" "đối chiếu SCR ↔ E# ↔ state — không có artifact riêng, /sdd-solo:gate kiểm"
 
 # ⑦ adversarial
-grep -qE '^- *Ngày chạy: *[0-9]{4}-' "$(printf '%s' "$F")" 2>/dev/null \
-  && sed -n '/^## Adversarial pass/,/^## /p' "$F" | grep -qE 'Ngày chạy: *[0-9]{4}-'
+grep -qE "^- *($(kw rundate)): *[0-9]{4}-" "$(printf '%s' "$F")" 2>/dev/null \
+  && awk -v re="$(kwh adversarial)" '$0 ~ re {t=1;next} /^## /{t=0} t' "$F" | grep -qE "($(kw rundate)): *[0-9]{4}-"
 st "⑦" $? "adversarial pass (3 vai)"
 
 # ⑧ đọc lại: mục ## Đọc lại có dòng F# (hoặc dòng nén sau close). 6.0.0 (#38): không
 # còn đếm "commit docs đã qua một đêm" — cửa đó đã bỏ, verify là bắt buộc.
 R8=1
-sed -n '/^## Đọc lại/,/^## /p' "$F" 2>/dev/null | grep -qE '^- F[0-9]+ |^- Ngày chạy:.*phát hiện' && R8=0
+awk -v re="$(kwh reread)" '$0 ~ re {t=1;next} /^## /{t=0} t' "$F" 2>/dev/null | grep -qE "^- F[0-9]+ |^- ($(kw rundate)):.*phát hiện" && R8=0
 st "⑧" $R8 "đọc lại bằng đầu chưa neo"
 
 [ -f "$ROOT/.sdd/gate/$ID.ok" ]; st "⑨" $? "qua cổng DoR"

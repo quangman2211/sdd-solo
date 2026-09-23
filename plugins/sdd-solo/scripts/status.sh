@@ -122,7 +122,7 @@ UY="$ROOT/notes/uy-quyen.md"; HQ="$ROOT/notes/hang-doi.md"
 if [ -f "$UY" ] || [ -f "$HQ" ]; then
   echo; echo "=== Đội agent (7.3) ==="
   if [ -f "$HQ" ]; then
-    for nm in $(grep -oE '\| *DỪNG-[^ |]+' "$HQ" | sed 's/.*DỪNG-//' | sort -u); do
+    for nm in $(grep -oE "\| *($(kw stop))-[^ |]+" "$HQ" | sed -E "s/.*($(kw stop))-//" | sort -u); do
       if [ -f "$UY" ] && grep -qE "^\| *$nm *\|" "$UY"; then ok "DỪNG-$nm có khai ở uy-quyen.md"
       else bad "hàng đợi có DỪNG-$nm nhưng notes/uy-quyen.md ## Điểm dừng không khai tên đó"; fi
     done
@@ -140,7 +140,7 @@ if [ -f "$UY" ] || [ -f "$HQ" ]; then
         d="$(printf '%s' "$row" | awk -F'|' '{print $2}' | tr -d ' ')"
         grep -qE "^- *$d" "$DEC" 2>/dev/null || warn "Sổ uỷ quyền ngày $d nói 'decisions' nhưng $(basename "$DEC") không có dòng ngày đó"; }
     done
-    grep -qE '^<Chủ dự án viết' "$UY" && info "uy-quyen.md ## Phạm vi còn khuôn — điều phối KHÔNG quyết câu L3 nào cho tới khi chủ dự án viết"
+    grep -qE "^($(kw ph_owner))" "$UY" && info "uy-quyen.md ## Phạm vi còn khuôn — điều phối KHÔNG quyết câu L3 nào cho tới khi chủ dự án viết"
   fi
   for hf in "$ROOT"/notes/hoi-dap/hoi-[A-Z]*.md; do [ -f "$hf" ] && bash "$HERE/hoi-check.sh" "$hf" 2>&1 | grep -E '✗|!' | head -3; done
 fi

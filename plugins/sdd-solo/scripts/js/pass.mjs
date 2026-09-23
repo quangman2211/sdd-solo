@@ -9,14 +9,17 @@
 // Adversarial · Đọc lại · History là giấy nháp: khi UC đóng, thân dời sang file cạnh (git giữ, tranh chấp thì
 // mở), tại chỗ còn một dòng có số đếm bằng máy. Đo ở runxops: UC-009.md 56 KB thì ba mục đó là 28,6 KB.
 import fs from 'node:fs';
+import { kw, kwW } from './kw.mjs';
 
 const [, , cmd, ...a] = process.argv;
 const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const read = (p) => fs.readFileSync(p, 'utf8');
 
-/** Thân của mục `## <tên>` tới `## ` kế tiếp (hoặc hết file). Trả {start, end, body} hoặc null. */
+/** Thân của mục `## <tên>` tới `## ` kế tiếp (hoặc hết file). Trả {start, end, body} hoặc null.
+ *  7.7.0: `name` là THÂN ALTERNATION (`Đọc lại|Re-read`) chứ không phải chuỗi cố định — mục viết
+ *  bằng tiếng nào cũng tìm ra. Tên mục không có ký tự đặc biệt của regex nên không cần esc. */
 function section(s, name) {
-  const re = new RegExp('^## ' + esc(name) + '[ \\t]*\\n', 'm');
+  const re = new RegExp('^## (?:' + name + ')[ \\t]*\\n', 'm');
   const m = re.exec(s);
   if (!m) return null;
   const start = m.index + m[0].length;
@@ -31,8 +34,10 @@ if (cmd === 'trace') {
   let s = read(f);
   const moved = [];
 
-  const replace = (name, summary) => {
-    const sec = section(s, name);
+  // 7.7.0: `alt` là thân alternation để TÌM mục (viết tiếng nào cũng thấy), `head` là tên mục
+  // GHI vào file dấu vết theo doc_lang. Trước 7.7.0 hai thứ này là một chuỗi.
+  const replace = (alt, head, summary) => {
+    const sec = section(s, alt);
     if (!sec) return;
     const body = sec.body;
     if (body.includes('→ ' + ID + '.trace.md')) return;      // đã nén
@@ -41,33 +46,38 @@ if (cmd === 'trace') {
     // trước khi hỏi "còn khuôn không". Khuôn thật: YYYY-MM-DD · Ngày chạy: ___ · <...> còn lại.
     let t = body.replace(/`[^`\n]*`/g, '');
     t = t.replace(/<\/?[A-Za-z][A-Za-z0-9-]*(\s+[A-Za-z_:-]+(=("[^"]*"|'[^']*'|[^\s>]+))?)*\s*\/?>/g, '');
-    if (/YYYY-MM-DD|Ngày chạy:\s*_|<[^>\n]+>/.test(t)) return;
-    moved.push([name, body.replace(/\n+$/, '') + '\n']);
+    if (new RegExp('YYYY-MM-DD|(?:' + kw('rundate') + '):\\s*_|<[^>\\n]+>').test(t)) return;
+    moved.push([head, body.replace(/\n+$/, '') + '\n']);
     s = s.slice(0, sec.start) + summary + '\n\n' + s.slice(sec.end);
   };
-  const dateIn = (body) => (/Ngày chạy:\s*(\d{4}-\d{2}-\d{2})/.exec(body) ?? [, today])[1];
+  const RUN = kwW('rundate');
+  const dateIn = (body) =>
+    (new RegExp('(?:' + kw('rundate') + '):\\s*(\\d{4}-\\d{2}-\\d{2})').exec(body) ?? [, today])[1];
 
-  let sec = section(s, 'Adversarial pass');
-  if (sec && sec.body.includes('Ngày chạy')) {
+  let sec = section(s, kw('adversarial'));
+  if (sec && new RegExp(kw('rundate')).test(sec.body)) {
     const n = (sec.body.match(/^\s*-\s*Q\d+\b/gm) ?? []).length;
-    replace('Adversarial pass', `- Ngày chạy: ${dateIn(sec.body)} · 3 vai · ${n} câu, đã áp hết → ${ID}.trace.md`);
+    replace(kw('adversarial'), kwW('adversarial'),
+      `- ${RUN}: ${dateIn(sec.body)} · 3 ${kwW('roles')} · ${n} ${kwW('questions')}, ${kwW('allapplied')} → ${ID}.trace.md`);
   }
-  sec = section(s, 'Đọc lại');
+  sec = section(s, kw('reread'));
   if (sec && /^- F\d+ /m.test(sec.body)) {
     const n = (sec.body.match(/^- F\d+ /gm) ?? []).length;
-    const k = (sec.body.match(/^- F\d+ .*không phải lỗi/gm) ?? []).length;
-    replace('Đọc lại', `- Ngày chạy: ${dateIn(sec.body)} · ${n} phát hiện · ${k} dương tính giả · đã áp hết → ${ID}.trace.md`);
+    const k = (sec.body.match(new RegExp('^- F\\d+ .*(?:' + kw('falsepos') + ')', 'gm')) ?? []).length;
+    replace(kw('reread'), kwW('reread'),
+      `- ${RUN}: ${dateIn(sec.body)} · ${n} ${kwW('findings')} · ${k} ${kwW('falsepos2')} · ${kwW('allapplied')} → ${ID}.trace.md`);
   }
   sec = section(s, 'History');
   if (sec && /^- v\d+ /m.test(sec.body)) {
     const vs = [...sec.body.matchAll(/^- v(\d+) /gm)].map((m) => Number(m[1]));
-    replace('History', `- v${Math.max(...vs) + 1} (${today}): implemented · lịch sử đầy đủ → ${ID}.trace.md`);
+    replace('History', 'History',
+      `- v${Math.max(...vs) + 1} (${today}): implemented · ${kwW('fullhistory')} → ${ID}.trace.md`);
   }
   sec = section(s, 'Open Questions');
   if (sec) {
     const closed = sec.body.match(/^[ \t]*[-*] \[x\].*\n?/gim) ?? [];
     if (closed.length) {
-      moved.push(['Open Questions (đã đóng)', closed.join('')]);
+      moved.push([`Open Questions (${kwW('closedq')})`, closed.join('')]);
       const nb = sec.body.replace(/^[ \t]*[-*] \[x\].*\n?/gim, '');
       s = s.slice(0, sec.start) + nb + s.slice(sec.end);
     }
@@ -93,8 +103,8 @@ if (cmd === 'trace') {
   const [f, today, reason, by] = a;
   let s = read(f);
   const vs = [...s.matchAll(/^- v(\d+) /gm)].map((m) => Number(m[1]));
-  const line = `- v${(vs.length ? Math.max(...vs) : 0) + 1} (${today}, anh): deprecated — ${reason}`
-    + (by !== '-' ? ` · thay bằng ${by}` : ' · không có UC thay thế');
+  const line = `- v${(vs.length ? Math.max(...vs) : 0) + 1} (${today}, ${kwW('byowner')}): deprecated — ${reason}`
+    + (by !== '-' ? ` · ${kwW('replacedby')} ${by}` : ` · ${kwW('noreplacement')}`);
   const sec = section(s, 'History');
   if (sec) {
     const body = sec.body.replace(/\n+$/, '');
@@ -108,7 +118,7 @@ if (cmd === 'trace') {
   let s = read(p);
   s = s.replace(/^(## Status\n+)[a-z]+[ \t]*$/m, '$1applying');
   if (s.includes('## History') && !s.includes(`${d}: designed -> applying`)) {
-    s = s.replace(/\n+$/, '') + `\n- ${d}: designed -> applying (qua cổng Phase 5)\n`;
+    s = s.replace(/\n+$/, '') + `\n- ${d}: designed -> applying (${kwW('c_p5')})\n`;
   }
   fs.writeFileSync(p, s);
 } else {

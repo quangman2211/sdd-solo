@@ -11,6 +11,7 @@
 // Tham số: <root> <file chủ thể> <ID> <owner> <WHY 0|1> <brief path> <brief sha> <BRIEF 0|1>
 import fs from 'node:fs';
 import path from 'node:path';
+import { kw, kwW, kwAlts } from './kw.mjs';
 
 const [, , ROOT, F, ID, CTX, WHY_, BP, BS, BRIEF_] = process.argv;
 const WHY = WHY_ === '1';
@@ -57,7 +58,18 @@ function sect(s, head, level = '## ') {
   return nx ? rest.slice(0, nx.index) : rest;
 }
 
-const TRACE = ['Adversarial pass', 'Đọc lại', 'History'];
+/** 7.7.0: tên mục có nhiều dạng (vi|en). Trả {name, body} của dạng CÓ THẬT trong file — tên in ra
+ *  giữ nguyên như tài liệu đã viết, không dịch ngược sang thứ tiếng của doc_lang. */
+function sectAny(s, names, level = '## ') {
+  for (const n of [].concat(names)) {
+    const b = sect(s, n, level);
+    if (b !== null) return { name: n, body: b };
+  }
+  return null;
+}
+
+// 7.7.0: danh sách mục dấu vết lấy từ bảng kw() (song ngữ) — context.sh export SDD_KW trước khi gọi.
+const TRACE = kw('trace').split('|');
 const isTrace = (title) => TRACE.some((x) => title.trim().toLowerCase().startsWith(x.toLowerCase()));
 
 /** #43: cắt mục dấu vết ở MỌI cấp heading của nguồn được trích, và câu hỏi đã [x]. */
@@ -91,9 +103,9 @@ if (IS_BR) {
   if (!WHY && bm) {
     H(`${ID}:${bm[1]} — quyết định (không Background)`);
     for (const hname of ['Goal', 'In Scope', 'Out of Scope', 'Success Metrics', 'Constraints',
-      'Related Use Cases', 'Đã loại khỏi brief', 'Open Questions']) {
-      const sb = sect(uc, hname);
-      if (sb && sb.trim()) out.push(`## ${hname}\n` + dropTrace(sb).replace(/\s+$/, ''));
+      'Related Use Cases', kwAlts('droppedbrief'), kwAlts('openq')]) {
+      const sc = sectAny(uc, hname);
+      if (sc && sc.body.trim()) out.push(`## ${sc.name}\n` + dropTrace(sc.body).replace(/\s+$/, ''));
     }
     const bg = sect(uc, 'Background');
     if (bg && bg.trim()) {
@@ -148,7 +160,7 @@ if (cons.length) {
     for (let i = 0; i < lines.length; i++) {
       if (new RegExp('-?\\s*\\*\\*' + esc(c) + WE, 'u').test(lines[i])) {
         hit = lines[i].trim();
-        if (i + 1 < lines.length && /^\s+- Từ:/.test(lines[i + 1])) hit += '\n' + lines[i + 1].replace(/\s+$/, '');
+        if (i + 1 < lines.length && new RegExp('^\\s+- (?:' + kw('since') + '):').test(lines[i + 1])) hit += '\n' + lines[i + 1].replace(/\s+$/, '');
         break;
       }
     }
@@ -190,9 +202,9 @@ if (!WHY && brid) {
   const body = new RegExp('^# ' + esc(b) + ':([^\\n]*)\\n([\\s\\S]*?)(?=^# BR-|$(?![\\s\\S]))', 'm').exec(brs);
   if (body) {
     H(`${b}:${body[1]} — quyết định (không Background)`);
-    for (const hname of ['Goal', 'In Scope', 'Out of Scope', 'Success Metrics', 'Đã loại khỏi brief']) {
-      const sb = sect(body[2], hname);
-      if (sb && sb.trim()) out.push(`## ${hname}\n` + dropTrace(sb).replace(/\s+$/, ''));
+    for (const hname of ['Goal', 'In Scope', 'Out of Scope', 'Success Metrics', kwAlts('droppedbrief')]) {
+      const sc = sectAny(body[2], hname);
+      if (sc && sc.body.trim()) out.push(`## ${sc.name}\n` + dropTrace(sc.body).replace(/\s+$/, ''));
     }
   } else warns.push(`${b} — UC trỏ tới nhưng br.md không có`);
 }
@@ -201,16 +213,19 @@ if (!WHY && brid) {
 const ar = ARCH ? rd(ARCH) : null;
 if (ar) {
   const ars = stripMarkup(ar);
-  const heads = WHY ? ['Cấm'] : (BRIEF ? ['Cấm', 'Ranh giới', 'Nơi chạy'] : ['Ngăn xếp', 'Nơi chạy', 'Ai gọi', 'Cấm']);
-  H(rel(ARCH) + (BRIEF ? ' — --brief: Cấm · Ranh giới · Nơi chạy' : ''));
-  for (const hname of heads) {
-    const sb = sect(ars, hname);
-    if (sb === null) {
-      if (hname !== 'Ranh giới') warns.push(`architecture.md thiếu ## ${hname}`);
+  // 7.7.0: `heads` là TÊN TỪ KHOÁ, không phải chữ — tra bảng để đọc cả hai thứ tiếng, và in cảnh báo
+  // theo doc_lang. Tên mục đưa vào gói giữ nguyên như file đã viết.
+  const heads = WHY ? ['forbidden'] : (BRIEF ? ['forbidden', 'boundaries', 'runswhere']
+    : ['stack', 'runswhere', 'callers', 'forbidden']);
+  H(rel(ARCH) + (BRIEF ? ` — --brief: ${['forbidden', 'boundaries', 'runswhere'].map((k) => kwW(k)).join(' · ')}` : ''));
+  for (const key of heads) {
+    const sc = sectAny(ars, kwAlts(key));
+    if (sc === null) {
+      if (key !== 'boundaries') warns.push(`architecture.md thiếu ## ${kwW(key)}`);
       continue;
     }
-    if (/<[^>\n]+>/.test(sb)) warns.push(`architecture.md ## ${hname} còn placeholder <...> — chưa ai quyết`);
-    out.push(`## ${hname}\n` + dropTrace(sb).replace(/\s+$/, ''));
+    if (/<[^>\n]+>/.test(sc.body)) warns.push(`architecture.md ## ${sc.name} còn placeholder <...> — chưa ai quyết`);
+    out.push(`## ${sc.name}\n` + dropTrace(sc.body).replace(/\s+$/, ''));
   }
 } else warns.push('thiếu ' + (ARCH ? rel(ARCH) : 'specs/architecture.md'));
 

@@ -1,0 +1,153 @@
+# kw.tsv — TỪ KHOÁ TÀI LIỆU, SONG NGỮ (7.7.0). Bốn cột, phân cách bằng TAB:
+#   tên <TAB> kiểu dùng <TAB> tiếng Việt <TAB> tiếng Anh
+# Kiểu dùng nói từ khoá đứng ở ĐÂU trong tài liệu, để bộ test đổi đúng vị trí thay vì thay chuỗi thô
+# (thay thô thì 'Từ' · 'mở' · 'câu' trong văn xuôi cũng bị đổi):
+#   head   tiêu đề mục `## X`
+#   label  nhãn đậm `**X:**`
+#   cell   ô bảng hoặc từ đứng riêng `| X |`
+#   raw    chuỗi nguyên văn (tiền tố ID, cụm cố định)
+#   group  nhiều dạng, CHỈ để đọc — không phải một cặp chữ, bộ test không đổi
+#   commit mảnh tiêu đề commit — nằm trong lịch sử git, không nằm trong file
+#   write  CHỈ để ghi (kw_w/kwW) — bộ test không đổi, vì vế tiếng Việt là chữ thường trong văn xuôi
+#
+# Vì sao có file này. Khuôn của plugin sinh ra tài liệu tiếng Anh từ 7.7.0, nhưng repo đang viết
+# tiếng Việt phải qua cổng y hệt như trước. Nên MỌI chỗ script khớp vào NỘI DUNG tài liệu đi qua
+# bảng này: `kw <tên>` trả `<vi>|<en>` để ĐỌC (nhận cả hai), `kw_w <tên>` trả một vế để GHI (theo
+# `doc_lang` của dự án). Không viết thẳng chuỗi tiếng Việt vào grep/sed/awk nữa.
+#
+# Vì sao KHÔNG đổi hẳn sang tiếng Anh: lịch sử git bất biến. runxops có 50 commit subject tiếng Việt
+# mà gate-check §9 grep vào chính chúng (`docs(UC-###): đọc lại`) — bỏ vế tiếng Việt là mọi UC đã
+# đóng mất bằng chứng đọc lại, và không migrate nào chữa được.
+#
+# Vì sao là file dữ liệu chứ không phải hàm trong lib.sh: bash và node đọc CÙNG một file, không phải
+# bơm bảng qua biến môi trường (quên export là hụt im lặng). githook không cần — chúng khớp `feat(UC-###)`,
+# không khớp chữ tiếng Việt nào (đã soi hết templates/githooks/ ở 7.7.0).
+#
+# Giá trị có thể chứa `|` để kê nhiều dạng của cùng một khái niệm, và ký tự escape của ERE (`\(`).
+# Thêm một dòng ở đây là ca 45 tự phủ luôn: nó đổi mọi cặp có đúng hai vế sang tiếng Anh rồi đòi
+# cổng cho cùng verdict. Thêm từ khoá mà quên định tuyến chỗ khớp → ca 45 đỏ.
+#
+# ── tiêu đề mục ──────────────────────────────────────────────────────────────────────────────────
+reread	head	Đọc lại	Re-read
+adversarial	head	Adversarial pass	Adversarial pass
+craftslice	head	Nghề và lát	Crafts and slices
+nonarrow	head	Không thu hẹp	Do not narrow
+droppedbrief	head	Đã loại khỏi brief	Dropped from brief
+forbidden	head	Cấm	Forbidden
+stack	head	Ngăn xếp	Stack
+runswhere	head	Nơi chạy	Runs where
+callers	head	Ai gọi	Callers
+boundaries	head	Ranh giới	Boundaries
+settledbrief	head	Đã chốt từ brief	Settled from brief
+summary	head	Tóm tắt	Summary
+techcontext	head	Bối cảnh kỹ thuật	Technical context
+vsarch	head	Đối chiếu architecture.md	Checked against architecture.md
+vsbrief	head	Đối chiếu brief	Checked against brief
+codestruct	head	Cấu trúc code	Code structure
+risks	head	Rủi ro	Risks
+techdir	head	Hướng kỹ thuật	Technical direction
+risksback	head	Rủi ro và cách lùi	Risks and rollback
+lanes	head	Làn	Lanes
+work	head	Việc	Work
+ticket	head	Phiếu	Tickets
+openq	head	Câu hỏi mở	Open Questions
+# ── nhãn **X:** trong tài liệu ───────────────────────────────────────────────────────────────────
+craft	label	Nghề	Craft
+slice	label	Lát	Slice
+relbr	label	Liên quan tới BR	Related BR
+implassum	label	Giả định triển khai	Implementation assumption
+source	label	Nguồn	Source
+briefsource	label	Nguồn brief	Brief source
+whybuild	label	Vì sao vẫn xây	Why still build
+pain	label	Khổ gì, vì sao rơi	What pain, why it lands
+statement	label	Phát biểu	Statement
+since	label	Từ	From
+state	label	Trạng thái	State
+reviewon	label	Kiểm lại	Review on
+appliesto	label	Áp dụng cho	Applies to
+belongs	label	Thuộc	Belongs to
+blocking	label	Chặn không	Blocking
+answer	label	Trả lời \(A/R\)	Answer \(A/R\)
+target	label	đích	target
+waiting	label	Đang làm gì trong lúc chờ	Doing while waiting
+specwork	label	Việc cho spec khi trả lời	Spec work when answered
+rundate	label	Ngày chạy	Run date
+measuredby	label	đo qua	measured by
+output	label	đầu ra	output
+skipstep	label	Bỏ bước	Skip step
+oldval	label	Cũ	Old
+newval	label	Mới	New
+reason	raw	lý do	reason
+held	label	giữ	held
+loaded	raw	nạp	loaded
+verbatim	raw	nguyên văn	verbatim
+onv	raw	trên v	on v
+# ── từ trạng thái (ĐỌC nhận cả hai · GHI theo doc_lang) ──────────────────────────────────────────
+q_wait	cell	chờ	waiting
+q_active	cell	đang	active
+q_done	cell	xong	done
+q_open	cell	mở	open
+applied	cell	đã áp	applied
+closed	cell	đóng	closed
+stop	raw	DỪNG	STOP
+undecided	raw	Chưa quyết	Undecided
+interim	raw	quyết định tạm	interim decision
+findings	raw	phát hiện	findings
+questions	raw	câu	questions
+nowork	raw	không có việc	no work
+narrowed	raw	cố ý thu hẹp — chủ dự án chốt	deliberately narrowed — owner decided
+narrow	raw	cố ý thu hẹp	deliberately narrowed
+dropped	raw	Bỏ	Dropped
+ask	raw	HỎI	ASK
+forwhom	label	Cho	For
+approve	label	Duyệt	Approve
+coordinator	raw	điều phối	coordinator
+# ── nhóm nhiều dạng ──────────────────────────────────────────────────────────────────────────────
+# ba mục dấu vết (#43): History là tiếng Anh sẵn ở cả hai vế
+trace	group	Adversarial pass|Đọc lại|History	Adversarial pass|Re-read|History
+# cụm đánh dấu treo trong văn xuôi — spec viết dở mà cổng vẫn đọc qua
+hanging	group	chờ phiếu|đang xét lại|\(chưa mở\)	awaiting ticket|under review|\(not open\)
+# đích của một dòng bị loại khỏi brief — hoãn mà không ghi đích là hoãn vào hư không
+dest	group	lát|mở lại khi|chuyển	slice|reopen when|moved to
+# dấu hiệu "để tầng thiết kế lo" trong dòng Đã loại
+deferarch	group	kiến trúc|sau này|để sau|tầng thiết kế	architecture|later|deferred|design layer
+# đích chuyển tiếp của một mục hoãn sang bước sau (nhánh 6.x của br-check)
+fwddest	group	chuyển|đích	moved to|target
+# mục câu hỏi mở, nhận cả số ít lẫn số nhiều — close-check khớp vào THÂN file UC, nơi người
+# viết gõ "Open Question" cũng nhiều như "Open Questions". Dùng `openq` (head) để khớp TIÊU ĐỀ.
+openq_any	group	Câu hỏi mở|Open Question	Câu hỏi mở|Open Question
+# từ mơ hồ ở ## Goal khi Success Metrics chưa có số
+vague	group	tối ưu|cải thiện|nâng cao|tốt hơn|hiệu quả|hiện đại hoá	optimi[sz]e|improve|enhance|better|efficient|modernise
+# ── placeholder của khuôn (chưa điền thì cổng đỏ) ────────────────────────────────────────────────
+ph_term	raw	<Thuật ngữ>	<Term>
+ph_entity	raw	<Tên entity	<Entity name
+ph_gloss	raw	<thuật ngữ	<term
+ph_brname	raw	<Tên business requirement>	<Business requirement name>
+ph_advq	group	<câu hỏi|→ xử lý ở đâu>	<question|→ handled where>
+ph_owner	raw	<Chủ dự án viết	<Owner writes
+# ── tiêu đề commit (LỊCH SỬ BẤT BIẾN — vế tiếng Việt ở đây KHÔNG bao giờ được bỏ) ────────────────
+c_reread	commit	đọc lại	re-read
+c_design	commit	thiết kế	design
+c_dor	commit	qua cổng DoR	DoR gate passed
+c_p5	commit	qua cổng Phase 5	Phase 5 gate passed
+c_ticket	commit	phi[eế]u #	ticket #
+c_role	commit	Vai	Role
+# ── thêm ở 7.7.0 khi định tuyến js/ ─────────────────────────────────────────────────────────────
+blockvals	group	chặn|không chặn	blocking|not blocking
+acchanged	raw	AC đổi	AC changed
+from_	raw	từ	from
+task	raw	việc	task
+anchor	raw	neo	anchor
+falsepos	raw	không phải lỗi	false positive
+allapplied	raw	đã áp hết	all applied
+date	cell	Ngày	Date
+file	cell	File	File
+falsepos2	raw	dương tính giả	false positives
+# ── chỉ để GHI (kwW), bộ test KHÔNG đổi: đây là chữ thường gặp trong văn xuôi (vai · anh), hoặc cụm
+#    không script nào khớp vào. Đổi thô chúng thì bản tiếng Anh hỏng vì lý do không liên quan tới cổng.
+roles	write	vai	roles
+byowner	write	anh	owner
+fullhistory	write	lịch sử đầy đủ	full history
+closedq	write	đã đóng	closed
+replacedby	write	thay bằng	replaced by
+noreplacement	write	không có UC thay thế	no replacement UC

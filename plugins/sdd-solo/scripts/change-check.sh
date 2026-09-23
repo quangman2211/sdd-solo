@@ -12,6 +12,9 @@ info "thư mục: ${D#$ROOT/}"
 
 # sect <file> <heading> — nội dung một mục, bỏ chính dòng heading
 sect() { awk -v h="$2" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}' "$1" 2>/dev/null; }
+# sectk <file> <mẫu ERE của tiêu đề> — như sect nhưng nhận mẫu `kwh`, để mục viết bằng
+# tiếng Anh đọc ra y như tiếng Việt (7.7.0).
+sectk() { awk -v re="$2" '$0 ~ re {f=1;next} f&&/^## /{exit} f{print}' "$1" 2>/dev/null; }
 # nonempty/filled dùng bản chung ở lib.sh (4.0.1)
 
 P="$D/proposal.md"; G="$D/design.md"; T="$D/tasks.md"
@@ -70,7 +73,7 @@ printf '%s' "$(sect "$P" "## History")" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}' 
 
 # 5. design.md
 if [ -f "$G" ]; then
-  filled "$(sect "$G" "## Hướng kỹ thuật")" && ok "design.md có hướng kỹ thuật" \
+  filled "$(sectk "$G" "$(kwh techdir)")" && ok "design.md có hướng kỹ thuật" \
     || bad "design.md ## Hướng kỹ thuật rỗng hoặc còn placeholder"
   for a in $(grep -oE 'ADR-[0-9]+' "$G" | sort -u); do
     if [ -n "$(adr_file "$a" "$ROOT")" ]; then
@@ -78,7 +81,7 @@ if [ -f "$G" ]; then
     else bad "design.md nêu $a nhưng không có file ADR ($(adr_dirs "$ROOT" | sed "s#$ROOT/##" | tr '\n' ' '))"; fi
   done
   grep -qE 'SCR-[0-9]+-[0-9]+' "$G" || warn "design.md chưa nêu SCR-###-# nào — change không đụng màn hình nào thật à?"
-  filled "$(sect "$G" "## Rủi ro và cách lùi")" && ok "có rủi ro và cách lùi" \
+  filled "$(sectk "$G" "$(kwh risksback)")" && ok "có rủi ro và cách lùi" \
     || bad "design.md ## Rủi ro và cách lùi rỗng hoặc còn '...' — đổi hành vi đã giao thì phải nói đường lùi"
 fi
 
@@ -121,7 +124,7 @@ for u in $UCS; do
             E*)   grep -qE "^- +(\*\*)?$x[.:]" "$UF" && ok "delta/$u sửa $x" || bad "delta/$u MODIFIED $x nhưng baseline không có $x";;
           esac
         done
-        printf '%s' "$S" | grep -qE '^Cũ:' && printf '%s' "$S" | grep -qE '^Mới:' \
+        printf '%s' "$S" | grep -qE "^($(kw oldval)):" && printf '%s' "$S" | grep -qE "^($(kw newval)):" \
           || bad "delta/$u MODIFIED phải ghi cả 'Cũ:' và 'Mới:' — không có thì không ai review được";;
       REMOVED)
         MODS=$((MODS+1))
@@ -132,7 +135,7 @@ for u in $UCS; do
           grep -qE "^### $x\b|^- +(\*\*)?$x[.:]" "$UF" || bad "delta/$u REMOVED $x nhưng baseline không có $x"
           printf '%s' "$ln" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}' \
             || bad "delta/$u REMOVED $x chưa ghi ngày deprecated"
-          printf '%s' "$ln" | grep -qiE 'lý do' \
+          printf '%s' "$ln" | grep -qiE "$(kw reason)" \
             || bad "delta/$u REMOVED $x chưa ghi lý do"
         done <<< "$S";;
     esac
@@ -157,9 +160,9 @@ RR="$(rr_lines "$P")"; RRN=0; RRU=0
 [ -z "$RRU" ] && RRU=0
 LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- "$D" 2>/dev/null)"
 LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- "$D" 2>/dev/null)"
-RRC=0; case "$LASTS" in "docs($ID): đọc lại"*) RRC=1;; esac
+RRC=0; printf '%s' "$LASTS" | grep -qE "^docs\($ID\): ($(kw c_reread))" && RRC=1
 if [ -z "$LAST" ]; then bad "chưa có commit docs($ID) — commit change trước"
-elif [ "$LASTS" = "docs($ID): change reviewed — qua cổng Phase 5" ]; then
+elif printf '%s' "$LASTS" | grep -qE "^docs\($ID\): change reviewed — ($(kw c_p5))$"; then
   ok "docs($ID) mới nhất là commit của change-pass — đã qua cổng trước đó"
 elif [ "$RRN" -gt 0 ] && [ "$RRC" = 1 ]; then
   ok "đọc lại bằng đầu chưa neo: $RRN phát hiện có neo + đầu ra, commit riêng là commit mới nhất của $ID"

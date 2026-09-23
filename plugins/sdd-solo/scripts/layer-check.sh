@@ -76,8 +76,8 @@ for f in $LIST; do
     # `## ` kế. Luật sổ cấm sửa dòng History, nên một glossary/ADR gốc có History cũ nhắc RULE nghề sẽ đỏ mỗi lần
     # ai chạm file — cùng loại với *.trace.md / evidence.md đã miễn theo file. Dòng bị bỏ in thành dòng trống để
     # số dòng in ra vẫn đúng số dòng trong file.
-    BODY="$(strip_markup < "$ROOT/$f" | awk '
-      /^## (History|Adversarial pass|Đọc lại)[[:space:]]*$/ { v=1; print ""; next }
+    BODY="$(strip_markup < "$ROOT/$f" | awk -v TR="$(kwh trace)[[:space:]]*$" '
+      $0 ~ TR { v=1; print ""; next }
       /^## / { v=0 }
       /^```/ { c=!c; print ""; next }
       (c || v) { print ""; next }

@@ -53,6 +53,10 @@ JS
 }
 app() { printf '%s\n' "$2" >> "$1"; }
 
+# kw_swap — đổi mọi từ khoá tài liệu của repo hiện tại sang vế tiếng Anh của bảng kw() (7.7.0).
+# Bảng ở lib.sh là nguồn duy nhất: thêm một từ khoá ở đó là ca 45 tự phủ luôn.
+kw_swap() { node "$T/kwswap.mjs" "$P/scripts/js/kw.mjs"; }
+
 UC1=specs/orders/br-001/use-cases/UC-001-notify-order/UC-001.md
 FL1=specs/orders/br-001/use-cases/UC-001-notify-order/UC-001.flow.md
 UCD=specs/orders/br-001/use-cases/UC-001-notify-order

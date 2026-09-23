@@ -15,7 +15,7 @@ echo "Sổ hỏi vai $V — ${F#$ROOT/}"
 if [ "$2" = --lich-su ] || [ "$3" = --lich-su ]; then
   N=0
   for h in $(git -C "$ROOT" log --format=%h --diff-filter=M -- "${F#$ROOT/}" 2>/dev/null); do
-    if git -C "$ROOT" show "$h" -- "${F#$ROOT/}" | grep -qE '^-### HỎI-'; then N=$((N+1)); bad "$h sửa một dòng '### HỎI-' đã có — sổ chỉ-thêm: $(git -C "$ROOT" log -1 --format=%s "$h" | cut -c1-60)"; fi
+    if git -C "$ROOT" show "$h" -- "${F#$ROOT/}" | grep -qE "^-### ($(kw ask))-"; then N=$((N+1)); bad "$h sửa một dòng '### HỎI-' đã có — sổ chỉ-thêm: $(git -C "$ROOT" log -1 --format=%s "$h" | cut -c1-60)"; fi
   done
   [ "$N" = 0 ] && ok "không commit nào sửa dòng HỎI đã có"
 fi

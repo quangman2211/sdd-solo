@@ -11,7 +11,8 @@ plugins/sdd-solo/
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
   scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3) · mermaid.sh (vỏ của parser mermaid, 7.5)
-  scripts/js/                        **mã node của plugin** (7.6, ESM, 0 gói npm): mermaid · mermaid-real (mượn mermaid của dự án khi có) · context · migrate · pass · brief · hoi · table · util
+  scripts/kw.tsv                     **bảng từ khoá tài liệu song ngữ** (7.7) — bash và node đọc chung
+  scripts/js/                        **mã node của plugin** (7.6, ESM, 0 gói npm): mermaid · mermaid-real (mượn mermaid của dự án khi có) · context · migrate · pass · brief · hoi · table · util · kw
   templates/project/                 19 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16; 7.2–7.3: + .sdd/roles · notes/hang-doi.md · notes/uy-quyen.md)
   templates/skel/                    khuôn use-case/ · br/ · nghe/ · entity.md · change/ · hoi-dap.md · hoi-vai.md — skill/script copy khi tạo, KHÔNG rơi vào dự án
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
@@ -59,6 +60,16 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   phải của plugin: dự án viết bằng node, và plugin dùng mermaid rất nhiều để kiểm luồng — một ngôn ngữ thứ hai chỉ để
   đọc sơ đồ là một thứ nữa phải cài trên mọi máy clone repo. Đừng thêm python trở lại. Chỗ nào CÓ đường lùi (mermaid,
   đọc JSON) thì không có node vẫn chạy; chỗ nào SỬA file thì gọi `need_node` để dừng có lời.
+- **Từ khoá tài liệu là song ngữ, và vế tiếng Việt KHÔNG bao giờ được bỏ** (7.7). Bảng ở
+  `scripts/kw.tsv` (tên · kiểu dùng · tiếng Việt · tiếng Anh); bash đọc qua `kw` · `kwh` · `kwl` · `kw_w`,
+  node qua `js/kw.mjs`. Khuôn sinh ra tài liệu tiếng Anh, repo đang viết tiếng Việt qua cổng y hệt. Không
+  viết thẳng chuỗi tiếng Việt vào `grep`/`sed`/`awk` nữa — thêm dòng vào bảng rồi gọi hàm.
+  Lý do KHÔNG đổi hẳn: lịch sử git bất biến. runxops có 50 commit subject tiếng Việt mà gate-check §9 grep
+  vào chính chúng (`docs(UC-###): đọc lại`) — bỏ vế cũ là mọi UC đã đóng mất bằng chứng đọc lại, và không
+  migrate nào chữa được. Hướng GHI theo `doc_lang` của `.sdd/config` (mặc định `vi`; `scaffold` ghi `en`
+  cho dự án MỚI), nên repo đang chạy không đổi một byte.
+  Phép đo là ca 45: chép repo, viết lại mọi từ khoá sang tiếng Anh theo bảng, rồi đòi cổng cho CÙNG verdict.
+  Thêm từ khoá mà quên định tuyến một chỗ khớp thì ca 45 đỏ — và chỉ ca 45 đỏ, vì bản tiếng Việt vẫn xanh.
 - **Luật lint mermaid đo bằng mermaid thật, không đoán** (7.5). `js/mermaid.mjs` chỉ báo những gì đã kiểm bằng
   `mermaid.parse` + `getDiagramFromText` (node 25, jsdom) trên 88 khối thật của runxops cộng ma trận 27 ký tự ×
   13 ngữ cảnh: 17/17 khối vỡ bắt được, 0 khối lành báo oan. Thêm luật mới thì thêm bằng cách ĐO lại, không bằng
@@ -122,6 +133,13 @@ python/grep quanh chữ có dấu (đo được: 126 dòng lệch ở `context.s
 
 - bash 3.2: không dùng mảng kết hợp, `mapfile`, `${var,,}`. `sed -i.bak` rồi `rm .bak`. `shasum -a 256` có fallback `sha256sum` trong `lib.sh`.
 - **Không đặt biến sát ký tự nhiều byte.** `echo "$VAR…"` trong bash 3.2 (macOS) dưới locale UTF-8 nuốt mất nội dung biến và byte đầu của ký tự theo sau — không riêng `…`, mà cả `→`, `✓`, chữ có dấu. Dùng `printf '…%s…\n' "$VAR"`, hoặc chèn một ký tự ASCII vào giữa. Bảng đo ở CHANGELOG 1.6.2 và issue #6. Vỏ ngoài mọi script đều bash và mọi thông điệp đều tiếng Việt, nên bẫy này còn lặp lại.
+- **`awk -v` xử lý escape của CHUỖI trước khi mẫu tới máy regex.** `-v re="…\\]…"` tới nơi còn `\]` và mẫu hụt
+  im lặng. Viết ngoặc vuông bằng `[[]` và `[]]` — trong ngoặc vuông không còn escape nào để nuốt. Đo được ở 7.7.0:
+  định tuyến `rr_count` theo lối `\\[` làm bản tiếng Việt đang xanh thành đỏ "chưa đọc lại", ở đúng cửa duy nhất
+  mở cổng Phase 5.
+- **Mẫu sinh từ `kw`/`kwl`/`kwh` dùng nhóm KHÔNG bắt.** `.source` của chúng hay được nối vào một mẫu lớn hơn, và
+  một nhóm bắt lạc vào đó đẩy số thứ tự của mọi nhóm sau. Đo được ở 7.7.0: `hoi.mjs` đọc `mm[1]` ra chính từ khoá
+  thay vì giá trị ô, nên phép kiểm bốn ô của sổ hỏi coi ô trống nào cũng là "có điền".
 - Mọi kiểm cơ học in `✓ / ✗ / !` qua `ok/bad/warn` của `lib.sh`; exit 1 nếu có ✗.
 - Commit từ script dùng `git commit --only -- <file>` để không kéo theo thứ user đang stage.
 - Đường dẫn dự án lấy từ `project_root()` (`$CLAUDE_PROJECT_DIR` → `git rev-parse --show-toplevel` → `pwd`).

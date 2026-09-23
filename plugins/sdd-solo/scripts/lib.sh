@@ -57,7 +57,7 @@ ctx_of() { owner_of "$1"; }   # tên cũ — giữ cho bản sao .sdd/scripts/ c
 br_of() {
   case "$1" in
     */br-[0-9]*/use-cases/*) printf '%s' "$1" | sed -E 's#.*/br-([0-9]+)/use-cases/.*#BR-\1#';;
-    *) grep -oE 'Liên quan tới BR:\*\* *BR-[0-9]+' "$1" 2>/dev/null | grep -oE 'BR-[0-9]+' | head -1;;
+    *) grep -oE "($(kw relbr)):\*\* *BR-[0-9]+" "$1" 2>/dev/null | grep -oE 'BR-[0-9]+' | head -1;;
   esac
 }
 # br_dir BR-003 <root> → thư mục lát (7.0), rỗng ở 6.x
@@ -85,7 +85,7 @@ evidence_file() { local d; d="$(br_dir "$1" "$2")"; if [ -n "$d" ]; then printf 
 br_untouched() {
   if [ "$(layout "$1")" = v7 ]; then
     ! br_text "$1" | grep -E '^# BR-[0-9]+: *[^ <]' | grep -vqE '^# BR-000'
-  else grep -q '<Tên business requirement>' "$1/specs/br.md" 2>/dev/null; fi
+  else grep -qE "$(kw ph_brname)" "$1/specs/br.md" 2>/dev/null; fi
 }
 # uc_table_file UC-### <root> → file có bảng | UC-### | … | Status |: 7.0 = br.md của lát,
 # 6.x = use-cases.md của context (#44)
@@ -152,7 +152,7 @@ entity_files() {
 # entity_cited <path-to-UC.md> <root> → trong entity_files, file nào tên entity xuất hiện trong
 # phần hiệu lực của UC (7.0); 6.x → chính entities.md (một file chứa mọi entity của context)
 entity_cited() {
-  local live; live="$(awk '/^## (Adversarial pass|Đọc lại|History)/{t=1;next} /^## /{t=0} !t' "$1")"
+  local live; live="$(awk -v re="^## ($(kw trace))" '$0 ~ re {t=1;next} /^## /{t=0} !t' "$1")"
   for f in $(entity_files "$1" "$2"); do
     case "$f" in */specs/contexts/*) printf '%s\n' "$f"; continue;; esac
     n="$(basename "$f" .md)"
@@ -186,6 +186,41 @@ id_exists() {
     *) return 1;;
   esac
 }
+
+# ── Từ khoá tài liệu: song ngữ (7.7.0) ───────────────────────────────────
+# Bảng ở scripts/kw.tsv (ba cột: tên · tiếng Việt · tiếng Anh) — bash và node đọc CÙNG file đó,
+# không bơm qua biến môi trường. Lý do đầy đủ nằm ở đầu kw.tsv.
+#   kw  <tên> → '<vi>|<en>'  thân alternation để ĐỌC (nhận cả hai thứ tiếng)
+#   kwh <tên> → '^## (…)'    mẫu tiêu đề mục
+#   kwl <tên> → '\*\*(…):\*\*' mẫu nhãn đậm
+#   kw_w <tên> [root] → MỘT vế để GHI, theo doc_lang của dự án (mặc định vi — repo đang chạy
+#                       không đổi một byte; scaffold ghi doc_lang=en cho dự án MỚI)
+# Tên không có trong bảng → in ra stderr và trả 1. Đừng để nó trả rỗng: một mẫu rỗng khớp vào
+# mọi thứ, và cổng xanh oan là loại hỏng đắt nhất của repo này.
+# KW_TSV tính LÚC GỌI, không lúc gán: SDD_LIBDIR được đặt ở cuối lib.sh, gán sớm thì ra "/kw.tsv".
+_kw_tsv() { printf "%s/kw.tsv" "${SDD_LIBDIR:-$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)}"; }
+_kw_col() {
+  KW_TSV="$(_kw_tsv)"
+  awk -F'\t' -v n="$1" -v c="$2" '$1 == n { print $c; found=1; exit } END { exit !found }' "$KW_TSV" 2>/dev/null
+}
+kw() {
+  _kw_vi="$(_kw_col "$1" 3)" || { printf 'lib.sh kw(): không có từ khoá "%s" trong kw.tsv\n' "$1" >&2; return 1; }
+  _kw_en="$(_kw_col "$1" 4)"
+  # bỏ vế trùng: nhóm nhiều dạng có phần tử giống nhau ở cả hai cột (History), đừng kê hai lần
+  printf '%s|%s\n' "$_kw_vi" "$_kw_en" | tr '|' '\n' | awk '!seen[$0]++' | paste -sd'|' -
+}
+kwh() { printf '^## (%s)' "$(kw "$1")"; }
+kwl() { printf '\\*\\*(%s):\\*\\*' "$(kw "$1")"; }
+# doc_lang <root> → vi | en. Ngôn ngữ mà script GHI ra tài liệu. Mặc định vi: mọi repo đang chạy
+# giữ nguyên hành vi; scaffold ghi doc_lang=en khi tạo .sdd/config MỚI.
+doc_lang() { _dl="$(cfg_get doc_lang "${1:-$(project_root)}" vi)"; case "$_dl" in en) echo en;; *) echo vi;; esac; }
+kw_w() {
+  _kww="$(_kw_col "$1" "$( [ "$(doc_lang "${2:-}")" = en ] && echo 4 || echo 3 )")" \
+    || { printf 'lib.sh kw_w(): không có từ khoá "%s" trong kw.tsv\n' "$1" >&2; return 1; }
+  printf '%s\n' "$_kww"
+}
+# kw_pairs — bảng cho bộ test (tests/kwswap.mjs): mỗi dòng `tên<TAB>vi<TAB>en`, bỏ chú thích.
+kw_pairs() { grep -v '^#' "$(_kw_tsv)" 2>/dev/null | awk -F'\t' 'NF>=4'; }
 
 # slug_of <path> → phần sau UC-###-
 slug_of() { basename "$(dirname "$1")" | sed -E 's/^UC-[0-9]+-//'; }
@@ -244,16 +279,23 @@ today() { date +%Y-%m-%d; }
 # rr_lines <file> → các dòng F# trong ## Đọc lại; rr_count (stdin) → bao nhiêu dòng có
 # CẢ [neo: ...] LẪN đầu ra khác ___. Đó là toàn bộ chốt chống khai gian: bịa một dòng
 # như vậy tốn đúng bằng đọc thật.
-rr_lines() { sed -n '/^## Đọc lại/,/^## /p' "$1" 2>/dev/null | grep -E '^- F[0-9]+ '; }
+rr_lines() { awk -v re="$(kwh reread)" '$0 ~ re {t=1;next} /^## /{t=0} t' "$1" 2>/dev/null | grep -E '^- F[0-9]+ '; }
 rr_count() {
-  awk '
-    /\[neo:[^]]*[^] [:space:]]\]/ && /→/ {
+  # 7.7.0: `[neo: …]` cũng song ngữ — `nb` là mẫu, không phải chữ, vì dòng F# của spec tiếng Anh viết
+  # `[anchor: …]`. Chỗ này là một trong hai cửa duy nhất mở cổng Phase 5; viết thẳng `neo` vào đây thì
+  # spec tiếng Anh đọc lại thật vẫn đỏ "chưa đọc lại", tức cổng đỏ oan mà không phép đo nào khác thấy.
+  # Dấu ngoặc vuông viết bằng `[[]` và `[]]`, KHÔNG bằng `\[` `\]`: `awk -v` xử lý escape của chuỗi
+  # trước khi tới máy regex, nên `\\]` tới nơi là `\]` và mẫu hụt im lặng (đo được: bản tiếng Việt
+  # đang xanh thành đỏ "chưa đọc lại"). Trong ngoặc vuông thì không còn escape nào để nuốt.
+  awk -v lb="^[[:space:]]*($(kw output))[[:space:]]*:" \
+      -v nb="[[]($(kw anchor)):[^]]*[^] [:space:]][]]" '
+    $0 ~ nb && /→/ {
       i = index($0, "→"); o = substr($0, i + 3)
       # Bóc nhãn trước rồi mới hỏi còn gì không: nếu giữ lại thì chuỗi
       # mũi-tên + dau ra + ___ vẫn khác rỗng nhờ chính hai chữ nhãn, nên một
       # dòng chưa quyết gì cũng mở được cửa. Đây là ca khai gian rẻ nhất.
       # KHÔNG đặt dấu nháy đơn trong khối awk này — nó đóng chuỗi của shell.
-      sub(/^[[:space:]]*đầu ra[[:space:]]*:/, "", o)
+      sub(lb, "", o)
       gsub(/[_[:space:]]/, "", o)
       if (o != "") n++
     } END { print n + 0 }'
@@ -262,7 +304,7 @@ rr_count() {
 # (7.0.1 #53: verify không hỏi, cổng mở với câu chưa trả lời là nợ chủ dự án tự nhận) — nhưng cổng phải NÓI RA con số,
 # không thì "11 phát hiện có neo + đầu ra" ở trạng thái chưa quyết gì và ở trạng thái đã quyết hết xanh y hệt nhau
 # (CHG-002 runxops: phải đổi tay 11 đuôi thành "Đã quyết" người đọc mới biết).
-rr_undecided() { grep -c '→ *Chưa quyết' 2>/dev/null || true; }
+rr_undecided() { grep -cE "→ *($(kw undecided))" 2>/dev/null || true; }
 # rr_tail (stdin, một dòng) → ĐUÔI SỐNG của dòng F#: chữ sau mũi tên CUỐI, sau khi bỏ mọi `…` và (…) (lồng nhau).
 # Thân F# hay chép nguyên lỗi cổng hay đuôi cũ vào nháy mã / ngoặc — "`✗ đọc lại khai → E4 …`" (UC-027 F74 runxops),
 # "(→ Chưa quyết cũ …)" (P-37) — mũi tên trong đó không phải đầu ra của dòng. Không có mũi tên → in rỗng.
@@ -353,8 +395,8 @@ brief_sha() { _b="$(brief_path "$1")"; [ -n "$_b" ] && [ -f "$1/$_b" ] || return
 # "mọi ký tự trừ \ và n", nên đường dẫn nào có chữ 'n' là hụt, và hụt thì im.
 # 7.0: nhiều br.md → lấy dòng có `nạp YYYY-MM-DD` MUỘN NHẤT (BR-001 cũ của runxops khai sha cũ, BR-003 khai sha
 # mới; lấy dòng đầu theo thứ tự file thì đỏ oan "brief đã đổi"). Không có ngày thì dòng đầu như cũ.
-brief_rec_sha() { br_text "$1" | grep -oE '\*\*Nguồn brief:\*\*.*sha256 [0-9a-f]{12}([^0-9a-f].*)?$' \
-                  | awk '{d=""; if (match($0,/nạp [0-9]{4}-[0-9]{2}-[0-9]{2}/)) d=substr($0,RSTART+4,10); print d "\t" $0}' \
+brief_rec_sha() { br_text "$1" | grep -oE "$(kwl briefsource).*sha256 [0-9a-f]{12}([^0-9a-f].*)?\$" \
+                  | awk -v ld="($(kw loaded)) [0-9]{4}-[0-9]{2}-[0-9]{2}" '{d=""; if (match($0,ld)) d=substr($0,RSTART+RLENGTH-10,10); print d "\t" $0}' \
                   | sort | tail -1 | grep -oE 'sha256 [0-9a-f]{12}' | cut -c8-; }
 # ── nội dung THẬT hay còn là template ───────────────────────────────────
 # Một bản DUY NHẤT. Tới 4.0.0 hàm này được chép nguyên vào br-check.sh và
@@ -580,7 +622,7 @@ spec_fp() { # spec_fp <root> <id> <rev> <vùng> [efs]
     rules)
       rl="$(for p in $(fp_rules "$root" "$rev"); do git -C "$root" show "$rev:$p" 2>/dev/null; printf '\n'; done)"
       for r in $(printf '%s' "$uc" | grep -oE 'RULE-[0-9]+' | sort -u); do
-        printf '%s\n' "$rl" | awk -v h="## $r" 'index($0,h)==1{f=1;print;next} f&&/^## /{f=0} f' | grep -v 'Áp dụng cho'
+        printf '%s\n' "$rl" | awk -v h="## $r" 'index($0,h)==1{f=1;print;next} f&&/^## /{f=0} f' | grep -vE "$(kw appliesto)"
       done;;
     entities) for p in $(fp_entities "$root" "$id" "$rev" "$efs"); do git -C "$root" show "$rev:$p" 2>/dev/null | sed -n '/^```mermaid/,/^```/p'; done;;
   esac
@@ -595,3 +637,10 @@ fp_changed() {
   done
   printf '%s' "$out"
 }
+
+# ── 7.7 — ngôn ngữ GHI cho mọi lệnh node của plugin ───────────────────────
+# Đặt MỘT chỗ ở cuối lib.sh thay vì export ở từng script gọi node. Quên một chỗ là file đó ghi tiếng
+# Việt trong repo khai `doc_lang=en`, và KHÔNG phép kiểm nào đỏ — chiều ĐỌC nhận cả hai vế, nên hụt
+# này im lặng tới lúc có người đọc file. Script nào cần root khác (context.sh) export đè sau khi
+# nạp lib; `:-` ở đây giữ nguyên giá trị đã đặt sẵn từ môi trường.
+export SDD_DOC_LANG="${SDD_DOC_LANG:-$(doc_lang 2>/dev/null || echo vi)}"

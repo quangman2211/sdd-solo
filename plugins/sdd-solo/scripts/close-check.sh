@@ -10,7 +10,7 @@ CTX="$(owner_of "$F")"; SLUG="$(slug_of "$F")"
 # 7.4 (P-10): marker cổng nói "spec ĐÃ ĐƯỢC đọc lại ở commit X". Sửa AC sau X bằng docs(UC-###) thì marker vẫn còn mà
 # điều nó chứng nhận không còn — tới 7.3 không script nào so lại. Vân tay §9 của gate-check (lib: fp_changed) so từ
 # commit gate-pass tới HEAD: Main/Alt/Exceptions/Postconditions/AC · flow · phát biểu RULE · mermaid entities.
-GH="$(git -C "$ROOT" log -1 --format=%H --grep="^docs($ID): spec reviewed — qua cổng DoR" 2>/dev/null)"
+GH="$(git -C "$ROOT" log -1 -E --format=%H --grep="^docs\($ID\): spec reviewed — ($(kw c_dor))" 2>/dev/null)"
 if [ -n "$GH" ]; then
   CHG="$(fp_changed "$ROOT" "$ID" "$GH" HEAD "$(entity_cited "$F" "$ROOT" | tr '\n' ' ')")"
   ST="$(grep -oE '\*\*Status:\*\* *[a-z]+' "$F" | head -1 | awk '{print $2}')"
@@ -92,7 +92,7 @@ if [ "$NF_" -gt 0 ]; then
     warn "$LN_ dòng số literal cần soi (phải trích RULE/CON hoặc giải thích)$( [ "$LN_" -gt 8 ] && printf ' — 8 dòng đầu dưới đây')${LOUT:+; đủ ở $LOUT}:"
     printf '%s\n' "$L" | head -8 | sed 's/^/      /'
     # Spec đã đánh dấu chỗ trống mà code đã điền số — rule ngầm đắt nhất.
-    if grep -qiE '(Open Question|Câu hỏi mở)' "$F" 2>/dev/null && grep -qE '^[[:space:]]*[-*] \[ \]' "$F" 2>/dev/null; then
+    if grep -qiE "($(kw openq_any))" "$F" 2>/dev/null && grep -qE '^[[:space:]]*[-*] \[ \]' "$F" 2>/dev/null; then
       warn "$ID còn Open Question chưa đóng mà code đã có số — soi hai chỗ này với nhau"
     fi
   else

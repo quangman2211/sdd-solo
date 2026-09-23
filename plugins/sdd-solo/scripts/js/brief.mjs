@@ -7,6 +7,7 @@
 //
 // Giữ NGUYÊN từng câu chữ của bản python nó thay — lời giao là thứ agent đọc, đổi chữ là đổi hành vi.
 import fs from 'node:fs';
+import { kw } from './kw.mjs';
 import path from 'node:path';
 
 const pf = process.argv[2];
@@ -17,7 +18,8 @@ const s = fs.readFileSync(pf, 'utf8');
 
 const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const m = /^###?\s*#(\d+)\s*·\s*từ:\s*([^·\n]+?)\s*·\s*việc:\s*([^·\n]+?)\s*·\s*(\S+)/m.exec(s);
+const m = new RegExp('^###?\\s*#(\\d+)\\s*·\\s*(?:' + kw('from_') + '):\\s*([^·\\n]+?)\\s*·\\s*(?:'
+    + kw('task') + '):\\s*([^·\\n]+?)\\s*·\\s*(\\S+)', 'm').exec(s);
 const n = m ? m[1] : '?';
 const viec = (m ? m[3] : '').trim();
 const IDRX = (alt) => new RegExp('(?<![\\p{L}\\p{N}_])(?:' + alt + ')-\\d+(?![\\p{L}\\p{N}_])', 'gu');
@@ -27,7 +29,9 @@ const idmain = ids[0] ?? 'viec';
 
 // Python `(?ms)…(?=^Duyệt:|\Z)` bắt tới CUỐI CHUỖI; trong JS cờ 'm' làm `$` khớp cuối mỗi DÒNG, nên
 // lazy match dừng ngay sau "Cho:" và khối việc rỗng — bẫy thứ hai khi chuyển python → node (7.6.0).
-const cm = /^Cho:([\s\S]*?)(?=^Duyệt:)/m.exec(s) ?? /^Cho:([\s\S]*)/m.exec(s);
+const FOR = '^(?:' + kw('forwhom') + '):', APP = '^(?:' + kw('approve') + '):';
+const cm = new RegExp(FOR + '([\\s\\S]*?)(?=' + APP + ')', 'm').exec(s)
+  ?? new RegExp(FOR + '([\\s\\S]*)', 'm').exec(s);
 const cho = cm ? cm[1] : '';
 let lines = cho.split('\n').map((l) => l.replace(/\s+$/, '')).filter((l) => l.trim());
 
@@ -62,14 +66,15 @@ for (const l of s.split('\n')) {
 let whole = false;
 if (!mine.length && lines.length) { mine = lines; whole = true; }
 
-if (mine.length === 1 && /không có việc/i.test(mine[0])) {
+if (mine.length === 1 && new RegExp(kw('nowork'), 'i').test(mine[0])) {
   process.stdout.write(`Phiếu #${n}: Cho: ${V} — "không có việc". Không giao.\n`);
   process.exit(0);
 }
 
 const neo = [];
-for (const x of s.match(/\[neo:[^\]]*\]/g) ?? []) {
-  if (!neo.includes(x) && x.replace(/^\[|\]$/g, '').replace('neo:', '').trim()) neo.push(x);
+const ANCHOR = new RegExp('\\[(?:' + kw('anchor') + '):[^\\]]*\\]', 'g');
+for (const x of s.match(ANCHOR) ?? []) {
+  if (!neo.includes(x) && x.replace(/^\[|\]$/g, '').replace(new RegExp('^(?:' + kw('anchor') + '):'), '').trim()) neo.push(x);
 }
 const pk = (process.env.SDD_PK ?? '').split(/\s+/).filter(Boolean);
 const missing = pk.filter((p) => !fs.existsSync(path.join(root, p.split(':')[0])));
