@@ -8,7 +8,12 @@ chk "cổng đọc được dấu vết trong THÂN UC (bản trước 8.0.0, ex
 S migrate.sh --trace
 chk "migrate --trace exit 0, báo đã dời UC-001" '[ $R = 0 ] && has "UC-001.md" && has "3 section(s)"'
 chk "thân UC không còn ba mục dấu vết" '! grep -qE "^## (Adversarial pass|Đọc lại|History)$" "$UC1"'
-chk "thân UC có con trỏ ## Evidence" 'grep -q "^## Evidence" "$UC1"'
+# 8.1.1 (P-45): mục con trỏ đi theo doc_lang của dự án như mọi chiều GHI từ 7.7.0. Repo nền của bộ test là
+# tiếng Việt, nên đúng là `## Dấu vết`. Tới 8.1.0 nó viết `## Evidence` vào 20 thân UC tiếng Việt ở runxops.
+chk "thân UC có con trỏ, tiếng Việt vì doc_lang=vi (P-45)" 'grep -q "^## Dấu vết" "$UC1" && ! grep -q "^## Evidence" "$UC1"'
+chk "văn con trỏ cũng tiếng Việt, không phải câu tiếng Anh (P-45)" 'grep -qF "ngay cạnh file này" "$UC1" && ! grep -qF "beside this file" "$UC1"'
+chk "tiêu đề file cạnh cũng tiếng Việt (P-45)" 'grep -qF "sổ dấu vết" "$UCD/UC-001.trace.md"'
+chk "cổng vẫn đọc được cả hai cách viết (kw trace là nhóm song ngữ)" '[ "$(bash -c ". \"$P/scripts/lib.sh\"; kw trace")" != "" ] && bash -c ". \"$P/scripts/lib.sh\"; kw trace" | grep -qF "Dấu vết" && bash -c ". \"$P/scripts/lib.sh\"; kw trace" | grep -qF "Evidence"'
 # tiêu đề ở file cạnh là tiêu đề TRẦN — '## Đọc lại', không phải '## Đọc lại — <ngày>'. Tiêu đề có ngày là
 # thứ pass.sh close viết cho một khối đã CẤT ĐI, và cổng chỉ đọc khối trần (ev_body). Đặt ngày ở đây thì mọi UC
 # từng đóng một lần sẽ có dấu vết rỗng dưới mắt cổng.

@@ -11,6 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { kwW, kwAlts } from './kw.mjs';
 
 const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const rd = (p) => { try { return fs.readFileSync(p, 'utf8'); } catch { return null; } };
@@ -668,15 +669,41 @@ function cmdEvidence(argv) {
 // Idempotence is decided from content, per file: no trail section in the body → already done, exit 1; and a
 // side file that already contains the exact block being appended is left alone. Neither the date nor a marker
 // file is consulted, because those are the two things an interrupted run gets wrong.
+// 8.1.1 (P-45): what migrate WRITES follows the project doc_lang, like every other write since 7.7.0. Up to
+// 8.1.0 this put an English `## Evidence` heading and two English sentences into 20 Vietnamese UC bodies at
+// runxops. The HEADING goes through kwW because checks match it (kw.tsv `evidence`, and the `trace` group);
+// the two sentences are PROSE nothing matches, so they stay here rather than bloating the matching table.
+const PTR = {
+  vi: (id, file) =>
+    `Bản adversarial, phần đọc lại và history của ${id} nằm ở \`${file}\`, ngay cạnh file này.\n`
+    + `Cổng đọc chúng ở đó; không mất gì cả, và file này giữ đúng cỡ của thứ nó đặc tả.\n\n`,
+  en: (id, file) =>
+    `The adversarial pass, the re-read and the history of ${id} live in \`${file}\`, beside this file.\n`
+    + `The gate reads them there; nothing was dropped, and this file stays the size of the thing it specifies.\n\n`,
+};
+const TRAIL_HEAD = {
+  vi: (id, file, today) =>
+    `# ${id} — sổ dấu vết\n\n`
+    + `<!-- migrate.sh --trace dời ra khỏi ${file} ngày ${today} (8.0.0). Đây là GIẤY NHÁP của ${id}: bản\n`
+    + `     adversarial, phần đọc lại, history. Chỉ nối thêm — không bao giờ viết lại dòng nào, đó là thứ làm nó\n`
+    + `     thành bằng chứng. Cổng đọc các mục này ở đây; ${file} giữ một con trỏ. -->\n`,
+  en: (id, file, today) =>
+    `# ${id} — evidence trail\n\n`
+    + `<!-- Moved out of ${file} by migrate.sh --trace on ${today} (8.0.0). This is the SCRATCH PAPER\n`
+    + `     of ${id}: the adversarial pass, the re-read, the history. Append only — nothing here is ever rewritten,\n`
+    + `     which is what makes it evidence. The gate reads these sections here; ${file} keeps a pointer. -->\n`,
+};
+
 function cmdTrace(a) {
-  const [f, tr, ID, dry, today] = a;
+  const [f, tr, ID, dry, today, lang] = a;
+  const L = (lang || process.env.SDD_DOC_LANG) === 'en' ? 'en' : 'vi';
   const DRY = dry === '1';
   const s0 = rd(f);
   if (s0 === null) return 1;
   let s = s0;
   const moved = [];
   // read either language: a repo migrating to 8.0.0 was written before the templates turned English.
-  const NAMES = [['Adversarial pass'], ['Đọc lại', 'Re-read'], ['History']];
+  const NAMES = [kwAlts('adversarial'), kwAlts('reread'), kwAlts('history')];
   let anchor = -1;
   for (const alts of NAMES) {
     for (const n of alts) {
@@ -692,9 +719,7 @@ function cmdTrace(a) {
   // cut from the bottom up so the earlier offsets stay valid
   moved.sort((x, y) => y[2] - x[2]);
   for (const [, sec, hstart] of moved) s = s.slice(0, hstart) + s.slice(sec.end);
-  const ptr = `## Evidence\n`
-    + `The adversarial pass, the re-read and the history of ${ID} live in \`${path.basename(tr)}\`, beside this file.\n`
-    + `The gate reads them there; nothing was dropped, and this file stays the size of the thing it specifies.\n\n`;
+  const ptr = `## ${kwW('evidence', L)}\n` + PTR[L](ID, path.basename(tr));
   const at = Math.min(anchor, s.length);
   s = s.slice(0, at) + ptr + s.slice(at);
 
@@ -705,10 +730,7 @@ function cmdTrace(a) {
   // whatever dated archive blocks are already in the file sit untouched around it.
   let out = rd(tr);
   if (out === null) {
-    out = `# ${ID} — evidence trail\n\n`
-      + `<!-- Moved out of ${path.basename(f)} by migrate.sh --trace on ${today} (8.0.0). This is the SCRATCH PAPER\n`
-      + `     of ${ID}: the adversarial pass, the re-read, the history. Append only — nothing here is ever rewritten,\n`
-      + `     which is what makes it evidence. The gate reads these sections here; ${path.basename(f)} keeps a pointer. -->\n`;
+    out = TRAIL_HEAD[L](ID, path.basename(f), today);
   }
   for (const [n, sec] of [...moved].reverse()) {
     const body = rstrip(s0.slice(sec.start, sec.end));

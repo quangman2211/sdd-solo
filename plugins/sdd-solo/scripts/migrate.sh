@@ -55,7 +55,7 @@ if [ "$TRACE" = "1" ]; then
     N=$((N+1))
     ID="$(basename "$(dirname "$f")" | grep -oE '^(UC|CHG)-[0-9]+')"
     [ -z "$ID" ] && ID="$(basename "${f%.md}")"
-    node "$HERE/js/migrate.mjs" trace "$f" "$(trace_of "$f")" "$ID" "$DRY" "$(today)" && M=$((M+1))
+    node "$HERE/js/migrate.mjs" trace "$f" "$(trace_of "$f")" "$ID" "$DRY" "$(today)" "$(doc_lang "$ROOT")" && M=$((M+1))
   done
   printf -- '--- %s file(s) looked at, %s moved ---\n' "$N" "$M"
   [ "$M" = 0 ] && ok "every file already keeps its trail beside it — nothing to move"

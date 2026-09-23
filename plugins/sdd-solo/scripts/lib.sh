@@ -352,7 +352,22 @@ rr_count() {
 # takes on knowingly) — but the gate must SAY the number, or "11 findings with an anchor + an outcome" looks exactly
 # the same whether nothing was decided or everything was (CHG-002 at runxops: 11 tails had to be changed to "Decided"
 # by hand before a reader could tell).
-rr_undecided() { grep -cE "→ *($(kw undecided))" 2>/dev/null || true; }
+# 8.1.1 (P-46): it counts the LIVE TAIL, through the same reduction as rr_tail below — not the whole line.
+# The re-read ledger is append-only, so a finding that HAS been settled keeps its old "→ Undecided" in the body
+# and carries the answer as a further tail: `→ Undecided (waiting on the owner) → **fixed in v4**`. Grepping the
+# whole line calls that Undecided forever, and at the ceiling of 8.0.0 that is a RED GATE WITH NO WAY OUT — the
+# only move left is to rewrite the old words, which the ledger forbids. Measured at runxops: UC-031 had 13 F#
+# lines, 11 already answered, live-tail count 2, and the gate printed "13 Undecided, ceiling reached". 7.4 (P-37)
+# already settled this for the ID scan; rr_undecided was the one place left reading the dead text.
+rr_undecided() {
+  awk -v re="($(kw undecided))" '{
+    t = $0
+    gsub(/`[^`]*`/, "", t)
+    while (match(t, /\([^()]*\)/)) t = substr(t, 1, RSTART - 1) substr(t, RSTART + RLENGTH)
+    n = 0; while ((i = index(t, "→")) > 0) { t = substr(t, i + 3); n++ }
+    if (n && t ~ re) u++
+  } END { print u + 0 }'
+}
 # rr_tail (stdin, one line) → the LIVE TAIL of an F# line: the text after the LAST arrow, once every `…` and (…) (nested) is dropped.
 # An F# body often quotes the gate error or the old tail inside code ticks / parentheses — "`✗ re-read faked → E4 …`" (UC-027 F74 at runxops),
 # "(→ old Undecided …)" (P-37) — and the arrow inside those is not the line's outcome. No arrow → print empty.

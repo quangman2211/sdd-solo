@@ -57,10 +57,24 @@ if [ -f "$ROOT/.sdd/version" ] && [ "$(layout "$ROOT")" = v6 ]; then
     exit 1
   fi
 fi
+# 8.1.1 (P-45): the plugin has had ONLY ENGLISH templates since 7.8.0. That release promised a running repo
+# would "not change by one byte", and for .sdd/config and the scripts it held — but templates/project is content,
+# and `init --update` applied the translation to it: measured at runxops, 3 files overwritten outright
+# (the CLAUDE.md block, specs/adr/_adr-template.md, specs/core/br-000/br.md) and 11 `.new` files that were empty
+# English skeletons with nothing to merge. Measured on the plugin side, the whole 7.7.0 → 8.1.0 templates diff
+# is TRANSLATION: 0 new files, 0 new sections, and the CLAUDE.md block is 29 lines before and after, 23 swapped
+# for 23. So there was nothing to gain and a repo full of Vietnamese to lose.
+# From here: doc_lang != en → a file that already exists is LEFT ALONE. No overwrite, no .new. Files that are
+# MISSING are still created (English beats absent, and the line below says so). Setting doc_lang=en in
+# .sdd/config takes the English templates on the next update — that is the opt-in, and there is no other flag.
+DL="$(doc_lang "$ROOT")"
 MAN="$ROOT/.sdd/manifest"; mkdir -p "$ROOT/.sdd/gate"; touch "$MAN"
 TPL="$PLUGIN/templates/project"
 COPIED=0; KEPT=0; NEW=0
 echo "sdd-solo $VER → $ROOT ${MODE}"
+if [ "$DL" != en ]; then
+  warn "doc_lang=$DL — the plugin templates have been English only since 7.8.0, so a file that is already there is left exactly as it is: no overwrite, no .new. Only MISSING files are created, and those come in English. To take the English templates instead, put doc_lang=en in .sdd/config."
+fi
 cd "$TPL"
 find . -type f | sed 's#^\./##' | sort | while read -r rel; do
   src="$TPL/$rel"; dst="$ROOT/$rel"; tsha="$(sha "$src")"
@@ -72,6 +86,10 @@ find . -type f | sed 's#^\./##' | sort | while read -r rel; do
     cp "$src" "$dst"; echo "$rel $(sha "$dst") $tsha" >> "$MAN"; ok "create  $rel"
   elif [ "$rec_tpl" = "$tsha" ]; then
     : # the template has not changed since it was installed → leave it alone
+  elif [ "$DL" != en ]; then
+    # P-45: the template moved but the only template there is is English. Record the new template sha so the
+    # same question is not asked again, and touch nothing in the repo.
+    echo "$rel $(sha "$dst") $tsha" >> "$MAN"; info "keep    $rel — yours (doc_lang=$DL)"
   else
     cur="$(sha "$dst")"
     # 7.0: NO manifest line and the file exists → it is the user's (or a real file just migrated onto a template
@@ -142,7 +160,12 @@ done
 # CLAUDE.md: the block between the markers
 CL="$ROOT/CLAUDE.md"; B='<!-- sdd-solo:begin -->'; E='<!-- sdd-solo:end -->'
 BLOCK="$(cat "$PLUGIN/templates/CLAUDE.md.tmpl")"
-if [ -f "$CL" ] && grep -q "$B" "$CL"; then
+if [ -f "$CL" ] && grep -q "$B" "$CL" && [ "$DL" != en ]; then
+  # P-45: same reason as the template loop — replacing the block would swap a Vietnamese block for an English
+  # one carrying no new rule. The block is what the project own agent reads every session; it is not ours to
+  # translate on the project behalf.
+  info "CLAUDE.md — the sdd-solo block left as it is (doc_lang=$DL)"
+elif [ -f "$CL" ] && grep -q "$B" "$CL"; then
   node "$PLUGIN/scripts/js/util.mjs" marker "$CL" "$B" "$E" "$BLOCK"
   ok "CLAUDE.md — the sdd-solo block replaced"
 else

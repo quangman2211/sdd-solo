@@ -1,5 +1,64 @@
 # Changelog
 
+## 8.1.1 — 2026-09-24
+
+Hai lỗi runxops gặp trong ngày, ghi ở `notes/sdd-solo-issues.md` mục **P-46** và **P-45**.
+
+### P-46 — `rr_undecided` đếm chữ đã chết, và ở trần 8.0.0 đó là cổng đỏ không có cách gỡ
+
+`lib.sh rr_undecided()` grep `→ Chưa quyết` trên **cả dòng**. Sổ đọc lại là sổ **chỉ-thêm**: một phát hiện đã
+được giải quyết vẫn giữ nguyên chữ cũ và mang câu trả lời ở đuôi — `→ Chưa quyết (chờ chủ dự án) → **sửa v4**`.
+Đếm cả dòng thì nó là "Chưa quyết" vĩnh viễn.
+
+Tới 7.8 điều đó chỉ làm sai một con số trong lời cảnh báo. **8.0.0 biến nó thành một cái chặn**: chạm trần
+`rr_max` mà còn tồn đọng thì cổng đỏ, và trần là một điểm DỪNG — thêm một vòng không mở được. Nên nước duy nhất
+còn lại là sửa lời cũ, tức là đúng thứ luật sổ chỉ-thêm cấm. Đo ở runxops: UC-031 đủ 3 vòng, 13 dòng `F#`,
+**11 đã trả lời**, đếm tay đuôi sống = 2, cổng in *"13 Undecided, ceiling reached"*.
+
+`rr_tail()` — "chỉ đuôi sống mới tính" — đã có từ 7.4 (P-37) và §7 của `gate-check` đã dùng nó cho vòng quét ID.
+`rr_undecided` là chỗ duy nhất còn lại đọc phần chữ đã chết. Giờ nó đi qua cùng phép rút gọn: bỏ `` `…` ``, bỏ
+`(…)` lồng nhau, lấy phần sau mũi tên **cuối**. Sửa một hàm là sửa cả bốn chỗ gọi — `gate-check` §8 (trần) và
+§9 (`rr_warn`), `change-check` §8, `status.sh`.
+
+Lỗi này là của 8.0.0, không phải của runxops: 8.0.0 dựng một cái chặn lên trên một phép đếm đã sai sẵn.
+
+### P-45 — `init --update` áp bản dịch tiếng Anh lên nội dung tiếng Việt của dự án
+
+7.8.0 chuyển vỏ plugin sang tiếng Anh và hứa repo đang chạy **không đổi một byte**. Với `.sdd/config` và các
+script thì đúng; với `templates/project/` thì không, vì đó là **nội dung**. Ở runxops, `init --update` ghi đè
+thẳng 3 file (khối `CLAUDE.md` · `specs/adr/_adr-template.md` · `specs/core/br-000/br.md`) và sinh 11 file
+`.new` là khuôn tiếng Anh trống, không có gì để gộp.
+
+Đo phía plugin trước khi sửa: cả diff `templates/project` từ 7.7.0 (`761d519`) tới 8.1.0 là **thuần dịch** —
+0 file mới, 0 mục mới; khối `CLAUDE.md` 29 dòng trước và sau, 23 dòng đổi lấy 23 dòng. Nên phía dự án không
+được gì cả, mà mất cả một repo tiếng Việt.
+
+Từ 8.1.1, `doc_lang != en`:
+
+- file **đã có** thì để nguyên — không ghi đè, không `.new`; `scaffold` ghi lại sha khuôn mới vào manifest nên
+  lần sau không hỏi lại.
+- file **thiếu** thì vẫn tạo (tiếng Anh vẫn hơn là không có), và dòng đầu của `scaffold` nói rõ điều đó.
+- khối giữa `<!-- sdd-solo:begin/end -->` giữ nguyên.
+- `migrate --trace` viết mục con trỏ theo `doc_lang`: `## Dấu vết` + văn tiếng Việt, và tiêu đề file cạnh cũng
+  vậy. Tới 8.1.0 nó viết `## Evidence` cùng hai câu tiếng Anh vào 20 thân UC/proposal tiếng Việt. Cổng đọc được
+  **cả hai cách viết** — `kw trace` là nhóm song ngữ — nên repo đã trót nhận mục tiếng Anh không cần sửa gì.
+
+Cách chọn ngược lại là `doc_lang=en` trong `.sdd/config`, không có cờ nào khác. Giá phải trả, nói thẳng: một
+repo `doc_lang=vi` từ đây **không nhận cập nhật khuôn nào nữa**, vì plugin không còn khuôn tiếng Việt để gửi.
+Đổi lại là không bao giờ mất chữ trong im lặng. Cơ chế (`.sdd/scripts/` · `kw.tsv` · `js/` · githook) vẫn chép
+vô điều kiện như cũ — nó là hành vi, không phải nội dung.
+
+### Test
+
+Hai ca mới, cả hai đã kiểm là **đỏ trên 8.1.0** (chạy bộ ca mới trên một worktree ở `HEAD`) trước khi sửa:
+`52-duoi-song-chua-quyet` (5 phép, gồm bản tiếng Anh cho cùng verdict) · `53-doc-lang-khuon` (8 phép, gồm cả
+chiều `doc_lang=en` vẫn ghi đè như cũ). Ca `47-trace-ben-canh` đổi theo: mục con trỏ giờ là `## Dấu vết` ở repo
+tiếng Việt. Bộ test: **53 ca · 264 PASS · 0 FAIL**.
+
+Chỗ còn lệch, biết và để lại: khuôn `templates/skel/use-case/UC-000.md` vẫn ghi `## Evidence` cho mọi dự án, kể
+cả `doc_lang=vi` — khuôn là tiếng Anh từ 7.8.0 và cổng đọc được cả hai, nên đây là chuyện chính tả chứ không
+phải chuyện verdict.
+
 ## 8.1.0 — 2026-09-23
 
 **Nhánh loại trừ nhau của skill ra `references/`.** Kế hoạch ghi "rút gọn sáu skill nặng". Đo trước thì tiền đề
