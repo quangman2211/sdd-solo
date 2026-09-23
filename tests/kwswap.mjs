@@ -27,6 +27,9 @@ for (const [, kind, vi0, en0] of kwPairs()) {
     // nhãn cũng hay viết TRẦN ở đầu một gạch đầu dòng: `- Ngày chạy: 2026-…`. Không phủ dạng này thì
     // mọi chỗ khớp `Ngày chạy` chưa định tuyến vẫn xanh ở bản tiếng Anh, tức phép đo hụt đúng chỗ nó phải soi.
     rules.push([new RegExp('^(\\s*[-*] )' + esc(vi) + '(?=:)', 'gm'), (m, h) => h + en]);
+    // …và TRẦN ở đầu dòng, không gạch đầu dòng: khuôn delta viết `Cũ: …` / `Mới: …`. Không phủ dạng
+    // này thì `change-check` §delta là đường duy nhất ca 45 không soi tới.
+    rules.push([new RegExp('^' + esc(vi) + '(?=:)', 'gm'), () => en]);
   }
   if (kind === 'cell') {
     rules.push([new RegExp('\\| *' + esc(vi) + ' *\\|', 'g'), () => '| ' + en + ' |']);
