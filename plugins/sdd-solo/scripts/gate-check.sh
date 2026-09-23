@@ -164,9 +164,14 @@ ST="$(echo "$STL" | grep -oE '\*\*Status:\*\* *[a-z]+' | awk '{print $2}')"
 case "$ST" in draft|reviewed) ok "status: $ST";; implemented) bad "status is already implemented — use Phase 5 (specs/changes/) to change behaviour";; deprecated) bad "status deprecated — the UC was dropped (#45); open a replacement UC recorded in ## History, not through this gate";; *) bad "invalid status: '$ST'";; esac
 
 # 1. the required sections
-for sec in "## Actor" "## Trigger" "## Preconditions" "## Main Flow" "## Exceptions" "## Postconditions" "## Acceptance Criteria" "## Screens" "## History"; do
+# 8.0.0: ## History left this list. It is the one required section that is EVIDENCE, and evidence now lives in
+# UC-###.trace.md — demanding it in the body would make every migrated repo red for having done the migration.
+# It is not unchecked: ev_history below asks for it wherever it is, which is the same question asked correctly.
+for sec in "## Actor" "## Trigger" "## Preconditions" "## Main Flow" "## Exceptions" "## Postconditions" "## Acceptance Criteria" "## Screens"; do
   grep -q "^$sec" "$F" && ok "has $sec" || bad "missing $sec"
 done
+if [ -n "$(ev_body history "$F" | tr -d '[:space:]')" ]; then ok "has ## History"
+else bad "missing ## History — it belongs in $(basename "$(trace_of "$F")") (8.0.0), or still in the UC body on a repo that has not run migrate.sh --trace"; fi
 grep -qE '<[^>]*>' <(sed -n '/^## Actor/,/^## Alternative/p' "$F" | grep -vE '^\s*$|^##') && warn "a <...> placeholder is left in Actor/Trigger/Flow"
 
 # 2. AC vs E#
@@ -179,7 +184,7 @@ screens_check
 echo "$SCR" | grep -qE 'SCR-[0-9]+-[0-9]+' || bad "no SCR-###-# in ## Screens yet"
 
 # 4. a quoted RULE must exist in rules.md
-for r in $(grep -oE 'RULE-[0-9]+' "$F" | sort -u); do
+for r in $(uc_text "$F" | grep -oE 'RULE-[0-9]+' | sort -u); do
   # grep -c prints "0" AND THEN exits 1, so a "|| echo 0" builds a two-line string and breaks
   # both comparisons below. Do not add a fallback here.
   C="$(cat /dev/null $RFS 2>/dev/null | grep -cE "^## $r\b")"; [ -z "$C" ] && C=0
@@ -319,7 +324,7 @@ if [ "$CTX" = core ] && [ -f "$HERE/layer-check.sh" ]; then
 fi
 
 # 7. the adversarial pass has content
-AP="$(awk -v re="$(kwh adversarial)" '$0 ~ re {t=1;next} /^## /{t=0} t' "$F")"
+AP="$(ev_body adversarial "$F")"
 if echo "$AP" | grep -qE "($(kw rundate)): *[0-9]{4}-[0-9]{2}-[0-9]{2}"; then ok "the adversarial pass has run"; else bad "the ## Adversarial pass section has no 'Run date: YYYY-MM-DD'"; fi
 echo "$AP" | grep -qE "$(kw ph_advq)" && bad "the adversarial pass still has a placeholder"
 # A claim of "→ spec" must carry a real ID, otherwise nobody can check whether it was actually
@@ -388,6 +393,22 @@ if [ -n "$OQ" ]; then echo "$OQ" | grep -vqiE "$(kw interim)" && bad "an Open Qu
 RR="$(rr_lines "$F")"; RRN=0; RRU=0
 [ -n "$RR" ] && { RRN="$(printf '%s\n' "$RR" | rr_count)"; RRU="$(printf '%s\n' "$RR" | rr_undecided)"; }
 [ -z "$RRU" ] && RRU=0
+# 8.0.0 — the ceiling on re-read rounds. An Undecided outcome is a legitimate one (7.0.1 #53: verify does not
+# ask, and opening the gate with an open question is a debt the owner takes on knowingly), so the gate has only
+# ever counted them. Measured on runxops, that turns out to be the loophole: rounds and leftovers rise together —
+# UC-024 13 rounds / 105 Undecided, UC-029 13 / 74, UC-026 12 / 71, UC-025 9 / 37 — while every UC that stopped
+# at one round carries none. Another round is not an answer to the previous round; it is the cheapest way to look
+# busy, and it is what grew one UC file to 455 KB.
+# So: under the ceiling nothing changes. AT the ceiling, an Undecided may no longer be carried forward — it
+# becomes an Open Question (the owner owes an answer) or a ticket (someone else does). This is a STOP, not a
+# door: there is no flag, and doing one more round does not clear it — the number only goes down by deciding.
+RMAX="$(rr_max "$ROOT")"; RND="$(rr_rounds "$F")"
+if [ "$RMAX" -gt 0 ] && [ "$RND" -ge "$RMAX" ] && [ "$RRU" -gt 0 ]; then
+  bad "round $RND of the re-read has reached the ceiling (rr_max=$RMAX) and $RRU finding(s) are still Undecided — turn each into an Open Question or a ticket; a further round is not an answer"
+  info "the ceiling lives in .sdd/config (rr_max=0 switches it off, and then nothing counts the rounds)"
+elif [ "$RMAX" -gt 0 ] && [ "$RND" -ge "$RMAX" ]; then
+  ok "$RND re-read rounds, at the ceiling (rr_max=$RMAX), nothing left Undecided"
+fi
 # A claim inside ## Re-read must carry a REAL ID — exactly the §7 rule for adversarial (#12). Real case
 # (runxops): an F# line claimed '→ fixed RULE-007' after the person fixing it had reverted the code; the
 # body was fixed but THE RECORD OF THE FIX was not — that is, the ## Re-read section is itself a place that

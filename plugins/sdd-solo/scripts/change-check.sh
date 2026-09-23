@@ -68,7 +68,8 @@ for r in $(printf '%s' "$SC" | grep -oE 'RULE-[0-9]+' | sort -u); do
 done
 
 # 4. History
-printf '%s' "$(sect "$P" "## History")" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}' \
+# 8.0.0: proposal.trace.md holds it once migrate --trace has run; before that it is still in proposal.md.
+ev_body history "$P" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}' \
   && ok "History has a dated line" || bad "## History has no 'YYYY-MM-DD: ...' line"
 
 # 5. design.md
@@ -158,6 +159,11 @@ fi
 RR="$(rr_lines "$P")"; RRN=0; RRU=0
 [ -n "$RR" ] && { RRN="$(printf '%s\n' "$RR" | rr_count)"; RRU="$(printf '%s\n' "$RR" | rr_undecided)"; }
 [ -z "$RRU" ] && RRU=0
+# 8.0.0: the same ceiling as the DoR gate (gate-check §8). A change proposal loops for the same reason a UC does.
+RMAX="$(rr_max "$ROOT")"; RND="$(rr_rounds "$P")"
+if [ "$RMAX" -gt 0 ] && [ "$RND" -ge "$RMAX" ] && [ "$RRU" -gt 0 ]; then
+  bad "round $RND of the re-read has reached the ceiling (rr_max=$RMAX) and $RRU finding(s) are still Undecided — turn each into an Open Question or a ticket; a further round is not an answer"
+fi
 LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- "$D" 2>/dev/null)"
 LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- "$D" 2>/dev/null)"
 RRC=0; printf '%s' "$LASTS" | grep -qE "^docs\($ID\): ($(kw c_reread))" && RRC=1

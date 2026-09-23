@@ -40,7 +40,7 @@ forgotten, and STATE carried the debt for days. Four separate jobs means one of 
 (if the variable is not substituted: `find ~/.claude/plugins -type f -name pass.sh -path '*sdd-solo*' | head -1`.)
    The script does exactly five things in one commit `docs($1): deprecated — <reason>`:
    - `**Status:** deprecated` + today's `Last updated` in the UC file;
-   - `## History` v+1: `deprecated — <reason> · replaced by <UC-###>`;
+   - `## History` v+1 **in `UC-###.trace.md`** (beside the UC, 8.0.0): `deprecated — <reason> · replaced by <UC-###>`;
    - removes `.sdd/gate/$1.ok` (from then on the githook blocks `feat($1)`: a retired UC gets no more code commits in its name);
    - the Status column in the `## Related Use Cases` table of that slice's `br.md` → `deprecated`;
    - one line in `specs/decisions.md` (root): `- <date> — Retire $1 (<reason>). Rejected: keep $1. Detail: <replacement UC>`.

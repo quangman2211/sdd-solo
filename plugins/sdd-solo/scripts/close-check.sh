@@ -105,7 +105,8 @@ elif [ -n "$F0" ]; then
 else
   warn "the code of $ID was not found in: $CP — the implicit rules could not be looked at"
 fi
-grep -qE '^- v[0-9]+ ' "$F" && ok "History has rows" || bad "History is empty"
+# 8.0.0: wherever the history lives — the UC body on a repo before 8.0.0, UC-###.trace.md after migrate --trace.
+ev_body history "$F" | grep -qE '^- v[0-9]+ ' && ok "History has rows" || bad "History is empty"
 git -C "$ROOT" status --porcelain 2>/dev/null | grep -q . && warn "there are uncommitted changes"
 echo
 if [ "$FAIL" -eq 0 ]; then echo "CAN BE CLOSED ($WARN warnings)."; exit 0; else echo "NOT CLOSABLE — $FAIL errors."; exit 1; fi

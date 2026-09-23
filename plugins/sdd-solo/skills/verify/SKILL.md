@@ -85,7 +85,8 @@ the DoR and the Phase 5 gate, because the cheaper door is the one that gets used
    There is no third output. `→ fix the spec` and `→ Open Question` are outputs of the **applying round** after the
    owner answers (overwriting the tail of that `F#` line, then `--since`), not of the reading round.
 
-5. Write into the UC file's `## Re-read` section, **exactly this shape, because the gate reads it mechanically**:
+5. Write into **`UC-###.trace.md`** — beside the UC, 8.0.0: the trail never goes in the UC body again, the body
+   keeps only its `## Evidence` pointer, and the gate reads the section here — into its `## Re-read` section, **exactly this shape, because the gate reads it mechanically**:
 ```
 ## Re-read
 - Run date: YYYY-MM-DD · Unprimed head: subagent

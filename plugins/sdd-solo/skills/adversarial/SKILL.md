@@ -62,7 +62,8 @@ three roles on a spec that still has placeholders.
    files the UC names). Pass the constraints verbatim: only ask, propose no code or architecture, do not edit the spec,
    at most 12 questions, ordered by consequence (money / permissions / customer data first), each question naming the
    step/E#/AC it relates to.
-4. Merge the results, drop the duplicates, and write them into the UC file's `## Adversarial pass` section as:
+4. Merge the results, drop the duplicates, and write them into **`UC-###.trace.md`** — beside the UC, 8.0.0: never into the UC body, which keeps only its
+   `## Evidence` pointer — into its `## Adversarial pass` section, as:
 ```
 - Run date: YYYY-MM-DD · Fresh session: [x]
 - Role end customer:

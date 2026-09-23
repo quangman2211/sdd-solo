@@ -23,11 +23,13 @@ Close `$1`.
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/pass.sh" close $1
 ```
-6. If the spec changed while coding and `## History` does not say so → add the v+1 line before passing.
-   Since 5.0.0 `pass.sh close` **moves** the bodies of `## Adversarial pass` · `## Re-read` · `## History` and the
-   `[x]` Open Questions into `UC-###.trace.md` in the same folder, leaving one machine-counted line per section. Tell
-   the user: `trace.md` is **scratch paper already used** — open it when something is disputed, it is not everyday
-   reading; `context.sh` and `decisions.sh` do not read it. UC-009 in runxops: 56 KB → ~20 KB, with nothing lost.
+6. If the spec changed while coding and `## History` does not say so → add the v+1 line to **`UC-###.trace.md`**
+   before passing. Since 8.0.0 the trail lives there from the first line, so `pass.sh close` has nothing to move: it
+   appends the `implemented` version line to that file, and compresses the `[x]` Open Questions out of the UC body.
+   (On a repo written before 8.0.0 it still moves the three sections out of the body, exactly as 5.0.0 did — run
+   `migrate.sh --trace` once and that path is never needed again.) Tell the user: `trace.md` is **scratch paper
+   already used** — open it when something is disputed, it is not everyday reading; `context.sh` and `decisions.sh`
+   do not read it. Measured on the runxops copy: 2.33 MB of UC bodies → 1.01 MB, with nothing lost.
 7. Suggest the next UC from the `## Related Use Cases` table in the slice's `br.md` (the first one still `draft`) and mention `/sdd-solo:state`.
 
    The slice has no `draft` UC left → say so, and read the `## Crafts and slices` table in `specs/vision.md`: which

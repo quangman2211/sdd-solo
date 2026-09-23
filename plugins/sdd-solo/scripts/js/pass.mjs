@@ -99,6 +99,24 @@ if (cmd === 'trace') {
     fs.writeFileSync(f, s);
     process.stdout.write(`  moved ${moved.length} sections into ${ID}.trace.md\n`);
   }
+
+  // 8.0.0: on the new layout there is nothing to move — the trail was written to ${ID}.trace.md all along, and
+  // everything above is the fallback that still serves a repo written before 8.0.0. What the close step still owes
+  // is the closing line of the history, so append it to the trail's own `## History`.
+  // Idempotent by content, not by date: a `): implemented` line already there means this ran, and running close
+  // twice must not grow the file. `migrate --trace` relies on the same property.
+  if (!section(s, 'History') && fs.existsSync(tr)) {
+    let t = read(tr);
+    const h = section(t, 'History');
+    if (h && !/\): implemented\b/.test(h.body)) {
+      const vs = [...h.body.matchAll(/^- v(\d+) /gm)].map((m) => Number(m[1]));
+      const v = vs.length ? Math.max(...vs) + 1 : 1;
+      const line = `- v${v} (${today}): implemented\n`;
+      t = t.slice(0, h.end).replace(/\n*$/, '\n') + line + t.slice(h.end);
+      fs.writeFileSync(tr, t);
+      process.stdout.write(`  wrote v${v} implemented into ${ID}.trace.md\n`);
+    }
+  }
 } else if (cmd === 'deprecate') {
   const [f, today, reason, by] = a;
   let s = read(f);

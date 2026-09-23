@@ -205,6 +205,12 @@ if [ ! -f "$ROOT/.sdd/config" ]; then
     echo "# A NEW project gets en because the templates are English. A repo from before 7.7.0 has no"
     echo "# such line, doc_lang falls back to vi, and its behaviour does not change by one byte."
     echo "doc_lang=en"
+    echo "# rr_max: the ceiling on re-read rounds — how many times /sdd-solo:verify may run on one UC or one"
+    echo "# change proposal while findings are still Undecided (8.0.0). At the ceiling the gate goes red until"
+    echo "# every leftover becomes an Open Question or a ticket; under it nothing changes. Measured: rounds and"
+    echo "# leftovers rise together (13 rounds / 105 Undecided in the worst case), so another round is not an"
+    echo "# answer to the previous one. 0 switches the ceiling off and then nothing counts the rounds."
+    echo "rr_max=3"
   } > "$ROOT/.sdd/config"
   ok ".sdd/config — code_paths=$DC · test_paths=$DT (probed from the repo; fix it if wrong)"
   # tests/ · __tests__/ · spec/ are three entirely different conventions. A wrong guess makes
@@ -231,7 +237,7 @@ fi
 # plugin installed (CI, whoever clones the repo). The price: the copy can drift in version — .sdd/version is
 # compared with the plugin version, and session-start and status warn about a mismatch.
 mkdir -p "$ROOT/.sdd/scripts"
-KEEP="lib.sh mermaid.sh role.sh phieu.sh queue.sh hoi-check.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
+KEEP="lib.sh mermaid.sh numbers.sh role.sh phieu.sh queue.sh hoi-check.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
 for f in $KEEP; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done

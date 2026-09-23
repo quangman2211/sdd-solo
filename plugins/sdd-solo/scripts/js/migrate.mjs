@@ -657,7 +657,83 @@ function cmdEvidence(argv) {
   console.log(`  git add ${path.relative(process.cwd(), brp)} ${path.relative(process.cwd(), evp)} && git commit -m 'docs(${BR}): dời dấu vết BR sang evidence.md'`);
 }
 
+// ── trace: the evidence trail out of the body and into <base>.trace.md (8.0.0) ──────────────────────────
+// Exit 0 = this file was moved, exit 1 = nothing to do. migrate.sh counts on that to print its tally.
+//
+// The three sections are appended to the side file VERBATIM, in the order they stood, under one dated
+// `## <name>` heading each — no summarising, no renumbering, no rewriting. A trail that a migration edited
+// is no longer a trail. The body gets a `## Evidence` pointer in its place, at the spot where the first
+// moved section stood, so the section order of the UC does not change either.
+//
+// Idempotence is decided from content, per file: no trail section in the body → already done, exit 1; and a
+// side file that already contains the exact block being appended is left alone. Neither the date nor a marker
+// file is consulted, because those are the two things an interrupted run gets wrong.
+function cmdTrace(a) {
+  const [f, tr, ID, dry, today] = a;
+  const DRY = dry === '1';
+  const s0 = rd(f);
+  if (s0 === null) return 1;
+  let s = s0;
+  const moved = [];
+  // read either language: a repo migrating to 8.0.0 was written before the templates turned English.
+  const NAMES = [['Adversarial pass'], ['Đọc lại', 'Re-read'], ['History']];
+  let anchor = -1;
+  for (const alts of NAMES) {
+    for (const n of alts) {
+      const sec = sectionOf(s, n);
+      if (!sec) continue;
+      const hstart = s.lastIndexOf('\n## ', sec.start) + 1;
+      if (anchor < 0 || hstart < anchor) anchor = hstart;
+      moved.push([n, sec, hstart]);
+      break;
+    }
+  }
+  if (!moved.length) return 1;
+  // cut from the bottom up so the earlier offsets stay valid
+  moved.sort((x, y) => y[2] - x[2]);
+  for (const [, sec, hstart] of moved) s = s.slice(0, hstart) + s.slice(sec.end);
+  const ptr = `## Evidence\n`
+    + `The adversarial pass, the re-read and the history of ${ID} live in \`${path.basename(tr)}\`, beside this file.\n`
+    + `The gate reads them there; nothing was dropped, and this file stays the size of the thing it specifies.\n\n`;
+  const at = Math.min(anchor, s.length);
+  s = s.slice(0, at) + ptr + s.slice(at);
+
+  // The moved section goes in under a PLAIN heading — `## Re-read`, never `## Re-read — <date>`. A dated heading
+  // is what `pass.sh close` writes for a block it has PUT AWAY, and the gate reads only the plain one (lib.sh
+  // ev_body). Dating the live section here would hand the gate an empty trail on every UC that had ever been
+  // closed. So: merge into the plain section when the file already has one, create it when it does not, and let
+  // whatever dated archive blocks are already in the file sit untouched around it.
+  let out = rd(tr);
+  if (out === null) {
+    out = `# ${ID} — evidence trail\n\n`
+      + `<!-- Moved out of ${path.basename(f)} by migrate.sh --trace on ${today} (8.0.0). This is the SCRATCH PAPER\n`
+      + `     of ${ID}: the adversarial pass, the re-read, the history. Append only — nothing here is ever rewritten,\n`
+      + `     which is what makes it evidence. The gate reads these sections here; ${path.basename(f)} keeps a pointer. -->\n`;
+  }
+  for (const [n, sec] of [...moved].reverse()) {
+    const body = rstrip(s0.slice(sec.start, sec.end));
+    if (!body.trim()) continue;
+    const cur = sectionOf(out, n);
+    if (cur) {
+      if (rstrip(cur.body).includes(body)) continue;               // already merged — run it again, nothing happens
+      out = out.slice(0, cur.end).replace(/\n*$/, '\n') + body + '\n' + out.slice(cur.end);
+    } else {
+      out = rstrip(out) + `\n\n## ${n}\n${body}\n`;
+    }
+  }
+  const saved = bytes(s0) - bytes(s);
+  if (DRY) {
+    info(`${path.relative(process.cwd(), f)} — would move ${moved.length} section(s), ${saved} bytes, into ${path.basename(tr)}`);
+  } else {
+    fs.writeFileSync(tr, out);
+    fs.writeFileSync(f, s);
+    ok(`${path.relative(process.cwd(), f)} — ${moved.length} section(s), ${saved} bytes → ${path.basename(tr)}`);
+  }
+  return 0;
+}
+
 const [, , cmd, ...rest] = process.argv;
 if (cmd === 'layout') cmdLayout(rest);
 else if (cmd === 'evidence') cmdEvidence(rest);
-else { process.stderr.write('usage: migrate.mjs <layout|evidence> …\n'); process.exit(2); }
+else if (cmd === 'trace') process.exit(cmdTrace(rest));
+else { process.stderr.write('usage: migrate.mjs <layout|evidence|trace> …\n'); process.exit(2); }

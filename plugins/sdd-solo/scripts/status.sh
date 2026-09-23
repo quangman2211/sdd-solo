@@ -145,5 +145,22 @@ if [ -f "$UY" ] || [ -f "$HQ" ]; then
   for hf in "$ROOT"/notes/hoi-dap/hoi-[A-Z]*.md; do [ -f "$hf" ] && bash "$HERE/hoi-check.sh" "$hf" 2>&1 | grep -E '✗|!' | head -3; done
 fi
 
+# ── 8.0.0: the two things a dashboard has to say or nobody acts on them ──
+# The trail beside the UC, the ceiling on rounds and the gathered blanks are all worth nothing if the owner has
+# to go looking. Both lines below are cheap (a grep and a section read) — numbers.sh itself is not run here,
+# because its value comes from the cross-reference and that costs a sweep of every UC.
+RMAX="$(rr_max "$ROOT")"
+if [ "$RMAX" -gt 0 ]; then
+  NEAR=""
+  for u in $(all_uc_files "$ROOT"); do
+    r="$(rr_rounds "$u")"; [ "$r" -ge "$RMAX" ] || continue
+    d="$(rr_lines "$u" | rr_undecided)"; [ -z "$d" ] && d=0
+    [ "$d" -gt 0 ] && NEAR="$NEAR $(basename "${u%.md}"):$r/${d}u"
+  done
+  [ -n "$NEAR" ] && warn "at the re-read ceiling (rr_max=$RMAX) with findings still Undecided —$NEAR (rounds/Undecided). Another round will not open the gate; decide them or turn them into tickets"
+fi
+BL="$(find "$ROOT/specs" -name '*.md' -not -name '*.trace.md' 2>/dev/null | xargs grep -l '___' 2>/dev/null | wc -l | tr -d ' ')"
+[ "${BL:-0}" -gt 0 ] && info "$BL spec file(s) still hold a '___' — /sdd-solo:numbers lists every one of them at once, grouped, with the UCs each blocks"
+
 # version: asks GitHub for at most 3s, remembers for 24h. Only speaks when there is a mismatch.
 V="$("$HERE/version-check.sh" --remote 2>&1)" || { echo; echo "$V"; }

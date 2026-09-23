@@ -104,7 +104,7 @@ approve	label	Duyệt	Approve
 coordinator	raw	điều phối	coordinator
 # ── nhóm nhiều dạng ──────────────────────────────────────────────────────────────────────────────
 # ba mục dấu vết (#43): History là tiếng Anh sẵn ở cả hai vế
-trace	group	Adversarial pass|Đọc lại|History	Adversarial pass|Re-read|History
+trace	group	Adversarial pass|Đọc lại|History|Dấu vết	Adversarial pass|Re-read|History|Evidence
 # cụm đánh dấu treo trong văn xuôi — spec viết dở mà cổng vẫn đọc qua
 hanging	group	chờ phiếu|đang xét lại|\(chưa mở\)	awaiting ticket|under review|\(not open\)
 # đích của một dòng bị loại khỏi brief — hoãn mà không ghi đích là hoãn vào hư không
@@ -160,3 +160,5 @@ p_src	write	Nguồn / lý do	Source / reason
 c_ticket_w	write	phiếu #	ticket #
 inscope	head	In Scope	In Scope
 outscope	head	Out of Scope	Out of Scope
+history	head	History	History
+evidence	head	Dấu vết	Evidence

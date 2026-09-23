@@ -85,7 +85,7 @@ The one-sentence test: *if the answer is the opposite of my assumption, does Mai
 
 ## How to write each thing
 
-**A UC** — skeleton at `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.md`. Required: Actor, Trigger, Preconditions, Main Flow (a "the system shows" step must name its SCR-ID), Alternative Flows (Na.), Exceptions (E#: condition → screen → message in the customer's words → what the system does), Postconditions, ACs, Screens (the table Source | Screen | What the customer sees | Action), Dependencies, Open Questions (each with an interim decision), Adversarial pass, History.
+**A UC** — skeleton at `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.md`. Required: Actor, Trigger, Preconditions, Main Flow (a "the system shows" step must name its SCR-ID), Alternative Flows (Na.), Exceptions (E#: condition → screen → message in the customer's words → what the system does), Postconditions, ACs, Screens (the table Source | Screen | What the customer sees | Action), Dependencies, Open Questions (each with an interim decision). The evidence trail — Adversarial pass, Re-read, History — lives in `UC-###.trace.md` beside it (8.0.0), never in the UC body; the body carries one `## Evidence` pointer.
 
 **An AC** — Given/When/Then, one for Main Flow and one per E#. Do not copy the rule: write "per RULE-004". Each AC becomes exactly one test file.
 

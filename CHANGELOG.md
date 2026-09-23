@@ -1,5 +1,105 @@
 # Changelog
 
+## 8.0.0 — 2026-09-23
+
+**Dấu vết ra khỏi thân UC · trần vòng đọc lại · gom câu hỏi số.** Ba thay đổi, một nguyên nhân chung đo được
+trên bản sao runxops: quy trình vẫn đúng ở từng bước, nhưng cái nó *để lại* đã lớn hơn cái nó đặc tả.
+
+### ① Dấu vết ở file cạnh, từ dòng đầu
+
+`## Adversarial pass` · `## Đọc lại` · `## History` giờ ghi vào **`UC-###.trace.md`** ngay khi UC ra đời; thân
+UC giữ một mục `## Evidence` trỏ sang. 5.0.0 đã nén chúng **khi UC đóng** — nhưng UC đóng không phải ca đắt.
+UC **đang mở** mới là file mọi phiên làm việc nạp lại, và phép đo nói thẳng:
+
+| | thân UC | trong đó là dấu vết |
+|---|---|---|
+| 16 UC của runxops | 2,33 MB | **56%** |
+| file lớn nhất (UC-029) | 455 KB | **72%** |
+| sau khi dời | **1,01 MB** | 0% |
+
+- `lib.sh` thêm `trace_of` · `ev_body` · `rr_rounds` · `rr_max`. **Mọi** chỗ đọc dấu vết đi qua `ev_body`:
+  `gate-check` §7 §8 và mục bắt buộc, `uc-steps` ⑦ ⑧, `change-check` §8.
+- **Thân THẮNG file cạnh** khi thân còn mục đó. Đây không phải chi tiết: repo viết trước 8.0.0 thường có CẢ
+  `UC-###.trace.md` cũ do `pass.sh close` để lại, và bản đầu đọc file cạnh trước làm cổng trả lời từ **bản lưu
+  trữ** thay vì bản sống — verdict trôi trên UC không ai đụng (đo được: **+28 ✓** trên một UC). Đọc thân trước
+  nghĩa là repo chưa migrate không nhận ra 8.0.0 tồn tại.
+- `## History` rời danh sách mục bắt buộc của thân UC và được hỏi lại qua `ev_body`: cùng một câu hỏi, hỏi đúng
+  chỗ. Để nguyên thì mọi repo vừa migrate đỏ vì đã migrate.
+- `migrate.sh --trace [--dry-run]` dời một repo sang — 16 UC + 4 proposal của runxops trong một lượt.
+  **Idempotent, và đó là ràng buộc thiết kế, không phải tính chất phụ**: một migration trên repo sống bị ngắt
+  giữa chừng, bị chạy từ hai worktree, bị chạy lại vì không ai nhớ đã chạy chưa. Nên nó quyết theo **nội dung
+  từng file** — thân không còn mục dấu vết là đã xong, file cạnh đã chứa đúng khối sắp nối thì không nối lần
+  hai. Không đọc ngày, không đọc file cờ: đó là hai thứ một lượt chạy dở làm sai. Chạy ba lần trên bản sao
+  runxops: cây `specs/` giống nhau **từng byte**.
+- Dấu vết chép sang **nguyên văn**, dưới một tiêu đề có ngày. Không tóm tắt, không đánh số lại, không viết lại
+  câu nào — một dấu vết mà migration đã sửa thì không còn là dấu vết.
+
+### ② Trần vòng đọc lại — một điểm DỪNG, không phải một cửa
+
+`rr_max` ở `.sdd/config`, **mặc định 3**, kể cả cho repo chưa có dòng đó. Tới 7.8 `→ Chưa quyết` là một đầu ra
+hợp lệ và chỉ được ĐẾM (7.0.1 #53: mở cổng với một câu hỏi chưa trả lời là món nợ chủ dự án nhận có ý thức).
+Đo trên runxops thì đó chính là lỗ hổng — số vòng và số tồn đọng lên **cùng nhau**:
+
+| UC | vòng đọc lại | còn Chưa quyết | cỡ file |
+|---|---|---|---|
+| UC-024 | 13 | 105 | 110 KB |
+| UC-029 | 13 | 74 | 455 KB |
+| UC-026 | 12 | 71 | 231 KB |
+| UC-025 | 9 | 37 | 242 KB |
+| mọi UC dừng ở 1 vòng | 1 | **0** | 2,9–91 KB |
+
+Thêm một vòng không phải là câu trả lời cho vòng trước; nó là cách rẻ nhất để trông có vẻ đang làm, và nó là
+thứ nuôi một file UC lên 455 KB. Nên: **dưới trần không đổi gì**; **chạm trần thì một `Chưa quyết` không được
+mang sang vòng sau** — nó thành Câu hỏi mở (chủ dự án nợ câu trả lời) hoặc một phiếu (người khác nợ). Không có
+cờ bỏ qua, và **chạy thêm một vòng nữa vẫn đỏ**: số chỉ xuống bằng cách quyết. `rr_max=0` tắt hẳn.
+
+Mặc định là một con số chứ không phải "tắt" — một cái trần không ai đứng dưới thì không phải cái trần. Giá
+phải trả nói thẳng: trên bản sao runxops, **7 UC đỏ thêm một dòng** ngay sau khi cập nhật (và 2 UC chạm trần mà không còn tồn đọng thì thêm một dòng xanh). Đó là chủ ý của một
+bản major; `status.sh` in danh sách đó kèm số vòng / số tồn để biết việc phải làm là gì.
+
+### ③ `/sdd-solo:numbers` — gặp mọi ô trống cùng một lúc
+
+Luật "không bịa số" cộng cổng chặn `___` sinh ra **588 ô trống rải trên 34 file**, và chủ dự án gặp **từng cái
+một**, mỗi cái giữa một lượt chạy cổng, mỗi cái là một lần bị ngắt. Ở đúng khoảnh khắc đó đường rẻ nhất luôn
+là điền một con số nghe được — tức là đúng cái thất bại mà luật kia sinh ra để chặn, đạt tới bằng cách tuân
+thủ nó. `scripts/numbers.sh` in tất cả một lượt, và thêm thứ biến một danh sách thành một bảng việc: **ai đang
+chờ**. Một `___` trong tham số của RULE không phải một ô trống, nó là mọi UC trích luật đó.
+
+Phân loại **theo cấu trúc, không theo tên mục** (nên đọc spec tiếng Việt và tiếng Anh như nhau): ô trống đứng
+**một mình trong ô bảng** = tham số; dòng `- [ ]` = câu hỏi mở chưa có quyết tạm; còn lại là văn xuôi. Phép
+phân biệt đó không phải chi tiết — bản đầu nhận mọi hàng bảng có `___` và chôn **26 tham số thật giữa 94
+hàng**. Read-only, luôn exit 0: đây là bảng việc, không phải cổng. `status.sh` in một dòng nói còn bao nhiêu
+file có `___`, vì một bảng việc không ai thấy thì vô giá trị.
+
+### Không hồi quy
+
+So **verdict** (exit · số ✓ · số ✗ · số !) của 93 lệnh trên bản sao runxops:
+
+- 7.8.0 ↔ 8.0.0 **trên repo CHƯA migrate**: 10/93 dòng đổi, và đúng những dòng của trần — `+1 ✓` ở UC chạm trần mà không còn
+  tồn đọng, `+1 ✗` ở UC còn tồn đọng. Không một dòng nào khác.
+- 8.0.0 **trước ↔ sau `migrate --trace`** (cùng plugin, cả hai repo đã commit): **0 dòng khác**. Đây là phép đo
+  quan trọng nhất của bản này — dời 1,3 MB dấu vết mà cổng phải trả lời y hệt, nếu không thì migration đang
+  giấu bằng chứng chứ không phải dời nó. Ba lỗi CHỈ phép đo này bắt được, cả ba cùng một họ "cổng thôi kiểm mà
+  không ai biết":
+  · `ev_body` khớp tiêu đề theo TIỀN TỐ, nên khối lưu trữ `## Đọc lại — 2026-09-17` do `pass.sh close` cất đi bị
+    gộp vào dấu vết sống — một UC từng đóng nhảy từ 38 ✓ lên 65 ✓. Giờ khớp đúng tiêu đề trần.
+  · phép kiểm "RULE được trích phải tồn tại" quét `grep -oE RULE- "$F"`, nên **6 UC lặng lẽ thôi kiểm 1–5 RULE**
+    ngay khi dấu vết rời thân. Giờ quét qua `uc_text` = thân + dấu vết: dời chỗ cất không đổi thứ được kiểm.
+  · vân tay hành vi của §9 lấy danh sách RULE từ chính file UC, nên commit dời dấu vết của một UC đã đóng bị
+    đọc thành "spec đổi HÀNH VI sau khi đóng — areas: rules". `spec_fp` giờ đọc cả `UC-###.trace.md` ở đúng
+    revision đó, nên tập RULE không phụ thuộc vào chỗ cất.
+
+Bộ test: **49 ca · 235 xanh · 0 đỏ**. Ba ca mới: 47 (dời · verdict giống nhau trước/sau · ba lần chạy giống
+từng byte · `--dry-run` không đụng đĩa), 48 (trần: dưới trần im, chạm trần đỏ, **thêm vòng vẫn đỏ**, quyết
+xong thì hết, `rr_max=0` tắt, không có dòng thì mặc định 3), 49 (`numbers`: ô bảng là tham số, ô có giá trị
+không tính, văn xuôi không tính, `blocks:` đúng UC).
+
+### Nâng cấp
+
+`/plugin update sdd-solo` → `/sdd-solo:init --update` → `bash .sdd/scripts/migrate.sh --trace --dry-run`, đọc,
+rồi chạy thật và commit. `update.sh` tự nhắc khi thấy repo còn dấu vết trong thân UC, và im khi không còn.
+**Không migrate cũng chạy được**: `ev_body` đọc thân trước, nên cổng cho verdict y hệt 7.8.0 (trừ trần).
+
 ## 7.8.0 — 2026-09-23
 
 **Plugin nói tiếng Anh; giọng trả lời đi theo ngôn ngữ anh gõ.** 7.7.0 dựng cơ chế (bảng từ khoá song ngữ,

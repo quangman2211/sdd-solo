@@ -10,7 +10,7 @@ Reply in whatever language the user writes in; keep file names, IDs and slugs in
 
 The Phase 5 gate for `$1`.
 
-Phase 5 is only for a change that makes **an old AC no longer true** on an already `implemented` UC. Adding a new AC without breaking an old one is still Phase 3: edit the UC directly, `## History` v+1, done. If the user opens a change for something that belongs to Phase 3, say so immediately and do not continue.
+Phase 5 is only for a change that makes **an old AC no longer true** on an already `implemented` UC. Adding a new AC without breaking an old one is still Phase 3: edit the UC directly, `## History` v+1 in `UC-###.trace.md`, done. If the user opens a change for something that belongs to Phase 3, say so immediately and do not continue.
 
 1. No change folder yet → create one first: copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/change/` (if the variable is not substituted: `find ~/.claude/plugins -type d -name skel -path '*sdd-solo*' | head -1`) to `specs/changes/$1-<slug>/`, fill it in with the user, commit `docs($1): ...`. Do not invent Why/Scope/delta for them.
 2. Run it and print the output verbatim:

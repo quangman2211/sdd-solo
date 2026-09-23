@@ -280,7 +280,53 @@ today() { date +%Y-%m-%d; }
 # rr_lines <file> → the F# lines in ## Re-read; rr_count (stdin) → how many lines carry
 # BOTH an [anchor: ...] AND an outcome other than ___. That is the whole anti-faking latch: making up
 # such a line costs exactly as much as actually reading.
-rr_lines() { awk -v re="$(kwh reread)" '$0 ~ re {t=1;next} /^## /{t=0} t' "$1" 2>/dev/null | grep -E '^- F[0-9]+ '; }
+# ── the evidence trail lives beside the UC, not inside it (8.0.0) ───────
+# Up to 7.8 the trail — `## Adversarial pass` · `## Re-read` · `## History` — sat in the UC body and only moved
+# into UC-###.trace.md when the UC CLOSED. Measured on the runxops copy: 56% of 2.33 MB of UC bodies is trail,
+# and the worst single file is 455 KB of which 72% is trail. A closed UC is not the expensive case — an OPEN one
+# is, because that is the file every working session loads. From 8.0.0 the trail is written to UC-###.trace.md
+# from its first line and the UC body keeps one `## Evidence` pointer.
+#
+# trace_of <UC file> → the side file next to it.
+# ev_body <keyword> <UC file> → that evidence section's body: from the side file when the section is there,
+# from the UC body otherwise. The fallback is not politeness. Every repo written before 8.0.0 has the trail in
+# the body, and a check that quietly stopped looking there would turn "the evidence is missing" into a RED gate
+# on work that was actually done — the gate would be lying, which is the one failure this plugin cannot have.
+# `migrate --trace` moves a repo across; until it runs, both places read.
+trace_of() { case "$1" in *.md) printf '%s\n' "${1%.md}.trace.md";; *) printf '%s\n' "$1.trace.md";; esac; }
+ev_body() {
+  _evre="$(kwh "$1")"; _evo=""
+  # The BODY WINS when it still has the section, and that order is the whole compatibility guarantee. A repo
+  # written before 8.0.0 keeps its live trail in the body and often ALSO has a UC-###.trace.md left by an older
+  # `pass.sh close` — reading the side file first made the gate answer from the archive instead of from the live
+  # section, and the verdict moved on UCs nobody had touched (measured: +28 ✓ on one UC of the runxops copy).
+  # Reading the body first means a repo that has not migrated cannot notice 8.0.0 at all; only a body with the
+  # section GONE — which is what `migrate --trace` and the 8.0.0 templates produce — falls through to the side file.
+  # The heading must match EXACTLY — `## Re-read`, not `## Re-read — 2026-09-17`. A trail file accumulates
+  # ARCHIVE blocks under dated headings (that is what `pass.sh close` has written since 5.0.0), and a prefix match
+  # folds the archive into the live section: measured on the runxops copy, gate-check §7 then walked every
+  # `→ spec` ID twice and one UC went from 38 ✓ to 65 ✓ purely from having been closed once. The live trail is the
+  # undated section; a dated one is a thing already put away, and it was invisible to the gate before 8.0.0 too.
+  _evx="$_evre[[:space:]]*\$"
+  _evo="$(awk -v re="$_evx" '$0 ~ re {f=1;next} /^## /{f=0} f' "$2" 2>/dev/null)"
+  if [ -n "$(printf '%s' "$_evo" | tr -d '[:space:]')" ]; then printf '%s\n' "$_evo"; return 0; fi
+  _evt="$(trace_of "$2")"
+  [ -f "$_evt" ] && awk -v re="$_evx" '$0 ~ re {f=1;next} /^## /{f=0} f' "$_evt" 2>/dev/null
+}
+# uc_text <UC file> → the UC body PLUS its trail, for the checks that scan for quoted IDs. Moving the trail out
+# must not change WHAT is checked, only where it is stored: before 8.0.0 a RULE named in an adversarial anchor
+# was inside the file the ID scan read, so it still has to be. Measured: without this, six UCs of the runxops
+# copy silently stopped checking between 1 and 5 RULE IDs the moment the trail moved.
+uc_text() { cat "$1" 2>/dev/null; ev_body adversarial "$1"; ev_body reread "$1"; ev_body history "$1"; }
+rr_lines() { ev_body reread "$1" | grep -E '^- F[0-9]+ '; }
+# rr_rounds <UC file> → how many re-read ROUNDS the trail records (one `- Run date:` line per round).
+# 8.0.0 uses it for the ceiling; see rr_max in .sdd/config and gate-check §8.
+rr_rounds() { ev_body reread "$1" | grep -cE "^- *($(kw rundate))[[:space:]]*:" 2>/dev/null || true; }
+# rr_max <root> → the ceiling on re-read rounds, 0 = no ceiling. Default 3, and it applies to repos that never
+# wrote the line: measured on runxops, rounds and unresolved findings rise together — 13 rounds / 105 Undecided
+# (UC-024), 13 / 74 (UC-029), 12 / 71 (UC-026) — while every UC that stopped at one round has none. A ceiling
+# nobody is under is not a ceiling, so the default is the number, not "off".
+rr_max() { _rm="$(cfg_get rr_max "${1:-$(project_root)}" 3)"; case "$_rm" in ''|*[!0-9]*) _rm=3;; esac; printf '%s\n' "$_rm"; }
 rr_count() {
   # 7.7.0: `[anchor: …]` is bilingual too — `nb` is a pattern, not a literal, because an English spec's F# line
   # writes `[anchor: …]`. This is one of only two doors that open the Phase 5 gate; hard-coding `neo` here means
@@ -625,6 +671,13 @@ spec_fp() { # spec_fp <root> <id> <rev> <area> [efs]
     flow) f="$(fp_uc "$root" "$id" "$rev" ".flow")"; [ -n "$f" ] && git -C "$root" show "$rev:$f" 2>/dev/null;;
     rules)
       rl="$(for p in $(fp_rules "$root" "$rev"); do git -C "$root" show "$rev:$p" 2>/dev/null; printf '\n'; done)"
+      # 8.0.0: which RULEs the fingerprint covers is read from the UC body AND its trail file at that revision.
+      # The set must not depend on WHERE the trail is stored, or the commit that moves it looks like a change of
+      # behaviour: measured on the runxops copy, migrating an implemented UC made §9 say "the spec changed
+      # BEHAVIOUR after the UC was closed — areas: rules" on a commit that moved bytes and edited nothing.
+      p="$(fp_uc "$root" "$id" "$rev" ".trace")"
+      [ -n "$p" ] && uc="$uc
+$(git -C "$root" show "$rev:$p" 2>/dev/null)"
       for r in $(printf '%s' "$uc" | grep -oE 'RULE-[0-9]+' | sort -u); do
         printf '%s\n' "$rl" | awk -v h="## $r" 'index($0,h)==1{f=1;print;next} f&&/^## /{f=0} f' | grep -vE "$(kw appliesto)"
       done;;

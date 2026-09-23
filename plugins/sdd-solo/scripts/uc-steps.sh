@@ -70,14 +70,13 @@ st "⑤" $R5 "screens (Claude Design)" "there is no file in screens/"
 nom_ "⑥" "checking SCR ↔ E# ↔ state — no artifact of its own, /sdd-solo:gate checks it"
 
 # ⑦ adversarial
-grep -qE "^- *($(kw rundate)): *[0-9]{4}-" "$(printf '%s' "$F")" 2>/dev/null \
-  && awk -v re="$(kwh adversarial)" '$0 ~ re {t=1;next} /^## /{t=0} t' "$F" | grep -qE "($(kw rundate)): *[0-9]{4}-"
+ev_body adversarial "$F" | grep -qE "^- *($(kw rundate)): *[0-9]{4}-"
 st "⑦" $? "adversarial pass (3 vai)"
 
 # ⑧ the re-read: the ## Re-read section has an F# line (or the compressed line after close). 6.0.0 (#38): it no
 # longer counts "a docs commit that survived a night" — that door is gone, verify is mandatory.
 R8=1
-awk -v re="$(kwh reread)" '$0 ~ re {t=1;next} /^## /{t=0} t' "$F" 2>/dev/null | grep -qE "^- F[0-9]+ |^- ($(kw rundate)):.*($(kw findings))" && R8=0
+ev_body reread "$F" | grep -qE "^- F[0-9]+ |^- ($(kw rundate)):.*($(kw findings))" && R8=0
 st "⑧" $R8 "re-read with an unanchored mind"
 
 [ -f "$ROOT/.sdd/gate/$ID.ok" ]; st "⑨" $? "through the DoR gate"

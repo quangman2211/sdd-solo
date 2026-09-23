@@ -70,3 +70,22 @@ elif [ "$(vcmp "$SESS" "$INSTALLED")" = "-1" ]; then
 else
   ok "this session already runs the newest version"
 fi
+
+# 8.0.0: the one migration this release needs, named here because nothing else will name it. Only speak when
+# there is something to move — a repo already on the new shape must not be told to run a migration.
+if [ -n "$(all_uc_files "$ROOT")" ]; then
+  OLDSHAPE=0
+  for u in $(all_uc_files "$ROOT"); do
+    grep -qE "$(kwh adversarial)|$(kwh reread)|^## History" "$u" 2>/dev/null && { OLDSHAPE=1; break; }
+  done
+  if [ "$OLDSHAPE" = 1 ]; then
+    echo
+    warn "8.0.0: the evidence trail (## Adversarial pass · ## Re-read · ## History) belongs beside the UC now, in"
+    info "UC-###.trace.md, not in the UC body. Your UCs still carry it in the body — the gate reads it there and"
+    info "nothing is broken, so this is not urgent, but it is what 8.0.0 is for. Measured on a real repo: 2.33 MB"
+    info "of UC bodies became 1.01 MB, with nothing lost and the same gate verdict on every UC."
+    info "  bash .sdd/scripts/migrate.sh --trace --dry-run   # see what would move, touches nothing"
+    info "  bash .sdd/scripts/migrate.sh --trace             # move it, then read the diff and commit"
+    info "Run it as often as you like: it decides per file from the file's own content and changes nothing twice."
+  fi
+fi

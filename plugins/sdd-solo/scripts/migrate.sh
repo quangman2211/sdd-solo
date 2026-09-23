@@ -20,17 +20,49 @@
 # DOES NOT COMMIT. It moves the files and prints what changed; the reader commits.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"
-DRY=0; EV=""; LAYOUT=""; MAPF=""
+DRY=0; EV=""; LAYOUT=""; MAPF=""; TRACE=0
 PREV=""
 for a in "$@"; do
   case "$PREV" in --layout) LAYOUT="$a"; PREV=""; continue;; --map) MAPF="$a"; PREV=""; continue;; esac
   case "$a" in
     --dry-run) DRY=1;;
     --evidence) EV="_";;
+    --trace) TRACE=1;;
     --layout|--map) PREV="$a";;
     BR-[0-9]*) [ "$EV" = "_" ] && EV="$a";;
   esac
 done
+
+# ── --trace : the evidence trail out of the body, into UC-###.trace.md (8.0.0) ──
+# What it moves: `## Adversarial pass` · `## Re-read` · `## History` out of every UC-###.md and every
+# specs/changes/CHG-###/proposal.md, into <base>.trace.md beside it, leaving a `## Evidence` pointer.
+# Nothing is deleted and nothing is rewritten — the sections are appended to the side file verbatim.
+#
+# IDEMPOTENT, and that is the whole design constraint. A migration of a live repo gets interrupted, gets
+# run from two worktrees, gets run again because nobody remembers whether it ran. So the decision is made
+# per FILE and from the file's own content: a body with no trail section is already migrated and is not
+# touched, and a side file that already ends with the very block being appended does not get a second copy.
+# Running it five times leaves the repo byte-identical to running it once.
+#
+# DOES NOT COMMIT — like every other mode here. Read the diff, then commit.
+if [ "$TRACE" = "1" ]; then
+  echo "=== The evidence trail beside the UC, not inside it (8.0.0) ==="
+  [ "$DRY" = "1" ] && info "--dry-run: NOTHING is touched on disk, it only prints what it would do"
+  need_node "migrate.sh --trace"
+  N=0; M=0
+  for f in $(all_uc_files "$ROOT") $(ls -d "$ROOT"/specs/changes/CHG-[0-9]*/proposal.md 2>/dev/null); do
+    [ -f "$f" ] || continue
+    N=$((N+1))
+    ID="$(basename "$(dirname "$f")" | grep -oE '^(UC|CHG)-[0-9]+')"
+    [ -z "$ID" ] && ID="$(basename "${f%.md}")"
+    node "$HERE/js/migrate.mjs" trace "$f" "$(trace_of "$f")" "$ID" "$DRY" "$(today)" && M=$((M+1))
+  done
+  printf -- '--- %s file(s) looked at, %s moved ---\n' "$N" "$M"
+  [ "$M" = 0 ] && ok "every file already keeps its trail beside it — nothing to move"
+  [ "$DRY" = "1" ] && info "run again WITHOUT --dry-run to do it"
+  [ "$DRY" = "0" ] && [ "$M" != 0 ] && info "read the diff, then commit: git commit -m 'docs(sdd): the evidence trail moves to UC-###.trace.md (8.0.0)'"
+  exit 0
+fi
 
 # ── --layout v7 : the context tree → core|craft × br-### (7.0.0, #54 #55) ───
 # All the logic is in js/migrate.mjs: splitting files by heading, building the UC table, fixing paths by the

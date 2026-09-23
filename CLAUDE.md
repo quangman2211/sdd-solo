@@ -7,14 +7,14 @@ Repo này là **plugin Claude Code** (đồng thời là marketplace một plugi
 .claude-plugin/marketplace.json      version phải khớp plugin.json
 plugins/sdd-solo/
   .claude-plugin/plugin.json         version
-  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · role · phieu · queue · state · status
+  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · role · phieu · queue · numbers · state · status
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
-  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3) · mermaid.sh (vỏ của parser mermaid, 7.5)
+  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3) · mermaid.sh (vỏ của parser mermaid, 7.5) · numbers.sh (gom ô `___` còn nợ số, 8.0)
   scripts/kw.tsv                     **bảng từ khoá tài liệu song ngữ** (7.7) — bash và node đọc chung
   scripts/js/                        **mã node của plugin** (7.6, ESM, 0 gói npm): mermaid · mermaid-real (mượn mermaid của dự án khi có) · context · migrate · pass · brief · hoi · table · util · kw
   templates/project/                 19 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16; 7.2–7.3: + .sdd/roles · notes/hang-doi.md · notes/uy-quyen.md)
-  templates/skel/                    khuôn use-case/ · br/ · nghe/ · entity.md · change/ · hoi-dap.md · hoi-vai.md — skill/script copy khi tạo, KHÔNG rơi vào dự án
+  templates/skel/                    khuôn use-case/ (kèm UC-000.trace.md, 8.0) · br/ · nghe/ · entity.md · change/ · hoi-dap.md · hoi-vai.md — skill/script copy khi tạo, KHÔNG rơi vào dự án
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
   templates/githooks/                commit-msg · pre-commit — chặn cứng; pre-commit.d/ commit-msg.d/ README + .example (luật riêng của repo, 6.2.0) + commit-msg.d/10-vai.sh (ranh giới vai theo .sdd/roles, 7.2)
   docs/playbook-example-khoskill.html
@@ -75,6 +75,25 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   13 ngữ cảnh: 17/17 khối vỡ bắt được, 0 khối lành báo oan. Thêm luật mới thì thêm bằng cách ĐO lại, không bằng
   suy đoán từ tài liệu mermaid — nới tay ở đây là đổi đỏ oan lấy hụt đỏ thật. Không có `node` thì mọi chỗ gọi
   rơi về đường grep của bản trước: một phép kiểm không chạy được không bao giờ được thành một phép kiểm đỏ.
+- **Dấu vết ở file CẠNH, không ở trong thân UC** (8.0.0). `## Adversarial pass` · `## Đọc lại` · `## History` ghi
+  vào `UC-###.trace.md` ngay từ dòng đầu; thân UC giữ một mục `## Evidence` trỏ sang. 5.0.0 đã nén chúng KHI UC
+  ĐÓNG, nhưng UC đóng không phải ca đắt — UC đang mở mới là file mọi phiên nạp lại. Đo trên bản sao runxops:
+  56% của 2,33 MB thân UC là dấu vết, file lớn nhất 455 KB trong đó 72% là dấu vết; sau khi dời còn 1,01 MB.
+  Mọi chỗ ĐỌC dấu vết đi qua `ev_body` của `lib.sh`, và **thân thắng file cạnh** khi thân còn mục đó: repo viết
+  trước 8.0.0 không nhận ra 8.0.0 tồn tại. Đọc file cạnh trước làm cổng trả lời từ bản lưu trữ thay vì bản sống,
+  và verdict trôi trên UC không ai đụng (đo được: +28 ✓ trên một UC). `migrate.sh --trace` dời một repo sang,
+  quyết theo NỘI DUNG từng file nên chạy bao nhiêu lần cũng ra một kết quả.
+- **Trần vòng đọc lại là một điểm DỪNG, không phải một cửa** (8.0.0). `rr_max` ở `.sdd/config`, mặc định **3** kể
+  cả cho repo chưa có dòng đó. Tới 7.8 `→ Chưa quyết` chỉ được ĐẾM (#53), và đo trên runxops thì đó là lỗ hổng:
+  số vòng và số tồn đọng lên cùng nhau — 13 vòng / 105 Chưa quyết (UC-024), 13 / 74 (UC-029), 12 / 71 (UC-026) —
+  còn mọi UC dừng ở một vòng thì không tồn một cái nào. Chạm trần mà còn tồn thì đỏ, và **thêm một vòng không mở
+  được cổng**: số chỉ xuống bằng cách quyết. Mặc định là một con số chứ không phải "tắt", vì một cái trần không ai
+  đứng dưới thì không phải cái trần.
+- **Ô `___` là câu hỏi số, và phải gặp chúng CÙNG MỘT LÚC** (8.0.0). Luật "không bịa số" cộng cổng chặn `___`
+  sinh ra 588 ô trống rải trên 34 file ở runxops, và chủ dự án gặp từng cái một giữa một lượt chạy cổng — lúc đó
+  đường rẻ nhất luôn là điền bừa, tức là đúng cái thất bại mà luật kia sinh ra để chặn. `numbers.sh` in tất cả
+  một lượt, phân loại **theo cấu trúc chứ không theo tên mục** (ô trống đứng một mình trong ô bảng = tham số),
+  kèm dòng `blocks:` nói UC nào đang chờ. Không thêm luật mới, không chặn gì: đây là bảng việc, không phải cổng.
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 
