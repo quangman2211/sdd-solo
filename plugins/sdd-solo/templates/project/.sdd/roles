@@ -12,6 +12,9 @@
 # A deny WINS over an allow. The blocking message says "this belongs to role X" (role.sh looks it up
 # with role_of_path).
 #
+# A role whose contract says "write a ticket and stop" must be able to WRITE the ticket: `notes/hoi-dap/phieu/**`
+# is in D's and T's area for that reason alone (8.3.0). Leave it out and `phieu.sh new` from those roles is blocked
+# the day you turn blocking on — the one moment an agent has no other way to report anything.
 # vai_bat_buoc: khong (default — the hook only WARNS when a commit touches outside the area)
 #               · nhanh-vai (blocks once a role can be inferred)
 #               · moi (blocks even when no role can be inferred).
@@ -50,7 +53,7 @@ R.kiem=
 # D · code — own worktree, branch code/uc-###. The gate's tests (uc_test_dir) belong to T: when D needs a
 # different fake → a TEST-# entry in hoi-D.md.
 D.ten=code
-D.ghi=@code_paths @test_paths notes/hoi-dap/hoi-D.md
+D.ghi=@code_paths @test_paths notes/hoi-dap/hoi-D.md notes/hoi-dap/phieu/**
 D.cam=@uc_test_dir specs/** STATE.md
 D.nhanh=code/*
 D.commit=co
@@ -59,7 +62,7 @@ D.kiem=the repo's test command — prints how many cases pass/fail
 # T · test — own worktree, branch test/uc-###. Does not read D's code: table names and signatures come
 # from design.md.
 T.ten=test
-T.ghi=@uc_test_dir notes/hoi-dap/hoi-T.md
+T.ghi=@uc_test_dir notes/hoi-dap/hoi-T.md notes/hoi-dap/phieu/**
 T.cam=@code_paths specs/** STATE.md
 T.nhanh=test/*
 T.commit=co

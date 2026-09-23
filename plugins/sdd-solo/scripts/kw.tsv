@@ -88,6 +88,7 @@ q_active	cell	đang	active
 q_done	cell	xong	done
 q_open	cell	mở	open
 applied	cell	đã áp	applied
+q_ans	cell	đã trả lời	answered
 closed	cell	đóng	closed
 stop	raw	DỪNG	STOP
 undecided	raw	Chưa quyết	Undecided
@@ -157,6 +158,7 @@ p_wrong	write	Nếu chọn sai thì	If chosen wrong
 p_lean	write	Agent nghiêng về	The agent leans towards
 p_ans	write	Trả lời (R)	Answer (R)
 p_src	write	Nguồn / lý do	Source / reason
+p_applied	label	Đã áp	Applied
 c_ticket_w	write	phiếu #	ticket #
 inscope	head	In Scope	In Scope
 outscope	head	Out of Scope	Out of Scope

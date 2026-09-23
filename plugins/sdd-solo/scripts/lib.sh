@@ -633,6 +633,10 @@ role_current() {
 # .sdd/ is inside the working tree, so each worktree has its own copy — a lock there is invisible to exactly what it must block.
 git_common() { local d; d="$(cd "$1" && git rev-parse --git-common-dir 2>/dev/null)"; case "$d" in /*) ;; *) d="$1/$d";; esac; printf '%s' "$d"; }
 lock_dir()   { printf '%s/sdd-lock' "$(git_common "$1")"; }
+# is_main_wt <root> → true in the MAIN checkout, false in a secondary worktree (7.3 queue.sh, 8.3.0 phieu.sh).
+# Anything shared and hand-merged — the queue board, the ticket index — is written by the main checkout only:
+# two worktrees writing one table is a merge conflict every round, and the coordinator pays it by hand (P-49).
+is_main_wt() { [ "$(cd "${1:-.}" && git rev-parse --git-dir 2>/dev/null)" = "$(cd "${1:-.}" && git rev-parse --git-common-dir 2>/dev/null)" ]; }
 ketqua_dir() { printf '%s/sdd-ketqua' "$(git_common "$1")"; }
 # lock_take <name> <root> — an atomic mkdir (POSIX). Waits up to 10 s; a lock older than 2 minutes counts as orphaned and is removed.
 lock_take() {

@@ -31,6 +31,11 @@
   `agent prompt <name> "/exit"` → the pane returns to a shell and the agent name disappears →
   `agent start <name> --kind claude --pane <pane> --timeout 90000` → read the screen → resend the role brief. Runxops
   did this for 6 panes after 6.6.1, and all 6 answered "ready".
+- **`/clear` does NOT reload the plugin.** It clears the context, so the pane LOOKS like a fresh session, but the
+  plugin code was loaded when the session opened and stays that version until the session ends. Slot ④ of
+  `version-check` is the one that sees this, and it is right: measured at runxops 02:34, C refused a task because
+  its session was still on 8.1.0 while everything on disk was newer. The fix is `/exit` and `herdr agent start`
+  again, then resend the role brief — `/clear` between rounds is for context, never for a version.
 - **`/exit` does NOT close the pane** — it ends the agent session and drops the pane back to a shell, still there,
   still holding its worktree. So the pane count only ever goes up unless the runner is told to close one, and that
   is the runner's job, not the plugin's: `role.sh --don UC-###` cleans the WORKTREES and BRANCHES of a finished UC

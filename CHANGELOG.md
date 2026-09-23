@@ -1,5 +1,64 @@
 # Changelog
 
+## 8.3.0 — 2026-09-24
+
+### P-49 — mục lục phiếu thôi làm nguồn, nó được SINH RA
+
+Tới 8.2.0 `phieu.sh new` nối một dòng vào `notes/hoi-dap/hoi-dap.md` ở bất cứ đâu nó chạy, còn R sửa cột Trạng
+thái của một dòng cũ trên `main`. **Hai người ghi, một bảng.** Đo ở runxops: mỗi lượt
+`git merge --no-ff soi/uc-031` xung đột ở đúng file đó và A gộp tay (`cb380e3a`, lượt 2 và 3 của UC-031).
+Không ai ghi sai cả — cái sai là file có hai người ghi.
+
+Ca kiểm 56 **tái hiện đúng lỗi đó trên 8.2.0** trước khi sửa: `CONFLICT (content): Merge conflict in
+notes/hoi-dap/hoi-dap.md`. Đó là phép đo, không phải suy đoán.
+
+`queue.sh` đã trả lời câu hỏi này ở 7.3 — chỉ checkout chính ghi bảng, agent ghi KETQUA, bảng suy ra từ đó.
+Bản này làm y hệt, thêm một bước: **mục lục không còn được ghi nữa, nó được tính**.
+
+- `phieu.sh new` ở **worktree phụ**: commit file phiếu, **không đụng mục lục**. Số vẫn an toàn — `max_n` lấy max
+  của ba nguồn, và hai nguồn sống sót đúng là hai nguồn xuyên worktree: tên file, và `git log --all` đọc kho
+  object mọi worktree dùng chung. Mục lục thật ra là nguồn **yếu nhất** ở đây, vì nó chính là cái cũ trong một
+  worktree chưa merge. P-21 không yếu đi một chút nào, có ca kiểm giữ.
+- `phieu.sh muc-luc --gom`: dựng lại mọi dòng từ file phiếu, **chỉ chạy ở checkout chính** (chạy ở nhánh vai
+  chính là cái ghi sinh ra xung đột, nên nó từ chối và nói vì sao). Văn phía trên bảng không bị đụng.
+- **Cột Trạng thái suy từ file**: `mở` → `đã trả lời` khi ô `**Trả lời (R):**` hết chỗ giữ chỗ `<…>` → `đã áp`
+  khi `close` **đóng dấu vào FILE**. Dấu ấy là dòng mới ở cuối phiếu, vì `đã áp` là trạng thái duy nhất không
+  đọc được từ phiếu: nó là kết luận của `close` (đếm F#/K# trên file + đủ KETQUA của mọi vai trong `Cho:`).
+  Không có nó thì "file là nguồn duy nhất" chỉ đúng gần hết, mà gần hết là chỗ mọi thứ trôi trở lại.
+
+**Cái mất, nói thẳng:** dòng mục lục sửa tay sẽ bị lần `--gom` sau ghi đè — đó là chủ ý, nhưng nếu đội đang ghi
+chú gì trong ô Việc thì phải chuyển vào file phiếu trước. Và phiếu tạo ở worktree phụ **vô hình với
+`phieu.sh list --mo` ở main cho tới khi merge**; A biết số qua dòng `KETQUA ket=chan hoi=#n`, đúng kênh đã thiết
+kế cho việc đó.
+
+**Bẫy đã trả giá, ghi lại vì nó sẽ lặp:** `kw('p_ans')` trả về `Trả lời (R)|Answer (R)` — **dấu ngoặc đó là
+nhóm regex**, nên mẫu ghép thẳng khớp `Trả lời R:`, thứ không phiếu nào viết, và **mọi phiếu đọc ra "còn mở"**.
+Mẫu dựng từ `kwAlts()` rồi escape từng vế. Từ khoá có siêu ký tự thì `kw()` không dùng thẳng được.
+
+`.sdd/roles` mẫu: thêm `notes/hoi-dap/phieu/**` vào vùng ghi của D và T. Một vai mà hợp đồng bảo "viết phiếu rồi
+dừng" thì phải ghi được phiếu; thiếu dòng này, ngày bật `vai_bat_buoc` là ngày `phieu.sh new` của D/T bị chặn —
+đúng lúc agent không còn đường nào khác để báo gì. **Repo `doc_lang=vi` không nhận thay đổi khuôn này** (P-45,
+8.1.1) nên phải tự thêm bằng tay.
+
+### Ghi chú herdr · README — `/clear` không nạp lại plugin
+
+`/clear` xóa ngữ cảnh nên phiên *trông như* mới, nhưng mã plugin nạp lúc mở phiên và ở nguyên bản đó tới khi
+phiên kết. Khe ④ của `version-check` báo đúng; người đọc tưởng `/clear` là xong. Ca thật ở runxops lúc 02:34:
+một agent từ chối việc vì phiên còn 8.1.0 trong khi mọi thứ trên đĩa đã mới. Ghi một dòng ở
+`references/herdr-traps.md` và một ở README mục "Đang chạy bản nào". (`/exit` không đóng pane đã ghi từ 8.2.0.)
+
+### Một dòng dọn kèm
+
+`hooks.json`: đường dẫn `${CLAUDE_PLUGIN_ROOT}` của hook SessionStart giờ nằm trong dấu nháy kép — `claude plugin validate`
+cảnh báo từ trước bản này: cài plugin vào thư mục có dấu cách thì lệnh tách làm nhiều từ và hook im lặng không chạy.
+Chỉ thêm hai dấu nháy, **không** đổi sang dạng `args` — đây là hook mọi phiên phụ thuộc, và đổi cơ chế chạy
+của nó để chữa một lỗi chưa ai gặp là đổi một rủi ro nhỏ lấy một rủi ro to hơn.
+
+### Test
+
+Ca mới `56-muc-luc-gom`, 13 phép, đã kiểm là **đỏ trên 8.2.0** (4 phép đỏ, trong đó có chính dòng xung đột merge).
+Bộ test: **56 ca · 293 PASS · 0 FAIL**.
+
 ## 8.2.0 — 2026-09-24
 
 Hai mục runxops ghi trong ngày, **cả hai không chặn gì** — đều là chỗ cơ chế vai 7.2/7.3 thiếu một nửa.

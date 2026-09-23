@@ -1,8 +1,8 @@
 ---
 name: phieu
-description: Question tickets with a number lock (7.2) — allocates the next number mechanically (an atomic lock shared by every worktree, the placeholder row committed immediately), closes a ticket by counting F#/K# in the file and requiring a KETQUA from each role, and audits the index. Use it when an agent needs a new ticket, when the coordinator closes one, or when the index looks out of step.
+description: Question tickets with a number lock (7.2) — allocates the next number mechanically (an atomic lock shared by every worktree, the placeholder row committed immediately), closes a ticket by counting F#/K# in the file and requiring a KETQUA from each role, and audits or REBUILDS the index from the ticket files. Use it when an agent needs a new ticket, when the coordinator closes one, after merging a role branch, or when the index looks out of step.
 disable-model-invocation: true
-argument-hint: "new \"<task>\" <from-role> [slug] | close <n> | muc-luc | list [--mo] | hoi <role> \"<question>\""
+argument-hint: "new \"<task>\" <from-role> [slug] | close <n> | muc-luc [--gom] | list [--mo] | hoi <role> \"<question>\""
 allowed-tools: Bash Read
 ---
 
@@ -18,6 +18,12 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/phieu.sh" $ARGUMENTS
 - `new "<task>" <from-role>` — **take the number first, write the body after.** The script locks with `mkdir` in `git-common-dir` (shared by every worktree), takes the number as the max of the index ∪ the file names ∪ `git log --all "ticket #n"` (which catches tickets in an unmerged worktree), creates `notes/hoi-dap/phieu/NNN-<slug>.md` from the skeleton, adds the index row, and **commits the placeholder row immediately** with `--only`. It prints `#n <path>`. The agent then fills in Question · Already looked up · If chosen wrong · The agent leans towards, and commits separately as `chore(sdd): ticket #n — <task>`, naming the files explicitly. A 6.x log at `specs/internal/hoi-dap.md` is also accepted.
 - `close <n>` — counts `F#`/`K#` **in the file** against the ticket's own declared total (a mismatch is red and lists what is missing — P-33); every role with work in `For:` must have a `KETQUA ket=xong` (`role.sh --ketqua`) — missing one is red. All present → the index row goes to `applied` and it commits.
 - `muc-luc` — repeated numbers · gaps · files with no row · rows with no file. Run it read-only over the existing log before trusting it.
+- `muc-luc --gom` — **rebuilds** every index row from the ticket files, State included; main checkout only. Run it
+  after merging a role branch. From 8.3.0 the index is COMPUTED, not written: `phieu.sh new` in a secondary worktree
+  commits the ticket file and touches no row, because a row written on a role branch while A and R edit the same
+  table on `main` conflicted on every merge (P-49, runxops `cb380e3a`). The State column follows the FILE — `open`
+  until the `Answer (R):` box loses its placeholder, `answered` after that, `applied` once `close` stamps the file.
+  Nobody edits that cell by hand any more; editing it is undone by the next rebuild.
 - `list [--mo]` — print the index; `--mo` shows only tickets not yet `applied`/`closed`.
 - `hoi <role> "<question>"` (7.3) — opens an `ASK-<V>n` entry in `notes/hoi-dap/hoi-<V>.md` from the four-box addressed skeleton (source · blocking · doing while waiting · spec work when answered) plus the `Answer (A/R)` · `target:` box. Check with `hoi-check.sh <V>`.
 

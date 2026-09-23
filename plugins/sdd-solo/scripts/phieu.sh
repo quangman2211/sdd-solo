@@ -7,7 +7,8 @@
 #                                          from the template, add the index row, COMMIT THE PLACEHOLDER ROW (--only) and only then return. Write the body afterwards.
 #   phieu.sh close <n>                     recount F#/K# ON THE FILE and compare with the total the ticket declares; every role in For: must
 #                                          have a KETQUA ket=xong (role.sh --ketqua); when it all holds, the index → "applied", and commit
-#   phieu.sh muc-luc                       audit: duplicate numbers · gaps · a file with no row · a row with no file. exit 1 if there is any
+#   phieu.sh muc-luc [--gom]               audit: duplicate numbers · gaps · a file with no row · a row with no file. exit 1 if there is any.
+#                                          --gom REBUILDS every index row from the ticket files (State derived from the file); main checkout only
 #   phieu.sh list [--mo]                   print the index; --mo: tickets not yet "applied"/"closed"
 #   phieu.sh hoi <role> "<one-line question>"  (7.3) open an ASK-<V>n entry in notes/hoi-dap/hoi-<V>.md using the four-box addressed template
 #                                          (copying templates/skel/hoi-vai.md when there is no log yet); the number = max + 1. Check it with: hoi-check.sh <V>
@@ -53,11 +54,25 @@ new)
   { printf '### #%s · %s: %s · %s: %s · %s\n' "$N" "$(kw_w from_ "$ROOT")" "$TU" "$(kw_w task "$ROOT")" "$VIEC" "$TD"
     printf '%s: <one sentence>\n%s: <file:line, …>\n%s: <the consequence>\n%s: <the choice + why>\n\n' "$(kw_w p_q "$ROOT")" "$(kw_w p_look "$ROOT")" "$(kw_w p_wrong "$ROOT")" "$(kw_w p_lean "$ROOT")"
     printf '**%s:** <level L0–L3> · <the answer>\n%s: <file:line or the reason>\n%s: <one line per role: - **B:** … · - **D:** … · - **T:** …>\n%s:\n' "$(kw_w p_ans "$ROOT")" "$(kw_w p_src "$ROOT")" "$(kw_w forwhom "$ROOT")" "$(kw_w approve "$ROOT")"; } > "$F"
-  ROW="| #$N | $VIEC | $TU | $TD | $(kw_w q_open "$ROOT") | [$NNN-$SL.md](phieu/$NNN-$SL.md) |"
-  node "$HERE/js/table.mjs" addrow "$HD" "$ROW"
-  git -C "$ROOT" add "$F" "$HD" 2>/dev/null
-  git -C "$ROOT" commit -q --only -m "chore(sdd): $(kw_w c_ticket_w "$ROOT")$N placeholder — $VIEC" -- "$F" "$HD" 2>/dev/null \
-    || warn "could not commit the placeholder row (a hook blocking, or no git in this repo?) — the number $N is written into the file and the index either way"
+  # 8.3.0 (P-49): in a SECONDARY WORKTREE the index row is not written at all. The row would land on the role branch
+  # while A and R edit the same table on main, and every `git merge --no-ff` then conflicts in the question log —
+  # measured at runxops, every round of UC-031 (cb380e3a). The number is still safe: max_n takes the max of THREE
+  # sources and the two that survive are the cross-worktree ones — the file name, and `git log --all` reading the
+  # object store every worktree shares. The index was in fact the weakest of the three here, because it is the one
+  # that is stale in a worktree that has not merged.
+  if is_main_wt "$ROOT"; then
+    ROW="| #$N | $VIEC | $TU | $TD | $(kw_w q_open "$ROOT") | [$NNN-$SL.md](phieu/$NNN-$SL.md) |"
+    node "$HERE/js/table.mjs" addrow "$HD" "$ROW"
+    git -C "$ROOT" add "$F" "$HD" 2>/dev/null
+    git -C "$ROOT" commit -q --only -m "chore(sdd): $(kw_w c_ticket_w "$ROOT")$N placeholder — $VIEC" -- "$F" "$HD" 2>/dev/null \
+      || warn "could not commit the placeholder row (a hook blocking, or no git in this repo?) — the number $N is written into the file and the index either way"
+  else
+    git -C "$ROOT" add "$F" 2>/dev/null
+    git -C "$ROOT" commit -q --only -m "chore(sdd): $(kw_w c_ticket_w "$ROOT")$N placeholder — $VIEC" -- "$F" 2>/dev/null \
+      || warn "could not commit the ticket file (a hook blocking, or no git in this repo?) — the number $N is written into the file either way"
+    info "secondary worktree: the ticket FILE is committed, the index is not touched (P-49). The number is taken."
+    info "after this branch is merged, the coordinator runs in the main checkout: bash .sdd/scripts/phieu.sh muc-luc --gom"
+  fi
   lock_drop phieu "$ROOT"
   printf '#%s %s\n' "$N" "$(rel "$F")"
   info "the number is taken and committed. Write the ticket body, then commit separately: git commit --only -m 'chore(sdd): $(kw_w c_ticket_w "$ROOT")$N — <task>' -- $(rel "$F")"
@@ -90,14 +105,31 @@ close)
     else bad "role $v has work in For: but no KETQUA ket=xong yet (role.sh --ketqua $(printf '%s' "$v" | tr 'A-Z' 'a-z')-${ID:-<id>}-p$N …)"; MISS=1; fi
   done
   if [ "$FAIL" -eq 0 ]; then
-    node "$HERE/js/table.mjs" mark "$HD" "$N" "$(kw_w applied "$ROOT")"
-    git -C "$ROOT" commit -q --only -m "chore(sdd): $(kw_w c_ticket_w "$ROOT")$N $(kw_w applied "$ROOT") — $NF F# · $NK K# counted on the file" -- "$HD" 2>/dev/null || true
-    echo "CLOSED #$N — the index now says applied."
+    # 8.3.0 (P-49): the stamp goes into the FILE, and the index is then recomputed from the files. `applied` is the
+    # one state that cannot be read off a ticket on its own — it is the conclusion of this check — so this is the line
+    # that keeps "the file is the only source" true instead of nearly true.
+    grep -qE "^($(kw p_applied)):" "$F" || printf '%s: %s\n' "$(kw_w p_applied "$ROOT")" "$(today)" >> "$F"
+    CF="$F"
+    if is_main_wt "$ROOT"; then
+      node "$HERE/js/phieu.mjs" index "$HD" "$PD" >/dev/null 2>&1 && CF="$F $HD"
+    else
+      info "secondary worktree: the file is stamped, the index is not rebuilt — run muc-luc --gom in the main checkout after merging"
+    fi
+    git -C "$ROOT" commit -q --only -m "chore(sdd): $(kw_w c_ticket_w "$ROOT")$N $(kw_w applied "$ROOT") — $NF F# · $NK K# counted on the file" -- $CF 2>/dev/null || true
+    echo "CLOSED #$N — stamped on the file; the index says applied."
   else
     echo "NOT CLOSED — $FAIL errors."; exit 1
   fi
   ;;
 muc-luc)
+  if [ "${2:-}" = --gom ]; then
+    is_main_wt "$ROOT" || { bad "muc-luc --gom runs in the MAIN checkout only — rebuilding the index on a role branch is exactly the write that made every merge conflict (P-49). Merge the branch first, then run it here."; exit 1; }
+    ensure_hd; need_node "phieu.sh muc-luc --gom"
+    CNT="$(node "$HERE/js/phieu.mjs" index "$HD" "$PD")" || exit 1
+    ok "the index rebuilt from the ticket files: $CNT row(s) — the State column is DERIVED, nobody edits it by hand"
+    info "review the diff, then commit: git commit --only -m 'chore(sdd): rebuild the ticket index' -- $(rel "$HD")"
+    exit 0
+  fi
   [ -f "$HD" ] || { info "there is no $(rel "$HD") yet"; exit 0; }
   echo "Ticket index — $(rel "$HD") · $(rel "$PD")/"
   IDX="$(grep -oE '^\| *#[0-9]+' "$HD" | grep -oE '[0-9]+' | sort -n)"

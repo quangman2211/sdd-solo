@@ -169,6 +169,8 @@ GitHub ─①─▶ marketplace đã tải ─②─▶ bản đã cài ─③�
 | ① GitHub có bản mới | `/plugin marketplace update sdd-solo` |
 | ④ phiên đang mở còn chạy bản cũ | **không lệnh nào sửa được** — mở session mới |
 
+**`/clear` không đủ.** Nó xóa ngữ cảnh nên phiên *trông như* mới, nhưng mã plugin nạp lúc mở phiên và ở nguyên bản đó tới khi phiên kết. Phải thoát hẳn rồi mở lại. Ca thật ở runxops lúc 02:34: một agent từ chối việc vì phiên của nó còn 8.1.0 trong khi mọi thứ trên đĩa đã mới — khe ④ báo đúng, người đọc tưởng `/clear` là xong.
+
 Khe ④ là khe nguy hiểm nhất: vừa `/plugin update` xong, `.sdd/` đã mới, mọi thứ trên đĩa đều đúng, nhưng phiên đang mở vẫn chạy code cũ nạp lúc mở — gõ `/sdd-solo:gate` là nhận logic cũ. Chỉ hook SessionStart biết được phiên nạp bản nào, nên nó ghi lại để `version-check` đọc.
 
 `/sdd-solo:status` tự kiểm cả ba (hỏi GitHub tối đa 3 giây, nhớ 24 tiếng) và chỉ nói khi lệch. `/sdd-solo:init --plugin` chạy đúng những khe đang lệch trong một lệnh — nhưng **bản mới chỉ có hiệu lực ở session sau**, giống hệt cách Claude Code tự update chính nó. Hook mở session cũng cảnh báo, nhưng **chỉ so cục bộ, không gọi mạng** — nên khe ① chỉ lộ ra khi chạy `status`.

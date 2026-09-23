@@ -14,7 +14,7 @@ plugins/sdd-solo/
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
   scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3) · mermaid.sh (vỏ của parser mermaid, 7.5) · numbers.sh (gom ô `___` còn nợ số, 8.0)
   scripts/kw.tsv                     **bảng từ khoá tài liệu song ngữ** (7.7) — bash và node đọc chung
-  scripts/js/                        **mã node của plugin** (7.6, ESM, 0 gói npm): mermaid · mermaid-real (mượn mermaid của dự án khi có) · context · migrate · pass · brief · hoi · table · util · kw
+  scripts/js/                        **mã node của plugin** (7.6, ESM, 0 gói npm): mermaid · mermaid-real (mượn mermaid của dự án khi có) · context · migrate · pass · brief · hoi · phieu (mục lục sinh từ file phiếu, 8.3) · table · util · kw
   templates/project/                 19 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16; 7.2–7.3: + .sdd/roles · notes/hang-doi.md · notes/uy-quyen.md)
   templates/skel/                    khuôn use-case/ (kèm UC-000.trace.md, 8.0) · br/ · nghe/ · entity.md · change/ · hoi-dap.md · hoi-vai.md — skill/script copy khi tạo, KHÔNG rơi vào dự án
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
