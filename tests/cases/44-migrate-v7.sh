@@ -126,19 +126,19 @@ mkmap() { printf 'context orders ebay\ncontext console core\nbr BR-001 ebay\nbr 
 mk6x mig1
 S migrate.sh --layout v7
 chk "migrate · không có map thì đỏ, không đụng đĩa (exit $R)" \
-  '[ $R = 1 ] && has "viết file map trước" && [ -d specs/contexts ]'
+  '[ $R = 1 ] && has "write the map file first" && [ -d specs/contexts ]'
 
 # ② map thiếu một dòng → kê đích danh chỗ thiếu, KHÔNG CHẠY
 printf 'context orders ebay\nbr BR-001 ebay\n' > .sdd/migrate-v7.map
 S migrate.sh --layout v7
 chk "migrate · map thiếu context/BR thì kê đích danh (exit $R)" \
-  '[ $R = 1 ] && has "KHÔNG CHẠY" && has "context \`console\`" && has "BR-002 chưa có dòng" && [ -f specs/br.md ]'
+  '[ $R = 1 ] && has "NOT RUN" && has "context \`console\`" && has "BR-002 has no" && [ -f specs/br.md ]'
 
 # ③ --dry-run: in kế hoạch, không đụng một byte nào
 mkmap
 S migrate.sh --layout v7 --dry-run
 chk "migrate · --dry-run in kế hoạch, đĩa y nguyên (exit $R)" \
-  '[ $R = 0 ] && has "SẼ dời" && has "chưa đụng đĩa" && [ -f specs/br.md ] && [ ! -d specs/ebay ] && git diff --quiet'
+  '[ $R = 0 ] && has "WOULD move" && has "nothing was touched on disk" && [ -f specs/br.md ] && [ ! -d specs/ebay ] && git diff --quiet'
 
 # ④ chạy thật: cây 7.0 dựng đúng, mỗi BR một lát dưới nghề của nó
 S migrate.sh --layout v7
@@ -172,7 +172,7 @@ chk "migrate · index trả về trống, in HAI lệnh commit tách theo ranh g
 # ⑤ chạy lại trên cây đã 7.0 → nói không có gì để dời, không hỏng
 S migrate.sh --layout v7
 chk "migrate · chạy lại trên cây 7.0 thì dừng, không dời gì (exit $R)" \
-  '[ $R = 0 ] && has "đã ở bố cục 7.0"'
+  '[ $R = 0 ] && has "already on the 7.0 layout"'
 
 # ⑥ --evidence: thân ## Background đi, mục lục ### và đoạn ** ở lại, ## Adversarial pass còn một dòng đếm
 mk6x mig2
@@ -185,9 +185,9 @@ chk "migrate --evidence · Adversarial pass còn một dòng có số ___ ra m�
   'grep -q "Ngày chạy: 2026-01-03 · 3 vai · trên v2 · 2 câu → 1 đã áp · 1 → ___" specs/br.md'
 S migrate.sh --evidence BR-001
 chk "migrate --evidence · chạy lại không nén lại (idempotent)" \
-  '[ $R = 0 ] && has "đã tách rồi" && [ "$(grep -c "Ngày chạy: 2026-01-03" specs/br.md)" = 1 ]'
+  '[ $R = 0 ] && has "has already been split" && [ "$(grep -c "Ngày chạy: 2026-01-03" specs/br.md)" = 1 ]'
 S migrate.sh --evidence BR-404
-chk "migrate --evidence · BR không có thì đỏ (exit $R)" '[ $R = 1 ] && has "không thấy"'
+chk "migrate --evidence · BR không có thì đỏ (exit $R)" '[ $R = 1 ] && has "found in specs/br.md"'
 
 # ⑦ không có node: migrate KHÔNG im lặng làm nửa vời — dừng có lời (khác mermaid, vì đây là script SỬA file)
 mk6x mig3
@@ -196,5 +196,5 @@ NODEDIR="$(dirname "$(command -v node)")"
 O="$(PATH="$(printf '%s' "$PATH" | tr ':' '\n' | grep -vxF "$NODEDIR" | paste -sd: -)" \
      bash "$P/scripts/migrate.sh" --layout v7 2>&1)"; R=$?; O="$(printf '%s\n' "$O" | clean)"
 chk "migrate · không có node thì dừng có lời, không dời nửa chừng (exit $R)" \
-  '[ $R = 127 ] && has "cần Node.js" && [ -d specs/contexts ]'
+  '[ $R = 127 ] && has "Node.js (>= 18) is required" && [ -d specs/contexts ]'
 cd "$T"

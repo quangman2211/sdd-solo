@@ -147,4 +147,7 @@ python/grep quanh chữ có dấu (đo được: 126 dòng lệch ở `context.s
 ## Khi viết skill
 - Skill lệnh: `disable-model-invocation: true`, có `argument-hint`, gọi script qua `${CLAUDE_PLUGIN_ROOT}/scripts/…` và kèm fallback `find ~/.claude/plugins -name <script> -path '*sdd-solo*'`.
 - Skill không được tự sửa spec thay user trừ khi user bảo; không đề xuất viết code ở các bước spec.
-- Văn tiếng Việt, xưng "anh"/"em" như user quen; tên file, ID, slug tiếng Anh.
+- **Skill viết bằng tiếng Anh** (7.8.0), và mở đầu bằng dòng `Reply in whatever language the user writes in; keep
+  file names, IDs and slugs in English.` — plugin là tiếng Anh, còn giọng trả lời đi theo ngôn ngữ user gõ.
+  Đừng viết thân skill bằng tiếng Việt nữa: từ khoá tài liệu đã song ngữ ở `kw.tsv`, nên văn skill không
+  còn là chỗ giữ tiếng Việt.

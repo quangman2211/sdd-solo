@@ -1,44 +1,38 @@
 ---
 name: status
-description: Xem đang ở đâu — STATE.md, danh sách UC theo status và cổng, trace ratio và AC coverage đếm bằng git; và sổ tra mọi quyết định của dự án xếp theo thời gian. Dùng khi user hỏi "đang tới đâu", "còn UC nào", "tỷ lệ commit có ID", "dự án đã quyết những gì", "có luật gì rồi", "cấm cái gì".
+description: Where things stand — STATE.md, the UCs by status and gate, the trace ratio and AC coverage counted from git; plus the lookup of every decision in the project in time order. Use it when the user asks "where are we", "which UCs are left", "what share of commits carry an ID", "what has this project decided", "what rules do we have", "what is forbidden".
 allowed-tools: Bash Read
 ---
 
-Chạy và diễn giải ngắn (không lặp lại nguyên văn):
+Reply in whatever language the user writes in; keep file names, IDs and slugs in English.
+
+Run it and interpret briefly (do not repeat it verbatim):
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/status.sh"
 ```
-Có mục `=== Version ===` thì nói ngay: mỗi dòng lệch đã kèm sẵn lệnh đúng cho **đúng khe** đó — ③ `/sdd-solo:init --update`, ② `/plugin update`, ① `/plugin marketplace update`. Đừng bảo user chạy cả ba.
+If there is a `=== Version ===` section, say so straight away: each mismatched line already carries the right command for **that particular link** — ③ `/sdd-solo:init --update`, ② `/plugin update`, ① `/plugin marketplace update`. Do not tell the user to run all three.
 
-Cuối output có mục `=== Phụ thuộc ===` thì nghĩa là thiếu một phụ thuộc **bắt buộc** (chỉ còn `git` và repo đã init) — nói ngắn thiếu gì. Đủ thì script im, đừng nhắc tới.
+A `=== Dependencies ===` section at the end of the output means a **required** dependency is missing (only `git` and an initialised repo are required) — say briefly what is missing. When everything is there the script says nothing; do not bring it up.
 
-Nói: đang ở UC nào bước nào; UC nào đã qua cổng nhưng chưa implemented (đang code); UC draft còn lại; hai con số cuối và chúng có đang xấu đi so với lần user hỏi trước không (nếu biết). Không đề xuất viết code.
+Say: which UC and step we are on; which UCs are past the gate but not implemented (being coded); which draft UCs are left; the last two numbers and whether they are getting worse since the user last asked (if you know). Do not propose writing code.
 
 ---
 
-User hỏi **dự án đã quyết những gì** — "có luật gì rồi", "cấm cái gì", "sao hồi đó chọn thế",
-"còn ràng buộc nào không" — thì đó KHÔNG phải `status.sh`. Chạy:
+When the user asks **what the project has decided** — "what rules do we have", "what is forbidden", "why did we choose that back then", "are there constraints left" — that is NOT `status.sh`. Run:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/decisions.sh"
 ```
-Nó gom CON · RULE · ADR · Cấm · CHG · ghi chú từ sáu chỗ về một dòng thời gian. Luôn exit 0,
-không phải cổng. Và chiều ngược lại — *"UC này do cái gì quyết định?"*, *"sao tính năng này lại
-thế?"* — là:
+It gathers CON · RULE · ADR · Forbidden · CHG · notes from six places onto one timeline. It always exits 0; it is not a gate. And the other direction — *"what decided this UC?"*, *"why is this feature like that?"* — is:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/context.sh" UC-### --why
 ```
-chỉ in RULE · CON · ADR mà UC đó trích, kèm `## Cấm` của architecture. Hai lệnh là hai chiều của
-cùng một câu hỏi: `decisions.sh` đi từ thời gian xuống quyết định, `--why` đi từ một UC lên.
-`decisions.sh` luôn exit 0,
-không phải cổng. In nguyên bảng cho user đọc — đây là bảng để **mắt người** đối chiếu, đừng
-tóm tắt nó thành vài câu.
+which prints only the RULE · CON · ADR that the UC cites, plus architecture's `## Forbidden`. The two commands are two directions of the same question: `decisions.sh` goes from time down to decisions, `--why` goes from one UC upwards. Print the whole table for the user to read — this is a table for **human eyes** to compare against, do not summarise it into a few sentences.
 
-Ba khối cuối, nếu có, phải nói ra chứ đừng bỏ qua:
-- **Quá hạn kiểm lại** — một ràng buộc tới hẹn xem lại mà chưa ai xem. Ràng buộc hết đúng khi
-  *thế giới* đổi, và thế giới đổi thì không có gì trong repo động đậy; đây là lưới duy nhất.
-- **Chưa có ngày** — không xếp được vào dòng thời gian. Nói thẳng đây là thứ duy nhất trong
-  bộ tài liệu không tái tạo được: hai quyết định mất ngày thì sau này không ai dựng lại được
-  cái nào ra trước khi chúng đá nhau.
-- **`br.md` còn nguyên khuôn** — chỉ mới có lát mẫu `specs/core/br-000/`, nên những dòng in ra là ví
-  dụ dạy việc, chưa phải quyết định của dự án. Nói user chạy `/sdd-solo:intake` trước; bước 0 của nó
-  là `specs/vision.md`, và tầng 0 chưa viết thì BR nào cũng đỏ ở `br-check`.
+The three trailing blocks, when present, must be said out loud rather than skipped:
+- **Review overdue** — a constraint whose review date has come and nobody has looked. A constraint stops being
+  true when *the world* changes, and when the world changes nothing in the repo moves; this is the only net.
+- **No date** — cannot be placed on the timeline. Say plainly that this is the one thing in the document set that
+  cannot be reconstructed: two decisions with no dates leave nobody able to tell which came first once they clash.
+- **`br.md` is still the skeleton** — only the sample slice `specs/core/br-000/` exists, so the lines printed are a
+  teaching example, not this project's decisions. Tell the user to run `/sdd-solo:intake` first; its step 0 is
+  `specs/vision.md`, and while layer 0 is unwritten every BR is red in `br-check`.

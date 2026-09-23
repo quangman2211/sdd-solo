@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
-# decisions.sh [--md] — sổ tra MỌI quyết định của dự án, xếp theo thời gian.
+# decisions.sh [--md] — a ledger of EVERY decision in the project, in time order.
 #
-# Vì sao có file này. Bộ tài liệu chứa 7 loại quyết định ở 6 chỗ với 4 khuôn khác
-# nhau (CON trong br.md · RULE trong rules.md · ADR trong internal/adr/ · Cấm trong
-# architecture.md · CHG trong changes/ · dòng một câu trong internal/decisions.md).
-# Mỗi khuôn đọc riêng thì hợp lý; hợp lại thì không ai nắm được dự án này đã quyết
-# những gì. Đó là câu hỏi phải trả lời được sau 5–10 năm, không phải sau một sprint.
+# Why this file exists. The document set holds 7 kinds of decision in 6 places with 4 different
+# shapes (a CON in br.md · a RULE in rules.md · an ADR in internal/adr/ · a Forbidden line in
+# architecture.md · a CHG in changes/ · a one-sentence line in internal/decisions.md).
+# Each shape read on its own makes sense; together, nobody can hold what this project has decided.
+# That is a question that must be answerable after 5–10 years, not after one sprint.
 #
-# XẾP THEO THỜI GIAN là chủ ý, không phải cho đẹp. Ca thật (runxops): hai điều cấm
-# viết ở hai thời điểm, cái sau ngặt hơn và nuốt luôn thứ In Scope đang cho phép.
-# Đọc rời từng file thì cả hai đều trôi chảy. Xếp chung một dòng thời gian thì hai
-# dòng nói cùng một chuyện với hai ngày khác nhau tự nằm cạnh nhau — mắt người bắt
-# được ngay thứ mà không phép kiểm cơ học nào bắt được.
+# TIME ORDER is deliberate, not decoration. Real case (runxops): two prohibitions written at two
+# different times, the later one stricter and swallowing something In Scope still allowed.
+# Read file by file, both read smoothly. Put on one timeline, two lines saying the same thing with
+# two different dates end up next to each other — the human eye catches at once what no mechanical
+# check can catch.
 #
-# KHÔNG GHI FILE (trừ khi --md và người dùng tự hứng ra). Một sổ tra sinh ra rồi
-# commit là một bản sao sẽ trôi khỏi nguồn, và trôi thì lại đúng lớp "báo xanh sai"
-# mà cả 3.x đi chữa. Sổ này phải luôn được đọc từ nguồn, tại thời điểm đọc.
+# WRITES NO FILE (unless --md and the user redirects it themselves). A ledger that is generated and
+# then committed is a copy that will drift from its source, and drifting is exactly the "falsely
+# green" class the whole 3.x line went to fix. This ledger must always be read from the source, at reading time.
 #
-# 4.2.0: script này CHỈ ĐỌC và luôn exit 0. Nó không phải cổng. Cổng cứng
-# (decision-check.sh) để bản sau, sau khi anh đã nhìn bảng này và điền xong — bật
-# cổng khi hàng chục dòng còn thiếu ngày thì chỉ dạy được người ta cách phớt lờ nó.
+# 4.2.0: this script is READ-ONLY and always exits 0. It is not a gate. A hard gate
+# (decision-check.sh) is for a later release, once you have looked at this table and filled it in —
+# turning on a gate while dozens of lines still lack a date only teaches people to ignore it.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"
 MD=0; [ "${1:-}" = "--md" ] && MD=1
@@ -27,9 +27,9 @@ TODAY="$(today)"
 
 REC="$(mktemp)"; trap 'rm -f "$REC"' EXIT
 
-# Mỗi bản ghi một dòng, ngăn bằng TAB:
-#   ngày <TAB> ID <TAB> loại <TAB> phát biểu <TAB> trạng thái <TAB> kiểm lại
-# Ngày trống → "0000-00-00", để sort đẩy lên đầu rồi tách ra khối riêng lúc in.
+# One record per line, TAB separated:
+#   date <TAB> ID <TAB> kind <TAB> statement <TAB> status <TAB> review on
+# An empty date → "0000-00-00", so sort pushes it to the top and printing splits it into its own block.
 TAB="$(printf '\t')"
 
 FLD='
@@ -41,18 +41,18 @@ function fld(s, name,   i, rest, j) {
   sub(/^[ \t]+/, "", rest); sub(/[ \t]+$/, "", rest)
   return rest
 }
-# fldk(): như fld nhưng nhận THÂN alternation của kw() (`Từ|From`) — thử từng vế, lấy vế
-# nào có mặt trên dòng. Nhờ nó một ô con viết bằng tiếng Anh vào sổ tra y như tiếng Việt.
+# fldk(): like fld but taking the alternation BODY from kw() (`Từ|From`) — it tries each side and takes
+# whichever is present on the line. Thanks to it, a sub-cell written in English enters the ledger exactly like the Vietnamese one.
 function fldk(s, k,   i, n, a, r) {
   n = split(k, a, "|")
   for (i = 1; i <= n; i++) { r = fld(s, a[i] ":"); if (r != "") return r }
   return ""
 }
 function nodate(d) { return (d ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) ? d : "0000-00-00" }
-# ghost(): dòng còn là KHUÔN, chưa phải quyết định. Bỏ nó đi là bắt buộc, không
-# phải cho gọn — một sổ tra liệt kê chính lời giảng trong khuôn thành "quyết định
-# của dự án" thì tệ hơn không có sổ, vì nó dạy người đọc rằng sổ này không đáng tin.
-# `<...>` phải có dấu đóng mới tính, nên "response < 200ms" không bị bắt oan.
+# ghost(): a line that is still a TEMPLATE, not a decision. Dropping it is mandatory, not tidiness —
+# a ledger listing the teaching text of a template as "a decision of the project" is worse than no
+# ledger, because it teaches the reader that this ledger cannot be trusted.
+# A `<...>` only counts with its closing bracket, so "response < 200ms" is not falsely caught.
 function ghost(s) {
   if (s == "") return 1
   if (s ~ /^[ \t]*(\.\.\.|_+)[ \t]*$/) return 1
@@ -61,20 +61,20 @@ function ghost(s) {
 }
 '
 
-# strip_markup TRƯỚC mọi thứ. Khuôn nào cũng có khối <!-- … --> dạy cách dùng, và
-# những khối đó nhắc CON-002 / ADR-001 / BR-001 làm ví dụ. Không lột thì sổ tra
-# đọc chính lời giảng thành quyết định. (Cùng bẫy đã dính ở design-check 4.0.x.)
+# strip_markup BEFORE anything else. Every template has a <!-- … --> block teaching how to use it, and
+# those blocks mention CON-002 / ADR-001 / BR-001 as examples. Without stripping, the ledger reads the
+# teaching text as decisions. (The same trap design-check hit at 4.0.x.)
 
 # ── CON-### : specs/br.md (6.x) · specs/*/br-###/br.md (7.0) ─────────────────
 br_text "$ROOT" | strip_markup | awk -v T="$TAB" \
   -v SINCE="$(kw since)" -v STATE="$(kw state)" -v REVIEWON="$(kw reviewon)" "$FLD"'
-function flush() { if (cur != "" && !ghost(stmt)) print d T cur T "ràng buộc" T stmt T stt T rc; cur = "" }
-# BR-000 là BR MẪU của template và nó Ở LẠI VĨNH VIỄN: `/sdd-solo:intake` dặn thẳng
-# "Giữ nguyên BR-000 mẫu", `br-check.sh:11` bỏ qua nó vì cùng lý do. Không bỏ ở đây
-# thì ba CON dạy-việc của nó nằm trong sổ tra của MỌI dự án, mãi mãi — và chúng
-# không phải placeholder, chúng đọc y như quyết định thật (hosting, luật kế toán).
-# Đó đúng là "sổ tra có mục ma", thứ tệ hơn không có sổ. Cùng một luật với br-check,
-# giữ ở hai nơi vì hai script không dùng chung vòng quét br.md.
+function flush() { if (cur != "" && !ghost(stmt)) print d T cur T "constraint" T stmt T stt T rc; cur = "" }
+# BR-000 is the template SAMPLE BR and it STAYS FOREVER: `/sdd-solo:intake` says outright "keep the
+# BR-000 sample", and `br-check.sh:11` skips it for the same reason. Not skipping it here would put its
+# three teaching CONs in the ledger of EVERY project, forever — and they are not placeholders, they
+# read exactly like real decisions (hosting, accounting law).
+# That is precisely "a ledger with ghost entries", the thing worse than no ledger. The same rule as in
+# br-check, kept in two places because the two scripts do not share the br.md scanning loop.
 /^# BR-/ { flush(); inbr0 = ($0 ~ /^# BR-000([^0-9]|$)/) ? 1 : 0; next }
 /^- \*\*CON-[0-9]+/ {
   flush()
@@ -90,10 +90,10 @@ cur != "" && $0 ~ ("^[ \t]+- (" SINCE "):") {
 END { flush() }
 ' >> "$REC"
 
-# ── RULE-### : specs/rules.md + specs/<nghề>/rules.md ────────────────────────
+# ── RULE-### : specs/rules.md + specs/<craft>/rules.md ───────────────────────
 rules_text "$ROOT" | strip_markup | awk -v T="$TAB" \
   -v STMT="$(kw statement)" -v SINCE="$(kw since)" "$FLD"'
-function flush() { if (cur != "" && !ghost(stmt)) print d T cur T "luật" T stmt T stt T ""; cur = "" }
+function flush() { if (cur != "" && !ghost(stmt)) print d T cur T "rule" T stmt T stt T ""; cur = "" }
 /^## RULE-/ {
   flush()
   match($0, /RULE-[0-9a-z]+/); cur = substr($0, RSTART, RLENGTH)
@@ -109,9 +109,9 @@ END { flush() }
 ' >> "$REC"
 
 # ── ADR-### : specs/internal/adr/*.md ───────────────────────────────────────
-# Bỏ file bắt đầu bằng "_" — đó là khuôn, không phải quyết định. Chính vì khuôn
-# từng mang tên ADR-000-template.md mà `id_exists ADR-000` báo XANH SAI trong mọi
-# repo vừa scaffold, không cần ai viết sai gì cả. Đổi tên ở 4.2.0.
+# Skip a file starting with "_" — that is a template, not a decision. It was exactly because the
+# template was once named ADR-000-template.md that `id_exists ADR-000` reported FALSELY GREEN in every
+# freshly scaffolded repo, with nobody writing anything wrong. Renamed at 4.2.0.
 for f in $(for d in $(adr_dirs "$ROOT"); do ls "$d"/*.md 2>/dev/null; done); do
   [ -f "$f" ] || continue
   case "$(basename "$f")" in _*) continue;; esac
@@ -126,17 +126,17 @@ for f in $(for d in $(adr_dirs "$ROOT"); do ls "$d"/*.md 2>/dev/null; done); do
   ' >> "$REC"
 done
 
-# ── Cấm : specs/internal/architecture.md, mục ## Cấm ────────────────────────
-# ID hiển thị là `CAM-N`, đánh theo THỨ TỰ XUẤT HIỆN — cố ý không phải danh tính.
-# "Số không phải danh tính, nó là vị trí, và vị trí thì đổi": chèn một điều cấm ở
-# giữa là mọi số sau nó chạy. Nên đừng trích `CAM-N` từ bất cứ đâu; cần trích được
-# thì nâng điều cấm đó thành RULE-### hoặc ADR-###, hai thứ có ID thật.
-# (Chữ ASCII vì đây là ID, và vì cột căn theo ký tự chỉ đúng khi bash đếm — awk
-#  length() ở macOS đếm BYTE, "Cấm-1" 5 ký tự nhưng 6 byte, đủ lệch cả bảng.)
+# ── Forbidden : specs/internal/architecture.md, section ## Forbidden ─────────
+# The displayed ID is `CAM-N`, numbered BY ORDER OF APPEARANCE — deliberately not an identity.
+# "A number is not an identity, it is a position, and positions move": inserting a prohibition in the
+# middle shifts every number after it. So never quote `CAM-N` from anywhere; if it must be quotable,
+# promote that prohibition to a RULE-### or an ADR-###, which have real IDs.
+# (ASCII letters because this is an ID, and because a column aligned by character only works when bash
+#  does the counting — awk length() on macOS counts BYTES.)
 [ -f "$(arch_file "$ROOT")" ] && strip_markup < "$(arch_file "$ROOT")" \
 | awk -v T="$TAB" -v FORB="$(kwh forbidden)" \
   -v SINCE="$(kw since)" -v STATE="$(kw state)" "$FLD"'
-function flush() { if (cur != "" && !ghost(stmt)) printf "%s%s%s%s%s%s%s%s%s%s%s\n", d,T,("CAM-" n),T,"cấm",T,stmt,T,stt,T,""; cur = "" }
+function flush() { if (cur != "" && !ghost(stmt)) printf "%s%s%s%s%s%s%s%s%s%s%s\n", d,T,("CAM-" n),T,"forbidden",T,stmt,T,stt,T,""; cur = "" }
 /^## / { flush(); insec = ($0 ~ FORB) ? 1 : 0; next }
 insec && /^-[ ]/ {
   flush(); n++; cur = "y"
@@ -160,11 +160,11 @@ for cd in "$ROOT/specs/changes/"CHG-*/ "$ROOT/changes/"CHG-*/; do
   /^## History/ { inhis = 1; next }
   inhis && d == "" && /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ {
                   match($0, /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/); d = substr($0, RSTART, RLENGTH); next }
-  END { if (id != "" && !ghost(stmt)) print nodate(d) T id T "thay đổi" T stmt T stt T "" }
+  END { if (id != "" && !ghost(stmt)) print nodate(d) T id T "change" T stmt T stt T "" }
   ' >> "$REC"
 done
 
-# ── dòng một câu : specs/internal/decisions.md ──────────────────────────────
+# ── one-sentence lines : specs/internal/decisions.md ─────────────────────────
 [ -f "$(decisions_file "$ROOT")" ] && strip_markup < "$(decisions_file "$ROOT")" \
 | awk -v T="$TAB" "$FLD"'
 /^-[ ]+[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][ ]/ {
@@ -172,15 +172,15 @@ done
   s = substr($0, RSTART + RLENGTH); sub(/^[ ]*(—|-)[ ]*/, "", s)
   if (ghost(s)) next
   n++
-  print d T ("note-" n) T "ghi chú" T s T "" T ""
+  print d T ("note-" n) T "note" T s T "" T ""
 }
 ' >> "$REC"
 
 # ── in ra ───────────────────────────────────────────────────────────────────
 TOT="$(grep -c . "$REC" 2>/dev/null)"; [ -n "$TOT" ] || TOT=0
 if [ "$TOT" = "0" ]; then
-  printf 'Chưa có quyết định nào ghi lại.\n'
-  printf 'Bắt đầu ở BR (## Constraints) và rules.md — hoặc chạy /sdd-solo:intake.\n'
+  printf 'No decision has been recorded yet.\n'
+  printf 'Start at the BR (## Constraints) and rules.md — or run /sdd-solo:intake.\n'
   exit 0
 fi
 
@@ -190,9 +190,9 @@ ND="$(printf '%s' "$DATED"   | grep -c . || true)"
 NU="$(printf '%s' "$UNDATED" | grep -c . || true)"
 
 if [ "$MD" = "1" ]; then
-  printf '# Sổ quyết định — sinh bởi decisions.sh ngày %s\n\n' "$TODAY"
-  printf '<!-- SINH RA, ĐỪNG SỬA TAY. Chạy lại: bash .sdd/scripts/decisions.sh --md -->\n\n'
-  printf '| Ngày | ID | Loại | Phát biểu | Trạng thái | Kiểm lại |\n|---|---|---|---|---|---|\n'
+  printf '# Decision ledger — generated by decisions.sh on %s\n\n' "$TODAY"
+  printf '<!-- GENERATED, DO NOT EDIT BY HAND. Regenerate: bash .sdd/scripts/decisions.sh --md -->\n\n'
+  printf '| Date | ID | Kind | Statement | Status | Review on |\n|---|---|---|---|---|---|\n'
   printf '%s\n%s\n' "$DATED" "$UNDATED" | grep . | while IFS="$TAB" read -r d i k s t r; do
     [ "$d" = "0000-00-00" ] && d="—"
     printf '| %s | %s | %s | %s | %s | %s |\n' "$d" "$i" "$k" "$s" "${t:-—}" "${r:-—}"
@@ -200,45 +200,45 @@ if [ "$MD" = "1" ]; then
   exit 0
 fi
 
-# Căn cột ở BASH, không ở awk: ${#v} của bash đếm ký tự, length() của awk đếm byte.
-# Mọi nhãn tiếng Việt đi qua đây, nên nhầm chỗ này là lệch cả bảng mà vẫn "chạy".
+# Columns are aligned in BASH, not in awk: bash ${#v} counts characters, awk length() counts bytes.
+# Every Vietnamese label goes through here, so getting this wrong shifts the whole table while still "running".
 padc() { _s="$1"; _w="$2"; while [ "${#_s}" -lt "$_w" ]; do _s="$_s "; done; printf '%s' "$_s"; }
 
-# br.md còn nguyên khuôn thì BR-000 là VÍ DỤ DẠY VIỆC, không phải quyết định của
-# dự án. Không nói ra thì sổ tra trông như dự án đã quyết ba ràng buộc về hosting
-# và luật kế toán — đúng loại "báo xanh sai" mà nó sinh ra để chống.
+# While br.md is still the untouched template, BR-000 is a TEACHING EXAMPLE, not a decision of the
+# project. Without saying so, the ledger looks as if the project had decided three constraints about
+# hosting and accounting law — exactly the "falsely green" class it was built to fight.
 UNTOUCHED=0; br_untouched "$ROOT" && UNTOUCHED=1
 
-printf '=== Sổ quyết định — %s mục ===\n' "$TOT"
-[ "$UNTOUCHED" = "1" ] && printf '!  BR còn nguyên khuôn — dòng BR-000 dưới đây là VÍ DỤ dạy việc,\n   chưa phải quyết định của dự án. Chạy /sdd-solo:intake trước.\n'
+printf '=== Decision ledger — %s entries ===\n' "$TOT"
+[ "$UNTOUCHED" = "1" ] && printf '!  the BR is still the untouched template — the BR-000 lines below are a TEACHING EXAMPLE,\n   not decisions of this project. Run /sdd-solo:intake first.\n'
 printf '\n'
 
 printf '%s\n' "$DATED" | grep . | while IFS="$TAB" read -r d i k s t r; do
   printf '%s  %s%s\n' "$d" "$(padc "$i" 9)" "$s"
   L="$t"
-  [ -n "$r" ] && { [ -n "$L" ] && L="$L · kiểm lại: $r" || L="kiểm lại: $r"; }
+  [ -n "$r" ] && { [ -n "$L" ] && L="$L · review on: $r" || L="review on: $r"; }
   [ -n "$L" ] && printf '            %s%s\n' "$(padc '' 9)" "$L"
 done
 
-# Quá hạn kiểm lại — chỉ bắt được khi `Kiểm lại:` là một NGÀY. Mốc dạng "khi đổi
-# gói hosting" thì máy chịu, và đó thường lại là mốc ĐÚNG HƠN. Nên đây là lưới
-# thưa có chủ ý: bắt được cái nào hay cái đó, và nói thẳng là nó không bắt hết —
-# một phép kiểm nhận mình thưa thì dùng được, một phép kiểm giả vờ kín thì không.
+# Past the review date — only catchable when `Review on:` is a DATE. A mark like "when the hosting plan
+# changes" defeats a machine, and that is often the MORE CORRECT mark. So this is a deliberately sparse
+# net: it catches what it can, and says plainly that it does not catch everything — a check that admits
+# it is sparse is usable, a check pretending to be complete is not.
 OVER="$(printf '%s\n' "$DATED" | awk -F"$TAB" -v today="$TODAY" '
-  $6 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ && $6 < today { printf "  %s  %s (hẹn %s)\n", $2, $4, $6 }')"
+  $6 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ && $6 < today { printf "  %s  %s (due %s)\n", $2, $4, $6 }')"
 if [ -n "$OVER" ]; then
-  printf '\n--- Quá hạn kiểm lại ---\n%s\n' "$OVER"
-  printf '  ^ ràng buộc hết đúng khi THẾ GIỚI đổi, mà thế giới đổi thì repo không động đậy gì.\n'
+  printf '\n--- Past the review date ---\n%s\n' "$OVER"
+  printf '  ^ a constraint stops being right when THE WORLD changes, and when the world changes the repo does not stir.\n'
 fi
 
 if [ "$NU" -gt 0 ]; then
-  printf '\n--- Chưa có ngày (%s mục — không xếp được vào dòng thời gian) ---\n' "$NU"
+  printf '\n--- No date (%s entries — cannot be placed on the timeline) ---\n' "$NU"
   printf '%s\n' "$UNDATED" | grep . | while IFS="$TAB" read -r d i k s t r; do
     printf '  %s%s\n' "$(padc "$i" 9)" "$s"
   done
-  printf '  ^ ngày là thứ DUY NHẤT ở đây không tái tạo được. Bố cục file lúc nào cũng sắp\n'
-  printf '    lại được; hai quyết định mất ngày thì không ai dựng lại được cái nào ra trước.\n'
+  printf '  ^ the date is the ONE thing here that cannot be reconstructed. A file layout can always be\n'
+  printf '    rearranged; two decisions that lost their dates can never be put back in order.\n'
 fi
 
-printf '\n%s mục có ngày · %s mục chưa có ngày.\n' "$ND" "$NU"
+printf '\n%s entries with a date · %s without.\n' "$ND" "$NU"
 exit 0

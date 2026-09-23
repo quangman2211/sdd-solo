@@ -1,25 +1,24 @@
 ---
 name: queue
-description: Hàng đợi việc của điều phối (7.3) — notes/hang-doi.md trong git, máy đọc; add · next (việc phát được ngay) · take · done (chỉ khi có KETQUA + neo) · stop <tên dừng> · board. Dùng khi điều phối phát việc, hỏi "phát được gì tiếp", hay xem bảng giao việc.
+description: The coordinator's work queue (7.3) — notes/hang-doi.md in git, machine-readable; add · next (what can be handed out right now) · take · done (only with a KETQUA + anchor) · stop <name> · board. Use it when the coordinator hands out work, asks "what can go out next", or wants the board.
 disable-model-invocation: true
-argument-hint: "add <khoá> <làn> <vai> [--can \"k1 k2\"] | next | take <khoá> [ai] | done <khoá> | stop <khoá> <tên> | board | list"
+argument-hint: "add <key> <lane> <role> [--can \"k1 k2\"] | next | take <key> [who] | done <key> | stop <key> <name> | board | list"
 allowed-tools: Bash Read
 ---
 
-Chạy `queue.sh` với `$ARGUMENTS`:
+Reply in whatever language the user writes in; keep file names, IDs and slugs in English.
+
+Run `queue.sh` with `$ARGUMENTS`:
 
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/queue.sh" $ARGUMENTS
 ```
-(không thay được biến: `find ~/.claude/plugins -type f -name queue.sh -path '*sdd-solo*' | head -1`; trong dự án: `.sdd/scripts/queue.sh`).
+(if the variable is not substituted: `find ~/.claude/plugins -type f -name queue.sh -path '*sdd-solo*' | head -1`; inside a project: `.sdd/scripts/queue.sh`).
 
-- **Chỉ điều phối ở checkout chính ghi** — `add|take|done|stop` từ chối ở worktree phụ. Agent không ghi bảng; agent ghi
-  KETQUA (`role.sh --ketqua`), `done` đọc KETQUA và kiểm neo rồi mới ghi dòng. Mỗi lần ghi là một commit `--only`.
-- `next` = mọi `Cần` đã `xong` và làn còn chỗ (bảng `## Làn`, cột Sức chứa). Hỏi máy, không hỏi trí nhớ.
-- `done` không có KETQUA `ket=xong` + neo → đỏ. `xong` mà Neo trống là đỏ ở `board`. Thời gian trôi không phải bằng chứng:
-  việc `đang` quá hạn (mặc định 90 phút, `--qua-han N`) chỉ cắm cờ `nghi-chết` để điều phối đi nhìn.
-- `stop <khoá> <tên>` → `DỪNG-<tên>`; tên phải có ở `notes/uy-quyen.md ## Điểm dừng`, `status.sh` kiểm.
-- Khoá việc `[a-z0-9][a-z0-9._-]{1,39}` — đồng thời là tên file KETQUA. Gợi ý: `<vai>-<id>-p<phiếu>[-l<lượt>]` như
-  `role.sh` in ở phần 6 của lời giao.
+- **Only the coordinator, in the main checkout, writes** — `add|take|done|stop` refuse to run in a secondary worktree. Agents do not write the board; an agent writes a KETQUA (`role.sh --ketqua`), and `done` reads it and checks the anchor before writing the row. Every write is one `--only` commit.
+- `next` = every `Needs` is `done` and the lane has room (the `## Lanes` table, Capacity column). Ask the machine, not your memory.
+- `done` with no KETQUA `ket=xong` + anchor → red. `done` with an empty Anchor is red on `board`. Elapsed time is not evidence: an `active` item past its deadline (90 minutes by default, `--qua-han N`) only raises a `suspected-dead` flag for the coordinator to go and look at.
+- `stop <key> <name>` → `STOP-<name>`; the name must exist in `notes/uy-quyen.md ## Stop points`, and `status.sh` checks it.
+- A work key is `[a-z0-9][a-z0-9._-]{1,39}` — it is also the KETQUA file name. Suggested shape: `<role>-<id>-p<ticket>[-l<round>]`, which is what `role.sh` prints in part 6 of a brief.
 
-Không tự quyết thứ tự việc thay điều phối; không đổi trạng thái theo thời gian.
+Do not decide the order of work for the coordinator; do not change a state because time passed.

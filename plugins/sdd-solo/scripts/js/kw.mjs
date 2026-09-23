@@ -1,16 +1,16 @@
-// kw.mjs — từ khoá tài liệu song ngữ, phía node (7.7.0).
+// kw.mjs — the bilingual documentation keywords, node side (7.7.0).
 //
-// Đọc THẲNG scripts/kw.tsv cạnh mình — cùng một file với `kw()` của lib.sh, không bơm qua biến môi
-// trường. Bơm qua env thì quên `export` ở một script bash là hụt im lặng; đọc chung một file thì không
-// có chỗ nào để quên. Lý do có bảng nằm ở đầu kw.tsv.
+// Reads scripts/kw.tsv next to it DIRECTLY — the same file as `kw()` in lib.sh, nothing passed through an
+// environment variable. Passing through env means forgetting an `export` in one bash script is a silent miss;
+// reading the same file leaves nothing to forget. The reasoning for the table is at the top of kw.tsv.
 //
-//   kw('reread')   → 'Đọc lại|Re-read'        thân alternation để ĐỌC (nhận cả hai)
-//   kwh('reread')  → /^## (Đọc lại|Re-read)/m mẫu tiêu đề mục
-//   kwl('slice')   → /\*\*(Lát|Slice):\*\*/   mẫu nhãn đậm
-//   kwW('q_done')  → 'xong'                   MỘT vế để GHI, theo doc_lang (mặc định vi)
+//   kw('reread')   → 'Đọc lại|Re-read'        the alternation body for READING (accepts either)
+//   kwh('reread')  → /^## (Đọc lại|Re-read)/m the section-heading pattern
+//   kwl('slice')   → /\*\*(Lát|Slice):\*\*/   the bold-label pattern
+//   kwW('q_done')  → 'xong'                   ONE side for WRITING, per doc_lang (default vi)
 //
-// Tên không có trong bảng thì NÉM LỖI, không trả rỗng: mẫu rỗng khớp vào mọi thứ, và cổng xanh oan
-// là loại hỏng đắt nhất của repo này.
+// A name not in the table THROWS, it does not return empty: an empty pattern matches everything, and a falsely
+// green gate is the most expensive kind of breakage in this repo.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,38 +23,38 @@ try {
     const c = ln.split('\t');
     if (c.length >= 4) TABLE.set(c[0], { kind: c[1], vi: c[2], en: c[3] });
   }
-} catch { /* không đọc được thì kw() ném lỗi có tên file, rõ hơn là im lặng */ }
+} catch { /* unreadable → kw() throws with the file name, which is clearer than silence */ }
 
 const row = (name) => {
   const r = TABLE.get(name);
-  if (!r) throw new Error(`kw(${name}): không có trong ${TSV}`);
+  if (!r) throw new Error(`kw(${name}): not in ${TSV}`);
   return r;
 };
-/** kiểu dùng: head | label | cell | raw | group | commit | write */
+/** the kind: head | label | cell | raw | group | commit | write */
 export const kwKind = (name) => row(name).kind;
-/** thân alternation để ĐỌC — nhận cả hai thứ tiếng, bỏ vế trùng */
+/** the alternation body for READING — accepts either language, dropping a duplicate side */
 export function kw(name) {
   const { vi, en } = row(name);
   const seen = [];
   for (const x of (vi + '|' + en).split('|')) if (!seen.includes(x)) seen.push(x);
   return seen.join('|');
 }
-/** MỘT vế để GHI. lang: 'vi' | 'en' — bash truyền xuống qua tham số hoặc SDD_DOC_LANG. */
+/** ONE side for WRITING. lang: 'vi' | 'en' — bash passes it down as an argument or through SDD_DOC_LANG. */
 export const kwW = (name, lang = process.env.SDD_DOC_LANG === 'en' ? 'en' : 'vi') =>
   (lang === 'en' ? row(name).en : row(name).vi);
-/** kwAlts — MẢNG các dạng của một từ khoá (vi, en, bỏ trùng). Dùng ở chỗ so tên mục bằng CHUỖI
- *  chứ không bằng regex — ví dụ danh sách tên `##` mà context.mjs lần lượt cắt ra. */
+/** kwAlts — the ARRAY of forms of one keyword (vi, en, deduplicated). Used where a section name is compared
+ *  as a STRING and not as a regex — for example the list of `##` names context.mjs cuts out one by one. */
 export const kwAlts = (name) => kw(name).split('|');
-// Nhóm KHÔNG bắt (`(?:`) là cố ý: `.source` của hai mẫu này hay được nối vào một mẫu lớn hơn, và một
-// nhóm bắt lạc vào đó đẩy số thứ tự của MỌI nhóm sau nó. Đúng lỗi đó đã ăn mất phép kiểm bốn ô của
-// hoi.mjs: `mm[1]` trả về chính từ khoá thay vì giá trị ô, nên ô trống nào cũng đọc ra "có điền".
+// The NON-capturing group (`(?:`) is deliberate: the `.source` of these two patterns is often concatenated into a
+// larger pattern, and a stray capture group in there shifts the number of EVERY group after it. That exact bug ate
+// the four-box check of hoi.mjs: `mm[1]` returned the keyword itself instead of the cell value, so every empty box read as filled.
 export const kwh = (name, flags = 'm') => new RegExp(`^## (?:${kw(name)})`, flags);
 export const kwl = (name, flags = '') => new RegExp(`\\*\\*(?:${kw(name)}):\\*\\*`, flags);
-/** kwr — ghép từ khoá vào một mẫu lớn hơn: kwr('- \\*\\*%s:\\*\\* *(.*)', 'source') */
+/** kwr — splice a keyword into a larger pattern: kwr('- \\*\\*%s:\\*\\* *(.*)', 'source') */
 export const kwr = (tpl, name, flags = '') => new RegExp(tpl.replace('%s', `(?:${kw(name)})`), flags);
-/** cặp đổi được — bộ test dùng để viết lại tài liệu sang tiếng Anh. Bỏ `group` (nhiều dạng, chỉ đọc),
- *  `commit` (nằm trong lịch sử git, không nằm trong file) và `write` (chỉ để GHI: chữ như `vai` · `anh`
- *  gặp đầy trong văn xuôi, đổi thô là hỏng bản tiếng Anh vì lý do không liên quan tới cổng). */
+/** the swappable pairs — the test suite uses them to rewrite the documents into English. Drops `group` (multi-form,
+ *  read only), `commit` (it lives in the git history, not in a file) and `write` (write only: words like `vai` · `anh`
+ *  occur all over ordinary prose, and swapping them crudely breaks the English side for reasons unrelated to the gate). */
 const NOSWAP = ['group', 'commit', 'write'];
 export const kwPairs = () => [...TABLE.entries()]
   .filter(([, r]) => !NOSWAP.includes(r.kind) && r.vi !== r.en)

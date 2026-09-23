@@ -1,81 +1,85 @@
 ---
 name: init
-description: Cài quy trình SDD-Solo vào repo hiện tại (scaffold specs/ .sdd/ STATE.md, khối CLAUDE.md, git hooks), hoặc cập nhật lên bản plugin mới mà không ghi đè file đã sửa tay. --update chỉ làm mới .sdd/ và template; --plugin làm trọn chuỗi marketplace → plugin đã cài → .sdd/ trong một lệnh.
+description: Install the SDD-Solo process into the current repo (scaffold specs/ .sdd/ STATE.md, the CLAUDE.md block, git hooks), or update to a newer plugin version without overwriting files edited by hand. --update only refreshes .sdd/ and the templates; --plugin does the whole chain marketplace → installed plugin → .sdd/ in one command.
 disable-model-invocation: true
 argument-hint: "[--update] [--plugin]"
 allowed-tools: Bash Read
 ---
 
-Cài hoặc cập nhật sdd-solo trong repo hiện tại.
+Reply in whatever language the user writes in; keep file names, IDs and slugs in English.
 
-`$ARGUMENTS` có `--plugin` → **chế độ B** (trọn chuỗi). Còn lại → **chế độ A** (scaffold).
+Install or update sdd-solo in the current repo.
+
+`$ARGUMENTS` contains `--plugin` → **mode B** (the whole chain). Otherwise → **mode A** (scaffold).
 
 ---
 
 ## A. `/sdd-solo:init` · `/sdd-solo:init --update`
 
-1. Xác định root repo: `git rev-parse --show-toplevel` (không phải git repo → hỏi user có muốn
-   `git init` không; hook cần git).
-2. Chạy scaffold — nó chỉ hiểu `--update`, đừng truyền cờ nào khác vào:
+1. Find the repo root: `git rev-parse --show-toplevel` (not a git repo → ask the user whether to
+   `git init`; the hooks need git).
+2. Run the scaffold — it only understands `--update`, do not pass it any other flag:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/scaffold.sh" "${CLAUDE_PLUGIN_ROOT}" "$(git rev-parse --show-toplevel)" --update
 ```
-   (bỏ `--update` nếu đây là lần cài đầu). Nếu `${CLAUDE_PLUGIN_ROOT}` không được thay, tìm plugin:
-   `find ~/.claude/plugins -type f -name scaffold.sh -path '*sdd-solo*' | head -1`, rồi dùng thư
-   mục cha của `scripts/`.
-3. In nguyên output cho user (các dòng ✓ / !).
-4. Kiểm phụ thuộc, in nguyên output:
+   (drop `--update` on a first install). If `${CLAUDE_PLUGIN_ROOT}` is not substituted, find the plugin:
+   `find ~/.claude/plugins -type f -name scaffold.sh -path '*sdd-solo*' | head -1`, then use the parent
+   directory of `scripts/`.
+3. Print the output verbatim (the ✓ / ! lines).
+4. Check dependencies and print the output verbatim:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/deps-check.sh"
 ```
-   Từ 4.0.0 danh sách này gần như rỗng — bắt buộc chỉ còn `git` và repo đã `git init`. Spec Kit,
-   AIUP, Camunda đều là **tuỳ chọn** và script chỉ nói một dòng về chúng. Exit ≠ 0 nghĩa là thiếu
-   một thứ thật sự bắt buộc; đọc lại dòng ✗ cho user.
-5. Output có cảnh báo *"specs/ đang chứa cả cây của Spec Kit"* → nói user chạy
-   `bash .sdd/scripts/migrate.sh --dry-run` xem trước, rồi chạy thật. **Đừng tự chạy** — nó dời file.
-6. **Repo còn ở bố cục 6.x mà đã có nội dung** (`specs/contexts/` · `specs/br.md` · `specs/internal/`
-   còn đó) → nói user chuyển sang cây 7.0. Ba bước, theo đúng thứ tự, và **đừng tự chạy bước nào**:
+   Since 4.0.0 this list is nearly empty — the only requirements are `git` and a repo that has been
+   `git init`ed. Spec Kit, AIUP and Camunda are all **optional** and the script says one line about them.
+   A non-zero exit means something genuinely required is missing; read the ✗ line back to the user.
+5. The output warns *"specs/ also holds Spec Kit's whole tree"* → tell the user to run
+   `bash .sdd/scripts/migrate.sh --dry-run` first and then for real. **Do not run it yourself** — it moves files.
+6. **The repo is still on the 6.x layout and already has content** (`specs/contexts/` · `specs/br.md` ·
+   `specs/internal/` still there) → tell the user to move to the 7.0 tree. Three steps, in this order, and
+   **do not run any of them yourself**:
 
-   a. Viết file map `.sdd/migrate-v7.map` — mỗi dòng ba từ, nói mỗi thứ về đâu:
-      `context <ctx> <nghề>` · `uc UC-### BR-###` · `br BR-### <core|nghề>` · `adr ADR-### <nghề>` ·
-      `rule RULE-### <nghề>` · `entity <Tên> <core|nghề>` · `glossary <từ-đầu-heading> <nghề>`.
-      Thiếu một context hay một BR thì script in đủ chỗ thiếu và **không chạy** — đó là chủ ý: cái gì
-      thuộc lõi, cái gì thuộc nghề là quyết định của chủ dự án, không phải thứ đoán được từ đường dẫn.
-   b. `bash .sdd/scripts/migrate.sh --layout v7 --dry-run` — đọc ba bảng nó in: đã dời · file đã sửa
-      đường dẫn · **CẦN TAY**.
-   c. Chạy thật, rồi làm bảng "CẦN TAY". Script **không commit hộ** và **không đụng brief nguồn**
-      (sha phải giữ nguyên).
+   a. Write the map file `.sdd/migrate-v7.map` — three words per line, saying where each thing goes:
+      `context <ctx> <craft>` · `uc UC-### BR-###` · `br BR-### <core|craft>` · `adr ADR-### <craft>` ·
+      `rule RULE-### <craft>` · `entity <Name> <core|craft>` · `glossary <heading-first-word> <craft>`.
+      Miss a context or a BR and the script prints every gap and **does not run** — deliberately: what belongs
+      to the core and what belongs to a craft is the owner's decision, not something inferable from a path.
+   b. `bash .sdd/scripts/migrate.sh --layout v7 --dry-run` — read the three tables it prints: moved · files
+      whose paths were rewritten · **BY HAND**.
+   c. Run it for real, then work the "BY HAND" table. The script **does not commit for you** and **does not
+      touch the source brief** (its sha must stay the same).
 
-   Sau khi migrate: `.sdd/config` có key mới `nghe_paths=<tên nghề cách nhau dấu cách>` (`core` không
-   kể) — kiểm nó khớp với các thư mục `specs/<nghề>/` thật. Và `specs/vision.md` sinh ra từ khuôn,
-   **còn trống**: nói user chạy `/sdd-solo:intake` để chép tầng 0 vào, vì `br-check` đòi mỗi BR khai
-   `**Lát:**` khớp bảng `## Nghề và lát` của file đó.
+   After migrating: `.sdd/config` has a new key `nghe_paths=<craft names separated by spaces>` (`core` is not
+   listed) — check it matches the real `specs/<craft>/` folders. And `specs/vision.md` is generated from the
+   skeleton and **still empty**: tell the user to run `/sdd-solo:intake` to write layer 0 into it, because
+   `br-check` requires every BR to declare a `**Slice:**` matching that file's `## Crafts and slices` table.
 
-   Repo 6.x **chưa** migrate vẫn chạy y nguyên — mọi script tra cả hai bố cục. Không ép user chuyển.
-7. `specs/core/br-000/br.md` còn nguyên template (có chuỗi `<Tên business requirement>`), hoặc
-   `specs/vision.md` còn nguyên khuôn → nói bước tiếp là **`/sdd-solo:intake`**; bước 0 của nó là tầng 0.
-   Đừng đề xuất viết code, đừng đề xuất công cụ ngoài.
-8. Có file `.new` trong output → liệt kê và nói user tự merge; không tự ghi đè.
+   A 6.x repo that has **not** migrated still runs exactly as before — every script looks in both layouts.
+   Do not push the user to convert.
+7. `specs/core/br-000/br.md` is still the template (it contains the string `<Business requirement name>`), or
+   `specs/vision.md` is still the skeleton → say the next step is **`/sdd-solo:intake`**; its step 0 is layer 0.
+   Do not propose writing code, do not propose outside tools.
+8. Any `.new` file in the output → list them and tell the user to merge them by hand; never overwrite.
 
 ---
 
 ## B. `/sdd-solo:init --plugin`
 
-Dùng khi hook SessionStart hoặc `/sdd-solo:status` báo lệch version. Chạy:
+Use it when the SessionStart hook or `/sdd-solo:status` reports a version mismatch. Run:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/update.sh"
 ```
-(không thay được biến: `find ~/.claude/plugins -type f -name update.sh -path '*sdd-solo*' | head -1`).
+(if the variable is not substituted: `find ~/.claude/plugins -type f -name update.sh -path '*sdd-solo*' | head -1`).
 
-In nguyên output. Script tự bỏ qua khe nào đã đúng, nên đừng chạy lại từng lệnh con.
+Print the output verbatim. The script skips whichever link is already correct, so do not re-run the sub-commands.
 
-Sau đó:
-- Mục `=== Sau khi update ===` mà dòng *"phiên NÀY vẫn đang chạy"* thấp hơn *"bản đã cài"* →
-  **nói user mở session mới**. Bản mới không áp vào phiên đang mở, y như Claude Code tự update
-  chính nó. Đừng hứa là đã có hiệu lực.
-- Có file `.new` trong phần ③ → liệt kê, nói user tự merge. Không tự ghi đè.
-- Lên **major** thì scaffold không di chuyển được file đã có: đọc CHANGELOG của bản đó. Với 4.0.0
-  nói user chạy `bash .sdd/scripts/migrate.sh --dry-run`; với **7.0.0** thì đó là cây `specs/` mới —
-  làm theo bước 6 của chế độ A (map → `--layout v7 --dry-run` → chạy thật → bảng CẦN TAY).
-- Script không sửa spec và không commit gì. Thay đổi trong `.sdd/` và template là việc của user
-  commit — nhắc `chore(sdd): update sdd-solo <ver>`.
+Then:
+- In the `=== After the update ===` section, if *"this session is still running"* is lower than *"installed"* →
+  **tell the user to open a new session**. A new version does not apply to an already open session, exactly like
+  Claude Code updating itself. Do not promise it has taken effect.
+- Any `.new` file in part ③ → list them, tell the user to merge. Never overwrite.
+- On a **major** upgrade the scaffold cannot move existing files: read that version's CHANGELOG. For 4.0.0, tell
+  the user to run `bash .sdd/scripts/migrate.sh --dry-run`; for **7.0.0** it is the new `specs/` tree — follow
+  step 6 of mode A (map → `--layout v7 --dry-run` → for real → the BY HAND table).
+- The script edits no spec and commits nothing. Changes under `.sdd/` and in the templates are the user's to
+  commit — mention `chore(sdd): update sdd-solo <ver>`.

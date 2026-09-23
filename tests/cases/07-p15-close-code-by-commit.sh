@@ -7,7 +7,7 @@ cm "feat(UC-001): phiên đăng nhập"
 printf 'export const retry = { max: 5 };\n' > src/other.ts
 git add -A; git commit -q --no-verify -m "fix: khác" -m "nhắc (UC-001) trong thân"
 S close-check.sh UC-001
-chk "tìm được code theo commit (1 file)" 'has "code của UC-001: 1 file — 1 do commit"'
+chk "tìm được code theo commit (1 file)" 'has "the code of UC-001: 1 files — 1 touched by a"'
 chk "literal maxAge: 900 được soi" 'has "src/core/session/token.ts:1:"'
 chk "bỏ chú thích, bỏ test, bỏ commit chỉ nhắc ID ở thân" '! hasE "token.ts:2:|token.test|other.ts"'
-chk "không đỏ 'không đọc được file code'" '! has "không đọc được file code"'
+chk "không đỏ 'không đọc được file code'" '! has "no code file can be read"'

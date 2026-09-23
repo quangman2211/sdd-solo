@@ -1,57 +1,61 @@
-# Hỏi đáp giữa các agent
+# Questions and answers between agents
 
-Sổ append-only. Agent (B · spec, C · soi, D · code, T · test, Q · QA) gặp điều spec chưa nói thì **ghi phiếu
-rồi dừng** — không `AskUserQuestion`, không nhắn agent khác. R · trọng tài xếp mức và trả lời ngay dưới phiếu;
-A · điều phối chuyển phần `Cho:` tới từng vai, hoặc hỏi chủ dự án khi L3. Không phải spec: quyết định nào
-thành luật thì B đưa vào `specs/`, A ghi `specs/decisions.md`. Sổ này nằm ở `notes/hoi-dap/` — ngoài `specs/`, vì nó là vết quá trình, không phải spec.
+An append-only log. When an agent (B · spec, C · review, D · code, T · test, Q · QA) hits something
+the spec does not say, it **writes a ticket and stops** — no `AskUserQuestion`, no messaging another
+agent. R · the arbiter grades it and answers right under the ticket; A · the coordinator forwards the
+`For:` part to each role, or asks the owner when it is L3. This is not spec: when a decision becomes
+a rule, B puts it into `specs/` and A records it in `specs/decisions.md`. The log lives in
+`notes/hoi-dap/` — outside `specs/`, because it is a trace of the process, not a specification.
 
-Quyền tự quyết mặc định: R tự quyết tới **L2**; L2 là quyết **tạm**, ô `Duyệt:` để trống chờ chủ dự án.
-Lật quá ___ quyết định của R trong một tuần thì hạ quyền R xuống L1.
+Default authority: R decides up to **L2**; an L2 is an **interim** decision, and the `Approve:` box
+stays empty waiting for the owner. If more than ___ of R's decisions are overturned in one week,
+drop R's authority to L1.
 
-## Bốn mức
+## Four levels
 
-| Mức | Loại câu | R làm gì |
+| Level | Kind of question | What R does |
 |---|---|---|
-| **L0 · Tra được** | Đáp án đã có trong spec / ADR / decisions / glossary / design | Trả lời, **bắt buộc kèm `file:dòng`**. Không có nguồn → không phải L0 |
-| **L1 · Kỹ thuật cục bộ** | Trong phạm vi `architecture.md` / `design.md` đã chốt; sai thì sửa < 30 phút, không ai ngoài repo thấy | Tự quyết, ghi lý do |
-| **L2 · Diễn giải** | Spec đọc được hai cách, nhưng cách nào **khách cũng không thấy khác** | Quyết **tạm**, việc chạy tiếp; ô `Duyệt:` để trống chờ chủ dự án |
-| **L3 · Chủ dự án** | Số · ngưỡng · enum · quyền · giá · hình dạng UC · thư viện/nơi chạy mới · đổi hành vi UC đã implemented · bỏ bước quy trình · gate/close · push/deploy/xoá/gửi ra ngoài · khoá, dữ liệu thật | **Không quyết.** Soạn câu hỏi 2–4 lựa chọn, mỗi lựa chọn một câu hệ quả, lựa chọn đề xuất đặt đầu, luôn có "Chưa quyết — ghi Open Question" |
+| **L0 · Look it up** | The answer is already in spec / ADR / decisions / glossary / design | Answer, **always with `file:line`**. No source → it is not L0 |
+| **L1 · Local technical** | Inside the settled `architecture.md` / `design.md`; if wrong it takes < 30 minutes to fix and nobody outside the repo sees it | Decide, record the reason |
+| **L2 · Interpretation** | The spec reads two ways, but **the customer sees no difference either way** | Decide **provisionally**, work continues; `Approve:` left empty for the owner |
+| **L3 · Owner** | Numbers · thresholds · enums · permissions · prices · the shape of a UC · a new library or runtime location · changing the behaviour of an implemented UC · skipping a process step · gate/close · push/deploy/delete/send outside · keys, real data | **Does not decide.** Drafts a 2–4 option question, one consequence sentence per option, the recommended option first, always including "Undecided — record an Open Question" |
 
-**Luật xếp mức**
-1. Không có nguồn thì không phải L0.
-2. Phân vân giữa hai mức → chọn mức **cao hơn**.
-3. Bài kiểm một câu: *nếu quyết sai, khách có thấy khác, hoặc Main Flow có phải viết lại không?* Có → L3.
-4. Hộp thoại xin quyền của Claude Code không phải câu hỏi của sổ này — luôn chuyển chủ dự án.
-5. R không sửa file nào ngoài sổ này, và không commit — A commit.
-6. C hay đẩy lên chủ dự án cái `design.md` đã quyết: R **tra design trước** khi xếp; câu "cần chủ dự án
-   chốt" của C chỉ tới chủ dự án **sau khi R xác nhận L3**.
+**Grading rules**
+1. No source means it is not L0.
+2. Torn between two levels → take the **higher** one.
+3. The one-sentence test: *if this is decided wrong, does the customer see a difference, or does Main Flow have to be rewritten?* Yes → L3.
+4. A Claude Code permission dialog is not a question for this log — always hand it to the owner.
+5. R edits no file but this log, and does not commit — A commits.
+6. C tends to escalate things `design.md` has already settled: R **reads the design first** before grading; C's "the owner must decide" reaches the owner **only after R confirms L3**.
 
-## Khuôn phiếu
+## Ticket skeleton
 
 ```
-### #<n> · từ: <spec|soi|code|test|qa> · việc: <BR-###|UC-###|…> · <YYYY-MM-DD>
-Câu: <một câu>
-Đã tra: <file:dòng, …>
-Nếu chọn sai thì: <hậu quả>
-Agent nghiêng về: <lựa chọn + vì sao>
+### #<n> · from: <spec|review|code|test|qa> · task: <BR-###|UC-###|…> · <YYYY-MM-DD>
+Question: <one sentence>
+Already looked up: <file:line, …>
+If chosen wrong: <consequence>
+The agent leans towards: <option + why>
 
-**Trả lời (R):** <mức L0–L3> · <câu trả lời, hoặc câu hỏi soạn sẵn cho chủ dự án>
-Nguồn / lý do: <file:dòng hoặc lý do>
-Cho: <spec · D · T — mỗi vai một dòng nói phải làm gì; thứ tự áp nếu có>
-Duyệt: <để trống · chủ dự án ghi "nhận" hoặc "lật: …" — bắt buộc với L2 và L3>
+**Answer (R):** <level L0–L3> · <the answer, or the question drafted for the owner>
+Source / reason: <file:line or reason>
+For: <spec · D · T — one line per role saying what to do; the order to apply, if it matters>
+Approve: <empty · the owner writes "accepted" or "overturned: …" — required for L2 and L3>
 ```
 
-Một phiếu có thể gom nhiều phát hiện (K1…Kn của một lượt soát): R xếp mức từng K trong một bảng
-`| K | Mức | Quyết tạm | Cho |`, cuối phiếu ghi **thứ tự áp** (spec trước · D · T) — ba vai áp song song vì chỉ
-cần chữ của phiếu.
+One ticket may collect several findings (K1…Kn of one review pass): R grades each K in a table
+`| K | Level | Interim decision | For |`, and the end of the ticket states **the order to apply**
+(spec first · D · T) — the three roles apply in parallel because they only need the ticket's text.
 
-## Phiếu
+## Tickets
 
-Mỗi phiếu một file `phieu/NNN-<slug>.md` + một dòng ở bảng dưới. **Cấp số bằng máy, không đọc bảng rồi đoán:**
-`bash .sdd/scripts/phieu.sh new "<việc>" <từ-vai>` — khoá nguyên tử chung mọi worktree, tạo file theo khuôn, thêm dòng,
-commit dòng giữ chỗ ngay; xong mới viết thân (7.2, P-21: trùng số bốn lần một ngày khi cấp tay). Đóng phiếu:
-`phieu.sh close <n>` đếm F#/K# **trên file** và đòi KETQUA của từng vai trong `Cho:` (P-33). Soát: `phieu.sh muc-luc`.
+One file per ticket, `phieu/NNN-<slug>.md`, plus one row in the table below. **Allocate the number
+mechanically, never by reading the table and guessing:**
+`bash .sdd/scripts/phieu.sh new "<task>" <from-role>` — an atomic lock shared by every worktree, it
+creates the file from the skeleton, adds the row and commits the placeholder row immediately; write
+the body afterwards (7.2, P-21: four collisions in one day when numbers were allocated by hand).
+Closing a ticket: `phieu.sh close <n>` counts F#/K# **in the file** and requires a KETQUA from every
+role listed in `For:` (P-33). Audit: `phieu.sh muc-luc`.
 
-| # | Việc | Từ | Ngày | Trạng thái | File |
+| # | Work | From | Date | State | File |
 |---|---|---|---|---|---|
-

@@ -1,33 +1,35 @@
 ---
 name: change
-description: Phase 5 — cổng cho một CHG-### đổi hành vi đã giao (proposal, design, delta ADDED/MODIFIED/REMOVED khớp baseline, UC bị đụng phải implemented). Đỏ thì không được sửa code; xanh thì đặt status applying, ghi marker .sdd/gate/CHG-###.ok và commit.
+description: Phase 5 — the gate for a CHG-### that changes behaviour already shipped (proposal, design, delta ADDED/MODIFIED/REMOVED matching the baseline, the UCs it touches must be implemented). Red means no code changes; green sets status applying, writes the marker .sdd/gate/CHG-###.ok and commits.
 disable-model-invocation: true
 argument-hint: "CHG-###"
 allowed-tools: Bash Read
 ---
 
-Cổng Phase 5 cho `$1`.
+Reply in whatever language the user writes in; keep file names, IDs and slugs in English.
 
-Phase 5 chỉ dành cho thay đổi làm **một AC cũ không còn đúng** trên UC đã `implemented`. Thêm AC mới mà không phá AC cũ thì vẫn là Phase 3: sửa thẳng UC, `## History` v+1, xong. Nếu user mở change cho việc thuộc Phase 3, nói ngay và đừng chạy tiếp.
+The Phase 5 gate for `$1`.
 
-1. Chưa có thư mục change thì tạo trước — copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/change/` (không thay được biến: `find ~/.claude/plugins -type d -name skel -path '*sdd-solo*' | head -1`) thành `specs/changes/$1-<slug>/`, điền cùng user, commit `docs($1): ...`. Không tự bịa Why/Scope/delta thay user.
-2. Chạy và in nguyên output:
+Phase 5 is only for a change that makes **an old AC no longer true** on an already `implemented` UC. Adding a new AC without breaking an old one is still Phase 3: edit the UC directly, `## History` v+1, done. If the user opens a change for something that belongs to Phase 3, say so immediately and do not continue.
+
+1. No change folder yet → create one first: copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/change/` (if the variable is not substituted: `find ~/.claude/plugins -type d -name skel -path '*sdd-solo*' | head -1`) to `specs/changes/$1-<slug>/`, fill it in with the user, commit `docs($1): ...`. Do not invent Why/Scope/delta for them.
+2. Run it and print the output verbatim:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/change-check.sh" $1
 ```
-(nếu `${CLAUDE_PLUGIN_ROOT}` không được thay: `find ~/.claude/plugins -type f -name change-check.sh -path '*sdd-solo*' | head -1`).
-3. Exit ≠ 0 → **KHÔNG QUA CỔNG**. Với mỗi dòng ✗ nói cần sửa gì, ở file nào. Bốn loại ✗ hay gặp và ý nghĩa thật của chúng:
-   - *"chưa đọc lại bằng đầu chưa neo"* / *"change đổi sau lần đọc lại"* → chạy `/sdd-solo:verify $1` (6.0.0, #38: bắt buộc, không còn cửa qua đêm). Đây là việc đầu, không phải sửa spec.
-   - *"UC đang draft, chưa implemented"* → đây là Phase 3, đóng change lại.
-   - *"không delta nào MODIFIED/REMOVED"* → cũng là Phase 3.
-   - *"REMOVED AC-# nhưng baseline không có"* → delta đang nói về một baseline khác với baseline thật; đọc lại UC trước khi sửa delta.
-   Không tự sửa spec thay user (trừ khi user bảo). Không viết code. Dừng ở đây.
-4. Exit 0 → chạy:
+(if `${CLAUDE_PLUGIN_ROOT}` is not substituted: `find ~/.claude/plugins -type f -name change-check.sh -path '*sdd-solo*' | head -1`).
+3. Exit ≠ 0 → **THE GATE IS CLOSED**. For each ✗ line say what to fix and where. The four common ✗ lines and what they really mean:
+   - *"not re-read by an unprimed head"* / *"the change moved after the re-read"* → run `/sdd-solo:verify $1` (6.0.0, #38: required, there is no overnight door any more). That is the first thing to do, not editing the spec.
+   - *"the UC is still draft, not implemented"* → this is Phase 3; close the change.
+   - *"no delta MODIFIED/REMOVED anything"* → also Phase 3.
+   - *"REMOVED AC-# but the baseline does not have it"* → the delta is talking about a different baseline from the real one; re-read the UC before touching the delta.
+   Do not edit the spec for the user (unless they ask). Do not write code. Stop here.
+4. Exit 0 → run:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/pass.sh" change $1
 ```
-Script đặt `Status: applying`, ghi `.sdd/gate/$1.ok`, commit `docs($1): change reviewed — qua cổng Phase 5`. Không có marker này thì githook chặn mọi commit code gắn `($1)`.
-5. STATE.md: `Đang làm: $1 · qua cổng Phase 5 — đang applying`. `Việc tiếp theo: test cho AC mới (đỏ trước) → sửa domain → test AC cũ được giữ vẫn xanh`.
-6. Nhắc user: AC bị `REMOVED` **không bị xoá** khỏi baseline lúc archive — đánh dấu `deprecated` kèm ngày. Và việc cuối của `tasks.md` là archive: merge delta vào `specs/`, `## History` của UC v+1, commit `chore($1): archive`.
+The script sets `Status: applying`, writes `.sdd/gate/$1.ok`, and commits `docs($1): change reviewed — Phase 5 gate passed`. Without that marker the githook blocks every code commit tagged `($1)`.
+5. STATE.md: `Working on: $1 · past the Phase 5 gate — applying`. `Next: test for the new AC (red first) → change the domain → the old ACs that were kept are still green`.
+6. Remind the user: an AC marked `REMOVED` is **not deleted** from the baseline at archive time — it is marked `deprecated` with a date. And the last task in `tasks.md` is the archive: merge the delta into `specs/`, the UC's `## History` v+1, commit `chore($1): archive`.
 
-Không có cờ bỏ qua.
+There is no skip flag.

@@ -1,47 +1,48 @@
 #!/usr/bin/env bash
-# role.sh — vai của đội agent (7.2). Cơ chế ở plugin; chính sách (có vai nào, ghi đâu) ở .sdd/roles của dự án.
+# role.sh — the roles of the agent team (7.2). The mechanism is in the plugin; the policy (which roles exist, who writes where) is in the project .sdd/roles.
 #
-#   role.sh <vai>                       đặt dấu vai cho WORKTREE này (.git[/worktrees/<tên>]/sdd-role) và in hợp đồng
-#   role.sh --xem                       vai hiện tại (SDD_ROLE → dấu worktree → mẫu nhánh) + vùng ghi/cấm
-#   role.sh --worktree <vai> [UC-###]   dựng worktree riêng cho vai trên nhánh theo <V>.nhanh, đặt dấu, nhắc merge main
-#   role.sh <vai> <file phiếu> [--luot N]   in LỜI GIAO SÁU PHẦN từ một phiếu — không nhận chuỗi tự do
-#   role.sh --ketqua <khoá> ket=xong|chan|do neo=<hash|marker|file> [kiem=…] [hoi=…] [con=…]
-#                                       ghi một dòng KETQUA vào $(git-common-dir)/sdd-ketqua/<khoá>.txt — chung mọi worktree
-#   role.sh --ketqua <khoá>             đọc
-#   role.sh --staged                    kiểm file đang stage theo vai hiện tại (githook gọi qua --commit)
-#   role.sh --commit <file msg>         như --staged, thêm suy vai từ đuôi `Vai: <V>` và ghi đuôi vào message
-#   role.sh --kiem-lich-su <range>      chỉ đọc: chạy luật vùng ghi qua lịch sử, đếm commit không vai nào được ghi đủ
+#   role.sh <role>                      set the role marker for THIS WORKTREE (.git[/worktrees/<name>]/sdd-role) and print the contract
+#   role.sh --xem                       the current role (SDD_ROLE → the worktree marker → the branch pattern) + the write/deny areas
+#   role.sh --worktree <role> [UC-###]  create a worktree for the role on a branch from <V>.nhanh, set the marker, remind about merging main
+#   role.sh <role> <ticket file> [--luot N]  print the SIX-PART BRIEF from a ticket — no free-form string accepted
+#   role.sh --ketqua <key> ket=xong|chan|do neo=<hash|marker|file> [kiem=…] [hoi=…] [con=…]
+#                                       write one KETQUA line into $(git-common-dir)/sdd-ketqua/<key>.txt — shared by every worktree
+#   role.sh --ketqua <key>              read it
+#   role.sh --staged                    check the staged files against the current role (the githook calls it via --commit)
+#   role.sh --commit <msg file>         like --staged, plus inferring the role from a `Vai: <V>` trailer and writing that trailer into the message
+#   role.sh --kiem-lich-su <range>      read-only: run the write-area rule over the history, counting commits no role was allowed to write in full
 #
-# Vì sao dấu vai theo worktree: ba agent spec và ba agent soi chạy song song trên một checkout đã cuốn file của nhau
-# hai lần một ngày (P-29) và trùng số phiếu bốn lần (P-21). Nhánh không đủ: vai spec/soi/trọng tài cùng ở main.
-# `git rev-parse --git-path sdd-role` trả đường riêng từng worktree, không vào git, không theo nhánh.
+# Why the role marker is per worktree: three spec agents and three review agents running in parallel on one checkout
+# swept up each other files twice in one day (P-29) and collided on ticket numbers four times (P-21). A branch is not
+# enough: the spec/review/arbiter roles all sit on main.
+# `git rev-parse --git-path sdd-role` returns a path private to each worktree, outside git and independent of the branch.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"
 usage() { sed -n '3,14p' "$0" | sed 's/^# \{0,3\}//'; exit 2; }
 [ $# -eq 0 ] && usage
 RF="$(roles_file "$ROOT")"
 
-need_roles() { [ -n "$RF" ] || { bad "chưa có .sdd/roles — chép khuôn: /sdd-solo:init --update (7.2) rồi sửa vai cho đúng repo"; exit 1; }; }
-check_role() { role_known "$1" "$ROOT" || { bad "vai '$1' không có trong .sdd/roles (vai=$(role_list "$ROOT"))"; exit 1; }; }
-contract() { # in hợp đồng vai
+need_roles() { [ -n "$RF" ] || { bad "there is no .sdd/roles yet — copy the template: /sdd-solo:init --update (7.2), then adjust the roles for this repo"; exit 1; }; }
+check_role() { role_known "$1" "$ROOT" || { bad "the role '$1' is not in .sdd/roles (vai=$(role_list "$ROOT"))"; exit 1; }; }
+contract() { # print the role contract
   local v="$1"
   printf 'Vai %s · %s\n' "$v" "$(role_name "$v" "$ROOT")"
-  printf '  được ghi: %s\n' "$(role_paths "$v" "$ROOT")"
+  printf '  may write: %s\n' "$(role_paths "$v" "$ROOT")"
   printf '  KHÔNG ghi: %s\n' "$(role_deny "$v" "$ROOT")"
-  [ -n "$(role_branch "$v" "$ROOT")" ] && printf '  nhánh: %s\n' "$(role_branch "$v" "$ROOT")"
-  role_may_commit "$v" "$ROOT" && printf '  commit: có — <type>(ID) kê đích danh file, đuôi Vai: %s\n' "$v" || printf '  commit: KHÔNG — A commit thay\n'
-  [ -n "$(role_checks "$v" "$ROOT")" ] && printf '  kiểm trước commit: %s\n' "$(role_checks "$v" "$ROOT")"
+  [ -n "$(role_branch "$v" "$ROOT")" ] && printf '  branch: %s\n' "$(role_branch "$v" "$ROOT")"
+  role_may_commit "$v" "$ROOT" && printf '  commit: yes — <type>(ID) listing the files by name, trailer Vai: %s\n' "$v" || printf '  commit: NO — A commits instead\n'
+  [ -n "$(role_checks "$v" "$ROOT")" ] && printf '  checks before committing: %s\n' "$(role_checks "$v" "$ROOT")"
 }
-# kiểm danh sách file theo vai → in ✗ từng file; trả 1 nếu có vi phạm
-check_files() { # check_files <vai> <danh sách file, mỗi dòng một>
+# check a file list against a role → print ✗ per file; return 1 if there was a violation
+check_files() { # check_files <role> <file list, one per line>
   local v="$1" f bad=0 who
-  role_may_commit "$v" "$ROOT" || { bad "vai $v không được commit (.sdd/roles: $v.commit=khong) — A commit thay"; bad=1; }
+  role_may_commit "$v" "$ROOT" || { bad "the role $v may not commit (.sdd/roles: $v.commit=khong) — A commits instead"; bad=1; }
   while IFS= read -r f; do
     [ -n "$f" ] || continue
     role_allows "$v" "$f" "$ROOT" && continue
     who="$(role_of_path "$f" "$ROOT")"
-    if [ -n "$who" ]; then bad "$f — chỗ này của vai $who, không của $v. Ghi HỎI/phiếu, vai kia sửa lượt kế"
-    else bad "$f — không vai nào trong .sdd/roles được ghi chỗ này"; fi
+    if [ -n "$who" ]; then bad "$f — this belongs to role $who, not to $v. Write an ASK/ticket and the other role fixes it next round"
+    else bad "$f — no role in .sdd/roles may write here"; fi
     bad=1
   done
   return $bad
@@ -51,48 +52,48 @@ case "$1" in
 --xem)
   need_roles
   V="$(role_current "$ROOT")"
-  if [ -z "$V" ]; then info "chưa suy được vai (không SDD_ROLE, không dấu worktree, nhánh không khớp mẫu nào). Đặt: role.sh <vai>"; exit 0; fi
+  if [ -z "$V" ]; then info "the role could not be inferred (no SDD_ROLE, no worktree marker, the branch matches no pattern). Set it: role.sh <role>"; exit 0; fi
   contract "$V"
-  M="$(role_marker_file "$ROOT")"; [ -f "$M" ] && info "dấu vai: ${M#$ROOT/}"
+  M="$(role_marker_file "$ROOT")"; [ -f "$M" ] && info "role marker: ${M#$ROOT/}"
   ;;
 --worktree)
   need_roles; V="$2"; U="$3"; [ -n "$V" ] || usage; check_role "$V"
   P="$(role_branch "$V" "$ROOT")"
-  [ -n "$P" ] || { bad "vai $V không có mẫu nhánh ($V.nhanh trống) — vai này làm ở checkout chính (spec giữ main để cái nó viết là sự thật chung, các vai khác đọc được ngay)"; exit 1; }
+  [ -n "$P" ] || { bad "the role $V has no branch pattern ($V.nhanh is empty) — this role works in the main checkout (spec keeps main so that what it writes is shared truth, readable at once by the other roles)"; exit 1; }
   case "$P" in
-    *\**) [ -n "$U" ] || { bad "mẫu nhánh $P cần UC-###: role.sh --worktree $V UC-###"; exit 1; }
+    *\**) [ -n "$U" ] || { bad "the branch pattern $P needs a UC-###: role.sh --worktree $V UC-###"; exit 1; }
           BR="$(printf '%s' "$P" | sed "s#\*#$(printf '%s' "$U" | tr 'A-Z' 'a-z')#")";;
     *) BR="$P";;
   esac
   D="$(dirname "$ROOT")/$(basename "$ROOT")-$(printf '%s' "$V" | tr 'A-Z' 'a-z')${U:+-$(printf '%s' "$U" | tr 'A-Z' 'a-z')}"
-  [ -e "$D" ] && { bad "đã có $D"; exit 1; }
+  [ -e "$D" ] && { bad "$D already exists"; exit 1; }
   if git -C "$ROOT" show-ref --verify --quiet "refs/heads/$BR"; then git -C "$ROOT" worktree add -q "$D" "$BR" || exit 1
   else git -C "$ROOT" worktree add -q -b "$BR" "$D" || exit 1; fi
   printf '%s\n' "$V" > "$(role_marker_file "$D")"
-  ok "worktree $D · nhánh $BR · dấu vai $V"
-  info "hook trong worktree là bản của nhánh lúc tách — mở lượt bằng: git -C $D merge main"
-  info "commit ở đó: git commit --only -m '<type>(ID): …' -- <file> ; hook thêm đuôi 'Vai: $V'"
+  ok "worktree $D · branch $BR · role marker $V"
+  info "the hooks in a worktree are the branch copy from when it was split — open a round with: git -C $D merge main"
+  info "committing there: git commit --only -m '<type>(ID): …' -- <file> ; the hook adds the trailer 'Vai: $V'"
   ;;
 --ketqua)
   K="$2"; shift 2
-  printf '%s' "$K" | grep -qE '^[a-z0-9][a-z0-9._-]{1,39}$' || { bad "khoá '$K' — chỉ [a-z0-9][a-z0-9._-]{1,39}, không dấu cách, không |"; exit 2; }
+  printf '%s' "$K" | grep -qE '^[a-z0-9][a-z0-9._-]{1,39}$' || { bad "the key '$K' — only [a-z0-9][a-z0-9._-]{1,39}, no spaces, no |"; exit 2; }
   KD="$(ketqua_dir "$ROOT")"; KF="$KD/$K.txt"
-  if [ $# -eq 0 ]; then [ -f "$KF" ] && cat "$KF" || { info "chưa có KETQUA cho $K ($KF)"; exit 1; }; exit 0; fi
+  if [ $# -eq 0 ]; then [ -f "$KF" ] && cat "$KF" || { info "there is no KETQUA for $K yet ($KF)"; exit 1; }; exit 0; fi
   KET=""; NEO=""; KIEM="-"; HOI="-"; CON="-"
-  for a in "$@"; do case "$a" in ket=*) KET="${a#ket=}";; neo=*) NEO="${a#neo=}";; kiem=*) KIEM="${a#kiem=}";; hoi=*) HOI="${a#hoi=}";; con=*) CON="${a#con=}";; *) bad "không hiểu '$a' (ket= neo= kiem= hoi= con=)"; exit 2;; esac; done
-  case "$KET" in xong|chan|do) ;; *) bad "ket= phải là xong · chan · do (được '$KET')"; exit 1;; esac
+  for a in "$@"; do case "$a" in ket=*) KET="${a#ket=}";; neo=*) NEO="${a#neo=}";; kiem=*) KIEM="${a#kiem=}";; hoi=*) HOI="${a#hoi=}";; con=*) CON="${a#con=}";; *) bad "cannot read '$a' (ket= neo= kiem= hoi= con=)"; exit 2;; esac; done
+  case "$KET" in xong|chan|do) ;; *) bad "ket= must be xong · chan · do (got '$KET')"; exit 1;; esac
   if [ "$KET" = xong ]; then
-    [ -n "$NEO" ] && [ "$NEO" != "-" ] || { bad "ket=xong bắt buộc có neo= (hash commit · marker .sdd/gate/… · đường dẫn file) — thời gian trôi không phải bằng chứng"; exit 1; }
+    [ -n "$NEO" ] && [ "$NEO" != "-" ] || { bad "ket=xong requires neo= (a commit hash · the marker .sdd/gate/… · a file path) — time passing is not evidence"; exit 1; }
     if printf '%s' "$NEO" | grep -qE '^[0-9a-f]{7,40}$'; then
-      git -C "$ROOT" cat-file -e "$NEO^{commit}" 2>/dev/null || { bad "neo=$NEO không phải commit có thật trong repo"; exit 1; }
-    elif [ ! -e "$ROOT/$NEO" ]; then bad "neo=$NEO — không phải hash và không có file/marker đó ở $ROOT"; exit 1; fi
+      git -C "$ROOT" cat-file -e "$NEO^{commit}" 2>/dev/null || { bad "neo=$NEO is not a real commit in this repo"; exit 1; }
+    elif [ ! -e "$ROOT/$NEO" ]; then bad "neo=$NEO — not a hash and no such file/marker under $ROOT"; exit 1; fi
   fi
-  [ "$KET" = chan ] && { [ -n "$HOI" ] && [ "$HOI" != "-" ] || { bad "ket=chan bắt buộc có hoi=<số phiếu | HỎI-X#> — chặn mà không có câu hỏi thì không ai gỡ được"; exit 1; }; }
+  [ "$KET" = chan ] && { [ -n "$HOI" ] && [ "$HOI" != "-" ] || { bad "ket=chan requires hoi=<ticket number | ASK-X#> — a block with no question is one nobody can clear"; exit 1; }; }
   mkdir -p "$KD"
   L="KETQUA key=$K ket=$KET neo=${NEO:--} kiem=$KIEM hoi=$HOI con=$CON vai=$(role_current "$ROOT" | tr -d ' ') luc=$(date +%Y-%m-%dT%H:%M)"
   printf '%s\n' "$L" >> "$KF"
   printf '%s\n' "$L"
-  info "đã ghi ${KF} — gửi đúng dòng trên về điều phối (dòng đầu tin nhắn)"
+  info "written to ${KF} — send exactly the line above back to the coordinator (as the first line of the message)"
   ;;
 --staged|--commit)
   [ -n "$RF" ] || exit 0
@@ -102,29 +103,29 @@ case "$1" in
   [ -z "$V" ] && V="$(role_current "$ROOT")"
   REQ="$(role_required "$ROOT")"
   if [ -z "$V" ]; then
-    [ "$REQ" = moi ] && { bad "không suy được vai (vai_bat_buoc=moi): đặt SDD_ROLE, đuôi 'Vai: <V>' trong message, dấu worktree (role.sh <vai>) hay nhánh theo mẫu"; exit 1; }
+    [ "$REQ" = moi ] && { bad "the role could not be inferred (vai_bat_buoc=moi): set SDD_ROLE, a 'Vai: <V>' trailer in the message, the worktree marker (role.sh <role>) or a branch matching a pattern"; exit 1; }
     exit 0
   fi
-  role_known "$V" "$ROOT" || { bad "vai '$V' không có trong .sdd/roles (vai=$(role_list "$ROOT"))"; [ "$REQ" != khong ] && exit 1; exit 0; }
+  role_known "$V" "$ROOT" || { bad "the role '$V' is not in .sdd/roles (vai=$(role_list "$ROOT"))"; [ "$REQ" != khong ] && exit 1; exit 0; }
   ST="${SDD_STAGED:-$(cd "$ROOT" && git diff --cached --name-only)}"
   if ! check_files "$V" <<EOS
 $ST
 EOS
   then
-    if [ "$REQ" != khong ]; then bad "vai $V: commit chạm ngoài vùng ghi — chặn (vai_bat_buoc=$REQ)"; exit 1
-    else warn "vai $V: commit chạm ngoài vùng ghi — chỉ nhắc (vai_bat_buoc=khong; bật chặn: vai_bat_buoc=nhanh-vai trong .sdd/roles)"; fi
+    if [ "$REQ" != khong ]; then bad "role $V: the commit touches outside its write area — blocked (vai_bat_buoc=$REQ)"; exit 1
+    else warn "role $V: the commit touches outside its write area — a reminder only (vai_bat_buoc=khong; to block: vai_bat_buoc=nhanh-vai in .sdd/roles)"; fi
   fi
-  # đuôi Vai: — kênh duy nhất git ghi lại được; `git log --grep '^Vai: '` đo mức tuân thủ
+  # the Vai: trailer — the only channel git can record; `git log --grep '^Vai: '` measures how well it is followed
   if [ "$1" = --commit ] && [ -f "$2" ] && ! grep -qE "^($(kw c_role)): " "$2"; then printf '\n%s: %s\n' "$(kw_w c_role "$ROOT")" "$V" >> "$2"; fi
   exit 0
   ;;
 --kiem-lich-su)
   need_roles; RANGE="${2:-HEAD~300..HEAD}"
   N=0; NONE=0; VIO=0; LIST=""
-  # đuôi vai đọc CẢ HAI vế (kw c_role) — git chỉ nhận một khoá mỗi %(trailers:key=…), nên một atom mỗi vế,
-  # và giá trị ra sau tiền tố ASCII '##' để phân biệt với dòng tên file của --name-only
+  # the role trailer reads BOTH sides (kw c_role) — git accepts only one key per %(trailers:key=…), so one atom per side,
+  # and the value comes out after the ASCII prefix '##' to tell it apart from a --name-only file line
   TFMT=""; for k in $(kw c_role | tr '|' ' '); do TFMT="$TFMT%(trailers:key=$k,valueonly=true)"; done
-  # mỗi commit không-merge: file chạm + đuôi Vai nếu có → vai nào được ghi ĐỦ mọi file
+  # per non-merge commit: the files touched + the Vai trailer if present → which role was allowed to write ALL of them
   while IFS= read -r line; do
     case "$line" in
       @@*) 
@@ -137,7 +138,7 @@ EOS
           [ -z "$OKR" ] && { NONE=$((NONE+1)); LIST="$LIST
   $H $S"; }
           if [ -n "$TV" ]; then case " $OKR " in *" $TV "*) ;; *) VIO=$((VIO+1)); LIST="$LIST
-  $H $S — khai Vai: $TV nhưng vai đó không được ghi đủ";; esac; fi
+  $H $S — declares Vai: $TV but that role may not write all of them";; esac; fi
         fi
         H="$(printf '%s' "$line" | cut -c3-9)"; S="$(printf '%s' "$line" | cut -c11- | cut -c1-70)"; TV=""; FILES="";;
       "##"*) TV="${line#\#\#}";;
@@ -148,9 +149,9 @@ EOS
 $(git -C "$ROOT" log --no-merges --format="@@%h %s%n##$TFMT" --name-only $RANGE 2>/dev/null)
 @@
 EOS
-  echo "Luật vùng ghi của .sdd/roles chạy qua $N commit ($RANGE)"
-  printf '  %s commit không vai nào được ghi đủ mọi file (lẽ ra bị chặn nếu vai_bat_buoc bật)\n' "$NONE"
-  printf '  %s commit khai đuôi Vai: mà vai đó không được ghi đủ\n' "$VIO"
+  echo "The .sdd/roles write-area rule run over $N commits ($RANGE)"
+  printf '  %s commits no role was allowed to write in full (they would have been blocked with vai_bat_buoc on)\n' "$NONE"
+  printf '  %s commits declaring a Vai: trailer for a role that may not write all of them\n' "$VIO"
   [ -n "$LIST" ] && printf '%s\n' "$LIST" | head -40
   exit 0
   ;;
@@ -159,15 +160,15 @@ EOS
   need_roles; V="$1"; check_role "$V"
   if [ -z "$2" ]; then
     M="$(role_marker_file "$ROOT")"; printf '%s\n' "$V" > "$M"
-    ok "dấu vai $V cho worktree $ROOT (${M#$ROOT/} — không vào git)"
+    ok "role marker $V for the worktree $ROOT (${M#$ROOT/} — not in git)"
     contract "$V"; exit 0
   fi
-  # ── lời giao sáu phần từ một phiếu ────────────────────────────────────────────────────────────
+  # ── the six-part brief from a ticket ──────────────────────────────────────────────────────────
   PF="$2"; LUOT="1"; shift 2
   while [ $# -gt 0 ]; do case "$1" in --luot) LUOT="$2"; shift 2;; *) shift;; esac; done
-  [ -f "$PF" ] || { bad "role.sh <vai> nhận MỘT FILE PHIẾU, không nhận chuỗi tự do — phần đắt của lời giao là neo, mà neo chỉ có trong phiếu ('$PF' không phải file)"; exit 1; }
+  [ -f "$PF" ] || { bad "role.sh <role> takes ONE TICKET FILE, not a free-form string — the expensive part of a brief is the anchor, and the anchor only exists in a ticket ('$PF' is not a file)"; exit 1; }
   export SDD_V="$V" SDD_VN="$(role_name "$V" "$ROOT")" SDD_DENY="$(role_deny "$V" "$ROOT")" SDD_CHECKS="$(role_checks "$V" "$ROOT")" SDD_BRANCH="$(role_branch "$V" "$ROOT")" SDD_LUOT="$LUOT" SDD_ROOT="$ROOT"
-  # gói đọc: mọi ID trong dòng đầu phiếu → đường dẫn qua lib (không find/grep thẳng specs/)
+  # the reading pack: every ID on the ticket first line → a path through lib (no find/grep straight at specs/)
   HDR="$(grep -m1 -E '^###? *#[0-9]+' "$PF")"
   PK=""
   for id in $(printf '%s' "$HDR" | grep -oE '\b(UC|BR|CHG|RULE|ADR)-[0-9]+\b' | sort -u); do

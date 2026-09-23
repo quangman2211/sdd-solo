@@ -1,36 +1,38 @@
-# Intake — bộ câu hỏi để moi ý tưởng ra thành BR
+# Intake — the questions that pull an idea out into a BR
 
-Dùng khi chỉ còn `core/br-000/` mẫu và chưa biết bắt đầu từ đâu.
-Có Claude Code thì gõ `/sdd-solo:intake` — nó hỏi từng câu và tự viết ra `br.md` của lát.
-Không có thì tự trả lời bảy câu dưới đây bằng giấy bút, rồi điền vào `specs/<core|nghề>/br-###/br.md` theo cột bên phải.
+Use this when only the sample `core/br-000/` exists and you do not know where to start.
+With Claude Code, type `/sdd-solo:intake` — it asks one question at a time and writes the slice's `br.md`.
+Without it, answer the seven questions below on paper and fill `specs/<core|craft>/br-###/br.md` per the
+right-hand column.
 
-**Câu 0 — trước bảy câu:** `specs/vision.md` đã có chưa? Chưa thì chủ dự án viết nó trước, bằng lời
-thường: đi về đâu · 3–5 điều không được co lại · nghề nào mở trước, "xong" nghĩa là gì. BR nào cũng
-phải tự nhận `**Lát:**` ở bảng đó, nên không có tầng 0 thì bảy câu dưới không có chỗ để đứng.
+**Question 0 — before the seven:** does `specs/vision.md` exist yet? If not, the owner writes it first, in
+plain words: where we are going · 3–5 things that must not shrink · which craft opens first, and what
+"done" means. Every BR has to claim its `**Slice:**` from that table, so without layer 0 the seven
+questions below have nothing to stand on.
 
-**Ba quy tắc khi trả lời:**
+**Three rules while answering:**
 
-1. **"Không biết" là câu trả lời hợp lệ.** Ghi `___` và đánh dấu thành Open Question.
-   Một con số đoán bừa ở đây sẽ được cả bộ 24 kiểm ở cổng DoR bảo vệ suốt phần đời còn lại của dự án.
-   Cả số mình **tự đoán** cũng vậy — "tuần nào cũng vài lần" là ước lượng, không phải số đếm được;
-   ghi rõ nó là ước lượng, đừng để nó thành sự thật trong `## Background`.
-2. **Kể chuyện, đừng kê tính năng.** Nếu câu trả lời bắt đầu bằng "xây một cái…" thì đó là
-   giải pháp, không phải vấn đề. Hỏi ngược mình: *cái đó để tôi biết hoặc làm được chuyện gì mà giờ không?*
-3. **Một câu một lượt.** Đọc cả bảy câu rồi ngồi nghĩ chung sẽ ra bảy câu trả lời chung chung.
+1. **"I don't know" is a valid answer.** Write `___` and mark it as an Open Question.
+   A number guessed here will be defended by all 24 checks at the DoR gate for the rest of the project's life.
+   That includes a number **you guessed yourself** — "a few times every week" is an estimate, not a count;
+   say it is an estimate, do not let it become a fact in `## Background`.
+2. **Tell the story, do not list features.** If the answer starts with "build a…", that is a solution, not a
+   problem. Ask yourself back: *what would that let me know or do that I cannot now?*
+3. **One question at a time.** Reading all seven and thinking about them together produces seven vague answers.
 
 ---
 
-## Ba câu bắt buộc
+## The three required questions
 
-Chưa xong ba câu này thì chưa viết `br.md`.
+Do not write `br.md` until these three are done.
 
-| # | Câu hỏi | Vào đâu trong br.md |
+| # | Question | Where it goes in br.md |
 |---|---|---|
-| 1 | Hiện đang khổ chuyện gì? Kể tự nhiên, không cần trau chuốt. | `## Background` · `## Goal` |
-| 2 | Ai khổ? (tôi · khách · người vận hành · hệ thống khác) | `## Goal` · WHO trên Impact Map |
-| 3 | Giờ họ xoay xở thế nào, và tốn gì? (thời gian · số lần sai · tiền) | `## Background` |
+| 1 | What hurts right now? Tell it plainly, no polish needed. | `## Background` · `## Goal` |
+| 2 | Who is hurting? (me · the customer · whoever operates it · another system) | `## Goal` · WHO on the Impact Map |
+| 3 | How do they cope today, and what does it cost? (time · number of mistakes · money) | `## Background` |
 
-Chỗ trả lời — viết thẳng vào đây:
+Answers — write them straight in here:
 
 > **1.**
 >
@@ -38,32 +40,32 @@ Chỗ trả lời — viết thẳng vào đây:
 >
 > **3.**
 
-Câu 3 là chỗ ra con số baseline. Chưa đếm bao giờ thì ghi `___` **và ghi luôn cách sẽ đếm** —
-"đếm thread trong inbox mỗi thứ Hai" là một cách đo hợp lệ, không cần analytics.
+Question 3 is where the baseline number comes from. Never counted it? Write `___` **and write down how you
+will count** — "count the threads in the inbox every Monday" is a valid way to measure; no analytics needed.
 
-## Bốn câu đào sâu
+## The four digging questions
 
-Chỉ hỏi khi ba câu trên đã có. Được phép kết thúc bằng `___`.
+Only ask these once the first three have answers. Ending in `___` is allowed.
 
-| # | Câu hỏi | Vào đâu trong br.md |
+| # | Question | Where it goes in br.md |
 |---|---|---|
-| 4 | Nếu không làm gì cả trong sáu tháng nữa thì chuyện gì xảy ra? | `## Background` hoặc `CON-###` |
-| 5 | Có cách nào đạt được điều đó mà **không xây phần mềm** không? (mua sẵn? đổi quy trình? thuê người?) | `## Background` — ghi lý do vẫn chọn xây |
-| 6 | Cái gì mình **cố ý không làm** ở bản đầu? | `## Out of Scope` + nhánh `-.->` trên Impact Map |
-| 7 | Làm sao biết là đã xong? Đo bằng con số nào, lấy ở đâu? | `## Success Metrics` |
+| 4 | If nothing is done for another six months, what happens? | `## Background` or `CON-###` |
+| 5 | Is there a way to get that **without building software**? (buy one? change the process? hire someone?) | `## Background` — record why building still wins |
+| 6 | What are you **deliberately not doing** in the first version? | `## Out of Scope` + a `-.->` branch on the Impact Map |
+| 7 | How will you know it is done? Which number, taken from where? | `## Success Metrics` |
 
-**Câu 5 là câu đáng giá nhất và hay bị bỏ nhất.** Nó là thứ duy nhất chặn được việc xây một
-phần mềm không cần tồn tại. Đang hào hứng thì càng phải hỏi.
+**Question 5 is the most valuable one and the most often skipped.** It is the only thing that stops you
+building software that need not exist. The more exciting the idea, the more it has to be asked.
 
-Chưa nghĩ tới thì đừng để trống — **đó cũng là một câu trả lời**. Ghi vào `## Background` một dòng
-`**Vì sao vẫn xây:** chưa có lý do — chưa cân phương án không-phần-mềm nào`. Trung thực hơn nhiều
-so với một câu nghe như đã cân nhắc xong, và `br-check` sẽ nhắc chừng nào dòng đó chưa có.
+Not thought about it yet? Do not leave it blank — **that is an answer too**. Put one line in `## Background`:
+`**Why still build:** no reason yet — no non-software option has been weighed`. Far more honest than a
+sentence that sounds as if the weighing had been done, and `br-check` keeps reminding you until that line exists.
 
-Bí thì tự liệt kê **ít nhất ba** cách không-phần-mềm rồi bác từng cái: đổi quy trình · làm tay
-theo lô · mua công cụ có sẵn · thuê người · một cái kệ và tờ nhãn. Nêu đúng một cái thì mình
-đang tự dẫn mình vào nó.
+Stuck? List **at least three** non-software routes and knock each one down: change the process · do it by
+hand in batches · buy an existing tool · hire someone · a shelf and a label. Naming exactly one means you
+are walking yourself into it.
 
-Chỗ trả lời:
+Answers:
 
 > **4.**
 >
@@ -73,43 +75,44 @@ Chỗ trả lời:
 >
 > **7.**
 
-**Câu 6 không có câu trả lời = BR chưa nghĩ xong.** Team có PO cản scope; làm một mình thì
-chỉ có dòng Out of Scope đó cản.
+**No answer to question 6 = the BR is not finished being thought about.** A team has a PO to hold scope back;
+working alone, that Out of Scope line is the only thing that does.
 
 ---
 
-## Xong rồi thì
+## When that is done
 
 ```bash
 .sdd/scripts/br-check.sh BR-001
 ```
 
-Cảnh báo về `___` là **bình thường ở Phase 1** — đó là nợ đã ghi sổ, không phải lỗi.
-Dòng ✗ mới là thứ phải sửa.
+Warnings about `___` are **normal in Phase 1** — that is debt on the books, not a mistake.
+The ✗ lines are what must be fixed.
 
-Rồi `/sdd-solo:adversarial BR-001` — ba vai đọc ngược lại BR vừa viết. Vai hoài nghi hỏi đúng
-một câu đáng sợ: *BR này có thật là một BR, hay là một giải pháp đã chọn sẵn rồi viết ngược
-thành lý do?*
+Then `/sdd-solo:adversarial BR-001` — three roles read the BR you just wrote back at you. The sceptic asks
+exactly one frightening question: *is this really a BR, or a solution already chosen and written backwards
+into a reason?*
 
 ---
 
-## Nếu đang cầm một brief do agent khác viết
+## If you are holding a brief written by another agent
 
 ```
-/sdd-solo:intake đường/dẫn/brief.md
+/sdd-solo:intake path/to/brief.md
 ```
 
-Đừng chép thẳng vào `specs/`. Brief do LLM viết gần như luôn kèm số nghe hợp lý mà không ai
-quyết — *"khoá 15 phút sau 5 lần sai"*, *"giữ tồn kho 30 phút"*, *"hỗ trợ 100 người dùng đồng
-thời"*. Không con số nào có nguồn. Chép vào rồi thì từ đó trở đi cả bộ kiểm ở cổng DoR sẽ bảo
-vệ chúng rất kỷ luật.
+Do not copy it straight into `specs/`. A brief written by an LLM almost always carries plausible numbers
+nobody decided — *"lock for 15 minutes after 5 failures"*, *"hold stock for 30 minutes"*, *"support 100
+concurrent users"*. None of them has a source. Once copied in, all the DoR gate checks will defend them very
+diligently from then on.
 
-Bốn luật khi chuyển:
+Four rules for the conversion:
 
-1. Số không nguồn → `___` + Open Question. Brief **đề xuất** một con số ≠ ai đó **đã duyệt** nó.
-2. Mọi "xây X" phải đẩy ngược lên được một mục tiêu đo được. Không ra → tính năng mồ côi,
-   vào Out of Scope hoặc Open Question, không giữ im lặng.
-3. Khẳng định không bằng chứng ("khách phàn nàn nhiều") → Open Question, không vào Background.
-4. Thứ đã **bỏ** phải ghi vào mục `## Đã loại khỏi brief` trong BR, mỗi dòng một lý do **và một đích**:
-   `→ lát ___` (lát nào trong `vision.md` sẽ nhận) hoặc `→ mở lại khi ___` — không phải chỉ nói miệng
-   rồi thôi. Sáu tháng sau, thứ duy nhất còn lại là file. `br-check` đỏ khi dòng thiếu đích (7.0).
+1. A number with no source → `___` + an Open Question. A brief **proposing** a number ≠ somebody **approving** it.
+2. Every "build X" must push back up to a measurable goal. It does not → an orphan feature; into Out of Scope
+   or an Open Question, never left silent.
+3. A claim without evidence ("customers complain a lot") → an Open Question, not `## Background`.
+4. Anything **dropped** goes into the BR's `## Dropped from brief` section, one line each with a reason **and a
+   destination**: `→ slice ___` (which slice in `vision.md` picks it up) or `→ reopen when ___` — not just said
+   out loud once. Six months later the file is the only thing left. `br-check` goes red when a line has no
+   destination (7.0).

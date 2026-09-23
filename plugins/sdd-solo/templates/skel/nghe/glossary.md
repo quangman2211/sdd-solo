@@ -1,7 +1,8 @@
-# Glossary — <nghề>
+# Glossary — <craft>
 
-Từ chỉ nghề này mới dùng. Từ dùng chung mọi nghề nằm ở `specs/glossary.md` gốc — một từ một chỗ,
-không chép lại. Từ trùng chữ với gốc mà khác nghĩa → ghi ở đây kèm "Không nhầm với …".
+Words only this craft uses. Words shared by every craft live in the root `specs/glossary.md` —
+one word, one place, never copied. A word spelled like a root word but meaning something else
+goes here with a "Not to be confused with …".
 
-- **<Thuật ngữ>** — <định nghĩa một câu>. Không nhầm với **<từ gốc>** là <...>.
-- **<Thuật ngữ>** (`<TênTrongCode>`) — ...
+- **<Term>** — <one-sentence definition>. Not to be confused with **<root word>**, which is <...>.
+- **<Term>** (`<NameInCode>`) — ...

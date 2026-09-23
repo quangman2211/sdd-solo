@@ -1,9 +1,9 @@
-# Self-review — năm câu (mục 6.4 của sách, bản một người)
+# Self-review — five questions (section 6.4 of the book, solo edition)
 
-Làm trước khi commit feat. Đọc spec trước, code sau.
+Do this before committing a feat. Read the spec first, the code after.
 
-1. **Spec trước:** Flow đã rõ? AC test được? Exception có thiếu case hiển nhiên?
-2. **Trace:** Commit có UC ID? Commit docs cùng UC đứng trước?
-3. **Test ↔ AC:** Mỗi AC có test? AC quan trọng không có test thì lý do ghi đâu?
-4. **Rule ngầm:** Có số, enum, điều kiện nào trong code mà spec không nói? (grep)
-5. **AI quyết hay mình quyết?** Đoạn logic phức tạp này nguồn gốc từ đâu? Quyết định kỹ thuật đáng nhớ → một dòng `docs/decisions.md`; đủ nặng → ADR.
+1. **Spec first:** Is the flow clear? Are the ACs testable? Does any exception miss an obvious case?
+2. **Trace:** Does the commit carry a UC ID? Does the docs commit for the same UC come first?
+3. **Test ↔ AC:** Does every AC have a test? If an important AC has none, where is the reason written?
+4. **Hidden rules:** Is there a number, an enum or a condition in the code that the spec never states? (grep)
+5. **Who decided, the AI or me?** Where did this complicated piece of logic come from? A technical decision worth remembering → one line in `specs/decisions.md`; heavy enough → an ADR.

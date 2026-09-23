@@ -1,53 +1,66 @@
-# sdd-solo — vai của đội agent (7.2). Cú pháp khoá=giá trị như .sdd/config; danh sách cách nhau bằng dấu cách.
-# Đây là CHÍNH SÁCH của repo: có vai nào, ghi đâu, cấm đâu. Sửa tay thoải mái, init --update không đè bản đã sửa.
-# Dự án một người: để nguyên, không đặt dấu vai thì không có gì xảy ra.
+# sdd-solo — roles of the agent team (7.2). Syntax is key=value like .sdd/config; lists are space separated.
+# This is the repo's POLICY: which roles exist, where each may write, where each may not. Edit freely;
+# init --update never overwrites a file you have changed.
+# Solo project: leave it alone — with no role marker set, nothing happens.
 #
-# Vùng ghi: đường dẫn (không dấu * = thư mục đó và mọi thứ dưới), * trong một đoạn, ** mọi độ sâu.
-# @code_paths @test_paths @uc_test_dir @tool_paths nở từ .sdd/config — không chép đường dẫn hai nơi.
-# Cấm THẮNG được ghi. Thông điệp chặn nói "chỗ này của vai X" (role.sh tra bằng role_of_path).
+# The KEYS below stay in Vietnamese on purpose: they are configuration identifiers read by a bare-bash
+# githook, not prose. Renaming them would force every running repo to edit its own config file for no
+# measurable gain. Role NAMES (`.ten`) are data — write them in whatever language the team speaks.
 #
-# vai_bat_buoc: khong (mặc định — hook chỉ NHẮC khi commit chạm ngoài vùng) · nhanh-vai (chặn khi suy được vai)
-#               · moi (không suy được vai cũng chặn). Bật sau khi `role.sh --kiem-lich-su` cho số chấp nhận được.
+# Write area: a path (no * = that folder and everything under it), * inside one segment, ** any depth.
+# @code_paths @test_paths @uc_test_dir @tool_paths expand from .sdd/config — never copy a path twice.
+# A deny WINS over an allow. The blocking message says "this belongs to role X" (role.sh looks it up
+# with role_of_path).
+#
+# vai_bat_buoc: khong (default — the hook only WARNS when a commit touches outside the area)
+#               · nhanh-vai (blocks once a role can be inferred)
+#               · moi (blocks even when no role can be inferred).
+# Turn it on after `role.sh --kiem-lich-su` reports a number you are willing to accept.
 vai_bat_buoc=khong
 vai=A B R D T
 
-# A · điều phối — giao việc, commit sổ thay vai không commit, hỏi chủ dự án khi L3. Không viết spec, không viết code.
-A.ten=điều phối
+# A · coordinator — hands out work, commits logs for roles that do not commit, asks the owner on L3.
+# Writes no spec and no code.
+A.ten=coordinator
 A.ghi=STATE.md specs/decisions.md notes/** .sdd/**
 A.cam=@code_paths @test_paths specs/vision.md
 A.nhanh=
 A.commit=co
 A.kiem=
 
-# B · spec — áp chữ theo phiếu đã có trả lời. Giữ CHECKOUT CHÍNH trên main: cái B viết là sự thật chung, ngồi worktree
-# riêng thì C/R/D/T đọc main cũ tới khi merge (ca D chọn ngược quyết định của R). Không ghi decisions/vision/STATE.
+# B · spec — applies the wording of tickets that already have an answer. Keeps the MAIN CHECKOUT on main:
+# what B writes is shared truth, and from a separate worktree C/R/D/T would read a stale main until the
+# merge (the real case where D chose against a decision R had already made). Does not write
+# decisions/vision/STATE.
 B.ten=spec
 B.ghi=specs/** notes/hoi-dap/**
 B.cam=specs/decisions.md specs/vision.md STATE.md @code_paths @test_paths
 B.nhanh=
 B.commit=co
-B.kiem=gate-check.sh --pre UC-### · layer-check.sh khi sửa gốc/core
+B.kiem=gate-check.sh --pre UC-### · layer-check.sh when editing root/core
 
-# R · trọng tài — chỉ ghi ô **Trả lời (R):** của phiếu, KHÔNG commit (A commit).
-R.ten=trọng tài
+# R · arbiter — writes only the **Answer (R):** box of a ticket, and does NOT commit (A commits).
+R.ten=arbiter
 R.ghi=notes/hoi-dap/**
 R.cam=specs/** @code_paths @test_paths STATE.md
 R.nhanh=
 R.commit=khong
 R.kiem=
 
-# D · code — worktree riêng, nhánh code/uc-###. Test của cổng (uc_test_dir) là của T: D cần fake khác → TEST-# trong hoi-D.md.
+# D · code — own worktree, branch code/uc-###. The gate's tests (uc_test_dir) belong to T: when D needs a
+# different fake → a TEST-# entry in hoi-D.md.
 D.ten=code
 D.ghi=@code_paths @test_paths notes/hoi-dap/hoi-D.md
 D.cam=@uc_test_dir specs/** STATE.md
 D.nhanh=code/*
 D.commit=co
-D.kiem=lệnh test của repo — in số ca xanh/đỏ
+D.kiem=the repo's test command — prints how many cases pass/fail
 
-# T · test — worktree riêng, nhánh test/uc-###. Không đọc code của D: tên bảng/chữ ký lấy từ design.md.
+# T · test — own worktree, branch test/uc-###. Does not read D's code: table names and signatures come
+# from design.md.
 T.ten=test
 T.ghi=@uc_test_dir notes/hoi-dap/hoi-T.md
 T.cam=@code_paths specs/** STATE.md
 T.nhanh=test/*
 T.commit=co
-T.kiem=lệnh test của repo — test ĐỎ trước khi có code
+T.kiem=the repo's test command — the test must be RED before any code exists

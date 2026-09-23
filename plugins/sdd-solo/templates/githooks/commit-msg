@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
-# sdd-solo commit-msg hook: chặn commit code không có ID, hoặc code trước khi qua cổng.
+# sdd-solo commit-msg hook: blocks a code commit with no ID, or code committed before the gate.
 MSG="$(head -1 "$1")"
 ROOT="$(git rev-parse --show-toplevel)"
 STAGED="$(git diff --cached --name-only)"
 
-# Đường dẫn code/test đọc từ .sdd/config. Hook chạy bash trần, không có lib.sh
-# nên parse tay. Trước 1.5.0 hai đường dẫn này viết chết là src|tests — repo
-# nào đặt code ở app/ là hook cho qua hết mà không nói một lời.
+# The code/test paths are read from .sdd/config. The hook runs bare bash with no lib.sh, so it parses
+# them by hand. Before 1.5.0 these two paths were hard-coded as src|tests — a repo with its code in
+# app/ had every commit waved through without a word.
 cfg() { sed -n "s/^$1=//p" "$ROOT/.sdd/config" 2>/dev/null | tail -1 | sed 's/[[:space:]]*$//'; }
 CP="$(cfg code_paths)"; [ -z "$CP" ] && CP="src"
 TP="$(cfg test_paths)"; [ -z "$TP" ] && TP="tests"
 UCT="$(cfg uc_test_dir)"; [ -z "$UCT" ] && UCT="tests/use-cases"
 RE="^($(printf '%s %s' "$CP" "$TP" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
 TLP="$(cfg tool_paths)"
-# tool_paths: code thật không thuộc UC nào (script đo, script chuyển đổi). Rỗng
-# thì mọi thứ dưới đây thành no-op, tức repo chưa khai hành xử y như trước (#31).
+# tool_paths: real code belonging to no UC (a measuring script, a conversion script). Empty makes
+# everything below a no-op, so a repo that has not declared it behaves exactly as before (#31).
 TRE=""; [ -n "$TLP" ] && TRE="^($(printf '%s' "$TLP" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
 notool() { if [ -n "$TRE" ]; then grep -vE "$TRE"; else cat; fi; }
 
 
-# Config sai thì hook mù. Phân biệt "repo chưa có code" với "config sai" bằng
-# chính danh sách file đang commit: có file nguồn mà không khớp đường dẫn nào
-# → chặn, đừng cho qua trong im lặng.
-# Danh sách LOẠI TRỪ chứ không phải danh sách cho phép: sai sót nghiêng về
-# chặn nhầm, đỡ hơn nghiêng về bỏ lọt. File không có phần mở rộng (Makefile,
-# Dockerfile…) không tính, để repo chưa có code không bị chặn oan.
-# --diff-filter=d CHỈ ở đây: file đang bị xoá thì không có gì để kiểm "nằm ngoài
-# code_paths" — cảnh báo cho 6 file .specify/*.sh đang git rm (runxops, 5.1.0) là nhiễu
-# dạy người ta phớt lờ. KHÔNG lọc ở $STAGED toàn cục: dòng TOUCH_CODE bên dưới và
-# pre-commit cũng đọc $STAGED, và một commit XOÁ code domain gắn UC chưa qua cổng vẫn
-# là commit đụng code — phải bị chặn y như commit thêm.
+# A wrong config makes the hook blind. "The repo has no code" is told apart from "the config is wrong"
+# by the list of files being committed: a source file matching no path
+# → block, do not wave it through in silence.
+# An EXCLUDE list rather than an allow list: a mistake leans towards blocking wrongly, which is better
+# than leaning towards letting things through. A file with no extension (Makefile, Dockerfile…) does
+# not count, so a repo without code is not blocked for nothing.
+# --diff-filter=d ONLY here: a file being deleted has nothing to check for "outside code_paths" — warning
+# about the 6 .specify/*.sh files being git rm-ed (runxops, 5.1.0) is noise that teaches people to ignore this.
+# It is NOT filtered on the global $STAGED: the TOUCH_CODE line below and pre-commit also read $STAGED, and a
+# commit DELETING domain code tagged with a UC that has not passed the gate is still a commit touching code —
+# it must be blocked exactly like a commit adding it.
 SRCLIKE="$(git diff --cached --name-only --diff-filter=d | grep -vE '^(specs|docs|changes|checklists|prompts|\.sdd|\.githooks)/' \
           | grep -vE '(^|/)\.[A-Za-z0-9_-]+$' \
           | grep -E '\.[A-Za-z0-9]+$' \
@@ -37,81 +37,82 @@ SRCLIKE="$(git diff --cached --name-only --diff-filter=d | grep -vE '^(specs|doc
 OUTSIDE="$(echo "$SRCLIKE" | grep -vE "$RE" | notool)"
 HAVE=0; for d in $CP $TP; do [ -d "$ROOT/$d" ] && HAVE=1; done
 if [ -n "$SRCLIKE" ] && [ "$HAVE" = 0 ]; then
-  echo "✗ sdd-solo: commit có file nguồn nhưng không thư mục nào trong '$CP $TP' tồn tại." >&2
-  echo "  .sdd/config đang sai bố cục repo → hook không kiểm được gì. Sửa code_paths/test_paths:" >&2
+  echo "✗ sdd-solo: the commit has source files but no directory in '$CP $TP' exists." >&2
+  echo "  .sdd/config does not match the repo layout → the hook cannot check anything. Fix code_paths/test_paths:" >&2
   echo "$SRCLIKE" | sed 's/^/    /' >&2
   exit 1
 elif [ -n "$OUTSIDE" ]; then
-  echo "! sdd-solo: file nguồn nằm ngoài '$CP $TP' nên không được kiểm:" >&2
+  echo "! sdd-solo: source files outside '$CP $TP', so they are not checked:" >&2
   echo "$OUTSIDE" | sed 's/^/    /' >&2
-  echo "  Thêm vào code_paths trong .sdd/config nếu đó là code thật." >&2
+  echo "  Add them to code_paths in .sdd/config if that is real code." >&2
 fi
 
-# Miễn trừ theo FILE, không theo câu chữ trong commit: phân loại bằng tiền tố
-# commit thì ai gõ nhầm tiền tố là lọt, còn file thì không tự đổi chỗ.
+# Exemption by FILE, not by the wording of the commit: classifying by commit prefix means a mistyped
+# prefix gets through, whereas a file does not move by itself.
 TOUCH_CODE=0; echo "$STAGED" | grep -vE 'README\.md$' | notool | grep -qE "$RE" && TOUCH_CODE=1
-# 7.2: Merge/Revert/chore(sdd) MIỄN kiểm ID nhưng KHÔNG miễn luật riêng ở commit-msg.d/ (ranh giới vai phải thấy cả
-# commit chore của vai trọng tài). Tới 7.1 dòng này `exit 0` trước vòng .d → mọi mảnh .d mù với ba loại commit đó.
+# 7.2: Merge/Revert/chore(sdd) are EXEMPT from the ID check but NOT from the repo own rules in commit-msg.d/ (the
+# role boundary must see the arbiter chore commits too). Up to 7.1 this line did `exit 0` before the .d loop → every
+# .d piece was blind to those three kinds of commit.
 SKIP_ID=0; echo "$MSG" | grep -qE '^Merge|^Revert|^chore\(sdd\)' && SKIP_ID=1
 if [ "$TOUCH_CODE" = 1 ] && [ "$SKIP_ID" = 0 ]; then
   ID="$(echo "$MSG" | grep -oE '\((UC|BR|RULE|ADR|CHG)-[0-9]+\)' | head -1 | tr -d '()')"
   if [ -z "$ID" ]; then
-    echo "✗ Commit đụng $CP hoặc $TP phải có ID: <type>(UC-###): ..." >&2; exit 1
+    echo "✗ A commit touching $CP or $TP must carry an ID: <type>(UC-###): ..." >&2; exit 1
   fi
-  # MỌI tiền tố phải chứng minh ID có thật. Trước 2.1.2 chỉ UC-* bị kiểm, nên
-  # đổi nhãn thành feat(CHG-999) là qua hết — kể cả ID bịa hoàn toàn. Đó là một
-  # cờ bỏ qua dài đúng ba chữ, trong khi README hứa không có cờ nào. Xem #15.
+  # EVERY prefix must prove its ID is real. Before 2.1.2 only UC-* was checked, so relabelling to
+  # feat(CHG-999) got everything through — including a completely invented ID. That was a skip flag
+  # three characters long, while the README promised there were none. See #15.
   case "$ID" in
   UC-*)
     if [ ! -f "$ROOT/.sdd/gate/$ID.ok" ]; then
-      echo "✗ $ID chưa qua cổng DoR (.sdd/gate/$ID.ok không có). Spec trước, code sau — chạy /sdd-solo:gate $ID." >&2; exit 1
+      echo "✗ $ID has not passed the DoR gate (.sdd/gate/$ID.ok is missing). Spec first, code after — run /sdd-solo:gate $ID." >&2; exit 1
     fi
     if ! git log --format=%s | grep -qE "^docs\($ID\)"; then
-      echo "✗ Chưa có commit docs($ID) nào trước commit code này." >&2; exit 1
+      echo "✗ There is no docs($ID) commit before this code commit." >&2; exit 1
     fi;;
   CHG-*)
-    # 2.0.0 dời changes/ → specs/changes/; nhận cả hai cho repo chưa migrate
-    # ls a b trả lỗi nếu BẤT KỲ đối số nào hỏng — glob thứ hai không khớp là
-    # chặn luôn cả ID thật. Phải hỏi từng chỗ một.
+    # 2.0.0 moved changes/ → specs/changes/; both are accepted for an unmigrated repo
+    # `ls a b` fails if ANY argument is bad — a second glob that does not match would block
+    # even a real ID. Each place must be asked separately.
     if ! ls -d "$ROOT/specs/changes/$ID-"* >/dev/null 2>&1 && \
        ! ls -d "$ROOT/changes/$ID-"* >/dev/null 2>&1; then
-      echo "✗ $ID không có thư mục specs/changes/$ID-*/ — ID bịa hoặc chưa tạo change." >&2; exit 1
+      echo "✗ $ID has no specs/changes/$ID-*/ directory — an invented ID, or the change was never created." >&2; exit 1
     fi
-    # 3.0.0: thư mục tồn tại là chưa đủ. Trước đó Phase 5 không có cổng nào, nên
-    # một change đụng hành vi ĐÃ giao cho khách vào repo được với proposal rỗng,
-    # delta rỗng, không nói lật AC nào. Xem #16.
+    # 3.0.0: the directory existing is not enough. Before that, Phase 5 had no gate at all, so a change
+    # touching behaviour ALREADY delivered to a customer could enter the repo with an empty proposal, an
+    # empty delta, and no statement of which AC it overturned. See #16.
     if [ ! -f "$ROOT/.sdd/gate/$ID.ok" ]; then
-      echo "✗ $ID chưa qua cổng Phase 5 (.sdd/gate/$ID.ok không có) — chạy /sdd-solo:change $ID." >&2; exit 1
+      echo "✗ $ID has not passed the Phase 5 gate (.sdd/gate/$ID.ok is missing) — run /sdd-solo:change $ID." >&2; exit 1
     fi;;
-  # 7.0: hai bố cục — 6.x specs/rules.md · specs/br.md · specs/internal/adr; 7.0 thêm
-  # specs/<nghề>/rules.md · specs/*/br-###/br.md · specs/adr · specs/<nghề>/adr. Cùng danh
-  # sách với id_exists ở lib.sh; hook chạy bash trần nên chép, đổi một nơi thì đổi cả hai.
+  # 7.0: two layouts — 6.x specs/rules.md · specs/br.md · specs/internal/adr; 7.0 adds
+  # specs/<craft>/rules.md · specs/*/br-###/br.md · specs/adr · specs/<craft>/adr. The same list as
+  # id_exists in lib.sh; the hook runs bare bash so it is copied, and changing one means changing both.
   RULE-*)
     if ! cat "$ROOT"/specs/rules.md "$ROOT"/specs/*/rules.md 2>/dev/null | grep -qE "^## $ID\b"; then
-      echo "✗ $ID không có heading trong specs/rules.md (hay specs/<nghề>/rules.md)." >&2; exit 1
+      echo "✗ $ID has no heading in specs/rules.md (or specs/<craft>/rules.md)." >&2; exit 1
     fi;;
   BR-*)
     if ! cat "$ROOT"/specs/br.md "$ROOT"/specs/*/br-[0-9]*/br.md 2>/dev/null | grep -qE "^#{1,2} $ID\b"; then
-      echo "✗ $ID không có heading trong specs/br.md (hay specs/*/br-###/br.md)." >&2; exit 1
+      echo "✗ $ID has no heading in specs/br.md (or specs/*/br-###/br.md)." >&2; exit 1
     fi;;
   ADR-*)
-    # `ls a b` trả lỗi nếu BẤT KỲ glob nào hỏng (bẫy #16) — hỏi từng thư mục một.
+    # `ls a b` fails if ANY glob is bad (trap #16) — ask each directory separately.
     ADR_OK=0
     for d in "$ROOT/specs/adr" "$ROOT"/specs/*/adr "$ROOT/specs/internal/adr" "$ROOT/docs/adr"; do
       ls "$d/$ID"* >/dev/null 2>&1 && { ADR_OK=1; break; }
     done
     if [ "$ADR_OK" = 0 ]; then
-      echo "✗ $ID không có file ADR (specs/adr/ · specs/<nghề>/adr/ · specs/internal/adr/)." >&2; exit 1
+      echo "✗ $ID has no ADR file (specs/adr/ · specs/<craft>/adr/ · specs/internal/adr/)." >&2; exit 1
     fi;;
   esac
 fi
-# .d/ — luật riêng của repo (#50): mọi file thực thi trong commit-msg.d chạy sau đây, theo tên.
-# Plugin không đụng file của repo ở đó khi update. Hook nằm trong git → mỗi worktree chạy
-# bản của nhánh nó; luật mới có hiệu lực ở nhánh khác sau khi merge (xem commit-msg.d/README.md).
+# .d/ — the repo own rules (#50): every executable file in commit-msg.d runs below, in name order.
+# The plugin does not touch the repo files there on update. The hooks live in git → each worktree runs
+# its own branch copy; a new rule takes effect on another branch after a merge (see commit-msg.d/README.md).
 export SDD_ROOT="$ROOT" SDD_STAGED="$STAGED" SDD_CODE_PATHS="$CP" SDD_TEST_PATHS="$TP" SDD_UC_TEST_DIR="$UCT" SDD_MSG="$MSG"
 for h in "$ROOT/.sdd/hooks/commit-msg.d/"*; do
   [ -f "$h" ] && [ -x "$h" ] || continue
   case "$h" in *.example|*README*) continue;; esac
-  "$h" "$1" || { rc=$?; echo "✗ commit-msg.d/$(basename "$h") chặn commit (exit $rc)" >&2; exit 1; }
+  "$h" "$1" || { rc=$?; echo "✗ commit-msg.d/$(basename "$h") blocked the commit (exit $rc)" >&2; exit 1; }
 done
 exit 0

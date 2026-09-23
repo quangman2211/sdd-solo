@@ -151,3 +151,12 @@ fullhistory	write	lịch sử đầy đủ	full history
 closedq	write	đã đóng	closed
 replacedby	write	thay bằng	replaced by
 noreplacement	write	không có UC thay thế	no replacement UC
+p_q	write	Câu	Question
+p_look	write	Đã tra	Already looked up
+p_wrong	write	Nếu chọn sai thì	If chosen wrong
+p_lean	write	Agent nghiêng về	The agent leans towards
+p_ans	write	Trả lời (R)	Answer (R)
+p_src	write	Nguồn / lý do	Source / reason
+c_ticket_w	write	phiếu #	ticket #
+inscope	head	In Scope	In Scope
+outscope	head	Out of Scope	Out of Scope

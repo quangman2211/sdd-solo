@@ -1,208 +1,241 @@
 ---
 name: orchestrate
-description: Điều phối nhiều agent trên cùng một repo SDD-Solo — tám vai A/B/C/R/V/D/T/Q, ranh giới theo đường dẫn từ .sdd/config, sổ hỏi đáp L0–L3, khuôn lời giao, chuỗi chuẩn T→D→C→R→(spec‖D‖T) cho một UC sau cổng. Dùng khi user nói "chạy nhiều agent", "giao việc cho agent code/test", "dựng đội", hoặc khi một UC đã qua gate + design và muốn code/test song song.
+description: Coordinating several agents on one SDD-Solo repo — the eight roles A/B/C/R/V/D/T/Q, path-based boundaries from .sdd/config, the L0–L3 question log, the briefing skeletons, and the standard chain T→D→C→R→(spec‖D‖T) for a UC past the gate. Use it when the user says "run several agents", "hand work to the code/test agent", "set up the team", or when a UC is past gate + design and code and tests should run in parallel.
 disable-model-invocation: true
 argument-hint: "setup | UC-### | round UC-###"
 allowed-tools: Bash Read Write Edit Grep Glob Agent AskUserQuestion
 ---
 
-Điều phối cho `$ARGUMENTS`.
+Reply in whatever language the user writes in; keep file names, IDs and slugs in English.
 
-**Vì sao skill này tồn tại (#39):** sdd-solo viết cho *một dev + một AI*. Ở runxops (2026-09-17, một ngày, 46 đợt
-spec, UC-014 từ start tới close) chủ dự án chạy **tám agent song song**, mỗi agent một vai, phối hợp bằng file
-trong repo. Mọi luật đó trả giá mới có (D sửa fake của T · R lệch D vì worktree không thấy spec mới · C đẩy lên
-chủ dự án cái design đã quyết) và tới 6.5.0 chỉ nằm trong sổ của một repo. Skill này nói **vai · file · thứ tự**;
-công cụ chạy song song (herdr, tmux, nhiều cửa sổ) là việc của user — phụ lục cuối có bẫy đã gặp.
+Coordination for `$ARGUMENTS`.
 
-Người đang đọc skill này **là vai A**. A không làm việc chuyên môn: đọc kết quả → quyết đường đi → giao việc →
-commit các sổ agent khác không được commit → cập nhật STATE → hỏi chủ dự án khi L3.
+**Why this skill exists (#39):** sdd-solo was written for *one developer + one AI*. At runxops (2026-09-17, one day,
+46 spec rounds, UC-014 from start to close) the owner ran **eight agents in parallel**, one role each, coordinating
+through files in the repo. Every rule here was paid for (D fixed T's fake · R disagreed with D because a worktree
+could not see the new spec · C escalated to the owner a design that was already settled), and up to 6.5.0 it lived
+only in one repo's notes. This skill states **the roles · the files · the order**; the tool that runs them in
+parallel (herdr, tmux, several windows) is the user's business — the appendix lists the traps already hit.
 
-`$ARGUMENTS` = `setup` → **§1**. `UC-###` → **§1 nếu chưa setup, rồi §4** (chuỗi chuẩn). `round UC-###` → **§4**
-từ lượt hiện tại. Không tham số → in bảng vai (§2) và hỏi user muốn gì.
+Whoever is reading this skill **is role A**. A does no specialist work: read results → decide the route → hand out
+work → commit the logs other agents may not commit → update STATE → ask the owner on an L3.
+
+`$ARGUMENTS` = `setup` → **§1**. `UC-###` → **§1 if setup has not run, then §4** (the standard chain).
+`round UC-###` → **§4** from the current round. No argument → print the role table (§2) and ask the user what they want.
 
 ---
 
-## 1. `setup` — một lần cho repo
+## 1. `setup` — once per repo
 
-1. Đọc `.sdd/config`: `code_paths` · `test_paths` · `uc_test_dir` · `nghe_paths`. Ranh giới vai **lấy từ đó**, không viết chết.
-   Thiếu `uc_test_dir` → dừng, bảo user khai (mặc định `tests/use-cases`). `nghe_paths` (7.0) là tên các nghề —
-   nó quyết `<uctest>/<core|nghề>/UC-###/` của vai T và vùng `src/<nghề>/` của vai D; trống ở repo còn bố cục 6.x
-   thì ranh giới vẫn tính theo `code_paths`/`uc_test_dir` như cũ.
-2. Sổ hỏi đáp: `notes/hoi-dap/hoi-dap.md` (vết quá trình, **ngoài `specs/`** từ 7.0). Chưa có → copy từ
-   `${CLAUDE_PLUGIN_ROOT}/templates/skel/hoi-dap.md` (không thay được biến: `find ~/.claude/plugins -name hoi-dap.md
-   -path '*sdd-solo*' | head -1`). Có rồi → không đụng.
-3. Vai (7.2): `.sdd/roles` chưa có → `/sdd-solo:init --update` chép bộ vai mẫu (A B R D T); đọc lại cùng user, sửa vùng
-   ghi/cấm cho đúng repo. Hook `commit-msg.d/10-vai.sh` đọc nó — mặc định `vai_bat_buoc=khong` chỉ nhắc; chạy
-   `bash .sdd/scripts/role.sh --kiem-lich-su` (chỉ đọc, 300 commit) rồi mới bật `nhanh-vai`. Bản cũ
-   `pre-commit.d/10-role-boundary.sh` (theo nhánh) còn thì `git rm`, kẻo hai mảnh cùng chặn. Hook nằm trong git, worktree
-   chỉ thấy nó sau khi `merge main`.
-4. (7.3) `notes/hang-doi.md` (hàng đợi, chỉ A ghi qua `queue.sh`) và `notes/uy-quyen.md` (uỷ quyền + điểm dừng có tên) —
-   `init --update` chép khuôn. Đọc `uy-quyen.md` cùng chủ dự án: **Phạm vi** do chủ dự án viết (còn khuôn thì A không
-   quyết câu L3 nào), sửa tên điểm dừng cho đúng repo. `status.sh` kiểm: mọi `DỪNG-<tên>` trong hàng đợi phải có tên ở
-   bảng Điểm dừng; dòng Sổ trỏ `#n` thì `decisions.md` phải có dòng khớp.
+1. Read `.sdd/config`: `code_paths` · `test_paths` · `uc_test_dir` · `nghe_paths`. The role boundaries **come from
+   there**, never hard-coded. Missing `uc_test_dir` → stop and tell the user to declare it (default `tests/use-cases`).
+   `nghe_paths` (7.0) is the list of craft names — it decides role T's `<uctest>/<core|craft>/UC-###/` and role D's
+   `src/<craft>/` area; empty in a repo still on the 6.x layout, where the boundaries fall back to
+   `code_paths`/`uc_test_dir` as before.
+2. The question log: `notes/hoi-dap/hoi-dap.md` (a process trace, **outside `specs/`** since 7.0). Missing → copy from
+   `${CLAUDE_PLUGIN_ROOT}/templates/skel/hoi-dap.md` (if the variable is not substituted:
+   `find ~/.claude/plugins -name hoi-dap.md -path '*sdd-solo*' | head -1`). Already there → leave it alone.
+3. Roles (7.2): no `.sdd/roles` yet → `/sdd-solo:init --update` copies the sample set (A B R D T); read it with the
+   user and adjust the write/deny areas to this repo. The `commit-msg.d/10-vai.sh` hook reads it — the default
+   `vai_bat_buoc=khong` only warns; run `bash .sdd/scripts/role.sh --kiem-lich-su` (read-only, 300 commits) before
+   turning on `nhanh-vai`. If the old `pre-commit.d/10-role-boundary.sh` (by branch) is still there, `git rm` it, or
+   two pieces block at once. Hooks live in git, so a worktree only sees them after `merge main`.
+4. (7.3) `notes/hang-doi.md` (the queue, written only by A through `queue.sh`) and `notes/uy-quyen.md` (delegation +
+   named stop points) — `init --update` copies the skeletons. Read `uy-quyen.md` with the owner: **Scope** is written
+   by the owner (while it is still the skeleton, A decides no L3 question), and rename the stop points to fit the
+   repo. `status.sh` checks: every `STOP-<name>` in the queue must appear in the Stop points table; a Ledger row
+   pointing at `#n` must have a matching line in `decisions.md`.
 5. Commit `chore(sdd): orchestrate setup — hoi-dap.md + .sdd/roles + hang-doi.md + uy-quyen.md`.
-6. Hỏi user bằng `AskUserQuestion` **hai câu**: (a) quyền tự quyết của R — *tới L2 (Recommended, runxops chốt) ·
-   tới L1 · chỉ L0*; (b) có vai Q (QA e2e) ngay không — *bật khi compose/deploy chạy được (Recommended) · bật ngay ·
-   không có*. Ghi hai câu trả lời vào đầu `hoi-dap.md` (dòng *Quyền tự quyết mặc định*) và `decisions.md`.
+6. Ask the user **two questions** with `AskUserQuestion`: (a) R's decision authority — *up to L2 (Recommended, what
+   runxops settled on) · up to L1 · L0 only*; (b) a Q role (end-to-end QA) right away or not — *enable it once
+   compose/deploy runs (Recommended) · enable now · none*. Record both answers at the top of `hoi-dap.md` (the
+   *Default authority* line) and in `decisions.md`.
 
-## 2. Bảng vai — ranh giới theo ĐƯỜNG DẪN, không theo "test hay code"
+## 2. The role table — boundaries by PATH, not by "test or code"
 
-`<code>` = `code_paths`, `<test>` = `test_paths`, `<uctest>` = `uc_test_dir` từ `.sdd/config`.
+`<code>` = `code_paths`, `<test>` = `test_paths`, `<uctest>` = `uc_test_dir` from `.sdd/config`.
 
-| Vai | Được ghi | Không được ghi | Kết thúc lượt bằng |
+| Role | May write | May not write | Ends a round with |
 |---|---|---|---|
-| **A · Điều phối** | `STATE.md`, `specs/decisions.md`, `notes/hoi-dap/hoi-dap.md` (commit thay R), sổ điều phối | code, spec | giao việc; **cổng duy nhất hỏi chủ dự án** (`AskUserQuestion`, mỗi lựa chọn một câu hệ quả, luôn có "Uỷ quyền R") |
-| **B · Spec** | `specs/` | code, `STATE.md`, `decisions.md` | commit `docs(ID)` + hash + danh sách `___` còn lại |
-| **C · Soi** | `notes/soat/soat-<ID>-luot-N.md` — ghi thẳng (runxops) hoặc scratchpad rồi A chép; **A commit**, C không commit | nội dung spec/code | số phát hiện + đường dẫn file; **phiên mới mỗi lượt**, không đọc sổ điều phối/STATE, không hỏi ai — HỎI ghi vào file |
-| **R · Trọng tài** | chỉ `notes/hoi-dap/hoi-dap.md`, **không commit** | mọi file khác | phiếu `#n · L? · Cho: spec · D · T` |
-| **V · Trình bày** | `notes/ban-do/` ghi chú, bản đồ, artifact | spec, code | link; **không quyết** |
-| **D · Code** | `<code>/**`, migrations, `<test>/**` **trừ** `<uctest>/**`, deploy — trong **worktree riêng**, nhánh `code/<uc-###>` | `<uctest>/**`, `specs/` (toàn bộ) | `feat(UC-###)` · câu hỏi → `notes/hoi-dap/hoi-D.md` (`HỎI-D#` · `TEST-#`) |
-| **T · Test** | `<uctest>/<core\|nghề>/UC-###/**` (test, harness, fake, fixture) — nhánh `test/<uc-###>` | `<code>/**`, `specs/` (toàn bộ) | `test(UC-###)` · câu hỏi → `notes/hoi-dap/hoi-T.md` (`HỎI-T#`) |
-| **Q · QA** | `notes/soat/qa-UC-###.md`, fixture ẩn danh | code, spec | báo cáo; bật khi compose/deploy chạy được |
+| **A · Coordinator** | `STATE.md`, `specs/decisions.md`, `notes/hoi-dap/hoi-dap.md` (committing for R), the coordination logs | code, spec | handing out work; **the only gate that asks the owner** (`AskUserQuestion`, one consequence sentence per option, always with "Delegate to R") |
+| **B · Spec** | `specs/` | code, `STATE.md`, `decisions.md` | a `docs(ID)` commit + the hash + the list of remaining `___` |
+| **C · Review** | `notes/soat/soat-<ID>-luot-N.md` — writing directly (runxops) or a scratchpad A then copies; **A commits**, C does not | spec/code content | the number of findings + the file path; **a fresh session each round**, reading no coordination log and no STATE, asking nobody — questions go into the file |
+| **R · Arbiter** | only `notes/hoi-dap/hoi-dap.md`, **no commits** | every other file | the ticket `#n · L? · For: spec · D · T` |
+| **V · Presentation** | `notes/ban-do/` notes, maps, artifacts | spec, code | a link; **decides nothing** |
+| **D · Code** | `<code>/**`, migrations, `<test>/**` **except** `<uctest>/**`, deploy — in its **own worktree**, branch `code/<uc-###>` | `<uctest>/**`, `specs/` (all of it) | `feat(UC-###)` · questions → `notes/hoi-dap/hoi-D.md` (`ASK-D#` · `TEST-#`) |
+| **T · Test** | `<uctest>/<core\|craft>/UC-###/**` (tests, harness, fakes, fixtures) — branch `test/<uc-###>` | `<code>/**`, `specs/` (all of it) | `test(UC-###)` · questions → `notes/hoi-dap/hoi-T.md` (`ASK-T#`) |
+| **Q · QA** | `notes/soat/qa-UC-###.md`, anonymised fixtures | code, spec | a report; enable it once compose/deploy runs |
 
-**Luật đã trả giá để có — đọc trước khi giao lượt đầu:**
-1. **Fake/harness của cổng thuộc T.** D thấy fake sai → **không sửa**, ghi `TEST-#` (file, dòng, cần gì, vì sao) vào
-   `hoi-D.md`, tạm bỏ ca đó; T sửa lượt kế. Lời giao lượt 3 ở runxops chỉ cấm "sửa test của T" → D sửa `fakes.ts`
-   (`c0e7137`) vì coi fake là "cài đặt cổng". Ranh giới phải gọi **đường dẫn**.
-2. **Kiểm cơ học sau mỗi lượt D, không tin mắt:** `git diff <đầu nhánh T> HEAD -- <uctest>` **rỗng** và
-   `git log --no-merges --format=%h -- <uctest>` **không có commit của D**. Pane Claude Code vẽ file đổi do `git merge`
-   y hệt agent tự sửa — chủ dự án đã tưởng D "vẫn viết test" một lần vì thế.
-3. **D/T mở lượt bằng `git merge main`** (và merge nhánh vai kia nếu lời giao bảo) rồi đọc **đúng phiếu được chỉ**,
-   không đọc cả sổ. D từng chọn ngược quyết định của R vì worktree không thấy spec mới.
-4. **Hợp đồng T↔D nằm ở một file harness** (T viết từ `design.md`); D "chấp nhận hoặc ghi lý do". `design.md`
-   phải khai **chữ ký cổng/hàm use-case**, không chỉ tên file (skill `design` §3 từ 6.6.0).
-5. **C hay đẩy lên chủ dự án cái design đã quyết** (hai lần một ngày). R tra design trước khi xếp mức; câu "cần
-   chủ dự án chốt" của C chỉ tới chủ dự án **sau khi R xác nhận L3**. A không hỏi thẳng theo lời C.
-6. **Tối đa hai agent ghi chạy cùng lúc** vào cùng vùng; không song song hai UC khác lát nếu cùng ghi một
-   `glossary.md`/`rules.md` (gốc hay của cùng một nghề); đổi tên lớn không song song với việc code nào.
-7. **Không bao giờ giao cho agent:** đặt số/ngưỡng/giá · câu chốt hình dạng UC · `gate`/`close` · push/deploy/xoá.
-   Đó là L3 của `hoi-dap.md`, và là việc A hỏi chủ dự án.
-8. **Agent con không được mở `AskUserQuestion`** — không ai ở đó để bấm, lượt treo tới hết hạn (#53). Lời giao chạy
-   `/sdd-solo:adversarial` ghi **`--phieu`**: câu hình dạng thành một phiếu K1…Kn cuối `hoi-dap.md`, UC/BR ghi
-   `Chưa quyết — Open Question (phiếu #n K#)`; A commit sổ rồi giao R. `/sdd-solo:verify` từ 7.0.1 không bao giờ hỏi
-   — mọi `F#` chưa bác thành `Chưa quyết (… · đề xuất: …)` và vẫn commit, không cần cờ. A đang ngồi cùng chủ dự án
-   mà muốn hỏi thẳng thì chạy adversarial trong **phiên của A** với `--hoi`, không giao.
+**Rules that were paid for — read them before handing out the first round:**
+1. **The gate's fakes and harness belong to T.** D sees a wrong fake → **does not fix it**, writes a `TEST-#` (file,
+   line, what is needed, why) into `hoi-D.md` and skips that case; T fixes it next round. Round 3's brief at runxops
+   only forbade "editing T's tests" → D edited `fakes.ts` (`c0e7137`) because it read a fake as "gate implementation".
+   A boundary must name **paths**.
+2. **Check mechanically after each D round, do not trust the eye:** `git diff <head of T's branch> HEAD -- <uctest>`
+   must be **empty**, and `git log --no-merges --format=%h -- <uctest>` must contain **no commit by D**. A Claude Code
+   pane draws files changed by `git merge` exactly like files the agent edited — the owner once believed D "was still
+   writing tests" because of this.
+3. **D/T open a round with `git merge main`** (and merge the other role's branch if the brief says so), then read
+   **exactly the ticket named**, not the whole log. D once chose against R's decision because its worktree could not
+   see the new spec.
+4. **The T↔D contract lives in one harness file** (T writes it from `design.md`); D "accepts it or records why not".
+   `design.md` must declare the **port/use-case function signatures**, not just file names (skill `design` §3, since
+   6.6.0).
+5. **C tends to escalate to the owner a design that is already settled** (twice in one day). R reads the design before
+   grading; C's "the owner must decide" reaches the owner **only after R confirms L3**. A does not ask directly on
+   C's word.
+6. **At most two writing agents at a time** in the same area; do not run two UCs from different slices in parallel if
+   both write the same `glossary.md`/`rules.md` (the root one or the same craft's); do not run a large rename in
+   parallel with any coding.
+7. **Never handed to an agent:** setting a number/threshold/price · settling the shape of a UC · `gate`/`close` ·
+   push/deploy/delete. Those are the L3 of `hoi-dap.md`, and they are A's job to ask the owner about.
+8. **A subagent may not open `AskUserQuestion`** — nobody is there to click and the turn hangs until it times out
+   (#53). A brief that runs `/sdd-solo:adversarial` writes **`--phieu`**: shape questions become one ticket K1…Kn at
+   the end of `hoi-dap.md`, and the UC/BR records `Undecided — Open Question (ticket #n K#)`; A commits the log and
+   hands it to R. Since 7.0.1 `/sdd-solo:verify` never asks — every `F#` that was not rejected becomes
+   `Undecided (… · proposal: …)` and it still commits, no flag needed. A sitting with the owner and wanting to ask
+   directly runs adversarial **in A's own session** with `--hoi`, not as a handed-out task.
 
-## 3. Khuôn lời giao
+## 3. The briefing skeletons
 
-**Từ 7.2 lời giao việc sinh bằng máy:** `bash .sdd/scripts/role.sh <vai> notes/hoi-dap/phieu/NNN-*.md [--luot N]` in sáu
-phần (mục tiêu · gói đọc `file:mục` qua lib · việc chép nguyên phần `Cho: <vai>` + mọi `[neo:]` · vùng cấm từ `.sdd/roles` ·
-lệnh kiểm + commit kê đích danh + đuôi `Vai:` · dòng `KETQUA`). Chỉ nhận **file phiếu** — 137 lượt giao tay ở runxops
-đều là chép lại phiếu, và chỗ hay rơi là neo. A sửa câu mục tiêu nếu cần rồi gửi; > 1.500 ký tự thì ghi file, `prompt
-"$(cat file)"`. Agent kết lượt bằng `role.sh --ketqua <khoá> ket=xong neo=<hash>` **trước** khi gửi tin — file ở
-`git-common-dir/sdd-ketqua/`, tin nhắn mất thì file còn (P-26); A đọc `role.sh --ketqua <khoá>`, không đọc màn hình.
-Mỗi vai một worktree: `role.sh --worktree D UC-###` · `role.sh --worktree T UC-###`; **B giữ checkout chính trên
-`main`** (cái B viết là sự thật chung); R và C đặt dấu bằng `role.sh R` / `role.sh C` ở worktree của mình.
-Hai khuôn dưới là để đọc hiểu sáu phần đó nói gì, và để dùng khi chưa có phiếu (lời giao vai lần đầu).
+**Since 7.2 a work brief is generated by machine:** `bash .sdd/scripts/role.sh <role> notes/hoi-dap/phieu/NNN-*.md
+[--luot N]` prints six parts (the goal · the reading pack as `file:section` through the lib · the work copied verbatim
+from `For: <role>` plus every `[anchor:]` · the forbidden area from `.sdd/roles` · the checks to run + an explicitly
+named commit + the `Vai:` trailer · the `KETQUA` line). It takes **a ticket file only** — all 137 hand-written briefs
+at runxops were transcriptions of a ticket, and the part usually dropped was the anchor. A edits the goal sentence if
+needed and sends it; over 1,500 characters → write it to a file and `prompt "$(cat file)"`. An agent ends a round with
+`role.sh --ketqua <key> ket=xong neo=<hash>` **before** sending its message — the file lives in
+`git-common-dir/sdd-ketqua/`, so if the message is lost the file remains (P-26); A reads `role.sh --ketqua <key>`,
+not the screen. One worktree per role: `role.sh --worktree D UC-###` · `role.sh --worktree T UC-###`; **B keeps the
+main checkout on `main`** (what B writes is shared truth); R and C set their markers with `role.sh R` / `role.sh C`
+in their own worktrees.
+The two skeletons below are there to read what those six parts say, and to use before there is a ticket (a role's
+first brief).
 
-**Lời giao vai** (một lần khi khởi động agent, ≤ 1.500 ký tự):
+**Role brief** (once when starting an agent, ≤ 1,500 characters):
 ```
-Vai: <D · Code cho UC-###>. Nhánh/worktree: <code/uc-###, đường-dẫn-worktree>.
-Được ghi: <code_paths> migrations, notes/hoi-dap/hoi-D.md. KHÔNG ghi: <uc_test_dir>/** (của T), specs/ (toàn bộ).
-Không tự quyết nghiệp vụ: spec thiếu số/enum/quyền → DỪNG, ghi HỎI-D# vào notes/hoi-dap/hoi-D.md, không đoán,
-không AskUserQuestion, không nhắn agent khác. Không chạy /sdd-solo:*. Commit <type>(UC-###), không push.
-Kết thúc mỗi lượt: báo ngắn (commit · số kiểm · HỎI/TEST mới) rồi DỪNG.
-CHƯA có việc. Đọc <design.md, tasks.md> rồi trả lời đúng một dòng: "D sẵn sàng".
+Role: <D · Code for UC-###>. Branch/worktree: <code/uc-###, worktree-path>.
+May write: <code_paths> migrations, notes/hoi-dap/hoi-D.md. MAY NOT write: <uc_test_dir>/** (T's), specs/ (all of it).
+Decide no business question: the spec is missing a number/enum/permission → STOP, write ASK-D# into
+notes/hoi-dap/hoi-D.md, do not guess, do not use AskUserQuestion, do not message another agent. Do not run
+/sdd-solo:*. Commit <type>(UC-###), do not push.
+End of every round: a short report (commit · check counts · new ASK/TEST) then STOP.
+There is NO work yet. Read <design.md, tasks.md> and answer with exactly one line: "D ready".
 ```
 
-**Lời giao việc** (mỗi lượt) — mười mục, thiếu một là lượt trôi:
+**Work brief** (each round) — ten items; missing one and the round drifts:
 ```
-Lượt <D-6> · nhánh <code/uc-014> · worktree <đường-dẫn>.
-Luật cũ một dòng: <được ghi / không được ghi / kiểu commit / không push / hỏi ghi vào đâu>.
-Bước 0: git merge main [và git merge test/uc-014].
-Đọc: <file:mục> — ĐÚNG phiếu #<n>, phần "Cho: D"; không đọc phiếu khác. (trỏ, không chép nội dung)
-Việc, theo thứ tự (L0 trước): 1. <K1 …> 2. <K2 …>
-Lệnh kiểm phải chạy: <npm test …> — in số ca xanh/đỏ, không nói "xanh" suông.
-Kiểm ranh giới cuối lượt: git diff --stat <đầu nhánh T>..HEAD -- <uc_test_dir> phải rỗng.
-Commit: <feat(UC-014): …>, tách theo khối. Không push.
-Báo cuối ≤ 10 dòng: commit · số kiểm · HỎI-D#/TEST-# mới · điều chưa làm. Kết quả dài → ghi file, trả đường dẫn.
-Xong thì DỪNG.
+Round <D-6> · branch <code/uc-014> · worktree <path>.
+Old rules in one line: <may write / may not write / commit style / no push / where questions go>.
+Step 0: git merge main [and git merge test/uc-014].
+Read: <file:section> — EXACTLY ticket #<n>, the "For: D" part; read no other ticket. (point at it, do not copy it)
+Work, in order (L0 first): 1. <K1 …> 2. <K2 …>
+Checks that must run: <npm test …> — print the pass/fail counts, do not just say "green".
+Boundary check at the end of the round: git diff --stat <head of T's branch>..HEAD -- <uc_test_dir> must be empty.
+Commit: <feat(UC-014): …>, split by block. Do not push.
+Final report ≤ 10 lines: commit · check counts · new ASK-D#/TEST-# · what was not done. Long output → write a file and return the path.
+When done, STOP.
 ```
-Soạn lời giao vào file trong scratchpad trước, rồi mới gửi — lời giao > ~1.500 ký tự qua một số công cụ bị dán thành
-khối không tự gửi (phụ lục).
+Write the brief into a scratchpad file first and only then send it — a brief over ~1,500 characters is pasted as a
+block by some tools and never sent (see the appendix).
 
-**Lời giao soát code cho C** (sau mỗi lượt D, phiên mới): diff `git -C <worktree> diff <base>..<head>`; năm câu:
-(1) truy vết việc → AC → test → code; (2) đúng tầng domain / use-cases / adapters; (3) mặc định ngầm và chỗ D khai
-"ĐOÁN"; (4) chuyển trạng thái theo file entity (`specs/<core|nghề>/entities/<Tên>.md`), cột cấm (CON) không lọt;
-(5) code đổi lặng lẽ so với `design.md`; (6) `src/core` có import `src/<nghề>` không — `layer-check.sh` đếm hộ.
-Mỗi phát hiện **theo khuôn phiếu** (`Câu · Đã tra · Nếu chọn sai thì · Agent nghiêng về`) để R xếp mức không phải
-dịch lại. Ghi trong prompt của C và R: **phép đo nào có thể đã cũ** vì T đang sửa song song.
+**Code review brief for C** (after each D round, a fresh session): the diff `git -C <worktree> diff <base>..<head>`;
+five questions: (1) trace the work → AC → test → code; (2) the right layer, domain / use-cases / adapters; (3) silent
+defaults and the places D marked "GUESS"; (4) state transitions follow the entity file
+(`specs/<core|craft>/entities/<Name>.md`), and no forbidden column (CON) slipped through; (5) code that quietly
+diverged from `design.md`; (6) does `src/core` import `src/<craft>` — `layer-check.sh` counts that for you.
+Every finding **in the ticket shape** (`Question · Already looked up · If chosen wrong · The agent leans towards`) so
+R can grade it without translating it again. Write into C's and R's prompts: **which measurements may already be
+stale**, because T is editing in parallel.
 
-## 4. Chuỗi chuẩn cho một UC sau cổng
+## 4. The standard chain for a UC past the gate
 
-Điều kiện vào: `.sdd/gate/UC-###.ok` · `design.md` qua `design-check` · `tasks.md`. Thiếu → dừng, chỉ lệnh
-(`/sdd-solo:gate`, `/sdd-solo:design`). Không dựng D khi chưa đủ — đó là luật của `CLAUDE.md`, không phải của A.
+Entry conditions: `.sdd/gate/UC-###.ok` · a `design.md` that passes `design-check` · `tasks.md`. Missing → stop and
+name the command (`/sdd-solo:gate`, `/sdd-solo:design`). Do not stand up D before those exist — that is `CLAUDE.md`'s
+rule, not A's.
 
 ```
-T lượt 1  — test ĐỎ từ AC (mỗi AC một file trong <uctest>/<core|nghề>/UC-###/), harness + fake từ design; nhánh test/uc-###
-D lượt 1  — khối nền (tasks "việc không gắn AC nào"), rồi merge test/uc-### từng AC, làm xanh; nhánh code/uc-###
-C soát    — phiên mới, diff lượt D, năm câu §3 → notes/soat/soat-UC-###-luot-N.md (C ghi thẳng, A commit)
-R         — một phiếu gom K1…Kn: mức từng K, Cho: spec · D · T, thứ tự áp; A commit sổ
-spec ‖ D ‖ T — ba vai áp CÙNG LÚC, mỗi vai đọc đúng phần "Cho:" của mình
-… lặp: D lượt n → C soát → R → spec ‖ D ‖ T … tới khi hai suite xanh trên code thật và C không còn K mức L0/L1
-C soát trọn — phiên mới, cả nhánh, đo cả migrate vào DB trống (số xanh trên cụm đã migrate không chứng minh gì)
-D self-review 5 câu (.sdd/checklists/self-review.md) — ba trong bốn mục thành việc ở runxops, đừng bỏ
-merge code/uc-### → main (A hoặc chủ dự án) → /sdd-solo:close (chủ dự án, không giao agent)
+T round 1  — RED tests from the ACs (one file per AC in <uctest>/<core|craft>/UC-###/), harness + fakes from the design; branch test/uc-###
+D round 1  — the groundwork blocks (the tasks "tied to no AC"), then merge test/uc-### one AC at a time and make them green; branch code/uc-###
+C review   — a fresh session, the diff of D's round, the five questions of §3 → notes/soat/soat-UC-###-luot-N.md (C writes it, A commits)
+R          — one ticket collecting K1…Kn: the level of each K, For: spec · D · T, the order to apply; A commits the log
+spec ‖ D ‖ T — the three roles apply AT THE SAME TIME, each reading exactly its own "For:" part
+… repeat: D round n → C review → R → spec ‖ D ‖ T … until both suites are green on the real code and C has no K left at L0/L1
+C full review — a fresh session, the whole branch, measuring a migration into an empty DB too (green numbers on an already-migrated cluster prove nothing)
+D runs the five self-review questions (.sdd/checklists/self-review.md) — three of the four items became work at runxops, do not skip it
+merge code/uc-### → main (A or the owner) → /sdd-solo:close (the owner, never an agent)
 ```
-Một vòng `C → R → spec ‖ D ‖ T` ≈ 35–45 phút ở runxops. Ba vai cuối luôn phát cùng lúc vì họ chỉ cần chữ của
-phiếu, không cần nhau.
+One `C → R → spec ‖ D ‖ T` loop was roughly 35–45 minutes at runxops. The last three roles always go out together
+because they only need the ticket's text, not each other.
 
-**Hàng đợi (7.3):** `queue.sh add <khoá> <làn> <vai> --can "<khoá trước>"` · `queue.sh next` in việc phát được ngay (mọi
-Cần đã xong, làn còn chỗ) — A hỏi máy, không hỏi trí nhớ · `queue.sh take <khoá>` khi phát · `queue.sh done <khoá>` chỉ khi
-có KETQUA `ket=xong` + neo · `queue.sh stop <khoá> <tên dừng>` với tên ở `uy-quyen.md` · `queue.sh board` là bảng giao việc
-(việc quá hạn chỉ cắm cờ `nghi-chết`, A đi nhìn, không tự đổi trạng thái). Agent không ghi bảng; worktree phụ đọc bản
-`main`. Mỗi lượt của A kết thúc bằng **một lệnh chờ nền hoặc một điểm dừng có tên** — không có trạng thái thứ ba.
-**Sổ hỏi có địa chỉ:** D/T mở câu bằng `phieu.sh hoi D "<câu>"` (bốn ô: nguồn · chặn không · đang làm gì trong lúc chờ ·
-việc cho spec khi trả lời); A trả lời vào ô `Trả lời (A/R)` + `đích:` (design.md · decisions.md), **không sửa lời hỏi**;
-thân UC chỉ mở lại khi một AC đổi — `hoi-check.sh D` đỏ khi cổng đã mở mà đích trỏ thân UC.
+**The queue (7.3):** `queue.sh add <key> <lane> <role> --can "<earlier key>"` · `queue.sh next` prints what can go out
+right now (every Need is done, the lane has room) — A asks the machine, not its memory · `queue.sh take <key>` when
+handing it out · `queue.sh done <key>` only with a KETQUA `ket=xong` + anchor · `queue.sh stop <key> <stop name>` with
+a name from `uy-quyen.md` · `queue.sh board` is the assignment board (an overdue item only raises a `suspected-dead` flag
+for A to look at; it never changes state by itself). Agents do not write the board; a secondary worktree reads the
+`main` copy. Every round of A's ends with **either a background wait command or a named stop point** — there is no
+third state.
+**The addressed question log:** D/T open a question with `phieu.sh hoi D "<question>"` (four boxes: source · blocking ·
+doing while waiting · spec work when answered); A answers in the `Answer (A/R)` box + `target:` (design.md ·
+decisions.md) and **does not edit the question**; the body of a UC only reopens when an AC changes —
+`hoi-check.sh D` is red when the gate is open and a target points into the UC body.
 
-**Sau mỗi lượt, A làm đúng bốn việc:** (1) đọc `git log` của nhánh + khối báo cuối của agent (không tin bản đọc màn
-hình cho kết quả dài); (2) kiểm ranh giới bằng máy (§2 luật 2); (3) commit sổ agent không được commit
-(`hoi-dap.md`, file soát) — `chore(sdd): hoi-dap #n` hoặc `docs(UC-###): soát lượt N`; (4) `STATE.md` một dòng:
-lượt nào đang chạy, phiếu nào chờ Duyệt.
+**After every round, A does exactly four things:** (1) read the branch's `git log` and the agent's final report block
+(do not trust a screen reading for long output); (2) check the boundary mechanically (§2 rule 2); (3) commit the logs
+the agent may not commit (`hoi-dap.md`, the review file) — `chore(sdd): hoi-dap #n` or `docs(UC-###): review round N`;
+(4) one line in `STATE.md`: which round is running, which ticket is waiting for Approve.
 
-**Luồng phiếu:** phiếu mới cấp số bằng `bash .sdd/scripts/phieu.sh new "<việc>" <vai>` (khoá nguyên tử chung mọi
-worktree, commit dòng giữ chỗ ngay — P-21 trùng số bốn lần một ngày khi cấp tay); đóng bằng `phieu.sh close <n>` (đếm
-F#/K# trên file, đòi KETQUA từng vai — P-33). Agent ghi `HỎI-<vai>#` vào `notes/hoi-dap/hoi-<vai>.md` (trong worktree của nó) rồi DỪNG → A đọc
-worktree, giao R: *"phiếu #n: xếp mức L0–L3, tra spec/ADR/design, ghi Cho: từng vai, thứ tự áp; chỉ ghi
-hoi-dap.md, không commit"* → L0–L2: A phát phần `Cho:` cho từng vai · L3: A hỏi chủ dự án `AskUserQuestion` (2–4
-lựa chọn, hệ quả một câu, có "Chưa quyết") → A ghi `decisions.md`/spec trước khi D bắt đầu lượt kế. Agent lặp lại
-câu đã trả lời → lời giao lượt sau nhắc *"đọc mục Trả lời của phiếu trước khi hỏi lại"*.
+**The ticket flow:** a new ticket takes its number with `bash .sdd/scripts/phieu.sh new "<task>" <role>` (an atomic
+lock shared by every worktree, the placeholder row committed immediately — P-21, four collisions in one day when
+numbers were allocated by hand); it is closed with `phieu.sh close <n>` (counting F#/K# in the file, requiring a
+KETQUA from each role — P-33). An agent writes `ASK-<role>#` into `notes/hoi-dap/hoi-<role>.md` (inside its own
+worktree) and STOPS → A reads the worktree and hands it to R: *"ticket #n: grade L0–L3, check the spec/ADR/design,
+write For: per role and the order to apply; write only hoi-dap.md, do not commit"* → L0–L2: A hands each role its
+`For:` part · L3: A asks the owner with `AskUserQuestion` (2–4 options, one consequence sentence each, with
+"Undecided") → A writes `decisions.md`/the spec before D starts the next round. An agent repeating an already-answered
+question → the next round's brief says *"read the ticket's Answer section before asking again"*.
 
-**Khi dùng ở repo plugin / repo nhỏ:** ba vai đủ — A (phiên này), D (sửa theo nhóm việc, worktree), C (phiên mới, soi
-diff của D so với thân việc và với chỗ khác đang nói). R gộp vào A vì câu hỏi thường L1.
+**Using this in a plugin repo / a small repo:** three roles are enough — A (this session), D (fixing by group of work,
+in a worktree), C (a fresh session, reviewing D's diff against the work itself and against everything else that
+speaks about it). R folds into A because the questions are usually L1.
 
-## 5. Giới hạn — nói với user
+## 5. Limits — tell the user
 
-1. Skill này **không đo được** agent có tuân lời giao không; thứ đo được là githook `commit-msg.d/10-vai.sh` (ranh
-   giới vai theo `.sdd/roles`, đuôi `Vai:` trong `git log`), file KETQUA, và hai lệnh `git diff`/`git log` ở §2 luật 2.
-   Còn lại là kỷ luật của A.
-2. Agent tự nén ngữ cảnh giữa lượt thì `wait` vẫn đúng nhưng nó có thể quên luật vai → lời giao việc **nhắc lại luật
-   cũ một dòng** mỗi lượt, không chỉ lúc khởi động.
-3. Không thay được `/sdd-solo:verify` và ba vai adversarial: C soát **code**; verify soát **spec**. Hai việc khác nhau.
+1. This skill **cannot measure** whether an agent followed its brief; what can be measured is the githook
+   `commit-msg.d/10-vai.sh` (the role boundary from `.sdd/roles`, the `Vai:` trailer in `git log`), the KETQUA files,
+   and the two `git diff`/`git log` commands in §2 rule 2. The rest is A's discipline.
+2. When an agent compacts its own context between rounds, `wait` still works but it may have forgotten its role rules
+   → a work brief **restates the old rules in one line** every round, not only at startup.
+3. It does not replace `/sdd-solo:verify` or the three adversarial roles: C reviews **code**; verify reviews **the
+   spec**. Two different jobs.
 
 ---
 
-## Phụ lục — bẫy đã gặp với herdr 0.9.0 (không phụ thuộc; công cụ khác có bẫy khác)
+## Appendix — traps already hit with herdr 0.9.0 (not a dependency; other tools have other traps)
 
-- `agent wait --timeout` tính **mili-giây**: `900` = 0,9 s trông như agent xong; dùng `900000` cho 15 phút. `wait`
-  trả sớm giữa các pha subagent → chờ bằng vòng `for i in 1..6: wait; đọc agent_status; break khi != working`.
-- Lời giao > ~1.500 ký tự dán vào ô nhập thành `[Pasted text #N]` và **không tự gửi**: `prompt` trả `agent_prompted`,
-  trạng thái vẫn `idle`. Sau mỗi prompt kiểm `agent_status = working`; `idle` + màn hình có `[Pasted text` → `send-keys
-  <tên> enter`.
-- Lời giao qua zsh: `<wt>`, `$(…)`, backtick bị hiểu là cú pháp shell → `parse error`, prompt không tới. Viết vào
-  file scratchpad rồi `prompt "$(cat file)"`; gọi tên bằng chữ ("đường-dẫn-worktree").
-- Shell nền mất PATH → `export PATH=/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin:$PATH` đầu mỗi lệnh nền.
-- Claude mới khởi động có thể kẹt hộp thoại, trạng thái vẫn `idle` không `blocked` → sau `agent start`, đọc màn hình
-  trước khi prompt. Hộp thoại có lựa chọn riêng tư (quét shell history) → A không tự bấm, hỏi chủ dự án.
-- Ô nhập hiện gợi ý mờ (`\x1b[2m` khi đọc `--format ansi`) sau khi một skill kết thúc — là gợi ý ma, vô hại; `agent
-  read` text không phân biệt được với chữ đã gõ.
-- `agent read` có thể không lấy lại được câu trả lời dài → kết quả dài bắt agent ghi file.
-- `agent send-keys` chỉ nhận **phím đặt tên** (`enter`, `escape`, `ctrl-u`…), không gõ được chữ — `send-keys soi
-  "/clear" enter` trả `invalid_key` và không làm gì. Mọi lệnh gạch chéo đi qua `agent prompt <tên> "/clear"`.
-  C phiên mới: `prompt soi "/clear"`, chờ ~8 s, rồi prompt lời giao. Agent báo "3% until auto-compact" → `/clear`
-  trước đợt kế; D/T giữ phiên vì đang có ngữ cảnh code.
-- Khởi động lại agent để nạp plugin mới (bản mới không áp vào phiên đang mở): `agent prompt <tên> "/exit"` → pane về
-  shell, tên agent biến mất → `agent start <tên> --kind claude --pane <pane> --timeout 90000` → đọc màn hình → gửi lại
-  lời giao vai. Runxops làm cho 6 pane sau 6.6.1, cả 6 trả "sẵn sàng".
-- Pane Claude Code vẽ file đổi do `git merge` y hệt agent tự sửa (§2 luật 2).
+- `agent wait --timeout` counts **milliseconds**: `900` = 0.9 s and looks like the agent finished; use `900000` for
+  15 minutes. `wait` returns early between subagent phases → wait with a loop `for i in 1..6: wait; read agent_status;
+  break when != working`.
+- A brief over ~1,500 characters pasted into the input box becomes `[Pasted text #N]` and is **not sent**: `prompt`
+  returns `agent_prompted` while the state stays `idle`. After every prompt check `agent_status = working`; `idle` +
+  `[Pasted text` on screen → `send-keys <name> enter`.
+- A brief through zsh: `<wt>`, `$(…)` and backticks are read as shell syntax → `parse error`, and the prompt never
+  arrives. Write it into a scratchpad file and `prompt "$(cat file)"`; name things in words ("worktree-path").
+- A background shell loses PATH → `export PATH=/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin:$PATH` at the start of
+  every background command.
+- A freshly started Claude can be stuck on a dialog while its state still reads `idle` rather than `blocked` → after
+  `agent start`, read the screen before prompting. A dialog with a privacy option (scanning shell history) → A does
+  not click it, A asks the owner.
+- The input box shows a ghost suggestion (`\x1b[2m` when read with `--format ansi`) after a skill finishes — harmless;
+  `agent read` as text cannot tell it apart from typed characters.
+- `agent read` may fail to retrieve a long answer → for long output, make the agent write a file.
+- `agent send-keys` only accepts **named keys** (`enter`, `escape`, `ctrl-u`…) and cannot type characters —
+  `send-keys soi "/clear" enter` returns `invalid_key` and does nothing. Every slash command goes through
+  `agent prompt <name> "/clear"`. A fresh session for C: `prompt soi "/clear"`, wait ~8 s, then prompt the brief. An
+  agent reporting "3% until auto-compact" → `/clear` before the next round; D/T keep their session because they hold
+  code context.
+- Restarting an agent to load a new plugin version (a new version does not apply to an open session):
+  `agent prompt <name> "/exit"` → the pane returns to a shell and the agent name disappears →
+  `agent start <name> --kind claude --pane <pane> --timeout 90000` → read the screen → resend the role brief. Runxops
+  did this for 6 panes after 6.6.1, and all 6 answered "ready".
+- A Claude Code pane draws files changed by `git merge` exactly like files the agent edited (§2 rule 2).

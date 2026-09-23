@@ -3,4 +3,4 @@ nr p35
 rep specs/rules.md '- Phát biểu: mỗi Order vào trạng thái new sinh một tin báo.' '- Phát biểu: mỗi Order vào trạng thái new sinh một tin báo, trừ đơn test.'
 cm "docs(RULE-001): thêm ngoại lệ đơn test" 2026-01-06
 S gate-check.sh UC-001
-chk "P-35 · sửa thân RULE được trích sau đọc lại → cổng nói vùng đổi rules" 'has "vùng đổi"'
+chk "P-35 · sửa thân RULE được trích sau đọc lại → cổng nói vùng đổi rules" 'has "areas changed"'

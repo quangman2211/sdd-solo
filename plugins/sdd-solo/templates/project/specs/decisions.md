@@ -1,5 +1,6 @@
-# Decisions — bảng tra
+# Decisions — lookup table
 
-Một dòng một quyết định. Append-only. Khi một dòng bị chất vấn lần thứ hai hoặc chạm nhiều lát → nâng lên ADR.
+One line per decision. Append-only. When a line is challenged a second time, or touches several
+slices, promote it to an ADR.
 
-- YYYY-MM-DD — <quyết định một câu>. Loại: <phương án bị loại, một câu>. Chi tiết: <ADR-### | UC-###/design.md | specs/changes/CHG-###>
+- YYYY-MM-DD — <one-sentence decision>. Rejected: <the option that lost, one sentence>. Detail: <ADR-### | UC-###/design.md | specs/changes/CHG-###>

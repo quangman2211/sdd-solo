@@ -1,34 +1,36 @@
 ---
 name: close
-description: Bước ⑭ — Definition of Done cho một UC — mỗi AC có test đúng tên, docs đứng trước feat trong git log, soi số literal (rule ngầm), History có dòng; xanh thì status implemented, ghi traceability và commit.
+description: Step ⑭ — Definition of Done for one UC — every AC has a correctly named test, docs comes before feat in the git log, literal numbers are reviewed (hidden rules), History has a line; green sets status implemented, writes traceability and commits.
 disable-model-invocation: true
 argument-hint: "UC-###"
 allowed-tools: Bash Read Edit
 ---
 
-Đóng `$1`.
+Reply in whatever language the user writes in; keep file names, IDs and slugs in English.
 
-**Không giao agent:** `close` là việc của chủ dự án (orchestrate §2 luật 7). Chạy dưới lời giao của agent khác → dừng, ghi KETQUA `ket=chan hoi=-` nói rõ "close là việc của chủ dự án".
+Close `$1`.
 
-1. Chạy self-review 5 câu cùng user trước (từ `.sdd/checklists/self-review.md`), đặc biệt câu 5 *"AI quyết hay mình quyết?"* — nếu có quyết định kỹ thuật đáng nhớ, append một dòng vào `specs/decisions.md` (gốc) theo format trong file.
-2. Chạy và in output:
+**Never delegated to an agent:** `close` is the owner's job (orchestrate §2 rule 7). Running under another agent's brief → stop and write `KETQUA ket=chan hoi=-` saying plainly "close is the owner's job".
+
+1. Go through the five self-review questions with the user first (from `.sdd/checklists/self-review.md`), especially question 5 *"who decided, the AI or me?"* — if there is a technical decision worth remembering, append one line to `specs/decisions.md` (root) in the format that file uses.
+2. Run it and print the output:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/close-check.sh" $1
 ```
-3. Exit ≠ 0 → liệt kê việc còn thiếu (test thiếu, thứ tự commit sai, chưa qua gate). Dừng.
-4. Có cảnh báo "số literal cần soi" → đi qua từng dòng với user: mỗi số phải trích RULE/CON hoặc user giải thích; số nào là rule nghiệp vụ mà spec chưa có → dừng, thêm RULE, commit `docs(...)`, rồi mới đóng.
-5. Exit 0 → chạy:
+3. Exit ≠ 0 → list what is still missing (a missing test, the commit order, the gate not passed). Stop.
+4. A "literal numbers to review" warning → walk each line with the user: every number must cite a RULE/CON or the user explains it; a number that is a business rule the spec does not have → stop, add the RULE, commit `docs(...)`, and only then close.
+5. Exit 0 → run:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/pass.sh" close $1
 ```
-6. Nếu spec có đổi trong lúc code mà `## History` chưa ghi → thêm dòng v+1 trước khi pass.
-   Từ 5.0.0 `pass.sh close` **dời** thân `## Adversarial pass` · `## Đọc lại` · `## History` · Open Question
-   đã `[x]` sang `UC-###.trace.md` cùng thư mục, để lại mỗi mục một dòng có số đếm bằng máy. Nói với
-   user: `trace.md` là **giấy nháp đã dùng xong** — mở khi tranh chấp, không phải file đọc thường;
-   `context.sh` và `decisions.sh` không đọc nó. UC-009 ở runxops: 56 KB → ~20 KB, không mất một chữ.
-7. Gợi ý UC tiếp theo từ bảng `## Related Use Cases` trong `br.md` của lát (status `draft` đầu tiên) và nhắc `/sdd-solo:state`.
+6. If the spec changed while coding and `## History` does not say so → add the v+1 line before passing.
+   Since 5.0.0 `pass.sh close` **moves** the bodies of `## Adversarial pass` · `## Re-read` · `## History` and the
+   `[x]` Open Questions into `UC-###.trace.md` in the same folder, leaving one machine-counted line per section. Tell
+   the user: `trace.md` is **scratch paper already used** — open it when something is disputed, it is not everyday
+   reading; `context.sh` and `decisions.sh` do not read it. UC-009 in runxops: 56 KB → ~20 KB, with nothing lost.
+7. Suggest the next UC from the `## Related Use Cases` table in the slice's `br.md` (the first one still `draft`) and mention `/sdd-solo:state`.
 
-   Lát này đã hết UC `draft` → nói ra, và đọc bảng `## Nghề và lát` của `specs/vision.md`: lát kế của nghề
-   là lát nào, hay nghề này sắp "xong" theo mục `## "Xong" của mỗi nghề`. **Không tự tuyên bố một nghề đã
-   xong và cũng không tự mở nghề kế** — điều kiện "xong" là của chủ dự án, ở tầng 0. Chỉ đọc lại điều kiện
-   đó cho user nghe và hỏi.
+   The slice has no `draft` UC left → say so, and read the `## Crafts and slices` table in `specs/vision.md`: which
+   slice of the craft comes next, or whether this craft is close to "done" per `## What "done" means per craft`.
+   **Never declare a craft done and never open the next one** — the "done" condition belongs to the owner, at layer 0.
+   Only read the condition back to the user and ask.

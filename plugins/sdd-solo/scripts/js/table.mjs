@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// table.mjs — sửa bảng markdown tại chỗ: thêm dòng phiếu, đổi ô, đánh dấu đã áp (7.6.0, thay ba khối python).
+// table.mjs — edit a markdown table in place: add a ticket row, change a cell, mark it applied (7.6.0, replacing three python blocks).
 //
-// Bảng markdown là kho dữ liệu của plugin (mục lục phiếu, hàng đợi, bảng UC) vì nó vừa máy đọc được vừa
-// người sửa được. Sửa bằng sed thì hỏng ngay khi một ô có ký tự lạ; mỗi lệnh dưới đây làm đúng một việc.
+// A markdown table is the plugin data store (the ticket index, the queue, the UC table) because it is both machine readable and
+// human editable. Editing it with sed breaks the moment a cell holds an odd character; each command below does exactly one job.
 //
-//   table.mjs addrow <file> <dòng>          chèn dòng sau dòng "| #n |" cuối cùng, hoặc sau header
-//   table.mjs setcell <file> <khoá> <cột>=<giá trị>…   sửa ô của dòng có ô đầu là khoá (cột: tên đã khai dưới)
-//   table.mjs mark <file> <n> <giá trị>     đặt ô thứ 5 của dòng "| #n |" (trạng thái phiếu)
+//   table.mjs addrow <file> <row>           insert after the last "| #n |" row, or after the header
+//   table.mjs setcell <file> <key> <column>=<value>…   edit the cells of the row whose first cell is the key (columns named below)
+//   table.mjs mark <file> <n> <value>       set the 5th cell of the "| #n |" row (the ticket state)
 import fs from 'node:fs';
 import { kw, kwW } from './kw.mjs';
 
@@ -18,13 +18,13 @@ function write(p, s) { fs.writeFileSync(p, s); }
 
 switch (cmd) {
   case 'addrow': {
-    // Cùng luật với khối python nó thay: sau dòng phiếu cuối nếu có; chưa có dòng nào thì sau gạch header
-    // của bảng mục lục; chưa có bảng thì thêm cả bảng. Ba nhánh, không nhánh nào được bỏ — mục lục phiếu là
-    // chỗ cấp số, mất một dòng ở đây là trùng số ở lượt sau (P-21).
+    // The same rule as the python block it replaced: after the last ticket row if there is one; with no row yet, after the
+    // header rule of the index table; with no table, add the whole table. Three branches, none of which may be dropped — the
+    // ticket index is where numbers are allocated, and losing a row here means a number collision next time (P-21).
     const row = rest[0];
     let s = read(file);
     const rows = [...s.matchAll(/^\| *#\d+ \|.*$/gm)];
-    // 7.7.0: đầu bảng mục lục nhận cả hai thứ tiếng; bảng MỚI ghi theo doc_lang.
+    // 7.7.0: the index table header is read in either language; a NEW table is written per doc_lang.
     const HEADRE = new RegExp('^\\| *# *\\| *(?:' + kw('work') + ') *\\|', 'm');
     if (rows.length) {
       const i = rows[rows.length - 1].index + rows[rows.length - 1][0].length;
@@ -56,20 +56,20 @@ switch (cmd) {
       const c = lines[i].trim().replace(/^\||\|$/g, '').split('|').map((x) => x.trim());
       while (c.length < 7) c.push('');
       for (const [k, v] of Object.entries(kv)) {
-        if (!(k in col)) { process.stderr.write(`cột lạ: ${k}\n`); process.exit(2); }
+        if (!(k in col)) { process.stderr.write(`unknown column: ${k}\n`); process.exit(2); }
         c[col[k]] = v;
       }
       lines[i] = '| ' + c.join(' | ') + ' |';
       done = true;
       break;
     }
-    if (!done) { process.stderr.write('không có dòng ' + key + '\n'); process.exit(1); }
+    if (!done) { process.stderr.write('no row ' + key + '\n'); process.exit(1); }
     write(file, lines.join('\n'));
     break;
   }
   case 'mark': {
-    // JS không có cờ inline (?m) như python — cờ phải ở tham số thứ hai của RegExp, nếu không nó là
-    // "nhóm không hợp lệ" và node ném ngay. Bẫy đầu tiên gặp khi chuyển từ python sang node (7.6.0).
+    // JS has no inline (?m) flag like python — the flag goes in the second argument of RegExp, otherwise it is an
+    // "invalid group" and node throws at once. The first trap hit when moving from python to node (7.6.0).
     const [n, val] = rest;
     const s = read(file);
     const re = new RegExp('^(\\| *#' + esc(n) + ' \\|(?:[^|]*\\|){3}) *[^|]* *(\\|)', 'm');
@@ -77,6 +77,6 @@ switch (cmd) {
     break;
   }
   default:
-    process.stderr.write('dùng: table.mjs <addrow|setcell|mark> <file> …\n');
+    process.stderr.write('usage: table.mjs <addrow|setcell|mark> <file> …\n');
     process.exit(2);
 }

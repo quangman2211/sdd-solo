@@ -1,14 +1,14 @@
-# Entities — <nghề>
+# Entities — <craft>
 
-Entity chỉ nghề này dùng, **mỗi entity một file** `<Tên>.md` (khuôn: `templates/skel/entity.md`).
-Entity dùng chung mọi nghề nằm ở `specs/core/entities/`. Nghề được trích entity core; core không
-biết entity của nghề.
+Entities only this craft uses, **one file per entity** `<Name>.md` (skeleton:
+`templates/skel/entity.md`). Entities shared by every craft live in `specs/core/entities/`.
+A craft may cite a core entity; core knows nothing about a craft's entities.
 
 ## Domain Model
 ```mermaid
 classDiagram
   direction LR
-  class EntityNghe
-  class EntityCore
-  EntityNghe "1" --> "*" EntityCore : <quan hệ>
+  class CraftEntity
+  class CoreEntity
+  CraftEntity "1" --> "*" CoreEntity : <relation>
 ```

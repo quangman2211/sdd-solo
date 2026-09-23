@@ -1,97 +1,100 @@
-# Architecture — hiến pháp kỹ thuật của dự án
+# Architecture — the project's technical constitution
 
 **Status:** draft
 **Last updated:** ___
 
-> Năm tầng yêu cầu (Hướng · BR · UC · Entity · AC) trả lời *vì sao · ai làm gì · khái niệm nào ·
-> biết đúng bằng cách nào*. **Không tầng nào trả lời *dựng bằng gì · chạy ở đâu · ai gọi*.**
-> File này là ngăn đó. Nó viết MỘT lần cho cả dự án và sửa khi có ADR đụng tới;
-> `design.md` của mỗi UC phải đối chiếu ngược lên đây.
+> The five requirement layers (Direction · BR · UC · Entity · AC) answer *why · who does what · which
+> concepts · how we know it is right*. **No layer answers *built with what · runs where · called by whom*.**
+> This file is that slot. It is written ONCE for the whole project and edited when an ADR touches it;
+> every UC's `design.md` must check back against it.
 >
-> Ca thật đẻ ra file này: một UC đi trọn vòng, qua cổng DoR, rồi bản thiết kế viết ra
-> một kiến trúc **ngược hẳn** brief — và không ai thấy trong hai ngày, vì mỗi tài liệu
-> tự nó nhất quán. Chỗ hỏng không phải một phép kiểm đo sai; là **một vùng không phép
-> kiểm nào được giao nhìn tới**.
+> The real case behind this file: a UC went the whole way round, passed the DoR gate, and then the design
+> described an architecture **directly opposed** to the brief — and nobody saw it for two days, because
+> every document was internally consistent. The failure was not a check measuring wrongly; it was **an
+> area no check was allowed to look at**.
 >
-> `design-check.sh` đỏ khi file này còn `<...>`. Chưa quyết được thì viết `___` **kèm một
-> dòng trong `## Open Questions` của BR** — `___` là câu trả lời hợp lệ, `<...>` thì không.
+> `design-check.sh` goes red while this file still contains `<...>`. Cannot decide yet? Write `___`
+> **together with a line in the BR's `## Open Questions`** — `___` is a valid answer, `<...>` is not.
 
-## Ngăn xếp
-<ngôn ngữ · runtime · thư viện xương sống. Kèm LÝ DO — "vì đang quen" là một lý do thật,
-cứ ghi thẳng thế; thứ không được phép là để trống rồi mỗi UC tự chọn một kiểu.>
+## Stack
+<language · runtime · backbone libraries. With the REASON — "because we already know it" is a real
+reason, write exactly that; what is not allowed is leaving it empty and letting each UC pick its own.>
 
-## Nơi chạy
-<máy khách · server mình dựng · CI · máy của khách. Và: dữ liệu nhạy cảm nằm ở đâu khi
-đang chạy, ai đọc được nó.>
+## Runs where
+<the customer's machine · our own server · CI · the customer's machine. And: where sensitive data sits
+while it runs, and who can read it.>
 
-<!-- Giá trị của mục này KHÔNG phải "bắt mâu thuẫn" — đừng đi tìm mâu thuẫn. Giá trị là
-     BUỘC PHẢI VIẾT CHỖ NỐI RA. Mâu thuẫn giả thì tan ngay khi viết; mâu thuẫn thật thì
-     không tan. Cả hai kết cục đều là thu hoạch, và không ai biết trước sẽ ra cái nào.
+<!-- The value of this section is NOT "catching contradictions" — do not go hunting for them. The value
+     is being FORCED TO WRITE THE SEAM DOWN. A false contradiction dissolves the moment it is written;
+     a real one does not. Both outcomes are a gain, and nobody knows in advance which one it will be.
 
-     Ca thật (runxops). Hai câu, đọc rời thì như chọi nhau:
-       CON-002  "phần chạm eBay bắt buộc chạy ở máy có Multilogin"
-       ADR-001  "server không bao giờ chạm ổ đĩa khách"
-     Viết vào cùng một mục mới thấy chúng nói về HAI CHỦ THỂ khác nhau — một câu nói việc
-     thủ công của NGƯỜI làm ở đâu, câu kia nói CODE chạy ở đâu. Mâu thuẫn tan.
-     Không có mục này thì mâu thuẫn giả đó sống tới lúc ai đó ở bước ⑪ tự giải theo cách
-     của họ, trong im lặng. -->
+     Real case (runxops). Two sentences that read as opposites in isolation:
+       CON-002  "anything touching eBay must run on a machine with Multilogin"
+       ADR-001  "the server never touches a customer's disk"
+     Written into the same section, it becomes clear they are about TWO DIFFERENT SUBJECTS — one is about
+     where a PERSON does manual work, the other about where CODE runs. The contradiction dissolves.
+     Without this section that false contradiction survives until somebody at step ⑪ resolves it their
+     own way, silently. -->
 
-## Ai gọi
-<người gõ lệnh · lịch chạy · hệ khác gọi vào · agent. Một cái tên cụ thể, không phải "người dùng".>
+## Callers
+<a person typing a command · a schedule · another system calling in · an agent. A concrete name, not
+"the user".>
 
-## Ranh giới
-<domain không được biết gì; adapter được biết gì. Vẽ luôn cho dễ đối chiếu:>
+## Boundaries
+<what the domain may not know; what an adapter may know. Draw it so it is easy to check against:>
 
 ```mermaid
 flowchart LR
-  K["<ai gọi>"] --> A["<lối vào: CLI · API · MCP>"]
+  K["<caller>"] --> A["<entry point: CLI · API · MCP>"]
   A --> D["Domain<br/>use cases · entities · RULE"]
-  D --> P1["Port: <tên>"] --> X1["Adapter: <thứ thật bên ngoài>"]
+  D --> P1["Port: <name>"] --> X1["Adapter: <the real outside thing>"]
 ```
 
-## Cấm
-<những thứ dự án này KHÔNG làm, kèm lý do. Đây là mục hay bị bỏ trống nhất và là mục đắt
-nhất: một điều cấm không viết ra thì sáu tháng sau không ai phân biệt được "chưa làm" với
-"cố ý không làm".>
+## Forbidden
+<the things this project does NOT do, with reasons. This is the most often empty section and the most
+expensive one: a prohibition that is never written down leaves nobody, six months later, able to tell
+"not built yet" from "deliberately not built".>
 
-**Dòng nào nêu nguồn thì phải trích nguyên văn**, dạng:
+**Any line that names a source must quote it verbatim**, like this:
 
-- không <việc bị cấm> — nguồn: `BR-001` · nguyên văn: "<chép đúng chữ trong nguồn>" — vì <lý do>
-  - Từ: YYYY-MM-DD · Trạng thái: active
+- no <the forbidden thing> — source: `BR-001` · verbatim: "<copy the source's exact words>" — because <reason>
+  - From: YYYY-MM-DD · State: active
 
-<!-- Dòng thứ hai (`Từ:` · `Trạng thái:`) thêm ở 4.2.0, và nó KHÔNG phải thủ tục cho đẹp.
+<!-- The second line (`From:` · `State:`) was added in 4.2.0, and it is NOT procedure for its own sake.
 
-     Ca runxops ở khối dưới kết thúc bằng: "đó là HAI điều cấm từ hai thời điểm, cái sau
-     ngặt hơn và nuốt luôn thứ In Scope đang cho phép". Câu đó chỉ nói được KHI CÓ NGÀY.
-     Không ngày thì hai dòng nằm cạnh nhau, đọc đều trôi chảy, và không ai — kể cả chủ dự
-     án — dựng lại được cái nào ra trước. Đó là thứ duy nhất trong cả bộ tài liệu này KHÔNG
-     TÁI TẠO ĐƯỢC: bố cục file lúc nào cũng sắp lại được, một điều cấm mất ngày thì mất hẳn.
+     The runxops case in the block below ends with: "those are TWO prohibitions from two moments, and the
+     later one is stricter and swallows something In Scope currently allows". That sentence can only be
+     said WHEN THERE ARE DATES. Without them the two lines sit side by side, both read fine, and nobody —
+     the owner included — can reconstruct which came first. It is the one thing in this whole document set
+     that CANNOT BE REBUILT: a file's layout can always be rearranged, a prohibition that lost its date is
+     gone for good.
 
-     Hết hiệu lực thì `Trạng thái: thay bởi <ID> từ YYYY-MM-DD` — KHÔNG xoá dòng. Xoá một
-     điều cấm là xoá luôn bằng chứng rằng nó đã từng được cân nhắc, và sáu tháng sau không
-     ai phân biệt được "chưa làm" với "cố ý không làm" nữa. -->
+     When it stops applying: `State: superseded by <ID> from YYYY-MM-DD` — do NOT delete the line. Deleting
+     a prohibition deletes the evidence that it was ever considered, and six months later nobody can tell
+     "not built yet" from "deliberately not built". -->
 
 
-<!-- Vì sao bắt chép nguyên văn thay vì chỉ ghi ID (ca thật, runxops). Một dòng ở đây viết:
-       "Không tự động hoá chạy TRONG phiên Multilogin. BR-001 Out of Scope: đã thử, rủi ro chết acc"
-     BR-001 thật ra cấm chạy NGOÀI phiên; còn In Scope của nó thì CHO PHÉP chạy trong.
-     Tức dòng đó vừa ĐẢO NGHĨA một điều cấm, vừa dán nguồn cho câu mà nguồn không nói.
+<!-- Why quoting verbatim is required instead of just naming the ID (real case, runxops). One line here read:
+       "No automation running INSIDE a Multilogin session. BR-001 Out of Scope: tried it, risk of a dead account"
+     BR-001 actually forbids running OUTSIDE the session; its In Scope explicitly ALLOWS running inside.
+     So that line both INVERTED a prohibition and attached a source to a sentence the source never said.
 
-     Nó đọc rất trôi chảy. Nó ngồi trong br.md từ đầu, qua br-check xanh, qua adversarial
-     ba vai, qua cổng DoR — không phép kiểm nào bắt được, vì KHÔNG PHÉP KIỂM NÀO ĐỌC BRIEF
-     VÀ BR CÙNG LÚC. `design-check` cũng không bắt được: nó kiểm ID CÓ TỒN TẠI, không kiểm
-     ID CÓ NÓI ĐÚNG THỨ ĐANG GẮN NÓ, và `BR-001` thì có thật.
+     It read perfectly. It sat in br.md from the start, passed br-check green, passed a three-role adversarial
+     pass, passed the DoR gate — no check caught it, because NO CHECK READS THE BRIEF AND THE BR AT THE SAME
+     TIME. `design-check` cannot catch it either: it checks that an ID EXISTS, not that the ID SAYS what is
+     attached to it, and `BR-001` does exist.
 
-     Thứ làm nó lộ ra là ĐỘNG TÁC CHÉP NGUYÊN VĂN: đi lấy đúng câu về dán vào đây thì thấy
-     ngay nó nói "ngoài" chứ không nói "trong". `design-check` cảnh báo (không chặn) khi
-     một dòng nêu ID mà không có "nguyên văn:".
+     What exposed it was THE ACT OF COPYING VERBATIM: going to fetch the exact sentence shows immediately that
+     it says "outside", not "inside". `design-check` warns (does not block) when a line names an ID without a
+     "verbatim:".
 
-     Và ca đó còn dạy thêm một điều: sửa xong mới lộ ra nó KHÔNG phải lỗi chép — đó là HAI
-     điều cấm từ hai thời điểm, cái sau ngặt hơn và nuốt luôn thứ In Scope đang cho phép.
-     Cho nên khi hai nguồn đá nhau, đừng chọn hộ: ghi cả hai vào đây, thêm một dòng
-     ## Open Questions, để chủ dự án quyết. -->
+     And that case taught one more thing: after the fix it turned out NOT to be a transcription error — they
+     were TWO prohibitions from two moments, the later one stricter, swallowing something In Scope allowed.
+     So when two sources clash, do not pick one for the owner: write both down here, add a line to
+     ## Open Questions, and let the owner decide. -->
 
-## Đã chốt từ brief
-<Đích đến của mọi dòng `→ chuyển: architecture.md` trong `## Đã loại khỏi brief` của
-`br.md` các lát (`specs/<core|nghề>/br-###/br.md`). Mỗi dòng: brief nói gì · ở đây quyết thế nào · nếu khác brief thì VÌ SAO.
-Trống mục này trong khi br.md có dòng trỏ tới đây nghĩa là hàng đã gửi mà chưa ai nhận.>
+## Settled from brief
+<The destination of every `→ moved to: architecture.md` line in the `## Dropped from brief` section of the
+slices' `br.md` (`specs/<core|craft>/br-###/br.md`). One line each: what the brief asks · what was decided
+here · and if it differs from the brief, WHY.
+An empty section while a br.md still points here means the parcel was sent and nobody signed for it.>

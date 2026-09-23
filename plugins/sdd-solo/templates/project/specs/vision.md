@@ -1,60 +1,64 @@
-# Hướng — tầng 0
+# Direction — layer 0
 
 - **Status:** draft
-- **Nguồn:** <lời chủ dự án · brief `<đường/dẫn>`>
+- **Source:** <the owner's words · brief `<path>`>
 - **Last updated:** ___
 
-> Tầng trên BR. BR trả lời *vì sao làm lát này*; file này trả lời *đi về đâu* và *cái gì không được
-> co lại* khi bộ lọc bằng chứng của BR làm việc. Ca thật đẻ ra nó: một BR bị co ba lần qua ba
-> lượt adversarial — mỗi lần đều đúng luật "không số thì không vào Background" — cho tới khi thứ
-> còn lại nhỏ hơn hẳn ý định ban đầu, và không phép kiểm nào thấy, vì không tầng nào giữ ý định.
+> The layer above BR. A BR answers *why build this slice*; this file answers *where we are going* and
+> *what must not shrink* while the BR's evidence filter does its work. The real case behind it: one BR
+> was narrowed three times over three adversarial passes — each time correctly, by the "no number, no
+> Background" rule — until what was left was plainly smaller than the original intent, and no check saw
+> it, because no layer held the intent.
 >
-> **Miễn luật "không số".** Ở đây số là ý muốn của chủ dự án, không phải sự thật cần nguồn.
-> Chỗ chưa biết vẫn để `___`, nhưng không ai đòi bằng chứng cho một hướng đi.
+> **Exempt from the "no numbers" rule.** Here a number is the owner's intent, not a fact needing a source.
+> Leave `___` where something is unknown, but nobody demands evidence for a direction.
 >
-> Người viết là **chủ dự án**, bằng lời thường. `/sdd-solo:intake` chỉ hỏi và chép lại; không
-> agent nào tự viết mục nào ở đây. Sửa file này là commit `docs(vision): …`.
+> The **owner** writes this, in plain words. `/sdd-solo:intake` only asks and transcribes; no agent
+> writes any section here by itself. Editing this file is a `docs(vision): …` commit.
 
-## Định vị
-<Một câu: sản phẩm này là gì, cho ai, và điều gì làm nó khác.>
+## Positioning
+<One sentence: what this product is, who it is for, and what makes it different.>
 
-## Không thu hẹp
-<3–5 điều. Mỗi dòng một điều BR nào cũng không được đưa vào Out of Scope. Dạng
-`- **<từ khoá ngắn>** — <giải thích>`: `br-check` so **từ khoá** (không phân biệt hoa thường) với từng
-dòng Out of Scope của mọi BR — trùng thì đỏ, trừ khi dòng đó ghi `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`.
-Từ khoá là cụm người ta sẽ viết y như thế trong Out of Scope ("chiều ghi", "offline"), không phải cả câu.>
-- **<từ khoá 1>** — <điều 1>
-- **<từ khoá 2>** — <điều 2>
-- **<từ khoá 3>** — <điều 3>
+## Do not narrow
+<3–5 items. One line per thing no BR may ever push into Out of Scope. Shape:
+`- **<short keyword>** — <explanation>`. `br-check` compares the **keyword** (case-insensitively) with
+every Out of Scope line of every BR — a match is red, unless that line says
+`deliberately narrowed — owner decided YYYY-MM-DD`.
+The keyword is the phrase someone would actually write in Out of Scope ("write path", "offline"),
+not the whole sentence.>
+- **<keyword 1>** — <item 1>
+- **<keyword 2>** — <item 2>
+- **<keyword 3>** — <item 3>
 
-## Nghề và lát
-<Mỗi nghề là một thư mục `specs/<nghề>/`; `core` là lõi dùng chung, ngang hàng với nghề. Mỗi lát
-là một `br-###/` trong thư mục đó. BR khai `**Lát:** <nghề> · <tên lát>` — tên lát phải có ở bảng này.>
+## Crafts and slices
+<Each craft is a folder `specs/<craft>/`; `core` is the shared core, a sibling of the crafts. Each slice
+is one `br-###/` inside that folder. A BR declares `**Slice:** <craft> · <slice name>` — the slice name
+must appear in this table.>
 
-| Nghề | Lát | BR | Trạng thái | Mở khi |
+| Craft | Slice | BR | State | Opens when |
 |---|---|---|---|---|
-| core | <đăng nhập · console> | BR-### | đang làm | — |
-| <nghề 1> | lát 1 "<phát hiện>" | BR-### | đang làm | — |
-| <nghề 1> | lát 2 "<vận hành>" | ___ | chờ | lát 1 xong |
-| <nghề 2> | ___ | ___ | điều kiện mở | <nghề 1> "xong" (mục dưới) |
+| core | <login · console> | BR-### | active | — |
+| <craft 1> | slice 1 "<discovery>" | BR-### | active | — |
+| <craft 1> | slice 2 "<operations>" | ___ | waiting | slice 1 done |
+| <craft 2> | ___ | ___ | conditional | <craft 1> "done" (section below) |
 
-Mỗi thời điểm **một nghề** đang mở. Nghề sau mở khi nghề trước "xong" theo mục dưới — không phải
-khi thấy hứng.
+**One craft** is open at a time. The next craft opens when the previous one is "done" by the section
+below — not when it feels exciting.
 
-## "Xong" của mỗi nghề
-<Điều kiện đóng một nghề để mở nghề kế. Hai vế: pack chạy được không cần dev, và đã có ít nhất
-một lát vận hành (chiều ghi) giao xong. Số ngày là ý muốn của chủ dự án — ví dụ runxops chốt
-2026-09-18: 7 ngày liên tục.>
-- <nghề 1>: pack chạy ___ ngày liên tục không dev sửa gì **và** ít nhất một lát vận hành đã giao (BR-___ implemented)
-- <nghề 2>: ___
+## What "done" means per craft
+<The condition for closing one craft so the next may open. Two halves: the pack runs without a developer,
+and at least one operations slice (the write path) has shipped. The number of days is the owner's intent —
+runxops settled on 2026-09-18: 7 consecutive days.>
+- <craft 1>: the pack runs ___ consecutive days with no developer fixes **and** at least one operations slice has shipped (BR-___ implemented)
+- <craft 2>: ___
 
-## Sổ sửa ngược
-<Append-only. Một UC hay BR phát hiện tầm nhìn sai ở điểm nào thì ghi ở đây, không sửa lặng lẽ
-mục trên. Mỗi dòng: ngày · ai phát hiện · trước → sau.>
-- YYYY-MM-DD — UC-### sửa tầm nhìn ở điểm ___: <trước> → <sau>
+## Reverse ledger
+<Append-only. When a UC or a BR finds the direction wrong at some point, record it here instead of quietly
+editing the sections above. One line each: date · who found it · before → after.>
+- YYYY-MM-DD — UC-### corrects the direction at ___: <before> → <after>
 
 ## Open Questions
-- [ ] <câu hỏi về hướng đi mà chủ dự án chưa quyết> (quyết định tạm: ___)
+- [ ] <a question about direction the owner has not settled> (interim decision: ___)
 
 ## History
 - v1 (YYYY-MM-DD): initial

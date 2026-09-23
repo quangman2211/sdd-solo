@@ -1,19 +1,19 @@
-# Design brief cho Claude Design — sinh từ UC, không sinh từ cảm hứng
+# Design brief for Claude Design — generated from the UC, not from inspiration
 
-Dán Design System (link canvas) + UC + state diagram của entity liên quan.
+Paste the Design System (canvas link) + the UC + the state diagram of the entities involved.
 
 ---
-Dựng các màn hình cho use case dưới đây, dùng Design System đã có. Quy tắc ràng:
+Build the screens for the use case below using the existing Design System. Hard rules:
 
-1. Mỗi bước trong Main Flow có "Hệ thống hiển thị" → một màn hình SCR-###-#.
-2. Mỗi Alternative Flow có UI → một trạng thái của màn hình liên quan.
-3. Mỗi Exception E# → một trạng thái màn hình, thông điệp lỗi viết bằng tiếng của khách (người kinh doanh, không phải dev), và nói khách làm gì tiếp.
-4. Mỗi trạng thái trên state diagram của entity phải nhìn thấy được ở đâu đó trên UI (nhãn, badge, hoặc màn hình riêng).
-5. Không thêm màn hình, nút hay trường nào không có nguồn trong UC. Nếu thấy cần → ghi thành câu hỏi cho spec, không tự vẽ.
-6. Đặt tên artboard đúng ID: SCR-###-# và SCR-###-#-E# cho trạng thái lỗi.
+1. Every Main Flow step that says "the system shows" → one screen SCR-###-#.
+2. Every Alternative Flow with UI → one state of the screen involved.
+3. Every Exception E# → one screen state, with the error message in the customer's own words (a business person, not a developer), saying what the customer does next.
+4. Every state on the entity's state diagram must be visible somewhere in the UI (a label, a badge, or its own screen).
+5. Add no screen, button or field that has no source in the UC. If one seems needed → write it down as a question for the spec, do not draw it.
+6. Name artboards by ID: SCR-###-# and SCR-###-#-E# for error states.
 
-Trả về kèm bảng đối chiếu: Nguồn trong spec | Màn hình / trạng thái | Khách thấy gì | Hành động.
-Ô nào không điền được → đó là chỗ spec thiếu, ghi rõ.
+Return a cross-check table with it: Source in spec | Screen / state | What the customer sees | Action.
+Any cell you cannot fill is a hole in the spec — say so.
 
-<dán UC-###.md + state diagram>
+<paste UC-###.md + the state diagram>
 ---

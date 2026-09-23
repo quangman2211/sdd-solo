@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// migrate.mjs — hai phép dời lớn của migrate.sh (7.0 · 5.1.0; chuyển sang node ở 7.6.0):
+// migrate.mjs — the two big moves of migrate.sh (7.0 · 5.1.0; moved to node at 7.6.0):
 //
-//   migrate.mjs layout   <root> <dry> <map> <skel> <tpl> <uc_test_dir> <ngày> <code_paths> <test_paths>
-//       Dời cây 6.x (specs/contexts · specs/br.md · specs/internal) sang bố cục 7.0 (core|nghề × br-###).
-//   migrate.mjs evidence <br.md> <evidence.md> <BR-###> <dry> <ngày>
-//       Tách thân ## Background (và ## Adversarial pass) của một BR sang evidence.md, để lại dòng đếm.
+//   migrate.mjs layout   <root> <dry> <map> <skel> <tpl> <uc_test_dir> <date> <code_paths> <test_paths>
+//       Move the 6.x tree (specs/contexts · specs/br.md · specs/internal) to the 7.0 layout (core|craft × br-###).
+//   migrate.mjs evidence <br.md> <evidence.md> <BR-###> <dry> <date>
+//       Split the ## Background (and ## Adversarial pass) body of one BR into evidence.md, leaving a counting line.
 //
-// Script KHÔNG commit hộ và KHÔNG để index đã stage (#57): nó in ra hai lệnh commit tách theo ranh giới
-// .sdd/config, vì pre-commit chặn spec + code/test trong một commit.
+// The script DOES NOT COMMIT and leaves NOTHING staged (#57): it prints two commit commands split along the
+// .sdd/config boundary, because pre-commit blocks spec + code/test in one commit.
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -20,7 +20,7 @@ const info = (m) => console.log(`  – ${m}`);
 const rstrip = (s, ch = '\n') => s.replace(new RegExp(`[${esc(ch)}]+$`), '');
 const bytes = (s) => Buffer.byteLength(s);
 
-/** thân của `## <name>` tới `## ` kế (hoặc hết) — trả {start, end, body} theo chỉ số trong s */
+/** the body of `## <name>` up to the next `## ` (or the end) — returns {start, end, body} as indexes into s */
 function sectionOf(s, name, from = 0) {
   const re = new RegExp('^## ' + esc(name) + '[ \\t]*\\n', 'm');
   const m = re.exec(s.slice(from));
@@ -34,7 +34,7 @@ function sectionOf(s, name, from = 0) {
 
 const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
-/** như `re.split(r'(?m)^(?=…)')` của python — JS bỏ lát rỗng đầu khi khớp ở vị trí 0, python thì không */
+/** like python `re.split(r'(?m)^(?=…)')` — JS drops the empty leading slice when the match is at position 0, python does not */
 function splitAt(s, re) {
   const r = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
   const out = [];
@@ -66,18 +66,18 @@ function cmdLayout(argv) {
   const M = { context: {}, uc: {}, br: {}, adr: {}, rule: {}, entity: {}, glossary: {} };
   const mp = rd(MAPP);
   if (mp === null) {
-    bad(`không có ${rel(MAPP)} — viết file map trước (mỗi dòng: context <ctx> <nghề> · uc UC-### BR-### · br BR-### <core|nghề> · adr ADR-### <nghề> · rule RULE-### <nghề> · entity <Tên> <core|nghề> · glossary <từ-đầu-heading> <nghề>)`);
+    bad(`there is no ${rel(MAPP)} — write the map file first (one per line: context <ctx> <craft> · uc UC-### BR-### · br BR-### <core|craft> · adr ADR-### <craft> · rule RULE-### <craft> · entity <Name> <core|craft> · glossary <heading-first-word> <craft>)`);
     process.exit(1);
   }
   for (let ln of mp.split('\n')) {
     ln = ln.split('#')[0].trim();
     if (!ln) continue;
     const w = ln.split(/\s+/);
-    if (w.length !== 3 || !has(M, w[0])) { ERR.push(`dòng map không hiểu: ${ln}`); continue; }
+    if (w.length !== 3 || !has(M, w[0])) { ERR.push(`map line not understood: ${ln}`); continue; }
     M[w[0]][w[1]] = w[2];
   }
   const CTXS = glob1('specs/contexts').filter((d) => isDir(`specs/contexts/${d}`) && !d.startsWith('_')).sort();
-  for (const c of CTXS) if (!has(M.context, c)) ERR.push(`context \`${c}\` chưa có dòng \`context ${c} <nghề>\` trong map`);
+  for (const c of CTXS) if (!has(M.context, c)) ERR.push(`the context \`${c}\` has no \`context ${c} <craft>\` line in the map`);
   const ngheOfCtx = M.context;
 
   // ── BR trong br.md ─────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ function cmdLayout(argv) {
   const BRHEAD = brmd.includes('# BR-') ? brmd.slice(0, brmd.indexOf('# BR-')) : brmd;
   for (const b of Object.keys(BRSEC)) {
     if (b === 'BR-000') continue;
-    if (!has(M.br, b)) ERR.push(`${b} chưa có dòng \`br ${b} <core|nghề>\` trong map`);
+    if (!has(M.br, b)) ERR.push(`${b} has no \`br ${b} <core|craft>\` line in the map`);
   }
 
   // ── UC ─────────────────────────────────────────────────────────────────
@@ -102,11 +102,11 @@ function cmdLayout(argv) {
       const st = (/\*\*Status:\*\* *([a-z]+)/.exec(f) ?? [, '?'])[1];
       const ti = ((/^# UC-[0-9]+: *(.*)/m.exec(f) ?? [, '___'])[1] ?? '___').trim();
       UCS[uid] = { dir: d, ctx: c, br, status: st, title: ti };
-      if (!br) ERR.push(`${uid} không biết thuộc BR nào — thêm \`uc ${uid} BR-###\` vào map`);
-      else if (!has(M.br, br)) ERR.push(`${uid} → ${br} nhưng ${br} chưa có dòng \`br ${br} <core|nghề>\` trong map`);
+      if (!br) ERR.push(`${uid} does not know which BR it belongs to — add \`uc ${uid} BR-###\` to the map`);
+      else if (!has(M.br, br)) ERR.push(`${uid} → ${br} but ${br} has no \`br ${br} <core|craft>\` line in the map`);
     }
   }
-  // bảng use-cases.md của từng context → hàng theo UC
+  // the use-cases.md table of each context → its rows by UC
   const ROWS = {};
   for (const c of CTXS) {
     const t = rd(`specs/contexts/${c}/use-cases.md`) ?? '';
@@ -117,19 +117,19 @@ function cmdLayout(argv) {
   }
   if (ERR.length) {
     for (const e of ERR) bad(e);
-    console.log(`\nKHÔNG CHẠY — ${ERR.length} chỗ map thiếu. Sửa ${rel(MAPP)} rồi chạy lại.`);
+    console.log(`\nNOT RUN — ${ERR.length} map entries missing. Fix ${rel(MAPP)} and run again.`);
     process.exit(1);
   }
   const ngheOfBr = (b) => M.br[b];
   const brDir = (b) => `specs/${ngheOfBr(b)}/br-${b.slice(3)}`;
 
-  // ── kế hoạch ───────────────────────────────────────────────────────────
+  // ── the plan ───────────────────────────────────────────────────────────
   const ACTS = [];
   const mv = (o, n) => { ACTS.push(['mv', o, n]); MOVED.push([o, n]); };
   const write = (p, c) => ACTS.push(['write', p, c]);
   const rm = (p) => ACTS.push(['rm', p]);
 
-  // 1. internal/ → gốc + notes/
+  // 1. internal/ → the root + notes/
   const ADR_ROOT = [];
   for (const b of glob1('specs/internal')) {
     const f = `specs/internal/${b}`;
@@ -148,14 +148,14 @@ function cmdLayout(argv) {
     else if (b.includes('ban-do')) mv(f, `notes/ban-do/${b}`);
     else {
       mv(f, `notes/${b}`);
-      NEED.push(['file internal/ không thuộc loại nào, đã đưa vào notes/ — xếp lại tay nếu cần', `notes/${b}`]);
+      NEED.push(['a file in internal/ of no known kind, moved into notes/ — sort it by hand if needed', `notes/${b}`]);
     }
   }
   if (ADR_ROOT.length) {
-    NEED.push([`ADR để ở gốc specs/adr/ vì map không nói: ${ADR_ROOT.join(', ')} — cái nào riêng một nghề thì thêm \`adr ADR-### <nghề>\` vào map (chạy lại) hoặc \`git mv\` sang specs/<nghề>/adr/`, 'specs/adr/']);
+    NEED.push([`ADRs left in the root specs/adr/ because the map did not say: ${ADR_ROOT.join(', ')} — for one belonging to a single craft, add \`adr ADR-### <craft>\` to the map (and run again) or \`git mv\` it into specs/<craft>/adr/`, 'specs/adr/']);
   }
 
-  // 2. br.md → mỗi BR một lát
+  // 2. br.md → one slice per BR
   const SKEL_BR = SKEL ? rd(`${SKEL}/br/br.md`) : null;
   const brTable = (b, ucs) => {
     const rows = ['| UC | Tên | Actor | BR | Status |', '|---|---|---|---|---|'];
@@ -167,7 +167,7 @@ function cmdLayout(argv) {
       rows.push(`| ${u} | ${n} | ${a} | ${b} | ${s} |`);
       seen.add(u);
     }
-    // hàng use-cases.md nói thuộc BR này mà chưa có thư mục UC (UC chưa mở / bỏ trước khi mở)
+    // a use-cases.md row claiming this BR with no UC directory yet (a UC not opened / dropped before opening)
     for (const u of Object.keys(ROWS).sort()) {
       const [n, a, rb, s] = ROWS[u];
       if (rb === b && !seen.has(u)) rows.push(`| ${u} | ${n} | ${a} | ${b} | ${s} |`);
@@ -185,7 +185,7 @@ function cmdLayout(argv) {
     let s = sec;
     if (!s.includes('**Lát:**')) {
       s = s.replace(/^(- \*\*Status:\*\*[^\n]*\n)/m, `$1- **Lát:** ${ngheOfBr(b)} · ___\n`);
-      NEED.push([`${b}: điền \`**Lát:** ${ngheOfBr(b)} · <tên lát>\` theo bảng \`## Nghề và lát\` của specs/vision.md`, `${brDir(b)}/br.md`]);
+      NEED.push([`${b}: fill in \`**Lát:** ${ngheOfBr(b)} · <slice name>\` from the \`## Nghề và lát\` table of specs/vision.md`, `${brDir(b)}/br.md`]);
     }
     s = s.replaceAll('→ specs/br.evidence.md', '→ evidence.md');
     const tbl = brTable(b, UC_BY_BR[b] ?? []);
@@ -199,10 +199,10 @@ function cmdLayout(argv) {
   if (biggest === 'BR-000' || (brKeys.length && !(biggest in BRSEC))) rm('specs/br.md');
   if (BRHEAD.trim() && !BRHEAD.includes('Mỗi BR một mục')) {
     write('notes/br-header.md', BRHEAD);
-    NEED.push(['phần đầu specs/br.md (trước BR đầu tiên) không phải khuôn — đã cất', 'notes/br-header.md']);
+    NEED.push(['the head of specs/br.md (before the first BR) is not the template — it was set aside', 'notes/br-header.md']);
   }
-  if ('BR-000' in BRSEC) info('BR-000 (mẫu khuôn) bỏ — bản 7.0 có mẫu ở specs/core/br-000/ khi init --update');
-  // BR chỉ có trong map uc → tạo khung
+  if ('BR-000' in BRSEC) info('BR-000 (the template sample) dropped — 7.0 has its sample in specs/core/br-000/ after init --update');
+  // a BR that only exists in the uc map → build a skeleton
   const brFromUc = [...new Set(Object.values(UCS).map((x) => x.br))].filter((b) => !has(BRSEC, b)).sort();
   for (const b of brFromUc) {
     const n = ngheOfBr(b);
@@ -218,10 +218,10 @@ function cmdLayout(argv) {
       s = `# ${b}: ___\n\n## Metadata\n- **Status:** draft\n- **Lát:** ${n} · ___\n- **Last updated:** ${TODAY}\n\n## Goal\n___\n\n## Related Use Cases\n${brTable(b, UC_BY_BR[b])}\n`;
     }
     write(dst, s);
-    NEED.push([`${b} chưa có trong br.md — đã dựng khung (Status draft) chứa ${[...UC_BY_BR[b]].sort().join(', ')}; viết BR thật`, dst]);
+    NEED.push([`${b} was not in br.md — a skeleton was built (Status draft) holding ${[...UC_BY_BR[b]].sort().join(', ')}; write the real BR`, dst]);
   }
 
-  // 3. br.evidence.md → evidence.md của từng lát
+  // 3. br.evidence.md → the evidence.md of each slice
   const ev = rd('specs/br.evidence.md');
   if (ev !== null) {
     const EVSEC = {};
@@ -230,7 +230,7 @@ function cmdLayout(argv) {
     }
     const orphan = Object.keys(EVSEC).filter((b) => !has(M.br, b));
     const placed = Object.keys(EVSEC).filter((b) => has(M.br, b));
-    for (const b of orphan) NEED.push([`evidence của ${b} không có lát đích (BR không trong map) — để lại ở file cũ`, 'specs/br.evidence.md']);
+    for (const b of orphan) NEED.push([`the evidence of ${b} has no destination slice (the BR is not in the map) — left in the old file`, 'specs/br.evidence.md']);
     if (placed.length && !orphan.length) mv('specs/br.evidence.md', `${brDir(placed[0])}/evidence.md`);
     for (const b of placed) {
       write(`${brDir(b)}/evidence.md`,
@@ -247,22 +247,22 @@ function cmdLayout(argv) {
     mv(x.dir, dst);
     const f = rd(`${x.dir}/${u}.md`) ?? '';
     const oldBr = (/Liên quan tới BR:\*\* *(BR-[0-9]+)/.exec(f) ?? [, null])[1];
-    // dấu vết "trước 7.0" để trong <!-- --> — strip_markup bỏ, nên layer-check không tính UC về core là trích nghề cũ
+    // the "before 7.0" trace goes inside <!-- --> — strip_markup drops it, so layer-check does not count a core UC as quoting its old craft
     let f2 = f.replace(/^- \*\*Bounded Context:\*\* *[^\n]*$/m,
       `- **Nghề:** ${n} · **Lát:** ${x.br} <!-- 7.0 (${TODAY}): dời từ context \`${x.ctx}\``
       + (oldBr && oldBr !== x.br ? `, ${oldBr}` : '') + ' -->');
-    if (oldBr && oldBr !== x.br) {   // map `uc` đổi BR: dòng Metadata phải nói cùng một thứ với thư mục
+    if (oldBr && oldBr !== x.br) {   // the `uc` map changed the BR: the Metadata line must say the same thing as the directory
       f2 = f2.replace(/^(- \*\*Liên quan tới BR:\*\* *)BR-[0-9]+/m, `$1${x.br}`);
     }
     if (f2 !== f) write(`${dst}/${u}.md`, f2);
     if (n !== ngheOfCtx[x.ctx]) {
-      NEED.push([`${u} sang \`${n}\` (context \`${x.ctx}\` → nghề \`${ngheOfCtx[x.ctx]}\`): entity nó dùng phải nằm ở \`specs/core/entities/\` hoặc \`specs/${n}/entities/\` — thêm dòng \`entity <Tên> ${n}\` vào map nếu chưa`, dst]);
+      NEED.push([`${u} moved to \`${n}\` (context \`${x.ctx}\` → craft \`${ngheOfCtx[x.ctx]}\`): the entities it uses must live in \`specs/core/entities/\` or \`specs/${n}/entities/\` — add an \`entity <Name> ${n}\` line to the map if there is none`, dst]);
     }
     const td = `${UCT}/${x.ctx}/${u}`;
     if (isDir(td) && n !== x.ctx) mv(td, `${UCT}/${n}/${u}`);
   }
 
-  // 5. entities.md → mỗi entity một file
+  // 5. entities.md → one file per entity
   for (const c of CTXS) {
     const p = `specs/contexts/${c}/entities.md`;
     const t = rd(p);
@@ -274,7 +274,7 @@ function cmdLayout(argv) {
     for (const sec of parts.slice(1)) {
       const head = sec.split('\n', 1)[0].slice(3).trim();
       const bt = /`([A-Za-z][A-Za-z0-9_]*)`/.exec(head);
-      const fw = /^([A-Z][A-Za-z0-9_]*)(?![\p{L}\p{N}_])/u.exec(head);   // biên từ hiểu chữ có dấu, như python
+      const fw = /^([A-Z][A-Za-z0-9_]*)(?![\p{L}\p{N}_])/u.exec(head);   // a word boundary that understands accented letters, like python
       const name = bt ? bt[1] : (fw && head.split(/\s+/)[0] === fw[1] ? fw[1] : null);
       if (name === null || name === 'Domain' || name === 'History') { readme.push(sec); continue; }
       const dn = has(M.entity, name) ? M.entity[name] : n;
@@ -286,7 +286,7 @@ function cmdLayout(argv) {
     }
     write(`specs/${n}/entities/README.md`, rstrip(readme.join('')) + '\n');
     rm(p);
-    MOVED.push([p, `specs/${n}/entities/README.md (Domain Model · phần không phải entity)`]);
+    MOVED.push([p, `specs/${n}/entities/README.md (the Domain Model · the non-entity part)`]);
     for (const extra of ['README.md', 'use-cases.md', 'diagrams/README.md']) {
       if (exists(`specs/contexts/${c}/${extra}`)) rm(`specs/contexts/${c}/${extra}`);
     }
@@ -295,7 +295,7 @@ function cmdLayout(argv) {
     }
   }
 
-  // 6. rules.md → nghề
+  // 6. rules.md → by craft
   const rl = rd('specs/rules.md') ?? '';
   if (Object.keys(M.rule).length) {
     const parts = splitAt(rl, /^(?=## RULE-)/m);
@@ -317,7 +317,7 @@ function cmdLayout(argv) {
     }
   }
 
-  // 7. glossary.md → nghề
+  // 7. glossary.md → by craft
   const gl = rd('specs/glossary.md') ?? '';
   {
     const parts = splitAt(gl, /^(?=## )/m);
@@ -327,7 +327,7 @@ function cmdLayout(argv) {
     const CORE_ENT = new Set(Object.entries(M.entity).filter(([, v]) => v === 'core').map(([k]) => k));
     const ROOT_TERMS = new Set(Object.entries(M.glossary)
       .filter(([, v]) => ['gốc', 'goc', 'root'].includes(v)).map(([k]) => k));
-    const termNames = (block) => {   // tên trong **đậm** và trong `backtick` của dòng đầu một mục từ
+    const termNames = (block) => {   // the names in **bold** and in `backticks` on the first line of a term entry
       const h = block.split('\n', 1)[0];
       return new Set([...(h.match(/\*\*([^*]+)\*\*/g) ?? []).map((x) => x.slice(2, -2)),
         ...[...h.matchAll(/`([A-Za-z][A-Za-z0-9_]*)`/g)].map((m) => m[1])]);
@@ -347,7 +347,7 @@ function cmdLayout(argv) {
           if (hit) {
             STAY.push(rstrip(bl) + '\n');
             MOVED.push([`specs/glossary.md ## ${head.slice(0, 30)} · ${[...names].sort().join(', ').slice(0, 40)}`,
-              'specs/glossary.md ## Chung (entity core / khai gốc)']);
+              'specs/glossary.md ## Chung (a core entity / declared as root)']);
           } else go.push(bl);
         }
         (per[n] ??= []).push(go.join(''));
@@ -367,7 +367,7 @@ function cmdLayout(argv) {
         head = (head ?? '# Glossary — <nghề>\n').split('\n- **')[0].replaceAll('<nghề>', n);
         write(`specs/${n}/glossary.md`, rstrip(head) + '\n\n' + rstrip(secs.join('')) + '\n');
       }
-      NEED.push(['glossary: mục theo tên context đã sang glossary nghề; mục còn ở gốc phải là từ CHUNG mọi nghề — soát lại', 'specs/glossary.md']);
+      NEED.push(['glossary: the entries named after a context moved to the craft glossary; what is left at the root must be a term SHARED by every craft — check it again', 'specs/glossary.md']);
     }
   }
 
@@ -375,7 +375,7 @@ function cmdLayout(argv) {
   if (!exists('specs/vision.md')) {
     const v = TPL ? rd(`${TPL}/specs/vision.md`) : null;
     write('specs/vision.md', v ?? '# Hướng — tầng 0\n\n## Định vị\n___\n\n## Không thu hẹp\n- ___\n\n## Nghề và lát\n| Nghề | Lát | BR | Trạng thái | Mở khi |\n|---|---|---|---|---|\n');
-    NEED.push(['viết specs/vision.md — chủ dự án, bằng lời thường: định vị · không thu hẹp · bảng nghề và lát (mỗi BR trích một dòng ở đó) · "xong" mỗi nghề', 'specs/vision.md']);
+    NEED.push(['write specs/vision.md — the owner does, in plain words: the positioning · what must not be narrowed · the crafts and slices table (every BR quotes one row of it) · what "done" means per craft', 'specs/vision.md']);
   }
   const NGHE = [...new Set([...Object.values(M.br), ...Object.values(ngheOfCtx),
     ...Object.values(M.adr), ...Object.values(M.rule), ...Object.values(M.entity)])]
@@ -391,7 +391,7 @@ function cmdLayout(argv) {
     }
   }
 
-  // 8b. .sdd/manifest: file khuôn vừa dời giữ dòng manifest dưới TÊN MỚI (sha lúc cài giữ nguyên)
+  // 8b. .sdd/manifest: a template file just moved keeps its manifest row under its NEW NAME (the install-time sha is kept)
   const MAN = rd('.sdd/manifest');
   if (MAN !== null) {
     const ren = {};
@@ -408,7 +408,7 @@ function cmdLayout(argv) {
     if (outl.join('\n') !== MAN) write('.sdd/manifest', outl.join('\n'));
   }
 
-  // 9. sửa đường dẫn trong file — theo tên THẬT vừa dời, dài trước ngắn sau
+  // 9. fix the paths inside the files — by the REAL name just moved, longest first
   const REPL = [];
   for (const [o, nw] of MOVED) {
     if (o.includes(' ## ') || nw.includes(' (')) continue;
@@ -421,7 +421,7 @@ function cmdLayout(argv) {
     if (brs.length === 1) REPL.push([`specs/contexts/${c}/use-cases.md`, `${brDir(brs[0])}/br.md`]);
   }
   REPL.sort((a, b) => b[0].length - a[0].length);
-  // #56 (7.0.1): test dời nghề còn được trích KHÔNG có tiền tố uc_test_dir — import tương đối từ code/harness.
+  // #56 (7.0.1): a test moved to a craft is also quoted WITHOUT the uc_test_dir prefix — a relative import from the code/harness.
   const RREPL = [];
   const UCTAIL = path.basename(UCT.replace(/\/$/, ''));
   for (const [o, nw] of MOVED) {
@@ -447,18 +447,18 @@ function cmdLayout(argv) {
   };
   walk('.');
   FILES.push('.sdd/config', 'CLAUDE.md');
-  // brief nguồn KHÔNG sửa: br-check/session-start so sha của nó với dòng `Nguồn brief:`
+  // the source brief is NOT edited: br-check/session-start compare its sha with the `Nguồn brief:` line
   const BRIEF = ((/^brief_path=(.*)$/m.exec(rd('.sdd/config') ?? '') ?? [, ''])[1]).trim();
   let files = FILES;
   if (BRIEF) {
     files = FILES.filter((f) => f !== BRIEF);
     if ((rd(BRIEF) ?? '').includes('specs/')) {
-      NEED.push([`brief nguồn nhắc đường dẫn cũ — KHÔNG tự sửa (sha phải giữ); để nguyên, hoặc sửa rồi nạp lại bằng /sdd-solo:intake`, BRIEF]);
+      NEED.push([`the source brief mentions an old path — NOT edited automatically (the sha must stay); leave it, or edit it and reload with /sdd-solo:intake`, BRIEF]);
     }
   }
   const TOUCH = [], LEFT = {};
   const pendingNew = new Map();
-  for (const a of ACTS) if (a[0] === 'write') pendingNew.set(a[1], a[2]);   // ghi sau đè ghi trước
+  for (const a of ACTS) if (a[0] === 'write') pendingNew.set(a[1], a[2]);   // a later write overrides an earlier one
   const movedDst = (f) => {
     for (const [o, nw] of MOVED) {
       if (o.includes(' ## ') || nw.includes(' (')) continue;
@@ -485,13 +485,13 @@ function cmdLayout(argv) {
     if (left) LEFT[dst] = left;
   }
 
-  // ── thực thi ───────────────────────────────────────────────────────────
+  // ── execution ──────────────────────────────────────────────────────────
   const git = (args) => {
     try { return { code: 0, out: execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }) }; }
     catch (e) { return { code: e.status ?? 1, out: '' }; }
   };
   const tracked = (p) => git(['ls-files', '--error-unmatch', p]).code === 0;
-  const move = (src, dst) => {   // như shutil.move: đích là thư mục đã có → dời VÀO trong nó
+  const move = (src, dst) => {   // like shutil.move: an existing destination directory means moving INTO it
     const d = isDir(dst) ? path.join(dst, path.basename(src)) : dst;
     try { fs.renameSync(src, d); }
     catch { fs.cpSync(src, d, { recursive: true }); fs.rmSync(src, { recursive: true, force: true }); }
@@ -518,15 +518,15 @@ function cmdLayout(argv) {
     const pruneEmpty = (d) => {
       if (!isDir(d)) return;
       for (const e of fs.readdirSync(d)) pruneEmpty(path.join(d, e));
-      try { if (!fs.readdirSync(d).length) fs.rmdirSync(d); } catch { /* không rỗng */ }
+      try { if (!fs.readdirSync(d).length) fs.rmdirSync(d); } catch { /* not empty */ }
     };
     for (const d of ['specs/contexts', 'specs/internal', UCT]) pruneEmpty(d);
     for (const c of CTXS) {
       pruneEmpty('specs/contexts');
       const d = `specs/contexts/${c}`;
-      if (isDir(d) && fs.readdirSync(d).length) NEED.push([`specs/contexts/${c}/ còn file không thuộc khuôn — xem và dời tay`, d]);
+      if (isDir(d) && fs.readdirSync(d).length) NEED.push([`specs/contexts/${c}/ still holds files outside the template — look and move them by hand`, d]);
     }
-    // #57 (7.0.1): KHÔNG để index đã stage — trả index về HEAD, in hai lệnh add theo ranh giới .sdd/config.
+    // #57 (7.0.1): leave NOTHING staged — reset the index to HEAD and print two add commands along the .sdd/config boundary.
     git(['reset', '-q']);
   }
   const intracked = (p) => git(['ls-tree', '-d', '--name-only', 'HEAD', p]).out.trim() !== '' || tracked(p);
@@ -546,15 +546,15 @@ function cmdLayout(argv) {
     }
   }
 
-  // ── báo cáo ────────────────────────────────────────────────────────────
-  console.log(`\n=== ${DRY ? 'SẼ dời' : 'Đã dời'} (${MOVED.length}) ===`);
+  // ── the report ─────────────────────────────────────────────────────────
+  console.log(`\n=== ${DRY ? 'WOULD move' : 'Moved'} (${MOVED.length}) ===`);
   for (const [o, nw] of MOVED) console.log(`  ${o}\n      → ${nw}`);
-  console.log(`\n=== File đã sửa đường dẫn (${TOUCH.length}) ===`);
+  console.log(`\n=== Files whose paths were fixed (${TOUCH.length}) ===`);
   for (const f of TOUCH) console.log(`  ${f}`);
   const leftKeys = Object.keys(LEFT);
   if (leftKeys.length) {
     const tot = Object.values(LEFT).reduce((a, b) => a + b, 0);
-    console.log(`\n=== Còn trỏ chỗ cũ mà máy không tự quyết được (${tot} chỗ) — \`specs/br.md\` giờ là nhiều lát, \`specs/contexts/\` / \`specs/internal/\` không còn ===`);
+    console.log(`\n=== Still pointing at the old place, and a machine cannot decide (${tot} spots) — \`specs/br.md\` is now several slices, and \`specs/contexts/\` / \`specs/internal/\` are gone ===`);
     for (const [f, k] of leftKeys.map((f) => [f, LEFT[f]]).sort((a, b) => b[1] - a[1]).slice(0, 30)) {
       console.log(`  ${String(k).padStart(3)}  ${f}`);
     }
@@ -562,19 +562,19 @@ function cmdLayout(argv) {
   console.log(`\n=== CẦN TAY (${NEED.length}) ===`);
   NEED.forEach(([w, p], i) => console.log(`  ${String(i + 1).padStart(2)}. ${w}\n      @ ${p}`));
   console.log();
-  if (DRY) console.log('--dry-run: chưa đụng đĩa. Chạy lại không có --dry-run để làm thật.');
+  if (DRY) console.log('--dry-run: nothing was touched on disk. Run again without --dry-run to do it.');
   else {
     const q = (xs) => xs.map((x) => (/[^\p{L}\p{N}_./@:+-]/u.test(x) ? "'" + x.replaceAll("'", "'\\''") + "'" : x)).join(' ');
-    console.log('Chưa commit, index để trống — script cố ý không stage/commit hộ. Đọc git status, làm các mục CẦN TAY (hoặc để sau),');
-    console.log('rồi HAI commit tách theo ranh giới .sdd/config (pre-commit chặn spec + code/test trong một commit):');
+    console.log('Not committed, the index is empty — the script deliberately does not stage or commit for you. Read git status, do the NEEDS HANDS items (or leave them),');
+    console.log('then TWO commits split along the .sdd/config boundary (pre-commit blocks spec + code/test in one commit):');
     console.log(`  git add -A -- ${q(ADD_A)} && git commit -m 'chore(sdd): migrate bố cục 7.0 — core|nghề × br-###, tầng 0 vision.md'`);
     if (addB.length) {
       console.log(`  git add -A -- ${q(addB)} && git commit -m 'chore(sdd): migrate 7.0 — dời test UC theo nghề, sửa đường dẫn trong code/test'`);
     } else {
-      console.log('  (không có test dời hay file code/test nào phải sửa — một commit là đủ)');
+      console.log('  (no test was moved and no code/test file needed fixing — one commit is enough)');
     }
-    console.log('  File khác đang untracked/đã sửa trước khi migrate KHÔNG nằm trong hai lệnh trên — cố ý.');
-    console.log('Sau đó: /sdd-solo:init --update (khuôn mới, dọn khuôn cũ) · /sdd-solo:status · gate-check từng UC đang mở.');
+    console.log('  Other files that were untracked/modified before the migration are NOT in those two commands — deliberately.');
+    console.log('Then: /sdd-solo:init --update (the new templates, cleaning up the old ones) · /sdd-solo:status · gate-check for each open UC.');
   }
 }
 
@@ -585,13 +585,13 @@ function cmdEvidence(argv) {
   const MARK = '→ ' + (brp.endsWith('/specs/br.md') ? 'specs/br.evidence.md' : path.basename(evp));
   const s = rd(brp) ?? '';
   const m = new RegExp('^# ' + esc(BR) + ':[\\s\\S]*?(?=^# BR-|$(?![\\s\\S]))', 'm').exec(s);
-  if (!m) { console.log(`  ✗ không thấy '# ${BR}:' trong specs/br.md`); process.exit(1); }
+  if (!m) { console.log(`  ✗ no '# ${BR}:' found in specs/br.md`); process.exit(1); }
   const sec = m[0];
   const bg = sectionOf(sec, 'Background');
-  if (!bg) { console.log(`  ✗ ${BR} không có ## Background`); process.exit(1); }
+  if (!bg) { console.log(`  ✗ ${BR} has no ## Background`); process.exit(1); }
   const body = bg.body;
   const bgDone = body.includes(MARK);
-  if (bgDone) console.log(`  ✓ ${BR} ## Background đã tách rồi — không làm lại`);
+  if (bgDone) console.log(`  ✓ ${BR} ## Background has already been split — not doing it again`);
   const paras = bgDone ? [] : body.replace(/^\n+|\n+$/g, '').split(/\n[ \t]*\n/);
   const keep = [], move = [];
   let nmove = 0;
@@ -609,10 +609,10 @@ function cmdEvidence(argv) {
   const kb0 = bytes(body) / 1024;
   const newbody = bgDone ? body : (keep.join('\n\n') + '\n\n');
   const kb1 = bytes(newbody) / 1024;
-  if (!bgDone) console.log(`  ${BR} ## Background: ${kb0.toFixed(1)} KB → ${kb1.toFixed(1)} KB · dời ${nmove} đoạn, giữ ${keep.length} dòng heading/**`);
+  if (!bgDone) console.log(`  ${BR} ## Background: ${kb0.toFixed(1)} KB → ${kb1.toFixed(1)} KB · moved ${nmove} paragraphs, kept ${keep.length} heading/** lines`);
 
-  // 5.1.0 — ## Adversarial pass của BR cùng loại dấu vết, nhưng Phase 1 ĐƯỢC PHÉP còn `___`:
-  // dòng đếm phải in số `___` ra mặt tiền, không phải "đã áp hết". Giữ chữ "Ngày chạy:" (br-check §10 grep).
+  // 5.1.0 — the ## Adversarial pass of a BR is the same kind of evidence, but Phase 1 IS ALLOWED to keep `___`:
+  // the counting line must show the `___` number up front, not "all applied". Keep the words "Ngày chạy:" (br-check §10 greps them).
   const ap = sectionOf(sec, 'Adversarial pass');
   let apMove = null;
   if (ap && ap.body.includes('Ngày chạy') && !ap.body.includes(MARK) && !/YYYY-MM-DD|<[^>\n]+>/.test(ap.body)) {
@@ -626,13 +626,13 @@ function cmdEvidence(argv) {
     const line = `- Ngày chạy: ${d} · 3 vai` + (onv ? ` · trên v${onv[1]}` : '')
       + ` · ${qs.length} câu → ${applied} đã áp · ${blank + noarrow} → ___ ${MARK}`;
     apMove = [rstrip(ab) + '\n', line];
-    console.log(`  ${BR} ## Adversarial pass: ${(bytes(ab) / 1024).toFixed(1)} KB → 1 dòng · ${qs.length} câu, ${applied} đã áp, ${blank + noarrow} còn ___`);
+    console.log(`  ${BR} ## Adversarial pass: ${(bytes(ab) / 1024).toFixed(1)} KB → 1 line · ${qs.length} questions, ${applied} applied, ${blank + noarrow} still ___`);
   }
   if (ap && ap.body.includes('Ngày chạy') && ap.body.includes(MARK)) {
-    console.log(`  ✓ ${BR} ## Adversarial pass đã tách rồi — không làm lại`);
+    console.log(`  ✓ ${BR} ## Adversarial pass has already been split — not doing it again`);
   }
   if (bgDone && !apMove) process.exit(0);
-  if (dry) { console.log('  --dry-run: chưa đụng đĩa'); process.exit(0); }
+  if (dry) { console.log('  --dry-run: nothing touched on disk'); process.exit(0); }
 
   let ev = rd(evp);
   if (ev === null) {
@@ -653,11 +653,11 @@ function cmdEvidence(argv) {
   }
   fs.writeFileSync(evp, ev);
   fs.writeFileSync(brp, s.slice(0, m.index) + sec2 + s.slice(m.index + sec.length));
-  console.log(`  ✓ đã ghi ${path.relative(process.cwd(), evp)} và cập nhật ${path.relative(process.cwd(), brp)} — chưa commit`);
+  console.log(`  ✓ wrote ${path.relative(process.cwd(), evp)} and updated ${path.relative(process.cwd(), brp)} — not committed`);
   console.log(`  git add ${path.relative(process.cwd(), brp)} ${path.relative(process.cwd(), evp)} && git commit -m 'docs(${BR}): dời dấu vết BR sang evidence.md'`);
 }
 
 const [, , cmd, ...rest] = process.argv;
 if (cmd === 'layout') cmdLayout(rest);
 else if (cmd === 'evidence') cmdEvidence(rest);
-else { process.stderr.write('dùng: migrate.mjs <layout|evidence> …\n'); process.exit(2); }
+else { process.stderr.write('usage: migrate.mjs <layout|evidence> …\n'); process.exit(2); }

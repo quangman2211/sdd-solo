@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Ranh giới lõi/nghề (7.0) — luật riêng của repo, bật khi đã migrate bố cục core|nghề.
-# Dùng: cp 20-layer-boundary.sh.example 20-layer-boundary.sh && chmod +x 20-layer-boundary.sh
+# Core/craft boundary (7.0) — a repo-owned rule, enable it once the core|craft layout has been migrated to.
+# Use: cp 20-layer-boundary.sh.example 20-layer-boundary.sh && chmod +x 20-layer-boundary.sh
 #
-# Chỉ xét file ĐANG STAGE (SDD_STAGED do hook mẹ export): gốc specs/*.md · specs/adr/ · specs/core/**
-# không trích ID của nghề; src/core/** không import src/<nghề>/. Repo vừa migrate còn nợ cũ thì
-# `.sdd/scripts/layer-check.sh` (không --staged) liệt kê; hook này chỉ chặn nợ MỚI.
+# Looks only at STAGED files (SDD_STAGED is exported by the parent hook): the root specs/*.md · specs/adr/ ·
+# specs/core/** cite no craft's IDs; src/core/** does not import src/<craft>/. A freshly migrated repo still
+# carrying old debt can list it with `.sdd/scripts/layer-check.sh` (without --staged); this hook only blocks NEW debt.
 [ -f "$(git rev-parse --git-path MERGE_HEAD)" ] && exit 0
 LC="$SDD_ROOT/.sdd/scripts/layer-check.sh"
-[ -x "$LC" ] || { echo "! layer-check.sh chưa có ở .sdd/scripts/ — chạy /sdd-solo:init --update" >&2; exit 0; }
-bash "$LC" --staged || { echo "✗ ranh giới lõi/nghề — xem trên; thứ cả nghề lẫn lõi cần thì đưa lên gốc/core, còn lại về specs/<nghề>/" >&2; exit 1; }
+[ -x "$LC" ] || { echo "! layer-check.sh is not in .sdd/scripts/ yet — run /sdd-solo:init --update" >&2; exit 0; }
+bash "$LC" --staged || { echo "✗ core/craft boundary — see above; anything both the craft and the core need moves up to the root/core, the rest goes back to specs/<craft>/" >&2; exit 1; }
 exit 0

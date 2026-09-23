@@ -1,72 +1,72 @@
 #!/usr/bin/env bash
-# update.sh — chạy trọn chuỗi update theo đúng thứ tự, chỉ những khe đang lệch.
+# update.sh — run the whole update chain in the right order, only the slots that are out of step.
 #   ① claude plugin marketplace update   ② claude plugin update   ③ scaffold --update
-# Bản mới KHÔNG áp vào phiên đang mở — giống hệt Claude Code, phải mở session mới.
+# A new version does NOT apply to an open session — exactly like Claude Code, a new session is needed.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 PLUGIN="${SDD_PLUGIN:-$(dirname "$HERE")}"; ROOT="$(project_root)"
 PNAME="$(jver "$PLUGIN/.claude-plugin/plugin.json" name 2>/dev/null || echo sdd-solo)"
 MKTNAME="$(mkt_of "$PLUGIN")"
 
 if [ -z "$MKTNAME" ]; then
-  warn "plugin đang chạy từ --plugin-dir, không phải bản cài qua marketplace"
-  info "bỏ qua ① ②, chỉ chạy ③ scaffold --update"
+  warn "the plugin is running from --plugin-dir, not from the marketplace-installed version"
+  info "skipping ① ②, running only ③ scaffold --update"
 else
   # ① marketplace clone ← GitHub
-  echo "① làm mới marketplace…"
+  echo "① refreshing the marketplace…"
   OUT="$(claude plugin marketplace update "$MKTNAME" </dev/null 2>&1)"; RC=$?
   echo "$OUT" | sed 's/^/    /'
   [ "$RC" -eq 0 ] && ok "marketplace $MKTNAME" \
-                  || bad "không làm mới được marketplace — mất mạng? Chạy tiếp bằng bản đã tải."
-  # ② bản cài ← marketplace clone
+                  || bad "could not refresh the marketplace — no network? Continuing with the downloaded version."
+  # ② the installed version ← the marketplace clone
   MKTLOC="$(mkt_field "$MKTNAME" installLocation)"
   MJ="$MKTLOC/.claude-plugin/marketplace.json"
   MKT='-'
   if [ -f "$MJ" ]; then
     MKT="$(jver "$MJ" plugins.0.version)"
-    # ① vừa ghi lại clone xong. Thử lại một nhịp nếu đọc ra thứ không phải version.
+    # ① has just written the clone. Retry once if what comes back is not a version.
     is_semver "$MKT" || { sleep 0.3; MKT="$(jver "$MJ" plugins.0.version)"; }
   fi
   CUR="$(clean_ver "$(jver "$PLUGIN/.claude-plugin/plugin.json" version)")"
   if ! is_semver "$MKT"; then
-    # Không đoán, không quyết định trên giá trị không tin được — xem khe ④ ở 1.4.0.
-    dump_bad "② version của marketplace" "$MKT"
-    bad "② bỏ qua vì không đọc được version marketplace → làm tay: claude plugin update $PNAME@$MKTNAME"
+    # Do not guess, do not decide on a value that cannot be trusted — see slot ④ at 1.4.0.
+    dump_bad "② the marketplace version" "$MKT"
+    bad "② skipped because the marketplace version could not be read → do it by hand: claude plugin update $PNAME@$MKTNAME"
     MKT='-'
   elif [ "$(vcmp "$CUR" "$MKT")" = "-1" ]; then
-    # PHẢI dùng printf, không dùng echo. bash 3.2 của macOS nuốt cả phép khai
-    # triển biến khi nó đứng ngay trước một ký tự nhiều byte:
-    #   bash -c 'M=1.6.1; echo "→ $M…"'   →  mất "1.6.1" và byte đầu của "…"
-    # Chỉ hỏng dưới locale UTF-8, tức đúng môi trường thật của người dùng. Xem #6.
-    printf '② cài %s %s → %s…\n' "$PNAME" "$CUR" "$MKT"
+    # MUST use printf, not echo. The bash 3.2 on macOS swallows a whole variable expansion
+    # when it sits immediately before a multi-byte character:
+    #   bash -c 'M=1.6.1; echo "→ $M…"'   →  loses "1.6.1" and the first byte of "…"
+    # It only breaks under a UTF-8 locale, which is the real environment of every user. See #6.
+    printf '② installing %s %s → %s…\n' "$PNAME" "$CUR" "$MKT"
     OUT="$(claude plugin update "$PNAME@$MKTNAME" </dev/null 2>&1)"; RC=$?
     echo "$OUT" | sed 's/^/    /'
-    [ "$RC" -eq 0 ] && ok "đã cài $MKT" || bad "cài không xong — làm tay: claude plugin update $PNAME@$MKTNAME"
+    [ "$RC" -eq 0 ] && ok "installed $MKT" || bad "the install did not finish — do it by hand: claude plugin update $PNAME@$MKTNAME"
   else
-    ok "② bản cài đã là mới nhất ($CUR)"
+    ok "② the installed version is already the newest ($CUR)"
   fi
 fi
 
-# ③ .sdd/ của dự án ← scaffold của bản MỚI NHẤT, không phải bản đang chạy
+# ③ the project .sdd/ ← the scaffold of the NEWEST version, not of the running one
 NEW="$(installed_path "$PNAME")"
 [ -n "$NEW" ] && [ -x "$NEW/scripts/scaffold.sh" ] || NEW="$PLUGIN"
-echo "③ cập nhật .sdd/ và template của dự án (scaffold từ $(jver "$NEW/.claude-plugin/plugin.json" version))…"
+echo "③ updating the project .sdd/ and templates (scaffold from $(jver "$NEW/.claude-plugin/plugin.json" version))…"
 "$NEW/scripts/scaffold.sh" "$NEW" "$ROOT" --update 2>&1 | sed 's/^/    /'
 
-# version phiên đang mở lấy từ chỗ hook SessionStart ghi lại — KHÔNG suy từ
-# đường dẫn script, vì script này gọi qua bash nên đường dẫn là bản mới.
+# the version of the open session comes from where the SessionStart hook recorded it — NOT inferred from
+# this script path, because this script is invoked through bash so its path is the new version.
 SESS="$(sess_ver)"
 INSTALLED="$(jver "$NEW/.claude-plugin/plugin.json" version)"
 echo
 echo "=== Sau khi update ==="
-printf '  %-8s %s\n' "$INSTALLED" "bản đã cài"
-printf '  %-8s %s\n' "$(cat "$ROOT/.sdd/version" 2>/dev/null || echo '-')" "dự án .sdd/"
-printf '  %-8s %s\n' "${SESS:-?}"  "phiên này đang chạy${SESS:+}"
+printf '  %-8s %s\n' "$INSTALLED" "the installed version"
+printf '  %-8s %s\n' "$(cat "$ROOT/.sdd/version" 2>/dev/null || echo '-')" "the project .sdd/"
+printf '  %-8s %s\n' "${SESS:-?}"  "this running session${SESS:+}"
 echo
 if [ -z "$SESS" ]; then
-  echo "Không biết phiên này đang nạp bản nào (hook chưa ghi). Cứ mở session mới cho chắc."
+  echo "Which version this session loaded is unknown (the hook has not recorded it). Open a new session to be sure."
 elif [ "$(vcmp "$SESS" "$INSTALLED")" = "-1" ]; then
-  echo "MỞ SESSION MỚI để nạp $INSTALLED — phiên này vẫn đang chạy $SESS."
-  echo "Giống Claude Code: bản mới không áp vào phiên đang mở."
+  echo "OPEN A NEW SESSION to load $INSTALLED — this one is still running $SESS."
+  echo "Same as Claude Code: a new version does not apply to an open session."
 else
-  ok "phiên này đã chạy bản mới nhất"
+  ok "this session already runs the newest version"
 fi

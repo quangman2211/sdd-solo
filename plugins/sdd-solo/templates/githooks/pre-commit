@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sdd-solo pre-commit hook: không trộn spec và code trong một commit.
+# sdd-solo pre-commit hook: do not mix spec and code in one commit.
 ROOT="$(git rev-parse --show-toplevel)"
 STAGED="$(git diff --cached --name-only)"
 
@@ -9,8 +9,8 @@ TP="$(cfg test_paths)"; [ -z "$TP" ] && TP="tests"
 UCT="$(cfg uc_test_dir)"; [ -z "$UCT" ] && UCT="tests/use-cases"
 RE="^($(printf '%s %s' "$CP" "$TP" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
 TLP="$(cfg tool_paths)"
-# tool_paths: code thật không thuộc UC nào (script đo, script chuyển đổi). Rỗng
-# thì mọi thứ dưới đây thành no-op, tức repo chưa khai hành xử y như trước (#31).
+# tool_paths: real code belonging to no UC (a measuring script, a conversion script). Empty makes
+# everything below a no-op, so a repo that has not declared it behaves exactly as before (#31).
 TRE=""; [ -n "$TLP" ] && TRE="^($(printf '%s' "$TLP" | tr -s ' ' '|' | sed 's/^|//; s/|$//'))/"
 notool() { if [ -n "$TRE" ]; then grep -vE "$TRE"; else cat; fi; }
 
@@ -18,20 +18,21 @@ notool() { if [ -n "$TRE" ]; then grep -vE "$TRE"; else cat; fi; }
 SPEC=0; CODE=0
 echo "$STAGED" | grep -vE '/_template/' | grep -qE '^specs/.*UC-[0-9]+\.md$|^specs/([^/]+/)?rules\.md$' && SPEC=1
 echo "$STAGED" | grep -vE 'README\.md$' | notool | grep -qE "$RE" && CODE=1
-# 7.4 (P-42): commit MERGE (MERGE_HEAD có) chở cả spec lẫn code của nhánh kia — hai bên đã tách ở nhánh gốc, đây
-# không phải người trộn. Chặn thì worktree code/uc-### không merge được main sau khi main có commit spec + code.
+# 7.4 (P-42): a MERGE commit (MERGE_HEAD present) carries both the spec and the code of the other branch — the two
+# were separate on the source branch, this is not somebody mixing them. Blocking it stops a code/uc-### worktree from
+# merging main once main holds a spec commit and a code commit.
 MERGING=0; [ -f "$(git rev-parse --git-path MERGE_HEAD 2>/dev/null)" ] && MERGING=1
 if [ "$SPEC" = 1 ] && [ "$CODE" = 1 ] && [ "$MERGING" = 0 ]; then
-  echo "✗ Commit đang trộn spec (specs/) và code ($CP $TP). Tách: commit docs(UC-###) trước, rồi feat(UC-###)." >&2
+  echo "✗ This commit mixes spec (specs/) and code ($CP $TP). Split them: commit docs(UC-###) first, then feat(UC-###)." >&2
   exit 1
 fi
-# .d/ — luật riêng của repo (#50): mọi file thực thi trong pre-commit.d chạy sau đây, theo tên.
-# Plugin không đụng file của repo ở đó khi update. Hook nằm trong git → mỗi worktree chạy
-# bản của nhánh nó; luật mới có hiệu lực ở nhánh khác sau khi merge (xem pre-commit.d/README.md).
+# .d/ — the repo own rules (#50): every executable file in pre-commit.d runs below, in name order.
+# The plugin does not touch the repo files there on update. The hooks live in git → each worktree runs
+# its own branch copy; a new rule takes effect on another branch after a merge (see pre-commit.d/README.md).
 export SDD_ROOT="$ROOT" SDD_STAGED="$STAGED" SDD_CODE_PATHS="$CP" SDD_TEST_PATHS="$TP" SDD_UC_TEST_DIR="$UCT"
 for h in "$ROOT/.sdd/hooks/pre-commit.d/"*; do
   [ -f "$h" ] && [ -x "$h" ] || continue
   case "$h" in *.example|*README*) continue;; esac
-  "$h" || { rc=$?; echo "✗ pre-commit.d/$(basename "$h") chặn commit (exit $rc)" >&2; exit 1; }
+  "$h" || { rc=$?; echo "✗ pre-commit.d/$(basename "$h") blocked the commit (exit $rc)" >&2; exit 1; }
 done
 exit 0

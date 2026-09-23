@@ -84,6 +84,10 @@ mkbase() {
   git init -q; git config user.email test@sdd; git config user.name sdd-test; git config commit.gpgsign false
   export CLAUDE_PROJECT_DIR="$W/base"
   bash "$P/scripts/scaffold.sh" "$P" "$W/base" >"$W/scaffold.log" 2>&1 || { cat "$W/scaffold.log"; echo "scaffold hỏng"; exit 1; }
+  # Repo gốc của bộ test là BẢN TIẾNG VIỆT — fixtures/v7 viết tiếng Việt, và mọi ca so chữ với nó.
+  # scaffold ghi doc_lang=en cho dự án MỚI (7.8.0), nên ở đây phải ghi đè về vi, nếu không chiều GHI
+  # của kw_w ra tiếng Anh và bản nền tự nó thành bản đã dịch — ca 45 sẽ không còn gì để so.
+  sed -i.bak "s/^doc_lang=.*/doc_lang=vi/" "$W/base/.sdd/config" && rm -f "$W/base/.sdd/config.bak"
   cp -R "$T/fixtures/v7/." "$W/base/"
   # commit 1: chưa có adversarial/đọc lại/v2
   node - "$UC1" <<'JS'

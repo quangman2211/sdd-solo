@@ -1,9 +1,10 @@
 # Glossary — Ubiquitous Language
 
-Từ **xuyên suốt cả dự án** — mọi nghề dùng cùng một nghĩa. Từ chỉ một nghề dùng, hoặc cùng chữ mà
-khác nghĩa theo nghề, nằm ở `specs/<nghề>/glossary.md`. Một từ một chỗ, nơi khác không chép lại.
-`context.sh UC-###` in gốc rồi nghề của UC.
+Words used **across the whole project** — every craft means the same thing by them. A word only one
+craft uses, or one spelled the same but meaning something else per craft, lives in
+`specs/<craft>/glossary.md`. One word, one place; nowhere else copies it.
+`context.sh UC-###` prints the root first, then the craft of the UC.
 
-## Chung
-- **<Thuật ngữ>** — <định nghĩa một câu>. Không nhầm với **<từ gần nghĩa>** là <...>.
-- **<Thuật ngữ>** (`<TênTrongCode>`) — ...
+## Shared
+- **<Term>** — <one-sentence definition>. Not to be confused with **<near-synonym>**, which is <...>.
+- **<Term>** (`<NameInCode>`) — ...

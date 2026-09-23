@@ -1,68 +1,68 @@
 #!/usr/bin/env bash
-# deps-check.sh — phụ thuộc ngoài của SDD-Solo.
+# deps-check.sh — the external dependencies of SDD-Solo.
 #
-# Từ 4.0.0 danh sách này gần như rỗng, và đó là chủ đích: quy trình chạy trọn
-# vòng bằng chính nó. Phụ thuộc BẮT BUỘC là `git`, `bash` và `node` (>= 18).
+# Since 4.0.0 this list is almost empty, and that is deliberate: the process runs the whole way round
+# on its own. The MANDATORY dependencies are `git`, `bash` and `node` (>= 18).
 #
-# Vì sao có node từ 7.6.0: bảy script đọc/sửa file có cấu trúc (mermaid, bảng
-# markdown, lời giao, dấu vết, gói context, migrate). Tới 7.5.0 phần đó là python
-# nhúng trong heredoc — 1.185 dòng python trong 4.953 dòng bash, hai ngôn ngữ cho
-# một plugin, và ngôn ngữ thứ hai KHÔNG phải ngôn ngữ của dự án dùng nó. Bỏ python,
-# giữ bash: chỗ nào có đường lùi (mermaid, đọc JSON) thì không có node vẫn chạy,
-# chỗ nào SỬA file (context · pass · migrate) thì `need_node` dừng có lời.
+# Why node since 7.6.0: seven scripts read/edit structured files (mermaid, markdown tables, the brief,
+# the evidence trail, the context pack, the migration). Up to 7.5.0 that part was python embedded in
+# heredocs — 1,185 lines of python inside 4,953 lines of bash, two languages for one plugin, and the
+# second language was NOT the language of the project using it. Python is gone, bash stays: where there
+# is a fallback (mermaid, reading JSON) it still runs without node; where a file is EDITED
+# (context · pass · migrate), `need_node` stops with a message.
 #
-# Vì sao Spec Kit rời khỏi cột bắt buộc — ba phép đo, không phải sở thích:
-#   ① `speckit-specify/SKILL.md` dặn agent BẰNG LỜI VĂN: specs nằm dưới `specs/`,
-#      số tiếp theo lấy bằng cách quét các thư mục đang có trong `specs/`, rồi
-#      `mkdir -p specs/<NNN>-<slug>`. Nó và ta dùng chung một thư mục với hai hệ
-#      ID (`001-` vs `UC-###`), không bên nào biết bên kia.
-#   ② `/speckit-plan` đọc đúng hai thứ: FEATURE_SPEC + `.specify/memory/constitution.md`.
-#      Ở repo thật, FEATURE_SPEC là bản mỏng chỉ có ID còn constitution.md vẫn nguyên
-#      placeholder. Bước quyết kiến trúc chạy trên hai đầu vào rỗng — đó là #34.
-#   ③ Bốn repo trên cùng một máy có 10 / 24 / 25 / 35 lệnh speckit-*. Đặt tên lệnh
-#      của người khác vào quy tắc cứng là để quy tắc hỏng theo lịch release của họ.
+# Why Spec Kit left the mandatory column — three measurements, not a preference:
+#   ① `speckit-specify/SKILL.md` tells the agent IN PROSE: the specs live under `specs/`, the next
+#      number is taken by scanning the directories currently in `specs/`, then
+#      `mkdir -p specs/<NNN>-<slug>`. It and we share one directory with two ID systems
+#      (`001-` vs `UC-###`), neither side aware of the other.
+#   ② `/speckit-plan` reads exactly two things: FEATURE_SPEC + `.specify/memory/constitution.md`.
+#      In a real repo, FEATURE_SPEC is a thin file holding only IDs while constitution.md is still all
+#      placeholders. The step that decides the architecture runs on two empty inputs — that is #34.
+#   ③ Four repos on one machine had 10 / 24 / 25 / 35 speckit-* commands. Putting someone else command
+#      name into a hard rule means the rule breaks on their release schedule.
 #
-# Spec Kit VẪN đáng cài và đáng đọc — nó là nguồn tham khảo thiết kế tốt, update
-# thường xuyên. Chỉ là không repo nào được gãy khi nó đổi.
+# Spec Kit IS still worth installing and reading — it is a good design reference, updated often. It is
+# only that no repo may break when it changes.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"
 
-echo "=== Phụ thuộc ==="
+echo "=== Dependencies ==="
 
-# ── bắt buộc ────────────────────────────────────────────────────────────
-command -v git >/dev/null 2>&1 && ok "git" || bad "git — chưa có; githook và mọi phép đếm đều cần"
-[ -d "$ROOT/.git" ] && ok "repo đã git init" || bad "chưa git init — githook không gắn được"
+# ── mandatory ───────────────────────────────────────────────────────────
+command -v git >/dev/null 2>&1 && ok "git" || bad "git — not there; the githooks and every count need it"
+[ -d "$ROOT/.git" ] && ok "the repo is git init-ed" || bad "not git init-ed — the githooks cannot be attached"
 if command -v node >/dev/null 2>&1; then
   NV="$(node -p 'process.versions.node' 2>/dev/null)"
   if [ "$(printf '%s\n' "${NV%%.*}")" -ge 18 ] 2>/dev/null; then ok "node $NV"
-  else bad "node $NV — cần >= 18 (parser mermaid, bảng markdown, migrate đều chạy ở đó)"; fi
+  else bad "node $NV — needs >= 18 (the mermaid parser, the markdown tables and migrate all run on it)"; fi
 else
-  bad "node — chưa có; cần >= 18 cho gate-check (mermaid), context.sh, pass.sh close, migrate.sh"
+  bad "node — not there; >= 18 is needed for gate-check (mermaid), context.sh, pass.sh close, migrate.sh"
 fi
 
-# ── tuỳ chọn: nói một dòng, không bao giờ đỏ ────────────────────────────
+# ── optional: one line each, never red ──────────────────────────────────
 if [ -d "$ROOT/.specify" ]; then
-  info "Spec Kit — có .specify/. Tuỳ chọn, KHÔNG nằm trong 14 bước từ 4.0.0."
-  # Chỉ nhắc khi hai cây thật sự đang chung thư mục — nói khi không có gì để dọn
-  # là dạy người ta phớt lờ dòng này.
+  info "Spec Kit — .specify/ is present. Optional, NOT part of the 14 steps since 4.0.0."
+  # Only mention it when the two trees really do share a directory — speaking when there is nothing to
+  # clean up teaches people to ignore this line.
   if find "$ROOT/specs" -maxdepth 1 -type d -name '[0-9][0-9][0-9]-*' 2>/dev/null | grep -q .; then
-    warn "specs/ đang chứa cả cây của Spec Kit (thư mục 00N-*) lẫn cây của sdd-solo"
-    info "→ bash .sdd/scripts/migrate.sh --dry-run   (dời sang .speckit/work/, giữ git history)"
+    warn "specs/ holds both the Spec Kit tree (the 00N-* directories) and the sdd-solo tree"
+    info "→ bash .sdd/scripts/migrate.sh --dry-run   (moves it to .speckit/work/, keeping the git history)"
   fi
 else
-  info "Spec Kit — chưa cài. Không cần cho 14 bước; cài nếu muốn đọc nó làm tham khảo thiết kế."
+  info "Spec Kit — not installed. Not needed for the 14 steps; install it if you want to read it as a design reference."
 fi
 
 find "$HOME/.claude/plugins/cache" -maxdepth 2 -type d -name 'aiup-core' 2>/dev/null | grep -q . \
-  && info "AIUP — đã cài. Không dùng cho bước ② ③ ④: bốn lệnh của nó ghi ra cây docs/, và /use-case-spec đụng hệ ID (#29)." \
-  || info "AIUP — chưa cài, và không cần."
+  && info "AIUP — installed. Not used for steps ② ③ ④: its four commands write into a docs/ tree, and /use-case-spec collides with the ID system (#29)." \
+  || info "AIUP — not installed, and not needed."
 
 [ -d "/Applications/Camunda Modeler.app" ] \
-  && info "Camunda Modeler — có (tuỳ chọn: DMN engine, mở .bpmn cũ)" \
-  || info "Camunda Modeler — không có, và không cần: bước ④ vẽ mermaid trong UC-###.flow.md"
+  && info "Camunda Modeler — present (optional: the DMN engine, opening an old .bpmn)" \
+  || info "Camunda Modeler — absent, and not needed: step ④ draws mermaid in UC-###.flow.md"
 
-info "Claude Design — không kiểm được bằng script; cần cho Phase 0 và bước ⑤"
+info "Claude Design — cannot be checked by a script; needed for Phase 0 and step ⑤"
 
 echo
-if [ "$FAIL" -gt 0 ]; then echo "Thiếu $FAIL phụ thuộc bắt buộc."; exit 1; fi
-echo "Đủ phụ thuộc."
+if [ "$FAIL" -gt 0 ]; then echo "$FAIL mandatory dependencies missing."; exit 1; fi
+echo "All dependencies present."

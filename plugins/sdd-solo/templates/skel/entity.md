@@ -1,31 +1,31 @@
 # EntityA
 
-<!-- Một entity một file (7.0, T2). Tên file = tên entity trong code = tên trong glossary.
-     Không phải ERD: chỉ ý nghĩa, trường đáng chú ý, quan hệ, trạng thái. -->
+<!-- One entity, one file (7.0, T2). File name = entity name in the code = name in the glossary.
+     Not an ERD: only meaning, the fields worth noting, relations, states. -->
 
-- **Đại diện:** <một câu>
-- **Thuộc:** core | <nghề>
-- **Trường đáng chú ý:** `fieldTwo` — giá trị theo RULE-###, không phải default.
-- **Quan hệ:** EntityA "1" --> "*" EntityB : <quan hệ>
-- **Trạng thái:** s1 → s2 → s3 (state diagram dưới; không có `status` thì bỏ mục này)
+- **Represents:** <one sentence>
+- **Belongs to:** core | <craft>
+- **Fields worth noting:** `fieldTwo` — value comes from RULE-###, not from a default.
+- **Relations:** EntityA "1" --> "*" EntityB : <relation>
+- **State:** s1 → s2 → s3 (state diagram below; drop this line when there is no `status`)
 
 ```mermaid
 stateDiagram-v2
-  [*] --> s1 : <UC-### tạo>
-  s1 --> s2 : <UC-### · điều kiện>
-  s2 --> s3 : <UC-### · điều kiện>
-  s1 --> s3 : <hệ thống ngoài / hết hạn — KHÔNG do UC nào>
+  [*] --> s1 : <UC-### creates>
+  s1 --> s2 : <UC-### · condition>
+  s2 --> s3 : <UC-### · condition>
+  s1 --> s3 : <external system / expiry — NOT caused by any UC>
   s3 --> [*]
   note right of s3
-    Không có mũi tên ra khỏi s3.
-    Đây là quyết định — RULE-###.
+    Nothing leaves s3.
+    That is a decision — RULE-###.
   end note
 ```
 
-Mỗi mũi tên ghi **nguyên nhân** kéo nó. Thường là một `UC-###`; nhưng trạng thái đổi vì thế giới
-bên ngoài (sàn khoá tài khoản, hết hạn theo đồng hồ, hệ thống khác đẩy sang) thì ghi đúng nguyên
-nhân đó — **đừng dán một `UC-###` giả lên cho đủ hình thức**. Cổng DoR chỉ đòi ít nhất một mũi tên
-gắn UC có thật trong các file entity UC nhắc tên.
+Every arrow names **what pulls it**. Usually a `UC-###`; but when a state changes because of the
+outside world (the marketplace locks the account, a clock expires it, another system pushes it),
+name that cause — **do not paste a fake `UC-###` on it to look complete**. The DoR gate only asks
+for at least one arrow carrying a UC that really exists, across the entity files the UC names.
 
 ## History
 - v1 (YYYY-MM-DD): initial

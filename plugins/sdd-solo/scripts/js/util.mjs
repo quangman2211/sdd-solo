@@ -1,15 +1,15 @@
 #!/usr/bin/env node
-// util.mjs — những việc nhỏ mà bash làm vụng: đọc JSON, in JSON, thay khối giữa hai marker, bỏ dấu tiếng Việt.
-// Gom một file để bash có đúng MỘT chỗ gọi, thay cho 9 khối python nhúng rải rác (7.6.0).
+// util.mjs — the small jobs bash does clumsily: read JSON, print JSON, replace the block between two markers, strip Vietnamese accents.
+// Gathered into one file so bash has exactly ONE place to call, replacing 9 scattered embedded python blocks (7.6.0).
 //
-// Mỗi lệnh con giữ NGUYÊN đầu vào/đầu ra của khối python nó thay — snapshot đầu ra mọi script phải khác 0 dòng.
+// Each sub-command keeps the EXACT input/output of the python block it replaced — an output snapshot of every script must differ by 0 lines.
 //
-//   util.mjs json <file> <đường.dẫn>        đọc một trường JSON theo đường dẫn "a.b.0.c" (im lặng nếu không có)
-//   util.mjs hookjson <ngữ cảnh>            in JSON hookSpecificOutput của SessionStart
-//   util.mjs marker <file> <mở> <đóng> <khối>   thay phần giữa hai marker bằng khối mới
-//   util.mjs slug <chữ>                     bỏ dấu tiếng Việt → slug a-z0-9-
-//   util.mjs installed <plugin> <ver|path>  đọc installed_plugins.json của Claude Code
-//   util.mjs mkt <tên marketplace> <đường.dẫn>  đọc known_marketplaces.json
+//   util.mjs json <file> <dotted.path>       read one JSON field by the path "a.b.0.c" (silent if absent)
+//   util.mjs hookjson <context>              print the SessionStart hookSpecificOutput JSON
+//   util.mjs marker <file> <open> <close> <block>   replace what is between two markers with a new block
+//   util.mjs slug <text>                     strip Vietnamese accents → an a-z0-9- slug
+//   util.mjs installed <plugin> <ver|path>   read the Claude Code installed_plugins.json
+//   util.mjs mkt <marketplace name> <dotted.path>  read known_marketplaces.json
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -21,7 +21,7 @@ function readJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
 }
 
-/** Đi theo đường dẫn "a.b.0.c"; mảng nhận chỉ số số. Trả undefined nếu hụt. */
+/** Follow the path "a.b.0.c"; an array takes a numeric index. Returns undefined on a miss. */
 function dig(d, dotted) {
   for (const k of dotted.split('.')) {
     if (d === null || d === undefined) return undefined;
@@ -30,7 +30,7 @@ function dig(d, dotted) {
   return d;
 }
 
-/** Bản cài mới nhất của một plugin trong installed_plugins.json (khoá dạng "tên@marketplace"). */
+/** The newest installed version of a plugin in installed_plugins.json (the key has the form "name@marketplace"). */
 function installedEntry(name) {
   const d = readJson(path.join(os.homedir(), '.claude', 'plugins', 'installed_plugins.json'));
   const plugins = d?.plugins;
@@ -65,7 +65,7 @@ switch (cmd) {
     break;
   }
   case 'slug': {
-    // Bỏ dấu bằng NFD rồi cắt dấu tổ hợp; đ/Đ không phải dấu tổ hợp nên thay tay.
+    // Strip the accents with NFD then cut the combining marks; đ/Đ are not combining marks, so replace them by hand.
     const s = (args[0] ?? '')
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/đ/g, 'd').replace(/Đ/g, 'D')
@@ -85,6 +85,6 @@ switch (cmd) {
     break;
   }
   default:
-    process.stderr.write('dùng: util.mjs <json|hookjson|marker|slug|installed|mkt> …\n');
+    process.stderr.write('usage: util.mjs <json|hookjson|marker|slug|installed|mkt> …\n');
     process.exit(2);
 }

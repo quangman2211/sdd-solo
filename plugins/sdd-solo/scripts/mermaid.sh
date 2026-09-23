@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# mermaid.sh <--lint|--edges|--nodes|--states|--kinds> <file...> — vỏ bash của js/mermaid.mjs (7.5.0, P-32;
-# chuyển từ python sang node ở 7.6.0).
+# mermaid.sh <--lint|--edges|--nodes|--states|--kinds> <file...> — the bash wrapper around js/mermaid.mjs (7.5.0, P-32;
+# moved from python to node at 7.6.0).
 #
-# Không có node thì im lặng và exit 0: mọi chỗ gọi đều có đường lùi grep của bản trước, và một phép kiểm
-# KHÔNG CHẠY ĐƯỢC không bao giờ được biến thành một phép kiểm ĐỎ.
+# Without node it stays silent and exits 0: every caller has the previous release grep fallback, and a check that
+# CANNOT RUN must never be turned into a check that is RED.
 #
-# SDD_MERMAID_REAL=1 → với --lint, hỏi thẳng thư viện mermaid của DỰ ÁN (cần mermaid + jsdom trong
-# node_modules) thay vì parser bắt chước. Dự án chưa có thì js/mermaid-real.mjs thoát 3 và ta rơi về parser.
+# SDD_MERMAID_REAL=1 → for --lint, ask the PROJECT own mermaid library directly (it needs mermaid + jsdom in
+# node_modules) instead of the imitating parser. If the project does not have it, js/mermaid-real.mjs exits 3 and we fall back to the parser.
 HERE="$(cd "$(dirname "$0")" && pwd)"
 command -v node >/dev/null 2>&1 || exit 0
 [ -f "$HERE/js/mermaid.mjs" ] || exit 0

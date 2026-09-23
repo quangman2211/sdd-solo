@@ -1,23 +1,25 @@
-# pre-commit.d/ — luật riêng của repo (#50)
+# pre-commit.d/ — the repo's own rules (#50)
 
-Mọi file **thực thi** (`chmod +x`) trong thư mục này chạy sau các kiểm của `.sdd/hooks/pre-commit`,
-theo thứ tự tên. Exit ≠ 0 là chặn commit. `.example` và `README.md` không chạy. Plugin **không đụng**
-file của anh ở đây khi `init --update` — chỉ làm mới `README.md` và các `.example`.
+Every **executable** file (`chmod +x`) in this folder runs after the checks in `.sdd/hooks/pre-commit`, in name
+order. A non-zero exit blocks the commit. `.example` and `README.md` do not run. The plugin **never touches** your
+files here on `init --update` — it only refreshes `README.md` and the `.example` files.
 
-Hook mẹ export cho script con: `SDD_ROOT` · `SDD_STAGED` (file đã stage, mỗi dòng một file) ·
-`SDD_CODE_PATHS` · `SDD_TEST_PATHS` · `SDD_UC_TEST_DIR` (đọc từ `.sdd/config`).
+The parent hook exports, for child scripts: `SDD_ROOT` · `SDD_STAGED` (the staged files, one per line) ·
+`SDD_CODE_PATHS` · `SDD_TEST_PATHS` · `SDD_UC_TEST_DIR` (read from `.sdd/config`).
 
-Hook nằm trong git, nên **mỗi worktree chạy bản hook của nhánh nó**: luật mới thêm trên `main`
-chỉ có hiệu lực ở nhánh khác sau khi nhánh đó `merge main`. Ca thật: sửa hook trên `main`, commit thử
-ở worktree `code/uc-014` → không chặn, phải `reset --hard`.
+Hooks live in git, so **each worktree runs its own branch's copy of the hook**: a new rule added on `main` only takes
+effect in another branch after that branch does `merge main`. Real case: the hook was edited on `main`, a test commit
+in worktree `code/uc-014` went through unblocked and had to be `reset --hard`.
 
-**Thử luật `.d` ở worktree:** hook mẹ tìm `.d/` dưới `git rev-parse --show-toplevel` **của worktree đó**,
-nên `git -c core.hooksPath=<repo chính>/.sdd/hooks commit` ở worktree vẫn **không** chạy luật `.d` (thư mục
-`.d` của worktree chưa có file) — commit lọt. Hai cách đúng: `merge main` vào worktree trước, hoặc gọi thẳng
-script với env: `SDD_STAGED="$(git diff --cached --name-only)" SDD_ROOT=$(git rev-parse --show-toplevel)
+**Testing a `.d` rule from a worktree:** the parent hook looks for `.d/` under that worktree's own
+`git rev-parse --show-toplevel`, so `git -c core.hooksPath=<main repo>/.sdd/hooks commit` in a worktree still does
+**not** run the `.d` rules (the worktree's `.d` folder has no files yet) — and the commit slips through. Two correct
+ways: `merge main` into the worktree first, or call the script directly with the environment:
+`SDD_STAGED="$(git diff --cached --name-only)" SDD_ROOT=$(git rev-parse --show-toplevel)
 bash .sdd/scripts/role.sh --staged`.
 
-Khuôn có sẵn: `20-layer-boundary` (7.0: gốc/core không trích nghề,
-`src/core` không import `src/<nghề>` — chỉ xét file đang stage, gọi `.sdd/scripts/layer-check.sh --staged`).
+Shipped skeleton: `20-layer-boundary` (7.0: the root and core cite no craft, `src/core` does not import
+`src/<craft>` — it looks only at staged files and calls `.sdd/scripts/layer-check.sh --staged`).
 
-Ranh giới **vai** từ 7.2 nằm ở `commit-msg.d/10-vai.sh`; `10-role-boundary.sh` cũ (theo nhánh) — xoá nếu còn.
+The **role** boundary has lived in `commit-msg.d/10-vai.sh` since 7.2; the old `10-role-boundary.sh` (by branch) —
+delete it if it is still there.

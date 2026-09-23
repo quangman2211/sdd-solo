@@ -1,27 +1,27 @@
 # Entities — core
 
-Entity dùng chung cho mọi nghề: **mỗi entity một file** `specs/core/entities/<Tên>.md` (T2, 7.0).
-Entity riêng một nghề nằm ở `specs/<nghề>/entities/<Tên>.md`. Một UC "dùng" entity nào thì file
-đó là bối cảnh của UC (`context.sh` in nguyên file entity mà UC nhắc tên; cổng DoR kiểm state
-diagram trong đó).
+Entities shared by every craft: **one file per entity**, `specs/core/entities/<Name>.md` (T2, 7.0).
+An entity belonging to one craft lives in `specs/<craft>/entities/<Name>.md`. Whichever entities a
+UC "uses" are context for that UC (`context.sh` prints the whole entity file the UC names; the DoR
+gate checks the state diagram inside it).
 
-Tên file = tên entity trong code và trong glossary (`WorkItem.md` ↔ `- **Việc** (`WorkItem`)`).
-Khuôn một entity: `templates/skel/entity.md` của plugin — `/sdd-solo:start` copy khi UC nhắc
-một entity chưa có file.
+File name = the entity name in the code and in the glossary (`WorkItem.md` ↔ `- **Work item** (`WorkItem`)`).
+Skeleton for one entity: the plugin's `templates/skel/entity.md` — `/sdd-solo:start` copies it when a
+UC names an entity that has no file yet.
 
 ## Domain Model
-<Quan hệ giữa các entity core. Không phải ERD — chỉ tên và quan hệ; trường và trạng thái nằm
-trong file từng entity.>
+<How the core entities relate. Not an ERD — names and relations only; fields and states live in each
+entity's own file.>
 
 ```mermaid
 classDiagram
   direction LR
   class EntityA
   class EntityB
-  EntityA "1" --> "*" EntityB : <quan hệ>
+  EntityA "1" --> "*" EntityB : <relation>
 ```
 
-## Luật ranh giới
-File trong `specs/core/` **không trích ID của nghề nào** (RULE/ADR/UC/BR của `specs/<nghề>/`).
-Lõi không biết nghề; nghề biết lõi. `layer-check.sh` kiểm; githook `pre-commit.d/20-layer-boundary`
-chặn khi bật.
+## Boundary rule
+A file in `specs/core/` **cites no craft's IDs** (RULE/ADR/UC/BR under `specs/<craft>/`).
+Core knows nothing of a craft; a craft knows core. `layer-check.sh` checks it; the githook
+`pre-commit.d/20-layer-boundary` blocks when enabled.

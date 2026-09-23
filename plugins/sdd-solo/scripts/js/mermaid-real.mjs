@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-// mermaid-real.mjs — lint khối mermaid bằng CHÍNH thư viện mermaid, thay vì bằng luật bắt chước nó (7.6.0).
+// mermaid-real.mjs — lint a mermaid block with THE mermaid library itself, instead of with rules imitating it (7.6.0).
 //
-// Vì sao có cả hai. `mermaid.mjs` là parser thuần, không phụ thuộc gì, chạy ở mọi máy có node: luật của nó đo
-// bằng mermaid thật nên đúng với bản mermaid tại thời điểm đo (17/17 khối vỡ của runxops bắt được, 0/71 oan).
-// Nhưng nó vẫn là bắt chước: mermaid ra bản mới đổi cú pháp, hay ai viết một kiểu sơ đồ chưa có trong mẫu đo,
-// thì nó có thể nói khác trình vẽ mà không ai biết. File này bịt đúng khe đó bằng cách hỏi thẳng trình vẽ.
+// Why both exist. `mermaid.mjs` is a pure parser with no dependency, running on any machine with node: its rules were measured
+// against real mermaid, so they are correct for the mermaid release they were measured against (17 of 17 broken runxops blocks
+// caught, 0 of 71 false). But it is still an imitation: a new mermaid release changing the syntax, or somebody writing a kind of
+// diagram not in the measured sample, could make it disagree with the renderer with nobody knowing. This file closes that gap by asking the renderer.
 //
-// KHÔNG phải mặc định, và plugin KHÔNG cài mermaid: nó chỉ chạy khi repo dự án đã có sẵn `mermaid` + `jsdom`
-// trong node_modules (dự án web thường có), hoặc khi người dùng tự bật. Không tìm thấy thì thoát 3 và chỗ gọi
-// rơi về parser thuần — một phép kiểm không chạy được không bao giờ được thành một phép kiểm đỏ.
+// NOT the default, and the plugin does NOT install mermaid: it only runs when the project repo already has `mermaid` + `jsdom`
+// in node_modules (a web project usually does), or when the user switches it on. If it is not found, it exits 3 and the caller
+// falls back to the pure parser — a check that cannot run must never become a check that is red.
 //
-// Dùng: mermaid-real.mjs <file...>        (ROOT của dự án lấy từ $SDD_ROOT hoặc thư mục hiện tại)
-//   exit 0 = mọi khối render được · 1 = có khối vỡ · 3 = không có thư viện để hỏi (không kết luận gì)
+// Usage: mermaid-real.mjs <file...>       (the project ROOT comes from $SDD_ROOT or the current directory)
+//   exit 0 = every block renders · 1 = a block is broken · 3 = there is no library to ask (no conclusion at all)
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -20,7 +20,7 @@ import { blocks } from './mermaid.mjs';
 
 const ROOT = process.env.SDD_ROOT || process.cwd();
 
-/** Tìm một gói trong node_modules của DỰ ÁN (đi ngược lên từ ROOT), không phải của plugin. */
+/** Find a package in the PROJECT node_modules (walking up from ROOT), not the plugin one. */
 function resolveFrom(root, name) {
   let dir = path.resolve(root);
   for (;;) {
@@ -30,7 +30,7 @@ function resolveFrom(root, name) {
         const req = createRequire(path.join(dir, 'noop.js'));
         return req.resolve(name);
       } catch {
-        return p;                       // gói ESM-only: nạp thẳng thư mục qua package.json
+        return p;                       // an ESM-only package: load the directory directly through package.json
       }
     }
     const up = path.dirname(dir);
@@ -46,8 +46,8 @@ async function loadMermaid() {
   let JSDOM;
   try { ({ JSDOM } = await import(pathToFileURL(jp).href)); } catch { return null; }
   const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
-  // mermaid đòi DOM toàn cục. `navigator` ở node hiện đại chỉ có getter nên KHÔNG gán được — bỏ qua nó,
-  // mermaid.parse không cần (đo ở node 25; gán navigator ném TypeError và làm hỏng cả lượt).
+  // mermaid demands a global DOM. `navigator` on a modern node only has a getter so it CANNOT be assigned — skip it,
+  // mermaid.parse does not need it (measured on node 25; assigning navigator throws a TypeError and breaks the whole run).
   globalThis.window = dom.window;
   globalThis.document = dom.window.document;
   globalThis.HTMLElement = dom.window.HTMLElement;
@@ -61,7 +61,7 @@ async function loadMermaid() {
 
 const mermaid = await loadMermaid();
 if (!mermaid) {
-  process.stderr.write('mermaid-real: dự án chưa có mermaid + jsdom trong node_modules — không kết luận gì\n');
+  process.stderr.write('mermaid-real: the project has no mermaid + jsdom in node_modules — no conclusion\n');
   process.exit(3);
 }
 
@@ -71,7 +71,7 @@ for (const f of process.argv.slice(2)) {
     try {
       await mermaid.parse(lines.join('\n'));
     } catch (e) {
-      const msg = String(e?.message || e).split('\n').map((x) => x.trim()).filter(Boolean)[0] || 'parse lỗi';
+      const msg = String(e?.message || e).split('\n').map((x) => x.trim()).filter(Boolean)[0] || 'parse error';
       process.stdout.write(`${f}:${start}: MMD-REAL ${msg.slice(0, 200)}\n`);
       rc = 1;
     }

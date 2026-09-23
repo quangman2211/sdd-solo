@@ -1,4 +1,4 @@
 # screens/
 
-Export PNG từ Claude Design, đặt tên đúng ID: `SCR-000-1.png`, `SCR-000-1-error-E1.png`...
-Mỗi file phải trỏ về một bước hoặc một E# trong UC-000.md. Màn hình không có nguồn trong spec là màn hình bịa.
+Export PNGs from Claude Design and name them by ID: `SCR-000-1.png`, `SCR-000-1-error-E1.png`…
+Every file must point back to a step or an E# in UC-000.md. A screen with no source in the spec is an invented screen.

@@ -1,33 +1,34 @@
-# ADR-000: <Quyết định, viết như một câu khẳng định>
+# ADR-000: <the decision, written as a statement>
 
-<!-- File này tên `_adr-template.md`, KHÔNG phải `ADR-000-template.md` — đổi ở 4.2.0.
+<!-- This file is named `_adr-template.md`, NOT `ADR-000-template.md` — changed in 4.2.0.
 
-     Tên cũ bắt đầu bằng `ADR-000`, mà `id_exists()` tra ADR bằng `ls specs/internal/adr/ADR-000*`.
-     Nên trong mọi repo vừa scaffold, một `design.md` trích `ADR-000` sẽ được `design-check`
-     cho qua MÀU XANH — dù chưa ai viết một ADR nào. Thứ "tồn tại" mà phép kiểm nhìn thấy
-     chỉ là chính cái khuôn này.
+     The old name started with `ADR-000`, and `id_exists()` looks an ADR up with
+     `ls specs/internal/adr/ADR-000*`. So in every freshly scaffolded repo, a `design.md` citing
+     `ADR-000` passed `design-check` GREEN — although nobody had written a single ADR. The thing
+     that "existed", as far as the check could see, was this skeleton itself.
 
-     Đây đúng lớp lỗi đã đặt tên nhiều lần: một phép kiểm báo xanh sai tệ hơn không có phép
-     kiểm. Và nó còn nhẹ dạ hơn thường lệ — không cần ai viết sai gì cả, chỉ cần scaffold. -->
+     This is exactly the class of bug named over and over here: a check that reports green wrongly
+     is worse than no check. And this one was cheaper than usual — nobody had to write anything
+     wrong, only to scaffold. -->
 
 ## Status
 Proposed | Accepted — YYYY-MM-DD | Superseded by ADR-### — YYYY-MM-DD
 
 ## Context
-<Bối cảnh ép phải quyết: ràng buộc, yêu cầu, điều chưa biết. Link UC/BR liên quan.>
+<What forces the decision: constraints, requirements, unknowns. Link the related UC/BR.>
 
 ## Decision
-<Cái đã chọn. Một đoạn.>
+<What was chosen. One paragraph.>
 
 ## Alternatives considered
-- **<Phương án B>:** <vì sao loại — một câu, cụ thể>
-- **<Phương án C>:** <vì sao loại>
+- **<Option B>:** <why it lost — one sentence, concrete>
+- **<Option C>:** <why it lost>
 
 ## Consequences
-+ <tốt>
-+ <tốt>
-− <đánh đổi — phải có ít nhất một>
-− <đánh đổi>
++ <good>
++ <good>
+− <trade-off — there must be at least one>
+− <trade-off>
 
 ## Links
 - UC-### · BR-### · RULE-###

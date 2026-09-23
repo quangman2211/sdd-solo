@@ -35,7 +35,7 @@ nr p32c
 rep specs/orders/entities/Order.md '[*] --> new : UC-001 báo đơn' '[*] --> new : UC-001 báo đơn (console; seed tay)'
 cm "docs(UC-001): đọc lại — sửa entity" 2026-01-06
 S gate-check.sh UC-001
-chk "P-32 · cổng đỏ khi ; làm mất nhãn state diagram (exit $R)" '[ $R = 1 ] && hasE "mất khi render|không render được"'
+chk "P-32 · cổng đỏ khi ; làm mất nhãn state diagram (exit $R)" '[ $R = 1 ] && hasE "lost on render|does not render"'
 # ⑦ không có node thì mọi thứ im lặng, hành vi như 7.4
 nr p32d
 # PATH chỉ còn thư mục giả + các thư mục hệ thống KHÔNG có node: dựng bằng cách chặn node bằng một file

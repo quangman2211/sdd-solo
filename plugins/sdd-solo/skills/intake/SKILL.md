@@ -1,303 +1,308 @@
 ---
 name: intake
-description: Bước đầu của Phase 1 — cửa vào của cả quy trình. Bước 0 hỏi chủ dự án để chép ra specs/vision.md (tầng 0). Không tham số thì phỏng vấn từng câu để moi ý tưởng ra thành BR-###; có đường dẫn brief thì chuyển brief của agent khác thành BR chuẩn theo bộ luật không-bịa-số. Đầu ra là specs/<core|nghề>/br-###/br.md qua được br-check.sh.
+description: The first step of Phase 1 — the way into the whole process. Step 0 asks the owner and transcribes specs/vision.md (layer 0). With no argument it interviews question by question to pull an idea out into a BR-###; given a brief path it converts another agent's brief into a proper BR under the never-invent-a-number rules. The output is a specs/<core|craft>/br-###/br.md that passes br-check.sh.
 disable-model-invocation: true
-argument-hint: "[đường-dẫn-brief]"
+argument-hint: "[brief-path]"
 allowed-tools: Bash Read Write Edit Grep AskUserQuestion
 ---
 
-Cửa vào Phase 1. `/sdd-solo:start` là bước ① của một UC; đây là bước ① của cả dự án.
+Reply in whatever language the user writes in; keep file names, IDs and slugs in English.
 
-**Chế độ phiếu (7.3) — khi chạy dưới lời giao của agent khác** (lời giao mở đầu `Vai:`/`Lượt`, hoặc
-`bash .sdd/scripts/role.sh --xem` ra một vai không phải điều phối, hoặc không chắc có người ở đầu kia): **không mở
-`AskUserQuestion`** — không ai bấm, lượt treo tới hết hạn (#53). Mỗi câu lẽ ra hỏi user thành một phiếu:
-`bash .sdd/scripts/phieu.sh new "<việc>" <vai>` với Câu · Đã tra · Nếu chọn sai thì · Agent nghiêng về; chỗ phụ thuộc
-câu đó để `___` + quyết định tạm; rồi **DỪNG** và kết bằng `role.sh --ketqua <khoá> ket=chan hoi=#<n>`. Chủ dự án tự
-gõ lệnh này trong phiên của mình thì hỏi như thường.
+The way into Phase 1. `/sdd-solo:start` is step ① of a UC; this is step ① of the whole project.
 
-Xác định chế độ:
-- **`$1` rỗng → phỏng vấn.** Đây là chế độ mặc định và là tình huống hay gặp nhất.
-- **`$1` là đường dẫn file → chuyển đổi.** Đọc brief, tách thành BR theo bộ luật ở phần B.
+**Ticket mode (7.3) — when running under another agent's brief** (the brief opens with `Vai:`/`Lượt`, or
+`bash .sdd/scripts/role.sh --xem` reports a role other than the coordinator, or you are not sure there is a human at
+the other end): **do not open `AskUserQuestion`** — nobody clicks it and the turn hangs until it times out (#53).
+Every question you would have asked becomes a ticket: `bash .sdd/scripts/phieu.sh new "<task>" <role>` with
+Question · Already looked up · If chosen wrong · The agent leans towards; leave whatever depends on it as `___` plus
+an interim decision; then **STOP**, ending with `role.sh --ketqua <key> ket=chan hoi=#<n>`. When the owner types this
+command themselves in their own session, ask as normal.
 
-Trước khi bắt đầu, đọc `specs/_intake.md` trong repo (bộ câu hỏi bản giấy) và `specs/core/br-000/br.md`
-(xem `BR-000` mẫu). Nếu đã có BR thật (thư mục `specs/*/br-*/` nào khác `core/br-000/`), hỏi user muốn
-thêm BR mới hay sửa BR đang có — **bằng `AskUserQuestion`**, mỗi BR đang có một lựa chọn. Bảy câu phỏng
-vấn ở mục A là câu mở, hỏi bằng lời như đã ghi; luật `AskUserQuestion` (sdd-process 1b) chỉ cho câu
-chọn giữa các hướng.
+Pick the mode:
+- **`$1` empty → interview.** The default mode and the most common situation.
+- **`$1` is a file path → conversion.** Read the brief and split it into a BR under the rules in part B.
+
+Before starting, read `specs/_intake.md` in the repo (the paper version of the question set) and
+`specs/core/br-000/br.md` (the sample `BR-000`). If a real BR already exists (any `specs/*/br-*/` folder other than
+`core/br-000/`), ask the user whether they want a new BR or to edit an existing one — **with `AskUserQuestion`**, one
+option per existing BR. The seven interview questions in part A are open questions, asked in words as written; the
+`AskUserQuestion` rule (sdd-process 1b) is only for questions that choose between directions.
 
 ---
 
-## Bước 0 — tầng 0 `specs/vision.md`, trước mọi câu hỏi về BR
+## Step 0 — layer 0, `specs/vision.md`, before any BR question
 
-**Chạy bước này trước cả chế độ A lẫn chế độ B.** BR nào cũng phải khai `- **Lát:** <core | nghề> · <tên lát>`
-và tên lát phải có trong bảng `## Nghề và lát` của `vision.md` — `br-check` đỏ khi thiếu. Không có tầng 0
-thì bảy câu dưới không có chỗ để đứng, và BR viết ra sẽ đỏ ngay ở lượt kiểm đầu tiên.
+**Run this before both mode A and mode B.** Every BR has to declare `- **Slice:** <core | craft> · <slice name>` and
+the slice name must be in the `## Crafts and slices` table of `vision.md` — `br-check` is red without it. Without
+layer 0 the seven questions below have nothing to stand on, and the BR that comes out is red on its first check.
 
-Kiểm:
+Check:
 
 ```bash
-cat specs/vision.md 2>/dev/null | grep -n 'Định vị\|Không thu hẹp\|Nghề và lát' -A3
+cat specs/vision.md 2>/dev/null | grep -n 'Positioning\|Do not narrow\|Crafts and slices' -A3
 ```
 
-File chưa có, hoặc các mục còn nguyên khuôn (`<Một câu: sản phẩm này là gì…>`, `<từ khoá 1>`, `___` ở
-`| Nghề |`) → **hỏi chủ dự án, ba câu, một câu một lượt, bằng lời thường**:
+No file, or the sections are still the skeleton (`<One sentence: what this product is…>`, `<keyword 1>`, `___` under
+`| Craft |`) → **ask the owner, three questions, one per turn, in plain words**:
 
-1. *"Sản phẩm này là gì, cho ai, và cái gì làm nó khác? Nói một câu như anh sẽ nói với một người bạn."*
-   → `## Định vị`
-2. *"Có 3–5 điều mà dù sau này cắt gọt thế nào cũng KHÔNG được co lại. Là những điều gì?"*
-   → `## Không thu hẹp`, mỗi điều một dòng `- **<từ khoá ngắn>** — <giải thích>`. **Từ khoá phải là cụm
-   người ta sẽ viết y như thế trong Out of Scope** ("chiều ghi", "offline"), không phải cả câu — `br-check`
-   so từ khoá với từng dòng Out of Scope của mọi BR.
-3. *"Nghề nào mở trước? Và 'xong' của nghề đó nghĩa là gì — mình lấy gì làm dấu để mở nghề kế?"*
-   → `## Nghề và lát` (bảng) và `## "Xong" của mỗi nghề`.
+1. *"What is this product, who is it for, and what makes it different? One sentence, the way you would say it to a friend."*
+   → `## Positioning`
+2. *"Name 3–5 things that must NOT shrink, however much gets cut later. What are they?"*
+   → `## Do not narrow`, one line each: `- **<short keyword>** — <explanation>`. **The keyword must be the phrase
+   someone would actually write in Out of Scope** ("write path", "offline"), not the whole sentence — `br-check`
+   compares the keyword against every Out of Scope line of every BR.
+3. *"Which craft opens first? And what does 'done' mean for it — what tells us we can open the next one?"*
+   → `## Crafts and slices` (the table) and `## What "done" means per craft`.
 
-**Kỷ luật của bước 0 — khác hẳn bảy câu BR:**
+**The discipline of step 0 — quite different from the seven BR questions:**
 
-- **Người viết là chủ dự án. Em chỉ hỏi và CHÉP.** Không tự nghĩ ra một điều "không thu hẹp" nào, không
-  tự đặt tên nghề, không tự điền điều kiện "xong". Chủ dự án nói một câu lệch ngữ pháp thì chép câu lệch
-  ngữ pháp đó, đừng làm nó hay hơn — làm hay hơn là thêm ý.
-- **Tầng 0 được miễn luật "không số".** Số ở đây là **ý muốn của chủ dự án**, không phải sự thật cần nguồn:
-  *"pack chạy 7 ngày liên tục không dev sửa gì"* ghi thẳng con số 7, không `___`, không đòi đo ở đâu.
-  Đây là ngoại lệ duy nhất trong cả quy trình — mọi tầng dưới vẫn cấm số không nguồn.
-- **Chỗ chủ dự án chưa nghĩ tới vẫn để `___`** và một dòng `## Open Questions`. "Chưa biết mở nghề nào sau"
-  là câu trả lời hợp lệ.
-- **Đọc lại toàn bộ file cho chủ dự án nghe và chờ gật** trước khi sang BR. Tầng 0 sai thì mọi lượt
-  adversarial bên dưới sẽ bảo vệ một hướng đi sai rất kỷ luật.
+- **The owner writes it. You only ask and TRANSCRIBE.** Do not invent a "do not narrow" item, do not name a craft,
+  do not fill in a "done" condition. If the owner says something ungrammatical, transcribe the ungrammatical
+  sentence; do not improve it — improving it adds meaning.
+- **Layer 0 is exempt from the "no numbers" rule.** A number here is **the owner's intent**, not a fact needing a
+  source: *"the pack runs 7 consecutive days with no developer fixes"* records the 7 as written, no `___`, no demand
+  for where it was measured. This is the only exception in the whole process — every layer below still forbids a
+  number with no source.
+- **Anything the owner has not thought about stays `___`** plus a `## Open Questions` line. "Not sure which craft
+  opens next" is a valid answer.
+- **Read the whole file back to the owner and wait for their agreement** before moving to the BR. If layer 0 is
+  wrong, every adversarial round below will defend a wrong direction very diligently.
 
-Đã có `vision.md` viết thật rồi → đọc `## Không thu hẹp` và `## Nghề và lát`, nói lại cho chủ dự án nghe
-một câu, rồi đi tiếp. Không sửa gì.
+`vision.md` already properly written → read `## Do not narrow` and `## Crafts and slices`, say them back to the owner
+in one sentence, and move on. Change nothing.
 
-Commit riêng: `git add specs/vision.md && git commit --only -m "docs(vision): tầng 0 — <định vị một câu>" -- specs/vision.md`.
-
----
-
-## A. Chế độ phỏng vấn
-
-**Kỷ luật của chế độ này — quan trọng hơn bộ câu hỏi:**
-
-- **Một câu một lượt.** Hỏi, chờ trả lời, mới hỏi tiếp. Không bao giờ đưa cả bảy câu ra một lần —
-  người đang mơ hồ nhìn bảy câu sẽ không trả lời câu nào.
-- **Nhắc lại điều vừa nghe bằng một câu, rồi mới hỏi tiếp.** "Vậy là ___, đúng không anh?"
-  Đây là chỗ bắt hiểu nhầm rẻ nhất, và nó cho user thấy mình đang được nghe.
-- **"Không biết" là câu trả lời hợp lệ.** Ghi `___` và một dòng Open Question. Không ép.
-- **Được gợi ý KHUNG ĐẾM, không được gợi ý NGƯỠNG.** Hai luật "đừng gợi ý số" và "cách đo không
-  được để trống" đá nhau với người chưa từng đo cái gì — họ cần một ví dụ, mà ví dụ nào cũng kèm
-  con số. Ranh giới: *đếm ở đâu · đếm cái gì · bao lâu một lần* thì được nêu; **ngưỡng bên trong
-  khung đó thì không**, luôn để `___` kể cả khi user đã gật.
-  Mẫu câu an toàn: *"cách đếm thì kiểu mỗi Chủ nhật mở lại từng kênh, đếm tin để lâu mới trả lời —
-  anh thấy làm được không? Còn 'lâu' là bao lâu thì mình chưa chốt, để trống đã."*
-- **User gật với con số do MÌNH nêu ra thì con số đó chưa phải của user.** Người đang mơ hồ sẽ gật
-  cho xong. Bắt buộc: để `___` ở chỗ ngưỡng, **và** ghi một dòng Open Question nói rõ *"số này do
-  người phỏng vấn nêu, user chưa quyết"*. Không có dòng đó thì sáu tháng sau không ai phân biệt
-  được số của user với số của máy.
-- **Không đề xuất tính năng.** Nếu user hỏi "nên làm gì", trả lời bằng câu hỏi về vấn đề.
-  Việc của bước này là hiểu, không phải thiết kế.
-- **Nếu user trả lời câu 1 bằng một giải pháp** ("em muốn làm một cái dashboard"), đừng ghi nó
-  vào Goal. Hỏi ngược: *"cái dashboard đó để anh biết được chuyện gì mà giờ anh không biết?"*
-  BR viết ngược từ giải pháp là lỗi đắt nhất của tầng này.
-
-**Ba câu bắt buộc** — chưa xong ba câu này thì chưa viết file:
-
-1. Hiện đang khổ chuyện gì? (kể tự nhiên, không cần trau chuốt)
-2. Ai khổ? (anh · khách · người vận hành · hệ thống khác)
-3. Giờ họ xoay xở thế nào, và tốn gì? (thời gian · số lần sai · tiền — không biết thì `___`)
-
-**Bốn câu đào sâu** — chỉ hỏi khi ba câu trên đã có, được phép kết thúc bằng `___`:
-
-4. Nếu không làm gì cả trong sáu tháng nữa thì chuyện gì xảy ra?
-5. Có cách nào đạt được điều đó mà **không xây phần mềm** không? (mua sẵn? đổi quy trình? thuê người?)
-6. Cái gì mình **cố ý không làm** ở bản đầu?
-7. Làm sao biết là đã xong? Đo bằng con số nào, lấy ở đâu?
-
-Câu 5 là câu hay bị bỏ nhất và là câu đáng giá nhất — nó là thứ duy nhất chặn được việc xây
-một phần mềm không cần tồn tại. Đừng lướt qua nó vì user đã hào hứng.
-Câu 6 sinh ra Out of Scope; câu 7 sinh ra Success Metrics.
-
-**Riêng câu 5 được phép nêu phương án** — đây là ngoại lệ có chủ ý của luật "không đề xuất tính
-năng". Người chưa nghĩ tới thì không tự liệt kê được cách làm không-phần-mềm, nên không nêu gì
-là bỏ luôn câu hỏi. Hai ràng buộc: chỉ nêu phương án **không-phần-mềm** (đổi quy trình, làm tay
-theo lô, mua sẵn, thuê người, một cái kệ và tờ nhãn), và nêu **ít nhất ba** để user không bị dẫn
-vào đúng một cái rồi gật.
-
-**Câu 5 trả lời "chưa nghĩ tới" là một kết quả, không phải một chỗ trống.** Ghi vào `## Background`
-một dòng `**Vì sao vẫn xây:** chưa có lý do — user chưa cân phương án không-phần-mềm nào` và một
-Open Question. Đừng viết dòng đó thành một câu nghe như đã cân nhắc xong. `br-check` cảnh báo khi
-thiếu dòng này, và vai hoài nghi ở `/sdd-solo:adversarial BR-###` sẽ bấu thẳng vào nó.
-
-**Viết ra:**
-
-- Câu 1 + 3 → `## Background`. Chỉ những gì user thật sự nói. Con số user nêu thì ghi kèm nguồn
-  ("anh đếm tay trong inbox tuần rồi"). Không có nguồn → xuống Open Questions.
-  **Từ 5.0.0, Background trong `br.md` là MỤC LỤC, không phải kho chứng cứ:** mỗi ý một `### heading`
-  + một dòng `→ evidence.md`, và các dòng `**…:**` (như `**Vì sao vẫn xây:**`). Thân — số đo,
-  trích dẫn dài, bảng — viết vào `evidence.md` **cạnh `br.md` của cùng lát** dưới `### heading` cùng tên. Đo ở runxops:
-  `## Background` một mình 31,8 KB, 15 mục chứng cứ, và mọi lượt đọc BR sau đó đều phải lội qua nó dù
-  chỉ cần biết Goal và Scope. Chứng cứ là thứ làm BR đứng vững *lúc viết*; sau đó nó là dấu vết.
-  Ở lát mới thì viết thẳng vào hai file, không cần công cụ. Repo **còn bố cục 6.x** (`specs/br.md` gộp)
-  mà `## Background` đã phình thì `bash .sdd/scripts/migrate.sh --evidence BR-### --dry-run` rồi chạy
-  thật — cờ đó chỉ hiểu cây 6.x; ở cây 7.0 thì `migrate.sh --layout v7` đã tách sẵn `evidence.md` cho
-  từng lát khi chuyển.
-- Câu 1 + 2 → `## Goal`, **một câu**, dạng "ai làm được gì mà giờ chưa làm được".
-- Câu 7 → `## Success Metrics`. Số để `___` thoải mái; **cách đo thì không được để trống**.
-  Chưa có analytics thì viết cách đếm tay — "đếm thread trong inbox mỗi thứ Hai" là một cách đo hợp lệ.
-- Câu 6 → `## Out of Scope`, và mỗi dòng thành một nhánh `-.->` trên Impact Map. **Mỗi dòng phải nói nó
-  đi đâu:** `→ lát ___` (lát nào trong `vision.md` sẽ nhận) hoặc `→ mở lại khi ___` (điều kiện). Và trước
-  khi ghi, đối chiếu với `## Không thu hẹp` của `vision.md`: dòng nào trùng một từ khoá ở đó thì **hỏi lại
-  chủ dự án** — hoặc bỏ dòng đó ra khỏi Out of Scope, hoặc chủ dự án chốt thu hẹp có chủ ý và dòng ghi
-  `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`. Không tự chọn nhánh nào; `br-check` đỏ nếu không có nhãn đó.
-- Câu 5 → **luôn** ghi một dòng `**Vì sao vẫn xây:** ...` vào `## Background`, dù câu trả lời là
-  gì. Có phương án không-phần-mềm mà user vẫn chọn xây → ghi lý do. Chưa nghĩ tới → ghi thẳng
-  *"chưa có lý do"* + Open Question. Dòng này là thứ duy nhất trong BR nói được rằng phần mềm
-  này đã được chứng minh là cần tồn tại.
-- Câu 4 → `## Background` hoặc một `CON-###` nếu nó là ràng buộc thời gian.
-- UC ứng viên → `## Related Use Cases`, **chỉ ID + tên**. Không viết chi tiết UC ở đây.
+Its own commit: `git add specs/vision.md && git commit --only -m "docs(vision): layer 0 — <the one-sentence positioning>" -- specs/vision.md`.
 
 ---
 
-## B. Chế độ chuyển brief
+## A. Interview mode
 
-Đọc file, rồi tách thành bốn phần: vì sao (BR) · ai làm gì (UC ứng viên) · ràng buộc (CON) ·
-chưa rõ (Open Questions).
+**The discipline of this mode matters more than the question set:**
 
-**Bước 0 áp cho cả chế độ này.** Brief là lời của agent khác; tầng 0 là lời của chủ dự án. Brief đòi
-một thứ đi ngược một điều ở `## Không thu hẹp` → **chủ dự án thắng, brief thua**, và dòng đó xuống
-`## Đã loại khỏi brief` kèm đích.
+- **One question per turn.** Ask, wait for the answer, then ask the next. Never put all seven out at once — someone
+  who is still vague will answer none of them.
+- **Say back what you just heard in one sentence, then ask the next.** "So it is ___, is that right?" This is the
+  cheapest place to catch a misunderstanding, and it shows the user they are being heard.
+- **"I don't know" is a valid answer.** Write `___` and an Open Question line. Do not push.
+- **You may suggest a COUNTING FRAME, never a THRESHOLD.** The two rules "do not suggest numbers" and "the way of
+  measuring may not be empty" collide for someone who has never measured anything — they need an example, and every
+  example carries a number. The boundary: *where to count · what to count · how often* may be offered; **the
+  threshold inside that frame may not**, and stays `___` even after the user nods.
+  A safe phrasing: *"for counting, something like: every Sunday go through each channel and count the messages that
+  waited a long time for a reply — could you do that? And how long 'a long time' is, we leave open for now."*
+- **A number the user merely nods at, that YOU proposed, is not yet theirs.** Someone who is still vague will nod to
+  move on. Required: leave `___` at the threshold, **and** write an Open Question line saying explicitly *"this
+  number came from the interviewer; the user has not decided"*. Without that line, six months later nobody can tell
+  the user's numbers from the machine's.
+- **Do not propose features.** If the user asks "what should we build", answer with a question about the problem.
+  This step is for understanding, not designing.
+- **If the user answers question 1 with a solution** ("I want to build a dashboard"), do not put it in the Goal. Ask
+  back: *"what would that dashboard let you know that you do not know now?"* A BR written backwards from a solution
+  is the most expensive mistake at this layer.
 
-**Trước khi điền Goal / In Scope: hỏi user ba câu bằng lời, một câu một lượt — bắt buộc, kể cả khi brief
-đã trả lời (#46, #47).** Ca thật runxops: BR-003 chuyển thẳng từ brief; cả hai vai hoài nghi (BR-003, BR-002)
-kết luận *"giải pháp viết ngược thành lý do"*; hai câu lộ ra **sau** đó — *"nguyên nhân việc rơi = không được
-báo"* và *"chạy cho mình trước khi bán"* — đổi plan nhiều hơn mọi phát hiện kỹ thuật cộng lại. Brief là lời
-của agent khác; ba câu này là lời của người trả tiền.
+**The three required questions** — do not write the file until these are done:
 
-1. *"Anh đang khổ chuyện gì — và vì sao nó rơi?"* (nguyên nhân, không phải triệu chứng)
-2. *"Làm cho anh chạy trước, hay đi hỏi khách trước?"*
-3. *"v1 xong, anh mở cái gì lên để làm việc mỗi ngày? tự đổi được gì mà không cần dev?"*
+1. What hurts right now? (tell it plainly, no polish needed)
+2. Who is hurting? (you · the customer · whoever operates it · another system)
+3. How do they cope today, and what does it cost? (time · number of mistakes · money — `___` if unknown)
 
-Ghi **nguyên văn** câu trả lời, có dấu vết, vào file — không vào lời nói:
-- 1 → `## Background`, dòng `**Khổ gì, vì sao rơi:** "<nguyên văn>" (hỏi bằng lời, <ngày>)`; và `## Goal` viết từ
-  câu này, không từ brief.
-- 2 → `## Background`, dòng `**Chạy cho mình trước hay bán:** "<nguyên văn>" (hỏi bằng lời, <ngày>)`.
-- 3 → `## In Scope`, dòng đầu `**Mở lên mỗi ngày:** "<nguyên văn>"` — thứ này **phải có** trong In Scope trước khi cắt
-  bất cứ gì; mâu thuẫn với brief thì brief thua và ghi vào `## Đã loại khỏi brief`.
-`br-check` cảnh báo khi BR có `**Nguồn:** brief` mà Background chưa có dòng `**Khổ gì, vì sao rơi:**`.
+**The four digging questions** — only once the first three have answers, and they may end in `___`:
 
-**Bộ luật bắt buộc — không có ngoại lệ:**
+4. If nothing is done for another six months, what happens?
+5. Is there a way to get that **without building software**? (buy one? change the process? hire someone?)
+6. What are you **deliberately not doing** in the first version?
+7. How will you know it is done? Which number, taken from where?
 
-1. **Không bao giờ bịa số.** Mọi ngưỡng, thời hạn, quota, quyền mà brief không nêu **nguồn**
-   → viết `___` và thêm một dòng Open Question hỏi cụ thể. Kể cả khi brief **có** ghi số:
-   không nguồn thì nó là *đề xuất*, không phải quyết định. Ghi `___ (brief đề xuất 15, chưa ai duyệt)`.
-2. **Đẩy ngược mọi tính năng lên một tầng.** Mỗi mục dạng "xây X" phải trả lời được *X phục vụ
-   mục tiêu nào, đo bằng gì*. Đẩy ngược không ra mục tiêu → đánh dấu là **tính năng mồ côi**,
-   đưa vào Out of Scope hoặc Open Question. Không lặng lẽ giữ lại.
-3. **Khẳng định không bằng chứng không được vào Background.** Brief hay viết "khách hàng phàn nàn
-   nhiều về…" mà không có số. Câu đó thành Open Question *"lấy ở đâu con số này?"*, không thành
-   sự thật trong Background.
-4. **Ghi ra cái đã bỏ — vào FILE, không phải ra màn hình.** Mọi câu/mục trong brief không được
-   đưa vào spec phải thành một dòng `- <mục> — <lý do> → <đích>` trong mục `## Đã loại khỏi brief` của BR,
-   rồi mới đọc lại cho user nghe. **Đích là bắt buộc từ 7.0** — `→ lát ___` (lát nào trong `vision.md`
-   sẽ nhận) · `→ mở lại khi ___` (điều kiện) · `→ chuyển: <architecture.md · ADR-### · CHG-### · Open
-   Question>` cho mục thuộc tầng thiết kế. `br-check` **đỏ** khi một dòng thiếu đích, không còn chỉ cảnh
-   báo. Bản 3.2.0 chỉ bảo "in danh sách" nên toàn bộ sản phẩm của luật
-   này sống trong lời nói: đóng terminal là mất, và sáu tháng sau không ai biết brief từng có
-   những gì và vì sao chúng biến mất. Ba luật trên đều để lại `___` hoặc Open Question trong file;
-   luật này cũng phải để lại dấu vết. Xem #21.
+Question 5 is the most skipped and the most valuable — it is the only thing that stops you building software that need
+not exist. Do not rush past it because the user is excited.
+Question 6 produces Out of Scope; question 7 produces Success Metrics.
 
-   **Bỏ hẳn và hoãn lại là hai việc khác nhau.** Lý do dạng *"thuộc tầng thiết kế"*, *"thuộc
-   tầng thiết kế"*, *"thuộc ADR"*, *"thuộc Phase 5"*, *"để sau"* là **hoãn**, và hoãn thì phải
-   ghi ĐÍCH: `→ chuyển: architecture.md · ADR-### · CHG-### · Open Question`. Không có
-   đích thì không cơ chế nào mang nó đi: `design.md` của mỗi UC do `/sdd-solo:design` sinh ra, và
-   nó đọc brief **chỉ khi** `brief_path` đã khai. Đích thường gặp nhất của một mục kiến trúc bị
-   hoãn là `specs/architecture.md` (gốc, xuyên suốt), mục `## Đã chốt từ brief`. Ca thật (`runxops`, #34): dòng *"toàn bộ kiến trúc ba lớp — thuộc tầng
-   thiết kế"* nằm yên hai ngày trong khi `plan.md` được viết với kiến trúc **ngược lại brief**,
-   và không ai thấy vì cả hai bên đều tự nhất quán. Một địa chỉ chuyển tiếp mà không ai giao hàng
-   trông y hệt một việc đã bàn giao xong. `br-check` đỏ khi dòng hoãn thiếu `→ chuyển:` (7.0).
+**Question 5 alone may offer options** — a deliberate exception to "do not propose features". Someone who has not
+thought about it cannot list non-software routes themselves, so offering nothing means dropping the question
+altogether. Two constraints: only **non-software** options (change the process, do it by hand in batches, buy an
+existing tool, hire someone, a shelf and a label), and offer **at least three**, so the user is not walked into one
+and nodded through it.
 
-5. **Không tự viết UC.** Chỉ sinh ID + tên UC ứng viên.
-6. **Ghi nguồn vào Metadata của BR:** dòng `- **Nguồn:** brief <đường/dẫn>`. Đó là thứ cho
-   `br-check.sh` biết BR này phải có mục `## Đã loại khỏi brief`.
-7. **Neo brief lại — hai việc, cả hai bắt buộc.** Sau intake, brief thành file **chỉ-ghi**: cả ba
-   lớp kiểm của plugin (`gate-check`, `verify`, ba vai adversarial) đều chỉ nhìn trong `specs/`.
-   Nên phải tự tay đưa nó vào tầm nhìn:
+**"I haven't thought about it" is a result for question 5, not a blank.** Write one line into `## Background`:
+`**Why still build:** no reason yet — the user has weighed no non-software option`, plus an Open Question. Do not turn
+that line into a sentence that sounds as if the weighing had been done. `br-check` warns while that line is missing,
+and the sceptic role in `/sdd-solo:adversarial BR-###` will push straight on it.
+
+**Writing it out:**
+
+- Questions 1 + 3 → `## Background`. Only what the user actually said. A number the user gives is recorded with its
+  source ("I counted them by hand in the inbox last week"). No source → down to Open Questions.
+  **Since 5.0.0, Background in `br.md` is a TABLE OF CONTENTS, not an evidence store:** one `### heading` per point
+  plus a line `→ evidence.md`, and the `**…:**` lines (such as `**Why still build:**`). The body — measurements, long
+  quotes, tables — goes into `evidence.md` **next to the `br.md` of the same slice**, under a `### heading` of the same
+  name. Measured at runxops: `## Background` alone was 31.8 KB across 15 evidence items, and every later reading of the
+  BR had to wade through it just to learn the Goal and the Scope. Evidence is what makes a BR stand up *while it is
+  being written*; after that it is a trail.
+  In a new slice, just write into the two files, no tool needed. A repo **still on the 6.x layout** (a combined
+  `specs/br.md`) whose `## Background` has bloated: `bash .sdd/scripts/migrate.sh --evidence BR-### --dry-run` and then
+  for real — that flag only understands the 6.x tree; in the 7.0 tree `migrate.sh --layout v7` already split out an
+  `evidence.md` per slice during the move.
+- Questions 1 + 2 → `## Goal`, **one sentence**, in the shape "who can do what that they cannot do now".
+- Question 7 → `## Success Metrics`. Numbers may freely be `___`; **the way of measuring may not be empty**. No
+  analytics yet → write the hand-counting method — "count the threads in the inbox every Monday" is a valid measurement.
+- Question 6 → `## Out of Scope`, and each line becomes a `-.->` branch on the Impact Map. **Every line says where it
+  goes:** `→ slice ___` (which slice in `vision.md` picks it up) or `→ reopen when ___` (the condition). And before
+  writing, check against `## Do not narrow` in `vision.md`: any line matching a keyword there → **ask the owner** —
+  either that line comes out of Out of Scope, or the owner settles it as a deliberate narrowing and the line records
+  `deliberately narrowed — owner decided YYYY-MM-DD`. Do not pick a branch yourself; `br-check` is red without that label.
+- Question 5 → **always** write a `**Why still build:** ...` line into `## Background`, whatever the answer was. A
+  non-software option exists and the user still chooses to build → record the reason. Not thought about → write
+  *"no reason yet"* + an Open Question. That line is the only thing in a BR that can say this software was shown to
+  need to exist.
+- Question 4 → `## Background`, or a `CON-###` if it is a timing constraint.
+- Candidate UCs → `## Related Use Cases`, **ID + name only**. Do not write UC detail here.
+
+---
+
+## B. Brief conversion mode
+
+Read the file, then split it into four parts: why (the BR) · who does what (candidate UCs) · constraints (CON) ·
+unclear (Open Questions).
+
+**Step 0 applies to this mode too.** A brief is another agent's words; layer 0 is the owner's. The brief asks for
+something that contradicts an item in `## Do not narrow` → **the owner wins, the brief loses**, and that line goes
+down into `## Dropped from brief` with a destination.
+
+**Before filling in Goal / In Scope: ask the user three questions in words, one per turn — required, even when the
+brief already answers them (#46, #47).** Real runxops case: BR-003 was converted straight from a brief; both sceptic
+roles (BR-003, BR-002) concluded *"a solution written backwards into a reason"*; two things surfaced **afterwards** —
+*"the cause of work falling through = not being told"* and *"run it for myself before selling it"* — and they changed
+the plan more than every technical finding put together. A brief is another agent's words; these three questions are
+the words of the person paying.
+
+1. *"What hurts, and why does it fall through?"* (the cause, not the symptom)
+2. *"Build it to run for you first, or go ask customers first?"*
+3. *"Once v1 is done, what do you open every day to do your work? What can you change yourself without a developer?"*
+
+Record the answers **verbatim**, with a trail, into the file — not into something said:
+- 1 → `## Background`, the line `**What pain, why it lands:** "<verbatim>" (asked in words, <date>)`; and `## Goal` is
+  written from this answer, not from the brief.
+- 2 → `## Background`, the line `**Run it for ourselves first or sell it:** "<verbatim>" (asked in words, <date>)`.
+- 3 → `## In Scope`, as the first line `**Opened every day:** "<verbatim>"` — this **must be** in In Scope before
+  anything is cut; if it contradicts the brief, the brief loses and that goes into `## Dropped from brief`.
+`br-check` warns when a BR has `**Source:** brief` but Background has no `**What pain, why it lands:**` line.
+
+**The required rules — no exceptions:**
+
+1. **Never invent a number.** Every threshold, deadline, quota or permission the brief does not give a **source** for
+   → write `___` and add a specific Open Question. Even when the brief **does** state a number: with no source it is a
+   *proposal*, not a decision. Write `___ (the brief proposes 15, nobody has approved it)`.
+2. **Push every feature back up a layer.** Every "build X" item must answer *which goal X serves, measured how*.
+   Pushing back reaches no goal → mark it an **orphan feature** and put it into Out of Scope or an Open Question. Never
+   keep it silently.
+3. **A claim without evidence does not go into Background.** A brief often says "customers complain a lot about…"
+   with no number. That becomes an Open Question *"where does this number come from?"*, not a fact in Background.
+4. **Record what was dropped — in the FILE, not on the screen.** Every sentence or item in the brief not carried into
+   the spec becomes a line `- <item> — <reason> → <destination>` in the BR's `## Dropped from brief` section, and only
+   then is read back to the user. **The destination is required since 7.0** — `→ slice ___` (which slice in
+   `vision.md` picks it up) · `→ reopen when ___` (the condition) · `→ moved to: <architecture.md · ADR-### · CHG-### ·
+   Open Question>` for anything in the design layer. `br-check` is **red** when a line has no destination; it no longer
+   only warns. Version 3.2.0 only said "print the list", so the entire product of this rule lived in speech: close the
+   terminal and it is gone, and six months later nobody knows what the brief contained or why it vanished. The three
+   rules above all leave a `___` or an Open Question in the file; this one must leave a trail too. See #21.
+
+   **Dropping and deferring are two different things.** A reason of the form *"belongs to the design layer"*,
+   *"belongs in an ADR"*, *"belongs to Phase 5"*, *"later"* is a **deferral**, and a deferral must record a
+   DESTINATION: `→ moved to: architecture.md · ADR-### · CHG-### · Open Question`. With no destination nothing carries
+   it: each UC's `design.md` is produced by `/sdd-solo:design`, and that reads the brief **only when** `brief_path` has
+   been declared. The most common destination of a deferred architecture item is `specs/architecture.md` (root,
+   project-wide), section `## Settled from brief`. Real case (`runxops`, #34): the line *"the whole three-layer
+   architecture — belongs to the design layer"* sat still for two days while `plan.md` was written with an architecture
+   **opposed to the brief**, and nobody saw it because both sides were internally consistent. A forwarding address
+   nobody delivers to looks exactly like a completed handover. `br-check` is red when a deferred line has no
+   `→ moved to:` (7.0).
+
+5. **Do not write the UCs.** Only produce the IDs + names of candidate UCs.
+6. **Record the source in the BR's Metadata:** the line `- **Source:** brief <path>`. That is what tells `br-check.sh`
+   this BR must have a `## Dropped from brief` section.
+7. **Anchor the brief — two jobs, both required.** After intake the brief becomes a **write-only** file: all three of
+   the plugin's checking layers (`gate-check`, `verify`, the three adversarial roles) look only inside `specs/`. So it
+   has to be brought into view by hand:
 
 ```bash
-# a) khai vào .sdd/config — đưa brief vào THỨ TỰ ĐỌC BẮT BUỘC của mọi session sau.
-#    Repo init trước 3.21.0 KHÔNG có sẵn dòng brief_path=, và `sed` trên một dòng
-#    không tồn tại im lặng không làm gì — nên phải hỏi trước rồi mới chọn nhánh.
+# a) declare it in .sdd/config — this puts the brief into the REQUIRED READING ORDER of every later session.
+#    A repo initialised before 3.21.0 has NO brief_path= line, and `sed` on a line that does not
+#    exist silently does nothing — so ask first, then pick the branch.
 if grep -q '^brief_path=' .sdd/config; then
   sed -i.bak "s|^brief_path=.*|brief_path=$1|" .sdd/config && rm -f .sdd/config.bak
 else
   printf 'brief_path=%s\n' "$1" >> .sdd/config
 fi
-grep '^brief_path=' .sdd/config        # in ra để thấy nó đã vào thật
-# b) neo phiên bản brief vào br.md — brief đổi sau intake thì br-check báo đỏ
-printf '**Nguồn brief:** %s · sha256 %s · nạp %s\n' \
+grep '^brief_path=' .sdd/config        # print it, to see that it really went in
+# b) anchor the brief's version in br.md — if the brief changes after intake, br-check goes red
+printf '**Brief source:** %s · sha256 %s · loaded %s\n' \
   "$1" "$(shasum -a 256 "$1" | cut -c1-12)" "$(date +%F)"
 ```
-   Dán dòng `**Nguồn brief:**` vào Metadata của BR, ngay dưới `- **Nguồn:**`. Thiếu (a) thì
-   session sau không biết brief tồn tại; thiếu (b) thì brief sửa lúc nào cũng không ai biết, và
-   hai tài liệu nói ngược nhau trong im lặng.
+   Paste the `**Brief source:**` line into the BR's Metadata, right under `- **Source:**`. Without (a), later sessions
+   do not know the brief exists; without (b), the brief can be edited at any time with nobody knowing, and two
+   documents contradict each other in silence.
 
-**Ranh giới số — số nào cấm, số nào không.** Luật 1 cấm số ở chỗ **quyết định nghiệp vụ**: ngưỡng,
-thời hạn, quota, quyền. Nó **không** cấm số ở chỗ **cách đo**: "bấm giờ 20 lượt đặt bàn liên tiếp"
-là một cách đo cụ thể và tốt hơn hẳn "bấm giờ vài lượt". Cách đo mơ hồ thì metric không kiểm được,
-tức mất đúng thứ `BR-000` đang dạy. Cụ thể ở cách đo là đúng; cụ thể ở quyết định mà không có ai
-duyệt là bịa.
+**The number boundary — which numbers are forbidden and which are not.** Rule 1 forbids numbers in a **business
+decision**: thresholds, deadlines, quotas, permissions. It does **not** forbid numbers in a **way of measuring**:
+"time 20 consecutive table bookings" is a concrete measurement and far better than "time a few bookings". A vague
+measurement makes the metric uncheckable, which loses exactly what `BR-000` is teaching. Being concrete about the
+measurement is right; being concrete about a decision nobody approved is invention.
 
-Vì sao bộ luật này gắt: brief do LLM viết gần như luôn kèm số nghe hợp lý mà không ai quyết —
-*"khoá 15 phút sau 5 lần sai"*, *"giữ tồn kho 30 phút"*. Chép thẳng vào `specs/` thì từ đó trở đi
-cả bộ 24 kiểm ở cổng DoR sẽ bảo vệ những con số ngầm ấy rất kỷ luật. Đó đúng là thứ
-`sdd-process` gọi là quyết định ngầm, chỉ khác là model đã lấp sẵn trước khi repo tồn tại.
+Why these rules are strict: a brief written by an LLM almost always carries plausible numbers nobody decided —
+*"lock for 15 minutes after 5 failures"*, *"hold stock for 30 minutes"*. Copied straight into `specs/`, all 24 DoR gate
+checks will defend those silent numbers very diligently from then on. That is exactly what `sdd-process` calls a silent
+decision, except the model filled it in before the repo existed.
 
 ---
 
-## C. Kết thúc (cả hai chế độ)
+## C. Finishing (both modes)
 
-1. **Hỏi lát nào, nghề nào — trước khi tạo file.** Bằng `AskUserQuestion`: mỗi nghề đã có
-   (`specs/<nghề>/`, cộng `core`) một lựa chọn, thêm lựa chọn *"nghề mới"*. Nghề suy ra từ đó; tên lát
-   lấy từ bảng `## Nghề và lát` của `vision.md`. Lát chưa có trong bảng → hỏi chủ dự án có thêm một dòng
-   vào bảng không, **chủ dự án gật thì mới thêm** — `vision.md` là của chủ dự án.
+1. **Ask which slice and which craft — before creating files.** With `AskUserQuestion`: one option per existing craft
+   (`specs/<craft>/`, plus `core`), and one *"a new craft"* option. The craft follows from that; the slice name comes
+   from the `## Crafts and slices` table of `vision.md`. A slice not in the table → ask the owner whether to add a row,
+   **and only add it once the owner agrees** — `vision.md` belongs to the owner.
 
-   `core` là lõi dùng chung, **ngang hàng** với nghề: chọn `core` khi lát này mọi nghề đều dùng
-   (đăng nhập, console, hạ tầng chung). Không chắc thì hỏi, đừng mặc định `core`.
+   `core` is the shared core, a **sibling** of a craft: choose `core` when every craft uses this slice (login, console,
+   shared infrastructure). Unsure → ask, do not default to `core`.
 
-2. **Số BR = số kế tiếp trong CẢ DỰ ÁN.** Một dãy `BR-###` cho mọi nghề, không đánh lại theo nghề:
+2. **The BR number is the next one in the WHOLE PROJECT.** One `BR-###` sequence across every craft, never restarted:
 
 ```bash
 ls -d specs/*/br-*/ 2>/dev/null | sed 's|.*/br-||; s|/$||' | sort -n | tail -1
 ```
-   Số lớn nhất + 1. Bỏ qua `br-000` (mẫu).
+   The largest + 1. Skip `br-000` (the sample).
 
-3. **Tạo lát:** copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/br/` (`br.md` + `evidence.md`) thành
-   `specs/<core|nghề>/br-###/`, đổi mọi `BR-000` thành `BR-###`. Nghề mới thì copy
-   `${CLAUDE_PLUGIN_ROOT}/templates/skel/nghe/` thành `specs/<nghề>/` trước (`README.md` ·
-   `glossary.md` · `rules.md` · `entities/README.md`), và thêm tên nghề vào `nghe_paths=` trong
-   `.sdd/config`. (Không thay được biến: `find ~/.claude/plugins -type d -name skel -path '*sdd-solo*' | head -1`.)
+3. **Create the slice:** copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/br/` (`br.md` + `evidence.md`) to
+   `specs/<core|craft>/br-###/`, replacing every `BR-000` with `BR-###`. A new craft → copy
+   `${CLAUDE_PLUGIN_ROOT}/templates/skel/nghe/` to `specs/<craft>/` first (`README.md` · `glossary.md` · `rules.md` ·
+   `entities/README.md`), and add the craft name to `nghe_paths=` in `.sdd/config`. (If the variable is not
+   substituted: `find ~/.claude/plugins -type d -name skel -path '*sdd-solo*' | head -1`.)
 
-   Ghi dòng `- **Lát:** <core | nghề> · <tên lát>` vào Metadata — **đúng chữ như trong bảng của
-   `vision.md`**. `br-check` đỏ khi thiếu dòng này, khi nghề khai lệch thư mục chứa BR, hoặc khi tên lát
-   không có trong bảng.
+   Write the line `- **Slice:** <core | craft> · <slice name>` into Metadata — **exactly the wording used in the
+   `vision.md` table**. `br-check` is red when this line is missing, when the craft does not match the folder holding
+   the BR, or when the slice name is not in the table.
 
-   Đây là BR thật đầu tiên → **xoá cả thư mục mẫu `specs/core/br-000/`**. BR mẫu có ích đúng lúc chưa có
-   gì để đọc. Sau đó nó là một dãy ID GIẢ: `BR-000` mang `CON-001/002/003` của riêng nó, và `id_exists()`
-   tra CON bằng grep *dòng đầu tiên khớp*. Ca thật ở runxops: `UC-009` trích `CON-002` và cổng DoR khớp
-   vào *"bản ghi thanh toán giữ 10 năm theo quy định kế toán"*; `architecture.md` viết *"Không gọi API
-   eBay. `CON-001` — tài khoản cá nhân…"* và `design-check` báo xanh bằng cách trỏ vào *"hosting chia
-   sẻ"*. UC đó đã qua cổng với những trích dẫn trỏ nhầm mục. Cần đọc lại BR mẫu thì nó vẫn nằm trong
-   `templates/project/specs/core/br-000/br.md` của plugin.
+   This is the first real BR → **delete the whole sample folder `specs/core/br-000/`**. A sample BR is useful exactly
+   while there is nothing else to read. After that it is a FAKE ID SEQUENCE: `BR-000` carries its own
+   `CON-001/002/003`, and `id_exists()` looks a CON up by grepping *the first matching line*. Real case at runxops:
+   `UC-009` cited `CON-002` and the DoR gate matched *"payment records kept for 10 years under accounting rules"*;
+   `architecture.md` said *"No eBay API calls. `CON-001` — personal account…"* and `design-check` reported green by
+   pointing at *"shared hosting"*. That UC passed the gate with citations pointing at the wrong sections. To read the
+   sample BR again, it is still in the plugin at `templates/project/specs/core/br-000/br.md`.
 
-4. Vẽ Impact Map: `WHY → WHO → HOW → WHAT`, và **ít nhất một nhánh `-.->`** cho Out of Scope.
-   Không có nhánh đứt nào nghĩa là chưa map gì — chỉ là đường thẳng từ Goal xuống việc đã định sẵn.
-5. Chạy kiểm và in nguyên output:
+4. Draw the Impact Map: `WHY → WHO → HOW → WHAT`, and **at least one `-.->` branch** for Out of Scope.
+   No dashed branch means nothing was mapped — just a straight line from the Goal down to work already decided on.
+5. Run the check and print the output verbatim:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/br-check.sh" BR-###
 ```
-(nếu `${CLAUDE_PLUGIN_ROOT}` không được thay: `find ~/.claude/plugins -type f -name br-check.sh -path '*sdd-solo*' | head -1`).
-Còn ✗ thì sửa cùng user rồi chạy lại. Cảnh báo `___` là **bình thường ở Phase 1** — nói rõ điều
-đó cho user, đừng để user tưởng mình làm sai.
-6. Commit: `git add <br.md, evidence.md, vision.md nếu sửa> && git commit --only -m "docs(BR-###): intake — <tên BR>" -- <đúng các file đó>` — kê đích danh, không `specs/` (P-29: `git add specs/` cuốn file dở của vai khác).
-7. STATE.md: `Đang làm: BR-### · Phase 1 — BR đã viết`. `Việc tiếp theo: /sdd-solo:adversarial BR-### (ba vai tầng BR), rồi /sdd-solo:start UC-### cho UC đầu tiên`.
-6. Nói với user hai điều: những chỗ còn `___` là nợ đã ghi sổ chứ không phải lỗi; và bước sau
-   `/sdd-solo:adversarial BR-###` sẽ hỏi ngược lại chính BR này bằng ba vai, đặc biệt là vai
-   hoài nghi — *"BR này có thật là BR, hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do?"*
+(if `${CLAUDE_PLUGIN_ROOT}` is not substituted: `find ~/.claude/plugins -type f -name br-check.sh -path '*sdd-solo*' | head -1`).
+Any ✗ → fix it with the user and run again. A `___` warning is **normal in Phase 1** — say so clearly, so the user does
+not think they did something wrong.
+6. Commit: `git add <br.md, evidence.md, and vision.md if edited> && git commit --only -m "docs(BR-###): intake — <BR name>" -- <exactly those files>` — name them explicitly, never `specs/` (P-29: `git add specs/` sweeps up another role's half-finished file).
+7. STATE.md: `Working on: BR-### · Phase 1 — the BR is written`. `Next: /sdd-solo:adversarial BR-### (the three BR-layer roles), then /sdd-solo:start UC-### for the first UC`.
+8. Tell the user two things: the remaining `___` are debt on the books, not mistakes; and the next step
+   `/sdd-solo:adversarial BR-###` will question this very BR through three roles, especially the sceptic —
+   *"is this really a BR, or a solution already chosen and written backwards into a reason?"*
 
-Không viết code. Không thiết kế kỹ thuật. Không tạo thư mục UC — đó là việc của `/sdd-solo:start`.
+Do not write code. Do not do technical design. Do not create a UC folder — that is `/sdd-solo:start`'s job.

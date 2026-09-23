@@ -1,41 +1,41 @@
 #!/usr/bin/env node
-// mermaid.mjs — đọc khối ```mermaid trong file markdown: parse ra node/cạnh/nhãn, và lint.
-// Chuyển từ mermaid.py (7.5.0) sang node ở 7.6.0 — plugin bỏ python, xem CHANGELOG 7.6.0.
+// mermaid.mjs — read the ```mermaid blocks of a markdown file: parse out the nodes/edges/labels, and lint.
+// Moved from mermaid.py (7.5.0) to node at 7.6.0 — the plugin dropped python, see CHANGELOG 7.6.0.
 //
-// Vì sao có file này (P-32). Tới 7.4 bốn chỗ đọc mermaid bằng grep từng dòng: gate-check §5 (nhãn cạnh E#,
-// id node, node kết), gate-check §6 (stateDiagram có mũi tên gắn UC), br-check §7 (Impact Map có nhánh
-// `-.->`), uc-steps ④ (có khối mermaid chưa). grep không biết đâu là nhãn, đâu là tên node, đâu là chữ
-// trong nháy kép — nên một node `E1([Đăng nhập được])` từng làm cổng tin rằng đường lỗi E1 đã vẽ (#17), và
-// 17/88 sơ đồ của runxops KHÔNG RENDER ĐƯỢC mà cổng vẫn xanh.
+// Why this file exists (P-32). Up to 7.4, four places read mermaid by grepping line by line: gate-check §5 (the E#
+// edge labels, the node ids, the terminal nodes), gate-check §6 (a stateDiagram with an arrow carrying a UC),
+// br-check §7 (an Impact Map with a `-.->` branch), uc-steps ④ (is there a mermaid block). grep does not know a
+// label from a node name from text inside double quotes — so a node `E1([Logged in])` once convinced the gate that
+// the E1 error path had been drawn (#17), and 17 of runxops 88 diagrams DID NOT RENDER while the gate stayed green.
 //
-// Luật lint KHÔNG đoán: đo bằng chính mermaid (mermaid.parse + getDiagramFromText qua jsdom) trên 88 khối
-// thật của runxops cộng một ma trận 27 ký tự × 13 ngữ cảnh. Hai loại hỏng, cùng hậu quả "sơ đồ nói sai mà
-// không ai biết":
-//   ① VỠ — mermaid ném lỗi, trình đọc hiện chữ đỏ thay cho hình:
-//      · nhãn node flowchart KHÔNG bọc nháy kép chứa ( ) [ ] { } |
-//      · nhãn bọc nháy kép chứa " lồng
-//      · dấu ; trong lời của sequenceDiagram (message · Note · alt/else/opt · participant as)
-//      · dấu ; trong nhãn quan hệ classDiagram; dấu : thứ hai trong nhãn quan hệ / note
-//   ② MẤT CHỮ IM LẶNG — parse qua nhưng nhãn không còn:
-//      · dấu ; trong nhãn `A --> B : lời` của stateDiagram-v2. Đo trên core/entities/Account.md của runxops:
-//        4/4 quan hệ về nhãn RỖNG và mermaid sinh 5 state rác. Sơ đồ vẫn vẽ, chỉ là mất lời.
-// KHÔNG tính là lỗi (đo được là vô hại): `;` trong nhãn flowchart · `#` · `,` · `·` · `→` · `<br/>` ·
-// nháy đơn · `%%` trong nháy · `[VIỆC LỖI]` bên trong nhãn đã bọc nháy kép.
+// The lint rules DO NOT GUESS: they were measured with mermaid itself (mermaid.parse + getDiagramFromText through
+// jsdom) over 88 real runxops blocks plus a matrix of 27 characters × 13 contexts. Two kinds of breakage, with the
+// same consequence "the diagram says the wrong thing and nobody knows":
+//   ① BROKEN — mermaid throws, and the reader shows red text instead of a picture:
+//      · a flowchart node label NOT wrapped in double quotes containing ( ) [ ] { } |
+//      · a double-quoted label containing a nested "
+//      · a ; inside sequenceDiagram text (a message · Note · alt/else/opt · participant as)
+//      · a ; in a classDiagram relation label; a second : in a relation label / note
+//   ② SILENTLY LOST TEXT — it parses but the label is gone:
+//      · a ; in the `A --> B : text` label of a stateDiagram-v2. Measured on runxops core/entities/Account.md:
+//        4 of 4 relations came back with an EMPTY label and mermaid produced 5 junk states. The diagram still draws, it has just lost its words.
+// NOT counted as an error (measured harmless): a `;` in a flowchart label · `#` · `,` · `·` · `→` · `<br/>` ·
+// a single quote · `%%` inside quotes · `[BROKEN WORK]` inside an already double-quoted label.
 //
-// Dùng:
-//   mermaid.mjs --lint  <file...>   # in <file>:<dòng>: <mã> <thông điệp>; exit 1 nếu có lỗi
-//   mermaid.mjs --edges <file>      # mỗi dòng một NHÃN CẠNH (chỉ nhãn, không tên node)
-//   mermaid.mjs --nodes <file>      # "<id>\t<hình>\t<nhãn>"
-//   mermaid.mjs --states <file>     # "<từ>\t<tới>\t<nhãn>" (stateDiagram · classDiagram)
-//   mermaid.mjs --kinds <file>      # "<dòng bắt đầu>\t<loại>" của từng khối
-// Thêm --json để in JSON thay vì dòng.
+// Usage:
+//   mermaid.mjs --lint  <file...>   # prints <file>:<line>: <code> <message>; exit 1 if there was an error
+//   mermaid.mjs --edges <file>      # one EDGE LABEL per line (labels only, no node names)
+//   mermaid.mjs --nodes <file>      # "<id>\t<shape>\t<label>"
+//   mermaid.mjs --states <file>     # "<from>\t<to>\t<label>" (stateDiagram · classDiagram)
+//   mermaid.mjs --kinds <file>      # "<start line>\t<kind>" per block
+// Add --json to print JSON instead of lines.
 import fs from 'node:fs';
 
-// ── tách khối ─────────────────────────────────────────────────────────────
+// ── splitting the blocks ──────────────────────────────────────────────────
 const FENCE = /^\s*```+\s*mermaid\s*$/i;
 const FENCE_END = /^\s*```+\s*$/;
 
-/** [{start: dòng đầu nội dung (1-based), lines: []}] — mọi khối ```mermaid của file. */
+/** [{start: the first content line (1-based), lines: []}] — every ```mermaid block of the file. */
 export function blocks(path) {
   let text;
   try { text = fs.readFileSync(path, 'utf8'); } catch { return []; }
@@ -49,7 +49,7 @@ export function blocks(path) {
       out.push({ start, lines: cur }); cur = null;
     } else cur.push(L[i]);
   }
-  if (cur !== null) out.push({ start, lines: cur });   // khối không đóng — vẫn trả, lint sẽ báo
+  if (cur !== null) out.push({ start, lines: cur });   // an unclosed block — still returned, the lint will report it
   return out;
 }
 
@@ -65,7 +65,7 @@ export function kindOf(lines) {
   return '?';
 }
 
-/** Bỏ `%%` tới hết dòng — nhưng không bỏ khi nó nằm trong nháy kép. */
+/** Drop `%%` to the end of the line — but not when it is inside double quotes. */
 export function stripComment(ln) {
   let out = '', q = false;
   for (let i = 0; i < ln.length; i++) {
@@ -77,7 +77,7 @@ export function stripComment(ln) {
   return out;
 }
 
-/** Thay nội dung mỗi "…" bằng khoảng trắng cùng độ dài — giữ chỉ số cột. */
+/** Replace the contents of each "…" with spaces of the same length — keeping the column indexes. */
 export function unquoted(s) {
   let out = '', q = false;
   for (const c of s) {
@@ -87,7 +87,7 @@ export function unquoted(s) {
 }
 
 // ── flowchart ─────────────────────────────────────────────────────────────
-// Cặp mở/đóng của mọi hình, DÀI TRƯỚC NGẮN (([ phải thử trước ( và [)
+// The open/close pairs of every shape, LONGEST FIRST (([ must be tried before ( and [)
 const SHAPES = [
   ['(((', ')))', 'double-circle'], ['[[', ']]', 'subroutine'], ['[(', ')]', 'cylinder'],
   ['([', '])', 'stadium'], ['((', '))', 'circle'], ['{{', '}}', 'hexagon'],
@@ -104,14 +104,14 @@ const BREAK_CHARS = '()[]{}|';
 function checkLabel(n, label, quoted, errs, what) {
   if (quoted) {
     if (label.includes('"')) {
-      errs.push([n, 'MMD-E02', `${what}: nháy kép lồng trong nhãn đã bọc nháy kép — mermaid vỡ`]);
+      errs.push([n, 'MMD-E02', `${what}: a nested double quote inside an already double-quoted label — mermaid breaks`]);
     }
     return;
   }
   const bad = [...new Set([...label].filter((c) => BREAK_CHARS.includes(c)))].sort();
   if (bad.length) {
     errs.push([n, 'MMD-E01',
-      `${what} chưa bọc nháy kép mà có ${bad.join(' ')} — mermaid vỡ; bọc nhãn trong "…"`]);
+      `${what} is not double-quoted and contains ${bad.join(' ')} — mermaid breaks; wrap the label in "…"`]);
   }
 }
 
@@ -127,18 +127,18 @@ export function fcParse(lines) {
     while (i < ln.length) {
       if (ln[i] === '|') {
         const j = ln.indexOf('|', i + 1);
-        if (j < 0) { errs.push([n, 'MMD-E01', 'nhãn cạnh mở bằng | mà không có | đóng']); break; }
+        if (j < 0) { errs.push([n, 'MMD-E01', 'an edge label opened with | and never closed']); break; }
         const before = ln.slice(0, i).replace(/\s+$/, '');
         if (LINK_RE.test(before.slice(-6)) || before.endsWith('--') || before.endsWith('==')) {
           const lbl = ln.slice(i + 1, j);
           const t = lbl.trim();
-          // nhãn cạnh bọc nháy kép: -->|"lời (có ngoặc)"| — hợp lệ, và runxops dùng thường
+          // a double-quoted edge label: -->|"text (with brackets)"| — valid, and runxops uses it often
           if (t.startsWith('"') && t.endsWith('"') && t.length >= 2) {
             edges.push([n, t.slice(1, -1)]);
-            checkLabel(n, t.slice(1, -1), true, errs, 'nhãn cạnh');
+            checkLabel(n, t.slice(1, -1), true, errs, 'edge label');
           } else {
             edges.push([n, t]);
-            checkLabel(n, lbl, false, errs, 'nhãn cạnh');
+            checkLabel(n, lbl, false, errs, 'edge label');
           }
         }
         i = j + 1;
@@ -152,12 +152,12 @@ export function fcParse(lines) {
         const bodyAt = i + op.length;
         let label, quoted, j;
         if (ln.slice(bodyAt).replace(/^\s+/, '').startsWith('"')) {
-          // Nhãn bọc nháy kép: dấu " đóng quyết định hết nhãn, KHÔNG phải dấu ] đầu tiên —
-          // `W4["… · [VIỆC LỖI]"]` là nhãn hợp lệ, mermaid nhận (đo trên runxops br-006).
+          // A double-quoted label: the closing " decides where the label ends, NOT the first ] —
+          // `W4["… · [BROKEN WORK]"]` is a valid label and mermaid accepts it (measured on runxops br-006).
           const qs = ln.indexOf('"', bodyAt);
           const qe = ln.indexOf('"', qs + 1);
           if (qe < 0) {
-            errs.push([n, 'MMD-E02', 'nhãn mở nháy kép mà không đóng: ' + ln.slice(qs, qs + 40)]);
+            errs.push([n, 'MMD-E02', 'a label opens a double quote and never closes it: ' + ln.slice(qs, qs + 40)]);
             hit = ln.length;
             break;
           }
@@ -170,7 +170,7 @@ export function fcParse(lines) {
           label = ln.slice(bodyAt, j); quoted = false;
         }
         nodes.push([n, m[0], shape, label.trim(), quoted]);
-        checkLabel(n, label, quoted, errs, 'nhãn node ' + m[0]);
+        checkLabel(n, label, quoted, errs, 'node label ' + m[0]);
         hit = j + cl.length;
         break;
       }
@@ -198,26 +198,26 @@ export function otherLint(kind, lines) {
       const m = SEQ_MSG.exec(ln);
       const txt = m ? m[2] : (SEQ_TEXT.test(ln) ? ln : null);
       if (txt !== null && unquoted(txt).includes(';')) {
-        errs.push([n, 'MMD-E03', 'dấu ; trong lời của sequenceDiagram — mermaid coi là hết câu và VỠ; '
-          + 'đổi thành — hoặc · , hoặc bọc cả lời trong "…"']);
+        errs.push([n, 'MMD-E03', 'a ; inside sequenceDiagram text — mermaid takes it as the end of the sentence and BREAKS; '
+          + 'change it to — or · , or wrap the whole text in "…"']);
       }
     } else if (kind.startsWith('stateDiagram')) {
       const m = ST_REL.exec(ln) || ST_NOTE.exec(ln) || ST_DESC.exec(ln);
       const txt = m?.groups?.t ?? null;
       if (txt && unquoted(txt).includes(';')) {
-        errs.push([n, 'MMD-E04', 'dấu ; trong nhãn của stateDiagram — nhãn MẤT TRẮNG khi render '
-          + '(mermaid cắt câu, sinh state rác); đổi thành — hoặc ·']);
+        errs.push([n, 'MMD-E04', 'a ; inside a stateDiagram label — the label is LOST ENTIRELY on render '
+          + '(mermaid cuts the sentence and produces junk states); change it to — or ·']);
       }
       const note = ST_NOTE.exec(ln);
       if (note && unquoted(note.groups.t).includes(':')) {
-        errs.push([n, 'MMD-E05', 'dấu : thứ hai trong note của stateDiagram — mermaid vỡ']);
+        errs.push([n, 'MMD-E05', 'a second : in a stateDiagram note — mermaid breaks']);
       }
     } else if (kind === 'classDiagram') {
       const m = CL_REL.exec(ln);
       if (m) {
         const t = unquoted(m.groups.t);
-        if (t.includes(';')) errs.push([n, 'MMD-E03', 'dấu ; trong nhãn quan hệ classDiagram — mermaid vỡ']);
-        if (t.includes(':')) errs.push([n, 'MMD-E05', 'dấu : thứ hai trong nhãn quan hệ classDiagram — mermaid vỡ']);
+        if (t.includes(';')) errs.push([n, 'MMD-E03', 'a ; in a classDiagram relation label — mermaid breaks']);
+        if (t.includes(':')) errs.push([n, 'MMD-E05', 'a second : in a classDiagram relation label — mermaid breaks']);
       }
     }
   });
@@ -237,7 +237,7 @@ export function stRels(lines) {
 }
 
 // ── API ───────────────────────────────────────────────────────────────────
-/** [{start, kind, nodes, edges, states, errs}] — dòng đã quy về dòng THẬT của file. */
+/** [{start, kind, nodes, edges, states, errs}] — the line numbers already mapped to the REAL file lines. */
 export function analyze(path) {
   const out = [];
   for (const { start, lines } of blocks(path)) {
@@ -266,7 +266,7 @@ const MODES = ['--lint', '--edges', '--nodes', '--states', '--kinds'];
 export function main(argv) {
   const mode = argv[2];
   if (!MODES.includes(mode) || argv.length < 4) {
-    process.stderr.write('dùng: mermaid.mjs <' + MODES.join('|') + '> <file...> [--json]\n');
+    process.stderr.write('usage: mermaid.mjs <' + MODES.join('|') + '> <file...> [--json]\n');
     return 2;
   }
   const asJson = argv.includes('--json');

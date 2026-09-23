@@ -1,89 +1,94 @@
-# Adversarial pass — chạy trong một session MỚI, không phải session đang viết spec
+# Adversarial pass — run it in a FRESH session, not the one that wrote the spec
 
-Hai bộ vai: **tầng UC** hỏi về hành vi, **tầng BR** hỏi về lý do tồn tại. Đừng dùng lẫn.
+Two sets of roles: the **UC layer** asks about behaviour, the **BR layer** asks about the reason for
+existing. Do not mix them.
 
-Dán glossary + rules liên quan + UC. Chạy ba vai, mỗi vai một lượt. AI chỉ được HỎI.
-
----
-Bạn đọc use case dưới đây với vai **<VAI>**. Nhiệm vụ duy nhất: liệt kê những câu hỏi mà spec chưa trả lời,
-những rule "đương nhiên với người làm nghiệp vụ" mà spec chưa ghi, và những chỗ thông điệp cho khách khó hiểu.
-
-Ràng buộc:
-- Không đề xuất code. Không đề xuất kiến trúc. Không sửa spec.
-- Mỗi câu hỏi một dòng, kèm bước/E#/AC mà nó liên quan.
-- Không lặp lại thứ spec đã nói. Không khen.
-- Tối đa 12 câu, xếp theo mức hậu quả nếu bỏ qua (tiền / quyền / dữ liệu khách → trước).
-
-Vai:
-1. **Khách cuối** — người kinh doanh hoặc marketing, không rành kỹ thuật, đang vội. Hỏi: chỗ nào tôi không biết làm gì tiếp? thông báo nào tôi đọc không ra? tôi tìm cái đó ở đâu?
-2. **Người vận hành / kế toán** — người trả lời ticket và đối soát tiền. Hỏi: rule nào "ai cũng biết" mà chưa ghi? hoàn tiền / hết hạn / đổi gói thì cái gì xảy ra với cái gì? tôi trả lời khách bằng dữ liệu nào?
-3. **Kẻ lợi dụng** — muốn dùng vượt quyền đã trả. Hỏi: bấm hai lần thì sao? hai request cùng lúc thì sao? đổi dữ liệu phía client thì sao? cái gì xảy ra ở ranh giới đúng bằng giới hạn?
-
-<dán UC-###.md>
----
-
-Chạy trong mô hình nhiều agent (`/sdd-solo:orchestrate`, có vai R): mỗi câu kèm ba dòng khuôn phiếu của
-`notes/hoi-dap/hoi-dap.md` — `Đã tra` · `Nếu chọn sai thì` · `Agent nghiêng về` — R xếp mức không phải dịch lại (#39).
-
-Đầu ra hợp lệ cho mỗi câu hỏi (ghi vào UC, mục Adversarial pass):
-- Trả lời trong spec → thêm RULE / AC / E# / SCR, History v+1
-- Chưa quyết được → `## Open Questions` kèm quyết định tạm
-- Không thuộc v1 → Out of Scope của BR
-Không có đầu ra "để đó".
+Paste the glossary + the relevant rules + the UC. Run three roles, one pass each. The AI may only ASK.
 
 ---
+Read the use case below in the role of **<ROLE>**. Your only job: list the questions the spec does not
+answer, the rules that are "obvious to anyone in this business" but are not written down, and the places
+where the message to the customer is hard to understand.
 
-# Ba vai tầng BR — dùng cho `/sdd-solo:adversarial BR-###`
+Constraints:
+- Do not propose code. Do not propose architecture. Do not edit the spec.
+- One question per line, naming the step/E#/AC it relates to.
+- Do not repeat what the spec already says. No praise.
+- At most 12 questions, ordered by what it costs to miss them (money / permissions / customer data first).
 
-Dán toàn bộ `br.md` của lát (`specs/<core|nghề>/br-###/br.md`) và mục `## Không thu hẹp` của `specs/vision.md`. Chạy ba vai, mỗi vai một lượt. AI chỉ được HỎI.
+Roles:
+1. **End customer** — a business or marketing person, not technical, in a hurry. Asks: where do I not know what to do next? which message can I not read? where do I find that?
+2. **Operations / accounting** — the person answering tickets and reconciling money. Asks: which "everyone knows that" rule is not written down? on a refund / expiry / plan change, what happens to what? which data do I answer the customer with?
+3. **Abuser** — wants more than they paid for. Asks: what if I click twice? what if two requests arrive at once? what if I change the data on the client? what happens exactly at the boundary value?
 
----
-Bạn đọc business requirement dưới đây với vai **<VAI>**. Nhiệm vụ duy nhất: liệt kê những câu hỏi
-mà BR chưa trả lời, những chỗ nó khẳng định mà không có nguồn, và những chỗ nó đang mô tả một
-giải pháp thay vì một vấn đề.
-
-Ràng buộc:
-- Không đề xuất giải pháp. Không đề xuất tính năng. Không sửa spec.
-- Mỗi câu hỏi một dòng, **kèm nhãn nguồn trong ngoặc vuông**: mục nào của BR sinh ra câu hỏi này
-  — `[Background]` · `[Success Metrics]` · `[Out of Scope]` · `[CON-002]` · `[Impact Map]`.
-  Vai UC đã bắt kèm nhãn từ đầu và làm được 24/24; vai BR không bắt nên 36/40 câu treo ở `br.md`
-  không truy được về đâu. Nhãn này là thứ để lúc trình cho người quyết còn dán được nguyên văn
-  chỗ spec đang nói gì.
-- Không lặp lại thứ BR đã nói. Không khen.
-- Tối đa 8 câu mỗi vai, xếp theo mức hậu quả nếu bỏ qua.
-
-Vai:
-1. **Người trả tiền** — người bỏ tiền và thời gian ra làm việc này. Hỏi: vì sao việc này đáng làm
-   **trước** việc khác? không làm gì cả thì mất bao nhiêu, **đo bằng gì**? con số baseline trong
-   Background lấy ở đâu ra? Success Metric này đo xong thì ai đọc, đọc để quyết cái gì?
-2. **Người sẽ phải vận hành nó mãi** — người trực ticket và sửa lúc nửa đêm. **Câu bắt buộc, hỏi
-   đầu tiên (#47): *"v1 xong, anh mở cái gì lên để làm việc mỗi ngày? tự đổi được gì mà không cần
-   dev?"* — đối chiếu câu trả lời với In Scope; In Scope không có cái "mở lên mỗi ngày" đó thì
-   phạm vi đang cắt sai.** Rồi hỏi: hỏng lúc 2 giờ sáng thì ai chịu? cái gì trong Out of Scope hôm
-   nay sẽ quay lại thành ticket tuần sau? việc này đẻ thêm bao nhiêu việc tay mỗi tháng? ai xử khi
-   dữ liệu vào sai ngay từ đầu?
-   Ca thật runxops: BR-003 v2.x ghi *"v1 không có bước người trên runX"* suy từ một câu hẹp; sau
-   đó chủ dự án: *"phải có app để quản lý chứ… xây đầy đủ tính năng thì mới thành MVP"* → lật, thêm
-   app quản lý M1–M8 vào v1. Ba vai đã chạy, không ai hỏi câu này.
-3. **Người hoài nghi** — người không tin là cần xây gì cả. **Đọc dòng `**Vì sao vẫn xây:**` trong
-   Background trước tiên; nếu nó ghi "chưa có lý do" thì đó là câu hỏi số một của bạn.** Hỏi tiếp:
-   có cách nào đạt Goal mà **không viết
-   phần mềm** không (mua sẵn, đổi quy trình, thuê người, làm tay theo lô)? BR này có thật là một BR,
-   hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do? nếu xoá hẳn BR này thì ai kêu, và
-   sau bao lâu?
-
-<dán mục BR-### trong br.md>
+<paste UC-###.md>
 ---
 
-Đầu ra hợp lệ cho mỗi câu hỏi (ghi vào mục `## Adversarial pass` của BR):
-- Có số và có nguồn → `## Background`
-- Chưa quyết được → `## Open Questions` kèm quyết định tạm
-- Không thuộc bản này → `## Out of Scope` + một nhánh `-.->` trên Impact Map
-- Là ràng buộc → một `CON-###` mới
-Không có đầu ra "để đó".
+Running in the multi-agent model (`/sdd-solo:orchestrate`, with role R): give each question the three
+skeleton lines of `notes/hoi-dap/hoi-dap.md` — `Already looked up` · `If chosen wrong` · `The agent leans
+towards` — so R can grade it without translating it again (#39).
 
-**Nếu vai người hoài nghi kết luận BR đang là giải pháp viết ngược thành lý do — dừng, nói rõ BR sẽ co từ gì thành gì
-(`br-scope-diff.sh BR-###` in dòng thêm/bớt của In Scope · Out of Scope), hỏi chủ dự án, rồi mới viết lại.** Ba vai
-cũng đọc `## Không thu hẹp` của `specs/vision.md`: câu hỏi nào đẩy một điều ở đó vào Out of Scope thì đầu ra phải là
-"hỏi chủ dự án", không phải "co BR" (7.0).
-Đừng ghi nó thành một Open Question rồi đi tiếp: mọi UC sinh ra từ BR đó sẽ kế thừa nguyên lỗi.
+Valid outputs for each question (written into the UC, section Adversarial pass):
+- Answered in the spec → add a RULE / AC / E# / SCR, History v+1
+- Cannot be decided yet → `## Open Questions` with an interim decision
+- Not part of v1 → the BR's Out of Scope
+There is no "leave it" output.
+
+---
+
+# The three BR-layer roles — for `/sdd-solo:adversarial BR-###`
+
+Paste the slice's whole `br.md` (`specs/<core|craft>/br-###/br.md`) and the `## Do not narrow` section of
+`specs/vision.md`. Run three roles, one pass each. The AI may only ASK.
+
+---
+Read the business requirement below in the role of **<ROLE>**. Your only job: list the questions the BR
+does not answer, the places where it asserts something with no source, and the places where it describes a
+solution instead of a problem.
+
+Constraints:
+- Do not propose solutions. Do not propose features. Do not edit the spec.
+- One question per line, **with a source label in square brackets**: which section of the BR produced this
+  question — `[Background]` · `[Success Metrics]` · `[Out of Scope]` · `[CON-002]` · `[Impact Map]`.
+  The UC roles required the label from the start and landed 24 out of 24; the BR roles did not, so 36 of 40
+  questions left hanging in `br.md` could not be traced back to anything. That label is what lets you paste
+  the spec's exact words when you put a question to whoever decides.
+- Do not repeat what the BR already says. No praise.
+- At most 8 questions per role, ordered by what it costs to miss them.
+
+Roles:
+1. **The one who pays** — the person spending money and time on this. Asks: why is this worth doing
+   **before** something else? what does doing nothing cost, **measured how**? where did the baseline number
+   in Background come from? once this Success Metric is measured, who reads it, and to decide what?
+2. **The one who will operate it forever** — the person on ticket duty who fixes it at midnight. **Required
+   question, asked first (#47): *"once v1 is done, what do you open every day to do your work? what can you
+   change yourself without a developer?"* — compare the answer against In Scope; if In Scope does not
+   contain that "thing you open every day", the scope is cut wrong.** Then: who is on the hook at 2am? what
+   in today's Out of Scope comes back as a ticket next week? how much manual work per month does this
+   create? who handles data that was wrong on the way in?
+   Real runxops case: BR-003 v2.x said *"v1 has no human step on runX"*, inferred from one narrow sentence;
+   then the owner said *"of course there has to be an app to manage it… it is only an MVP if the features
+   are all there"* → overturned, and a management app M1–M8 went into v1. Three roles had run; nobody asked
+   this question.
+3. **The sceptic** — the person who does not believe anything needs building. **Read the
+   `**Why still build:**` line in Background first; if it says "no reason yet", that is your question
+   number one.** Then: is there a way to reach the Goal **without writing software** (buy one, change the
+   process, hire someone, do it by hand in batches)? Is this really a BR, or a solution already chosen and
+   written backwards into a reason? If this BR were deleted outright, who would complain, and how soon?
+
+<paste the BR-### section of br.md>
+---
+
+Valid outputs for each question (written into the BR's `## Adversarial pass`):
+- Has a number and a source → `## Background`
+- Cannot be decided yet → `## Open Questions` with an interim decision
+- Not in this release → `## Out of Scope` + a `-.->` branch on the Impact Map
+- It is a constraint → a new `CON-###`
+There is no "leave it" output.
+
+**If the sceptic concludes the BR is a solution written backwards into a reason — stop, say exactly what the
+BR would shrink from and to (`br-scope-diff.sh BR-###` prints the added/removed lines of In Scope · Out of
+Scope), ask the owner, and only then rewrite.** All three roles also read `## Do not narrow` in
+`specs/vision.md`: any question that would push an item from there into Out of Scope must output "ask the
+owner", not "shrink the BR" (7.0).
+Do not record it as an Open Question and move on: every UC born from that BR inherits the same mistake.

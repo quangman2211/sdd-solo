@@ -1,232 +1,286 @@
 ---
 name: adversarial
-description: Adversarial pass ba vai đọc spec và liệt kê câu hỏi spec chưa trả lời. UC-### (bước ⑦) dùng ba vai khách cuối / vận hành / kẻ lợi dụng và hỏi về hành vi; BR-### (Phase 1) dùng ba vai người trả tiền / người vận hành mãi / người hoài nghi và hỏi về lý do tồn tại. Thay cho reviewer nghiệp vụ khi làm một mình.
+description: A three-role adversarial pass that reads the spec and lists the questions it does not answer. UC-### (step ⑦) uses the roles end customer / operations / abuser and asks about behaviour; BR-### (Phase 1) uses the one who pays / the one who operates it forever / the sceptic and asks about the reason for existing. It replaces the business reviewer when you work alone.
 disable-model-invocation: true
 argument-hint: "UC-### | BR-### [--phieu | --hoi]"
 allowed-tools: Bash Read Write Edit Grep Agent AskUserQuestion
 ---
 
-Adversarial pass cho `$1`.
+Reply in whatever language the user writes in; keep file names, IDs and slugs in English.
 
-`$1` bắt đầu bằng `UC-` → **phần A**. Bắt đầu bằng `BR-` → **phần B**. Khác hai dạng đó thì dừng và hỏi lại.
+An adversarial pass for `$1`.
 
-**Hai chế độ trình câu hỏi — chọn TRƯỚC khi chạy ba vai** (7.0.1, #53):
+`$1` starting with `UC-` → **part A**. Starting with `BR-` → **part B**. Anything else → stop and ask again.
 
-| Chế độ | Khi nào | Câu hình dạng đi đâu |
+**Two modes for putting the questions — choose BEFORE running the three roles** (7.0.1, #53):
+
+| Mode | When | Where a shape question goes |
 |---|---|---|
-| **hỏi** | anh gõ lệnh trong phiên của mình, không cờ · hoặc có `--hoi` | `AskUserQuestion`, một câu một lượt (bước 5) |
-| **phiếu** | có `--phieu` · hoặc lượt chạy theo **lời giao của một agent khác** (orchestrate: vai B/C, lời giao bắt đầu `Vai:` / `Lượt`) mà không có `--hoi` | một phiếu gom K1…Kn vào sổ hỏi đáp (bước 5′), **không** `AskUserQuestion` |
+| **ask** | the user typed the command in their own session, no flag · or `--hoi` is given | `AskUserQuestion`, one question per turn (step 5) |
+| **ticket** | `--phieu` is given · or the round runs under **another agent's brief** (orchestrate: role B/C, a brief starting with `Vai:` / `Lượt`) without `--hoi` | one ticket collecting K1…Kn in the question log (step 5′), **never** `AskUserQuestion` |
 
-Không chắc mình đang ở chế độ nào → **phiếu**. Phiếu chậm một lượt; câu hỏi mở trong phiên không có người thì
-treo cả lượt tới khi hết hạn — ca thật runxops (#53): adversarial chạy dưới lời giao của A mở `AskUserQuestion`,
-không ai bấm, `## Adversarial pass` không được ghi, A phải giao lại từ đầu. `--hoi` để A ép hỏi khi chính A đang ngồi
-cùng chủ dự án. Cả hai chế độ dùng chung ba vai, cùng bài kiểm hình dạng/giá trị, cùng bốn ràng buộc khi đề xuất —
-khác nhau đúng một chỗ: ai trả lời câu hình dạng, và khi nào.
+Not sure which mode you are in → **ticket**. A ticket costs one extra round; a question opened in a session with
+nobody in it hangs the whole round until it times out — the real runxops case (#53): adversarial ran under A's brief,
+opened `AskUserQuestion`, nobody clicked, `## Adversarial pass` was never written, and A had to hand the work out
+again. `--hoi` is there so A can force asking while A is sitting with the owner. Both modes use the same three roles,
+the same shape/value test and the same four constraints on proposals — they differ in exactly one thing: who answers
+a shape question, and when.
 
-Sổ hỏi đáp: `notes/hoi-dap/hoi-dap.md` (cây 7.0) · `specs/internal/hoi-dap.md` (6.x). Chưa có → chép khuôn
-`${CLAUDE_PLUGIN_ROOT}/templates/skel/hoi-dap.md` (không thay được biến: `find ~/.claude/plugins -type f -name hoi-dap.md
--path '*sdd-solo*skel*' | head -1`).
+The question log: `notes/hoi-dap/hoi-dap.md` (the 7.0 tree) · `specs/internal/hoi-dap.md` (6.x). Missing → copy the
+skeleton `${CLAUDE_PLUGIN_ROOT}/templates/skel/hoi-dap.md` (if the variable is not substituted:
+`find ~/.claude/plugins -type f -name hoi-dap.md -path '*sdd-solo*skel*' | head -1`).
 
-**Bố cục 6.x** (chưa `migrate --layout v7`): BR ở `specs/br.md` (mục `# BR-###`), RULE ở `specs/rules.md`, entity ở
-`specs/contexts/<ctx>/entities.md`, chưa có `specs/vision.md` → bỏ phần "Không thu hẹp", nói ra là bỏ. `context.sh`,
-`gate-check.sh`, `br-check.sh` tra cả hai cây.
+**The 6.x layout** (no `migrate --layout v7` yet): the BRs are in `specs/br.md` (sections `# BR-###`), the RULEs in
+`specs/rules.md`, the entities in `specs/contexts/<ctx>/entities.md`, and there is no `specs/vision.md` → drop the
+"Do not narrow" part, and say that you dropped it. `context.sh`, `gate-check.sh` and `br-check.sh` look in both trees.
 
 ---
 
-## A. Tầng UC — bước ⑦
+## A. The UC layer — step ⑦
 
-1. Gom đầu vào bằng **một lệnh**, không tự đi nhặt file:
+1. Gather the input with **one command**, do not pick up files yourself:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/context.sh" $1 --brief
 ```
-   Output đó (UC bỏ dấu vết · RULE/CON/ADR được trích · BR cha · architecture · entity/glossary; `--brief` từ
-   6.5.0: ADR chỉ đoạn đầu Decision, architecture chỉ Cấm · Ranh giới · Nơi chạy — ba vai hỏi hành vi, không
-   hỏi ngăn xếp) là **toàn bộ** thứ ba vai được đọc — đưa nguyên văn cho mỗi subagent ở bước 3. Không có → `find ~/.claude/plugins
-   -type f -name context.sh -path '*sdd-solo*' | head -1`.
-2. Kiểm tiền điều kiện bằng **script**, không tự đánh giá — bốn điều kiện cũ đo cấu trúc nên template rỗng qua hết (#11):
+   That output (the UC with the evidence trail stripped · the RULE/CON/ADR it cites · the parent BR · architecture ·
+   the entities and glossary; `--brief` since 6.5.0: each ADR cut to the first paragraph of Decision, architecture cut
+   to Forbidden · Boundaries · Runs where — the three roles ask about behaviour, not about the stack) is **all** the
+   three roles get to read — hand it verbatim to each subagent at step 3. Not found →
+   `find ~/.claude/plugins -type f -name context.sh -path '*sdd-solo*' | head -1`.
+2. Check the preconditions with the **script**, do not judge for yourself — the four old conditions measured structure,
+   so an empty template passed all of them (#11):
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/gate-check.sh" --pre $1
 ```
-Exit ≠ 0 → **dừng**, in nguyên output, nói user viết xong nội dung rồi chạy lại. Không chạy ba vai trên spec còn placeholder.
-3. **Chạy ba vai bằng subagent riêng** (Agent tool, mỗi vai một agent, không dùng context của session này để tránh bị neo bởi giả định đã có). Prompt cho mỗi agent: nội dung `.sdd/prompts/adversarial-pass.md` trong repo, phần vai tương ứng, kèm toàn bộ UC + glossary (gốc và của nghề) + RULE liên quan + **file entity của mỗi entity UC nhắc tên** (`specs/core/entities/<Tên>.md` · `specs/<nghề>/entities/<Tên>.md`, mỗi entity một file — đừng đưa cả thư mục, đưa đúng những file UC nhắc). Ràng buộc chuyển nguyên văn: chỉ hỏi, không đề xuất code/kiến trúc, không sửa spec, tối đa 12 câu, xếp theo hậu quả (tiền / quyền / dữ liệu khách trước), mỗi câu kèm bước/E#/AC liên quan.
-4. Gộp kết quả, bỏ trùng, ghi vào mục `## Adversarial pass` của file UC theo dạng:
+Exit ≠ 0 → **stop**, print the output verbatim, and tell the user to finish the content and run again. Do not run the
+three roles on a spec that still has placeholders.
+3. **Run the three roles in separate subagents** (the Agent tool, one agent per role, not using this session's context,
+   so they are not primed by assumptions already made). The prompt for each agent: the content of
+   `.sdd/prompts/adversarial-pass.md` in the repo, the matching role's part, plus the whole UC + the glossary (root and
+   craft) + the relevant RULEs + **the entity file of every entity the UC names** (`specs/core/entities/<Name>.md` ·
+   `specs/<craft>/entities/<Name>.md`, one file per entity — do not hand over the whole folder, hand over exactly the
+   files the UC names). Pass the constraints verbatim: only ask, propose no code or architecture, do not edit the spec,
+   at most 12 questions, ordered by consequence (money / permissions / customer data first), each question naming the
+   step/E#/AC it relates to.
+4. Merge the results, drop the duplicates, and write them into the UC file's `## Adversarial pass` section as:
 ```
-- Ngày chạy: YYYY-MM-DD · Session mới: [x]
-- Vai khách cuối:
-  - Q1 <câu hỏi> [liên quan: bước N / E# / AC-#] → <đầu ra: ___>
-- Vai vận hành/kế toán: ...
-- Vai kẻ lợi dụng: ...
+- Run date: YYYY-MM-DD · Fresh session: [x]
+- Role end customer:
+  - Q1 <question> [related: step N / E# / AC-#] → <output: ___>
+- Role operations/accounting: ...
+- Role abuser: ...
 ```
-Cột "đầu ra" để `___` — **user quyết**, không tự điền. Khi user chọn, ghi kèm **ID của thứ đã tạo**:
-`→ spec: RULE-003` · `→ spec: E4, AC-5` · `→ Open Question` · `→ Out of Scope`.
-Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắt (#12).
-5. **Chế độ hỏi — trình từng câu bằng `AskUserQuestion`, một câu một lượt** (chế độ phiếu: bước 5′, nhưng đọc hết
-   bước này — phân loại, ba thứ, bốn ràng buộc áp nguyên cho phiếu) — không in 24 dòng liên tiếp rồi
-   hỏi "anh chọn gì". Đây là chỗ mật độ quyết định cao nhất trong cả quy trình.
+Leave the "output" column as `___` — **the user decides**, never fill it in. When the user chooses, record **the ID of
+whatever was created**: `→ spec: RULE-003` · `→ spec: E4, AC-5` · `→ Open Question` · `→ Out of Scope`.
+An empty `→ spec` claim cannot be checked, and `gate-check` will catch it (#12).
+5. **Ask mode — put each question through `AskUserQuestion`, one question per turn** (ticket mode: step 5′, but read
+   all of this step — the classification, the three things and the four constraints apply to tickets unchanged) — do
+   not print 24 lines in a row and then ask "which do you want". This is the highest decision density in the whole
+   process.
 
-   **Trước khi hỏi, phân loại bằng bài kiểm hình dạng/giá trị** (xem `sdd-process`): câu đổi
-   *hình dạng* (actor là ai · dữ liệu đến từ đâu · ai được làm) thì **phải hỏi**; câu đổi *giá trị*
-   (ngưỡng · thời hạn · enum) thì ghi thẳng `Open Question` kèm quyết định tạm, đừng làm phiền.
-   Hỏi hết 24 câu là cách nhanh nhất để user bấm bừa cho xong.
+   **Before asking, classify with the shape/value test** (see `sdd-process`): a question that changes the *shape*
+   (who the actor is · where the data comes from · who is allowed) **must be asked**; a question that changes a *value*
+   (a threshold · a deadline · an enum) goes straight into an `Open Question` with an interim decision, without
+   bothering anyone. Asking all 24 questions is the fastest way to make the user click through them.
 
-   **Mỗi câu phải kèm ba thứ. Thiếu một là câu hỏi không trả lời được:**
+   **Each question must carry three things. Missing one makes it unanswerable:**
 
-   a. **Ngữ cảnh = TRÍCH DẪN NGUYÊN VĂN**, không phải tóm tắt. Nhãn `[Main 7, RULE-003]` là con
-      trỏ — đọc chỗ nó trỏ tới rồi **dán nguyên văn** vào. Tóm tắt là chỗ mình lén thêm giả định
-      vào mà không ai thấy.
+   a. **Context = A VERBATIM QUOTE**, not a summary. A label like `[Main 7, RULE-003]` is a pointer — read what it
+      points at and **paste the exact words** in. A summary is where an assumption is slipped in unseen.
 
-      **Từ vựng nhãn có BA nguồn, không phải một.** Tra thiếu một nguồn thì nhãn đó im lặng mất
-      ngữ cảnh — không có lỗi nào bật lên, chỉ là câu hỏi trở lại thành một dòng trơ:
+      **Label vocabulary has THREE sources, not one.** Look up only some of them and the label silently loses its
+      context — nothing errors, the question simply becomes a bare line again:
 
-      | Nhãn | Tra ở đâu |
+      | Label | Where to look it up |
       |---|---|
-      | `Main N` · `Alt Na` · `E#` · `AC-#` · `SCR-###-#` · `Open Q` | file `UC-###.md` — bước đánh số, mục `## Exceptions`, heading `### AC-#`, bảng Screens |
-      | `RULE-###` | `specs/rules.md` (gốc) **và** `specs/<nghề>/rules.md` — một dãy số, hai chỗ ở; tra thiếu một chỗ là mất nhãn |
-      | **`CON-###`** | **`br.md` của lát UC thuộc về** (`specs/<core\|nghề>/br-###/br.md`) — trong `## Constraints`, KHÔNG nằm trong UC |
-      | `Background` · `Success Metrics` · `Out of Scope` · `Impact Map` | cùng `br.md` đó |
-      | tên entity | `specs/core/entities/<Tên>.md` · `specs/<nghề>/entities/<Tên>.md` — mỗi entity một file |
+      | `Main N` · `Alt Na` · `E#` · `AC-#` · `SCR-###-#` · `Open Q` | the `UC-###.md` file — the numbered steps, `## Exceptions`, the `### AC-#` headings, the Screens table |
+      | `RULE-###` | `specs/rules.md` (root) **and** `specs/<craft>/rules.md` — one sequence, two homes; missing one means losing the label |
+      | **`CON-###`** | **the `br.md` of the slice the UC belongs to** (`specs/<core\|craft>/br-###/br.md`) — inside `## Constraints`, NOT in the UC |
+      | `Background` · `Success Metrics` · `Out of Scope` · `Impact Map` | the same `br.md` |
+      | an entity name | `specs/core/entities/<Name>.md` · `specs/<craft>/entities/<Name>.md` — one file per entity |
 
-      Đo trên `runxops`: 50 nhãn trong 24 câu của một UC, deref được 49; cái trượt duy nhất là
-      `CON-011` — vì nó nằm ở `br.md` chứ không ở hai file kia. Nhãn `CON-` thường là nhãn mang
-      ràng buộc đắt nhất, nên bỏ sót đúng nó là bỏ sót ngữ cảnh quan trọng nhất.
+      Measured on `runxops`: 50 labels across 24 questions of one UC, 49 dereferenced; the only miss was `CON-011` —
+      because it lives in `br.md`, not in the other two files. A `CON-` label usually carries the most expensive
+      constraint, so missing exactly that one means missing the most important context.
 
-      Tra không thấy → **nói thẳng trong câu hỏi**: *"nhãn `[CON-011]` không tìm thấy trong
-      `br.md` của lát"*. Đừng lặng lẽ bỏ nhãn đi.
-   b. **Mỗi lựa chọn kèm cái mất.** Không phải "chọn A hay B" mà "chọn A thì E4 phải viết lại,
-      chọn B thì mất khả năng đối soát ngược".
-   c. **`Chưa quyết — ghi Open Question` LUÔN là một lựa chọn hiện sẵn**, không phải thứ user
-      phải tự gõ ra để thoát. `___` là câu trả lời hợp lệ ở mọi tầng của quy trình này.
+      Cannot find it → **say so inside the question**: *"the label `[CON-011]` was not found in the slice's
+      `br.md`"*. Do not quietly drop the label.
+   b. **Every option carries what it costs.** Not "A or B" but "choosing A means E4 has to be rewritten, choosing B
+      loses the ability to reconcile backwards".
+   c. **`Undecided — record an Open Question` is ALWAYS a visible option**, never something the user has to type to
+      escape. `___` is a valid answer at every layer of this process.
 
-   **Bốn ràng buộc khi đề xuất — đây là chỗ dễ phá hỏng cả tầng BR nhất:**
+   **Four constraints on proposals — the easiest place to wreck the whole BR layer:**
 
-   1. **Căn cứ phải truy được trong repo, hoặc là một lệnh user chạy lại được.** "Luật này phân
-      định được 13/13 nhóm trên dữ liệu thật, đếm bằng `<lệnh>`" là căn cứ. Kiến thức chung của
-      model **không** phải căn cứ — cái đó trình bày là *hướng có thể đi*, không được gọi là
-      *khuyến nghị*.
-   2. **Không xếp hạng, không đánh dấu "nên chọn"** cho câu đổi giá trị nghiệp vụ. Bày ra không
-      gian lựa chọn là đưa thông tin; chọn hộ là ra quyết định.
-   3. **Giá trị cụ thể do mình nêu ra mà user chỉ gật thì chưa phải của user.** Ghi vào spec dạng
-      `___ (AI gợi ý <X>, chưa ai duyệt)` kèm một dòng Open Question. Chỉ khi user tự nói ra con
-      số bằng lời của họ mới ghi thành quyết định, và ghi kèm *"user quyết sau khi xem <căn cứ>"*.
-      Đây đúng là bẫy gật đầu mà `/sdd-solo:intake` đã vá — cùng một cái bẫy, chỗ khác.
-   4. **Ba ràng buộc đầu sống trong hội thoại; ràng buộc này sống trong FILE.** Đóng terminal thì
-      chỉ còn file. Nên provenance của mọi con số phải nằm trong spec, không nằm trong lời nói.
+   1. **The basis must be traceable in the repo, or be a command the user can re-run.** "This rule distinguishes 13
+      of 13 groups on the real data, counted by `<command>`" is a basis. The model's general knowledge is **not** a
+      basis — present that as *a possible direction*, never call it *a recommendation*.
+   2. **No ranking, no "recommended" marker** on a question that changes a business value. Laying out the option
+      space is providing information; choosing is making the decision.
+   3. **A concrete value you proposed and the user merely nodded at is not yet theirs.** Write it into the spec as
+      `___ (AI suggested <X>, nobody has approved it)` with an Open Question line. Only when the user says the number
+      in their own words does it become a decision, and it is recorded with *"the user decided after seeing
+      <the basis>"*. This is exactly the nodding trap `/sdd-solo:intake` already patched — the same trap, elsewhere.
+   4. **The first three constraints live in the conversation; this one lives in the FILE.** Close the terminal and
+      only the file is left. So the provenance of every number belongs in the spec, not in something said.
 
-   Với mỗi lựa chọn user chọn:
-   - spec → sửa đúng chỗ (thêm E#, AC, sửa RULE trong `rules.md`, thêm dòng Screens), rồi `## History` v+1 ghi "sau adversarial pass vai ___".
+   For each option the user picks:
+   - spec → fix it in the right place (add an E#, an AC, edit the RULE in `rules.md`, add a Screens row), then
+     `## History` v+1 recording "after the ___ role's adversarial pass".
 
-     **Nếu bản sửa làm đổi THỨ TỰ các bước — sửa nửa vời ở đây không phép kiểm nào bắt được.**
-     Đổi nội dung hai bước cho nhau mà giữ nguyên số thì mọi bước vẫn tồn tại, vẫn đánh số đủ, mọi
-     nhãn vẫn deref được — nhưng đọc `Main Flow` từ 1 xuống vẫn ra thứ tự cũ, tức thứ tự sai. Ca
-     thật ở `runxops`: câu Q1 bảo *duyệt trước, ghi sau*; bản vá đảo nội dung, giữ số; nửa sai sống
-     sót qua cả một lượt adversarial lẫn **ba lần chạy cổng**. Cái sai nằm ở thứ tự — thứ chỉ đọc
-     mới thấy, và đó là lý do bước ⑧ *"đọc lại bằng đầu chưa neo"* tồn tại.
+     **If the fix changes the ORDER of the steps — a half-done fix here is caught by no check.**
+     Swap the content of two steps while keeping the numbers and every step still exists, every number is still
+     there, every label still dereferences — but reading `Main Flow` from 1 downwards still produces the old order,
+     which is the wrong one. Real case at `runxops`: question Q1 said *approve first, then record*; the patch swapped
+     the content and kept the numbers; the half that was wrong survived a whole adversarial pass and **three gate
+     runs**. The error was in the order — something only reading catches, and that is why step ⑧ *"re-read with an
+     unprimed head"* exists.
 
-     Ba việc, làm đủ cả ba:
-     1. **Đánh số lại** theo thứ tự đúng, sửa luôn `UC-###.flow.md` cho khớp.
-     2. **Remap mọi nhãn theo NGHĨA, không theo số.** `Main 5` sau khi đánh số lại có thể đang trỏ
-        vào bước khác hẳn. **Số không phải danh tính** — nó là vị trí, và vị trí thì đổi.
-     3. `## History` ghi **vì sao số đổi**, không chỉ ghi "đã sửa". Sáu tháng sau, một số nhảy chỗ
-        mà không có lý do trong file thì không ai dám tin nhãn nào nữa.
-   - **Sau mỗi khái niệm vừa đổi: grep chỗ anh em** (#49, #48). Một khái niệm của UC-014 ở runxops chép lại ở
-     3–5 chỗ (glossary gốc và nghề · file entity · sequence · `Áp dụng cho` của RULE · flow · ADR); ba đợt áp chỉ sửa file UC
-     → 14/18 phát hiện verify là lệch với file anh em. Chạy `grep -rn '<tên/giá trị cũ>' specs/` **và**
-     `grep -rn '<tên/giá trị mới>' specs/`, sửa hết trong cùng lượt, rồi `gate-check.sh --pre $1` — nó cảnh báo
-     cụm treo, entity thiếu glossary, RULE không nhận UC.
-   - Open Question → thêm `- [ ] <câu> (quyết định tạm: <user nói>)`. User chưa có gì để nói thì `___`, và giữ nhãn nguồn `[Main 7]` trong câu để sáu tháng sau còn truy được.
-   - Out of Scope → thêm vào `br.md` của lát UC thuộc về, mỗi dòng kèm đích (`→ lát ___` · `→ mở lại khi ___`). Dòng trùng một từ khoá ở `## Không thu hẹp` của `specs/vision.md` → **hỏi chủ dự án trước**, đừng tự ghi: hoặc không đưa vào Out of Scope, hoặc chủ dự án chốt `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`.
-   Không được để câu nào không có đầu ra.
+     Three jobs, do all three:
+     1. **Renumber** in the right order, and fix `UC-###.flow.md` to match.
+     2. **Remap every label by MEANING, not by number.** After renumbering, `Main 5` may point at a completely
+        different step. **A number is not an identity** — it is a position, and positions move.
+     3. `## History` records **why the numbers changed**, not just "fixed". Six months later, a number that moved
+        with no reason in the file makes every label untrustworthy.
+   - **After every concept that just changed: grep the neighbours** (#49, #48). One concept of UC-014 at runxops was
+     repeated in 3–5 places (the root and craft glossary · the entity file · the sequence · a RULE's `Applies to` ·
+     the flow · an ADR); three rounds of fixing touched only the UC file → 14 of 18 verify findings were mismatches
+     with a neighbouring file. Run `grep -rn '<old name/value>' specs/` **and** `grep -rn '<new name/value>' specs/`,
+     fix them all in the same round, then `gate-check.sh --pre $1` — it warns about dangling phrases, entities
+     missing from the glossary, and RULEs that do not acknowledge the UC.
+   - Open Question → add `- [ ] <question> (interim decision: <what the user said>)`. Nothing to say yet → `___`, and
+     keep the source label `[Main 7]` in the question so it can still be traced six months later.
+   - Out of Scope → add it to the `br.md` of the slice the UC belongs to, each line with a destination
+     (`→ slice ___` · `→ reopen when ___`). A line matching a keyword in `## Do not narrow` of `specs/vision.md` →
+     **ask the owner first**, do not write it yourself: either it does not go into Out of Scope, or the owner settles
+     it as `deliberately narrowed — owner decided YYYY-MM-DD`.
+   No question may be left without an output.
 
-5′. **Chế độ phiếu** — không `AskUserQuestion`, không ai được đoán thay chủ dự án.
-   - Câu đổi **giá trị** (ngưỡng · thời hạn · enum): như chế độ hỏi — `→ Open Question` kèm quyết định tạm `___`.
-   - Câu đổi **hình dạng** (actor · nguồn dữ liệu · quyền · thứ tự bước) và câu đụng `## Không thu hẹp`: gom **một
-     phiếu** cuối sổ hỏi đáp theo khuôn của sổ — `### #<n> · từ: spec · việc: $1 · <ngày>`, mỗi câu một `K#` với
-     `Câu` · `Đã tra` (**nguyên văn** chỗ nhãn trỏ tới, như điểm a) · `Nếu chọn sai thì` · `Agent nghiêng về` (mỗi
-     hướng kèm cái mất — điểm b; câu đổi giá trị nghiệp vụ thì không nghiêng). Để trống `Trả lời (R)` và `Duyệt`.
-   - Trong UC: đầu ra `→ Chưa quyết — Open Question (phiếu #<n> K#)`, và thêm vào `## Open Questions`
-     `- [ ] <câu> [nhãn nguồn] (quyết định tạm: ___ · phiếu #<n> K#)`. **Không** sửa Main/Alt/E#/AC/RULE theo
-     hướng mình nghiêng — áp phiếu là việc của lượt sau, đọc phần `Cho: spec` khi R/chủ dự án đã trả lời.
-   - Sổ **không** nằm trong commit bước 6: dưới orchestrate A commit sổ (R/B không commit sổ); chạy tay thì commit
-     riêng `chore(sdd): sổ hỏi đáp — phiếu #<n>`. Báo cuối lượt: số phiếu, số `K#`, số Open Question mới.
-   Không được để câu nào không có đầu ra — `Chưa quyết — Open Question (phiếu …)` là một đầu ra.
-6. Kết thúc: `git add <file UC và file anh em đã sửa> && git commit --only -m "docs($1): spec vN — sau adversarial pass" -- <đúng các file đó>` — kê đích danh, không `specs/`: vùng stage là của cả cây, `git add specs/` cuốn file dở của vai khác (P-29). Commit này là mốc để `/sdd-solo:gate` biết spec vừa đổi hôm nay.
-7. STATE.md: `Đang làm: $1 · bước ⑧ — chờ đọc lại bằng đầu chưa neo`. Nói với user bước tiếp là
-   **`/sdd-solo:verify $1`** — subagent đọc lại, ghi `## Đọc lại`, commit riêng; xong là chạy cổng được.
-   Từ 6.0.0 (#38) đây là đường **duy nhất**: cửa "đóng máy, buổi sau đọc lại" đã bỏ, vì một đêm đo thời
-   gian trôi qua chứ không đo việc đọc có xảy ra không, và cửa rẻ hơn vẫn là cửa được đi (#27 → #38).
+5′. **Ticket mode** — no `AskUserQuestion`, and nobody guesses on the owner's behalf.
+   - A question changing a **value** (a threshold · a deadline · an enum): as in ask mode — `→ Open Question` with the
+     interim decision `___`.
+   - A question changing the **shape** (the actor · the data source · permissions · the order of steps) and any
+     question touching `## Do not narrow`: collect them into **one ticket** at the end of the question log, in the
+     log's own shape — `### #<n> · from: spec · task: $1 · <date>`, each question as one `K#` with `Question` ·
+     `Already looked up` (**verbatim**, what the label points at, as in point a) · `If chosen wrong` · `The agent
+     leans towards` (each direction with what it costs — point b; no leaning on a question that changes a business
+     value). Leave `Answer (R)` and `Approve` empty.
+   - In the UC: the output is `→ Undecided — Open Question (ticket #<n> K#)`, and add to `## Open Questions`
+     `- [ ] <question> [source label] (interim decision: ___ · ticket #<n> K#)`. Do **not** edit Main/Alt/E#/AC/RULE
+     in the direction you lean — applying the ticket is a later round, reading the `For: spec` part once R or the
+     owner has answered.
+   - The log is **not** part of the step 6 commit: under orchestrate, A commits the log (R/B do not); running by hand,
+     commit it separately as `chore(sdd): question log — ticket #<n>`. Report at the end of the round: the ticket
+     number, the number of `K#`, and how many new Open Questions.
+   No question may be left without an output — `Undecided — Open Question (ticket …)` is an output.
+6. Finish: `git add <the UC file and the neighbouring files you edited> && git commit --only -m "docs($1): spec vN —
+   after the adversarial pass" -- <exactly those files>` — name them explicitly, never `specs/`: the staging area
+   belongs to the whole tree, and `git add specs/` sweeps up another role's half-finished file (P-29). This commit is
+   the mark that tells `/sdd-solo:gate` the spec changed today.
+7. STATE.md: `Working on: $1 · step ⑧ — waiting for the re-read with an unprimed head`. Tell the user the next step is
+   **`/sdd-solo:verify $1`** — a subagent re-reads, writes `## Re-read`, and commits on its own; after that the gate
+   can run. Since 6.0.0 (#38) this is the **only** route: the "shut down and re-read tomorrow" door is gone, because a
+   night measures time passing rather than whether the reading happened, and the cheaper door is the one that gets
+   used (#27 → #38).
 
 ---
 
-## B. Tầng BR — Phase 1
+## B. The BR layer — Phase 1
 
-Ba vai của tầng UC hỏi về **hành vi**. Tầng BR cần vai hỏi về **lý do tồn tại** — đó là câu hỏi khác hẳn, và không hỏi ở đây thì không còn chỗ nào hỏi nữa.
+The UC-layer roles ask about **behaviour**. The BR layer needs roles that ask about **the reason for existing** —
+an entirely different question, and if it is not asked here there is nowhere left to ask it.
 
-1. Đọc `br.md` của lát `$1` (`specs/<core|nghề>/br-###/br.md` — tìm bằng `ls -d specs/*/br-###/`), cùng
-   `specs/_intake.md` để biết bộ câu hỏi đã dùng, **và `specs/vision.md`** — mục `## Không thu hẹp` cùng
-   dòng của lát này trong bảng `## Nghề và lát`.
+1. Read the `br.md` of slice `$1` (`specs/<core|craft>/br-###/br.md` — find it with `ls -d specs/*/br-###/`), together
+   with `specs/_intake.md` to see which question set was used, **and `specs/vision.md`** — the `## Do not narrow`
+   section plus this slice's row in the `## Crafts and slices` table.
 
-   `## Không thu hẹp` là **đầu vào bắt buộc của cả ba vai**, không phải thông tin nền. Ba vai tồn tại để
-   bóp BR lại cho chặt; tầng 0 tồn tại để nói chỗ nào không được bóp. Chạy ba vai mà không đưa cho họ
-   `## Không thu hẹp` là chạy đúng nửa cơ chế — và nửa thiếu là nửa đã sinh ra tầng 0.
-2. Kiểm tiền điều kiện:
+   `## Do not narrow` is **required input for all three roles**, not background information. The three roles exist to
+   squeeze the BR tighter; layer 0 exists to say where it may not be squeezed. Running the three roles without giving
+   them `## Do not narrow` is running exactly half the mechanism — and the missing half is the half that created
+   layer 0.
+2. Check the preconditions:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/br-check.sh" $1
 ```
-Còn dòng ✗ → **dừng**, in output, bảo user viết xong BR rồi chạy lại. Cảnh báo `___` thì **cứ chạy tiếp** — `___` là trạng thái hợp lệ ở Phase 1, và mấy chỗ `___` chính là thứ ba vai sẽ soi.
-3. **Chạy ba vai bằng subagent riêng** (Agent tool, mỗi vai một agent). Prompt: phần *Ba vai tầng BR* trong `.sdd/prompts/adversarial-pass.md`, kèm toàn bộ `br.md` của lát **và mục `## Không thu hẹp` của `specs/vision.md`** nguyên văn. Ràng buộc như tầng UC: chỉ hỏi, không đề xuất giải pháp, không sửa spec, tối đa 8 câu mỗi vai.
+Any ✗ line → **stop**, print the output, tell the user to finish the BR and run again. A `___` warning → **carry on** —
+`___` is a valid state in Phase 1, and those `___` spots are exactly what the three roles will push on.
+3. **Run the three roles in separate subagents** (the Agent tool, one agent per role). The prompt: the *three BR-layer
+   roles* part of `.sdd/prompts/adversarial-pass.md`, plus the whole slice `br.md` **and the `## Do not narrow` section
+   of `specs/vision.md`** verbatim. Same constraints as the UC layer: only ask, propose no solutions, do not edit the
+   spec, at most 8 questions per role.
 
-   - **Người trả tiền** — vì sao việc này đáng làm **trước** việc khác? không làm thì mất gì **đo được**? con số baseline lấy ở đâu?
-   - **Người sẽ phải vận hành nó mãi** — **câu bắt buộc đầu tiên (#47): *"v1 xong, anh mở cái gì lên để làm việc mỗi ngày? tự đổi được gì mà không cần dev?"*** — trả lời quyết In Scope trước khi cắt phạm vi (BR-003 runxops bị lật vì không ai hỏi); rồi: ai chịu trách nhiệm khi nó hỏng lúc 2 giờ sáng? cái gì trong Out of Scope hôm nay sẽ thành ticket tuần sau?
-   - **Người hoài nghi** — dòng `**Vì sao vẫn xây:**` trong Background nói gì? nếu nó ghi *"chưa có lý do"* thì **bắt đầu từ đó**: đã cân phương án không-phần-mềm nào chưa, cân xong chưa? có cách nào đạt Goal mà **không xây gì** không? BR này có thật là một BR, hay là một giải pháp đã chọn sẵn rồi viết ngược thành lý do?
+   - **The one who pays** — why is this worth doing **before** something else? what does doing nothing cost,
+     **measurably**? where did the baseline number come from?
+   - **The one who will operate it forever** — **the required first question (#47): *"once v1 is done, what do you open
+     every day to do your work? what can you change yourself without a developer?"*** — the answer settles In Scope
+     before the scope is cut (BR-003 at runxops was overturned because nobody asked); then: who is on the hook when it
+     breaks at 2am? what in today's Out of Scope becomes a ticket next week?
+   - **The sceptic** — what does the `**Why still build:**` line in Background say? If it says *"no reason yet"*,
+     **start there**: has any non-software option been weighed, and was the weighing finished? Is there a way to reach
+     the Goal **without building anything**? Is this really a BR, or a solution already chosen and written backwards
+     into a reason?
 
-   Vai thứ ba là vai quan trọng nhất và không có ở tầng UC. *"BR: xây dashboard theo dõi đơn hàng"* không phải BR — đó là giải pháp; BR thật nằm ở câu hỏi *vì sao cần theo dõi*. Nếu vai này kết luận BR đang là giải pháp viết ngược thì **dừng, nói rõ BR sẽ co từ gì thành gì, hỏi chủ dự án, rồi mới viết lại** — đừng ghi nó thành một Open Question rồi đi tiếp, và cũng đừng tự viết lại trước khi chủ dự án nghe được cái mất. Viết lại một BR là thu hẹp nó; người duy nhất được quyết thu hẹp là chủ dự án. Chế độ phiếu: một phiếu riêng `K1` = *"BR co từ ___ thành ___, mất ___"*, đầu ra mọi câu còn lại `Chưa quyết`, commit bước 7 **không** kèm History v+1 — rồi dừng lượt.
+   The third role is the most important one and does not exist at the UC layer. *"BR: build an order-tracking
+   dashboard"* is not a BR — that is a solution; the real BR is in the question *why tracking is needed*. If this role
+   concludes the BR is a solution written backwards then **stop, say exactly what the BR would shrink from and to, ask
+   the owner, and only then rewrite** — do not record it as an Open Question and move on, and do not rewrite before
+   the owner has heard what it costs. Rewriting a BR is narrowing it; the only person who may decide to narrow is the
+   owner. Ticket mode: its own ticket with `K1` = *"the BR shrinks from ___ to ___, losing ___"*, every other question
+   output as `Undecided`, and the step 7 commit **without** a History v+1 — then stop the round.
 
-   **Mọi vai đều phải đối chiếu `## Không thu hẹp`.** Câu nào dẫn tới việc bỏ bớt một điều nằm trong đó thì vai phải nói ra rằng nó đang đụng vào tầng 0, và câu hỏi đi thẳng tới chủ dự án ở bước 5 — không phải một `Open Question` để đó.
+   **Every role must check against `## Do not narrow`.** Any question that would drop something listed there means the
+   role must say out loud that it is touching layer 0, and the question goes straight to the owner at step 5 — not
+   into an `Open Question` to sit there.
 
-4. Ghi vào mục `## Adversarial pass` của BR:
+4. Write into the BR's `## Adversarial pass` section:
 ```
-- Ngày chạy: YYYY-MM-DD · Session mới: [x]
-- Vai người trả tiền:
-  - Q1 <câu hỏi> → <đầu ra: ___>
-- Vai người sẽ vận hành nó mãi: ...
-- Vai người hoài nghi: ...
+- Run date: YYYY-MM-DD · Fresh session: [x]
+- Role the one who pays:
+  - Q1 <question> → <output: ___>
+- Role the one who operates it forever: ...
+- Role the sceptic: ...
 ```
-5. Chế độ hỏi: trình từng câu bằng `AskUserQuestion`; chế độ phiếu: như phần A bước 5′ — **cùng ba thứ và bốn ràng buộc như phần A bước 5** —
-   ngữ cảnh là trích dẫn nguyên văn mục BR mà nhãn trỏ tới (`[Background]` · `[CON-002]` ·
-   `[Success Metrics]`), mỗi lựa chọn kèm cái mất, và `Chưa quyết` luôn hiện sẵn.
-   Bốn đầu ra hợp lệ, không có "để đó":
-   - → `## Background` (kèm **nguồn** của con số; không có nguồn thì không phải Background)
-   - → `## Open Questions` kèm quyết định tạm
-   - → `## Out of Scope` + một nhánh `-.->` trên Impact Map, **kèm đích** `→ lát ___` hoặc `→ mở lại khi ___`
-   - → một `CON-###` mới trong `## Constraints`
+5. Ask mode: put each question through `AskUserQuestion`; ticket mode: as in part A step 5′ — **the same three things
+   and four constraints as part A step 5** — the context is a verbatim quote of the BR section the label points at
+   (`[Background]` · `[CON-002]` · `[Success Metrics]`), every option carries what it costs, and `Undecided` is always
+   visible.
+   Four valid outputs, and no "leave it":
+   - → `## Background` (with the **source** of the number; no source means it is not Background)
+   - → `## Open Questions` with an interim decision
+   - → `## Out of Scope` + a `-.->` branch on the Impact Map, **with a destination** `→ slice ___` or
+     `→ reopen when ___`
+   - → a new `CON-###` in `## Constraints`
 
-6. **"Được và mất" — trước khi ghi `## History` v+1, bắt buộc, không bỏ.**
+6. **"What was gained and what was lost" — before writing `## History` v+1, required, never skipped.**
 
-   Áp xong các phiếu ở bước 5 nhưng **chưa** ghi History, chạy:
+   Once the step 5 tickets are applied but `## History` is **not** yet written, run:
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/br-scope-diff.sh" $1
 ```
-(không thay được biến: `find ~/.claude/plugins -type f -name br-scope-diff.sh -path '*sdd-solo*' | head -1`).
-   Nó in những dòng `## In Scope` / `## Out of Scope` **thêm và bớt** so với `HEAD`.
+(if the variable is not substituted: `find ~/.claude/plugins -type f -name br-scope-diff.sh -path '*sdd-solo*' | head -1`).
+   It prints the `## In Scope` / `## Out of Scope` lines **added and removed** against `HEAD`.
 
-   Rồi **nói lại bằng lời thường cho chủ dự án nghe**, không dán nguyên diff: *"BR sẽ co từ ___ thành ___;
-   mở thêm ___; bỏ ___ sang lát ___."* Và **chờ chủ dự án gật** — bằng `AskUserQuestion`, một câu, ba lựa
-   chọn: *đồng ý co như vậy* · *giữ nguyên phạm vi, bác phiếu ___* · *chưa quyết, để lại ở Open Questions*.
+   Then **say it back to the owner in plain words**, do not paste the diff: *"the BR shrinks from ___ to ___; it opens
+   ___; it drops ___ to slice ___."* And **wait for the owner to agree** — via `AskUserQuestion`, one question, three
+   options: *agree to that narrowing* · *keep the scope, reject ticket ___* · *undecided, leave it in Open Questions*.
 
-   Vì sao bước này tồn tại: ba lượt adversarial, mỗi lượt co BR một ít, mỗi lượt đều đúng luật — cộng lại
-   thì thứ còn lại nhỏ hơn hẳn ý định ban đầu, và **không lượt nào nhìn thấy hai lượt kia**. Diff của một
-   lượt là thứ duy nhất làm phép co ấy hiện ra trước khi nó thành nếp. Dòng nào đụng một từ khoá ở
-   `## Không thu hẹp` thì nói thẳng ra là nó đụng, đừng để lẫn trong danh sách.
+   Why this step exists: three adversarial rounds, each narrowing the BR a little, each correctly — and together what
+   is left is plainly smaller than the original intent, while **no round can see the other two**. One round's diff is
+   the only thing that makes that narrowing visible before it sets. Any line touching a keyword in `## Do not narrow`
+   is called out explicitly, not left inside the list.
 
-   Chủ dự án chưa gật → **không ghi History, không commit**. Đó không phải chờ cho lịch sự: `## History`
-   là chỗ khai rằng phiên bản này đã được chốt.
+   The owner has not agreed → **write no History, make no commit**. That is not waiting out of politeness:
+   `## History` is where a version declares itself settled.
 
-   **Chế độ phiếu:** ở bước 5 không được áp phiếu nào đổi `## In Scope` / `## Out of Scope` / `## Đã loại khỏi
-   brief` — chúng thành `K#` trong phiếu, đầu ra `Chưa quyết`. Nên `br-scope-diff.sh` phải **rỗng**; nó in dòng nào
-   thì đó là phép co mình vừa tự áp — hoàn lại (`git checkout -- <br.md>` rồi áp lại phần không đụng phạm vi), đừng
-   ghi History. Diff rỗng → ghi History v+1 *"sau adversarial pass — phiếu #<n> chờ chủ dự án"* và đi tiếp bước 7.
-7. Chạy lại `br-check.sh $1`, rồi `git add <br.md và file đã sửa> && git commit --only -m "docs($1): BR sau adversarial pass" -- <đúng các file đó>` (kê đích danh, không `specs/` — P-29).
-8. STATE.md: `Đang làm: $1 · Phase 1 xong`. `Việc tiếp theo: /sdd-solo:start UC-### cho UC đầu tiên trong ## Related Use Cases của lát`.
+   **Ticket mode:** at step 5 you may apply no ticket that changes `## In Scope` / `## Out of Scope` /
+   `## Dropped from brief` — those become `K#` in the ticket, output `Undecided`. So `br-scope-diff.sh` must be
+   **empty**; any line it prints is a narrowing you just applied yourself — undo it (`git checkout -- <br.md>` and
+   reapply only the parts that do not touch scope), and write no History. An empty diff → write History v+1
+   *"after the adversarial pass — ticket #<n> waiting on the owner"* and go on to step 7.
+7. Run `br-check.sh $1` again, then `git add <br.md and the files you edited> && git commit --only -m "docs($1): BR
+   after the adversarial pass" -- <exactly those files>` (name them explicitly, never `specs/` — P-29).
+8. STATE.md: `Working on: $1 · Phase 1 done`. `Next: /sdd-solo:start UC-### for the first UC in the slice's
+   ## Related Use Cases`.
 
-Không viết code. Không tạo thư mục UC.
+Do not write code. Do not create a UC folder.

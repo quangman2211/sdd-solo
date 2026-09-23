@@ -1,110 +1,111 @@
 #!/usr/bin/env bash
-# br-check.sh BR-### — kiểm cơ học tầng BR (Phase 1). exit 0 = dùng được.
-# BR là tầng trên cùng: BR sai thì mọi UC bên dưới đều sai, và bộ 24 kiểm ở cổng
-# DoR sẽ giúp người dùng sai một cách rất kỷ luật. Trước 3.2.0 tầng này không có
-# một kiểm nào. Xem #18.
-ID="$1"; [ -z "$ID" ] && { echo "dùng: br-check.sh BR-###"; exit 2; }
+# br-check.sh BR-### — the mechanical check of the BR layer (Phase 1). exit 0 = usable.
+# The BR is the top layer: a wrong BR makes every UC under it wrong, and the 24 checks at the
+# DoR gate will then help the user be wrong with great discipline. Before 3.2.0 this layer had
+# no check at all. See #18.
+ID="$1"; [ -z "$ID" ] && { echo "usage: br-check.sh BR-###"; exit 2; }
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"; BF="$(br_file "$ID" "$ROOT")"
-echo "Kiểm BR — $ID"
-[ -f "$BF" ] || { bad "không có ${BF#$ROOT/} — chạy /sdd-solo:init (6.x) hoặc /sdd-solo:intake (7.0 tạo lát br-###/)"; exit 1; }
+echo "BR check — $ID"
+[ -f "$BF" ] || { bad "no ${BF#$ROOT/} — run /sdd-solo:init (6.x) or /sdd-solo:intake (7.0 creates the br-###/ slice)"; exit 1; }
 if [ "$ID" = "BR-000" ]; then
-  info "BR-000 là BR mẫu của template — không kiểm. Viết BR-001 rồi kiểm cái đó."
+  info "BR-000 is the template sample BR — not checked. Write BR-001 and check that one."
   exit 0
 fi
 
-# ── BR-000 phải BIẾN MẤT khi đã có BR thật ────────────────────────────────
-# Tới 4.2.0 luật là "giữ nguyên BR-000 mẫu" — và đó là chỗ hỏng, đo được ở
-# runxops: BR-000 mang CON-001/002/003, BR-001 thật cũng mang CON-001/002/003.
-# `id_exists()` tra CON bằng grep DÒNG ĐẦU TIÊN khớp, nên nó luôn trúng bộ của
-# BR-000. Hệ quả thật, không phải giả định:
-#   · UC-009 trích CON-002 → cổng DoR khớp vào "bản ghi thanh toán giữ 10 năm";
-#   · architecture.md ## Cấm viết "Không gọi API eBay. CON-001 — tài khoản cá
-#     nhân…" → design-check báo XANH bằng cách trỏ vào "hosting chia sẻ".
-# UC-009 đã qua cổng với những trích dẫn trỏ nhầm mục đó.
+# ── BR-000 must DISAPPEAR once a real BR exists ───────────────────────────
+# Up to 4.2.0 the rule was "keep the BR-000 sample" — and that is where it broke, measured at
+# runxops: BR-000 carried CON-001/002/003, and the real BR-001 also carried CON-001/002/003.
+# `id_exists()` looks a CON up by grepping THE FIRST MATCHING LINE, so it always hit the BR-000
+# set. The real consequences, not hypotheticals:
+#   · UC-009 quoting CON-002 → the DoR gate matched "payment records kept for 10 years";
+#   · architecture.md ## Forbidden saying "No eBay API calls. CON-001 — a personal
+#     account…" → design-check reported GREEN by pointing at "shared hosting".
+# UC-009 went through the gate with quotations pointing at the wrong item.
 #
-# Một BR mẫu có ích đúng lúc chưa có gì để đọc. Sau đó nó là một dãy ID giả
-# đứng trước mọi ID thật trong cùng một file — và ID giả đứng trước thì mọi phép
-# tra "dòng đầu tiên khớp" đều rơi vào nó. Chữa bằng cách đánh lại số CON của BR
-# thật là chữa triệu chứng; chữa đúng chỗ là BR mẫu phải đi khi hết việc.
-# "BR THẬT" = tiêu đề không còn `<...>`. Đếm bằng SỰ CÓ MẶT của một ID là sai:
-# khuôn phát ra sẵn `# BR-001: <Tên business requirement>`, nên repo vừa scaffold
-# cũng có "BR-001" và phép kiểm này báo đỏ ngay lần cài đầu — đỏ oan trên một repo
-# chưa ai đụng vào là cách nhanh nhất dạy người ta phớt lờ dòng đỏ.
+# A sample BR is useful exactly while there is nothing else to read. After that it is a run of
+# fake IDs standing in front of every real ID in the same file — and with a fake ID in front,
+# every "first matching line" lookup lands on it. Renumbering the real BR CONs treats the
+# symptom; the real fix is that the sample BR must leave when its job is done.
+# "A REAL BR" = a title with no `<...>` left. Counting by the PRESENCE of an ID is wrong: the
+# template ships `# BR-001: <Business requirement name>`, so a freshly scaffolded repo also has
+# a "BR-001" and this check would go red on the first install — a false red on a repo nobody has
+# touched is the fastest way to teach people to ignore red lines.
 REAL=""
 for b in $(br_ids "$ROOT" | grep -v '^BR-000$'); do
   grep -qE "^# $b:.*<[^>]+>" "$BF" && continue
   REAL="$b"; break
 done
 if [ -n "$REAL" ] && grep -qE '^# BR-000\b' "$BF"; then
-  bad "br.md đã có $REAL thật mà BR-000 (BR mẫu) vẫn còn — xoá cả mục BR-000 đi"
-  info "  BR-000 mang CON-001/002/003 của riêng nó. Còn nó thì mọi phép tra CON-###"
-  info "  bằng 'dòng đầu tiên khớp' đều trúng ví dụ dạy việc, không trúng CON thật."
-  info "  Cần đọc lại BR mẫu: nó nằm trong template của plugin, không mất đi đâu."
+  bad "br.md already has a real $REAL while BR-000 (the sample BR) is still there — delete the whole BR-000 section"
+  info "  BR-000 carries its own CON-001/002/003. While it is there, every CON-### lookup"
+  info "  by 'the first matching line' hits the teaching example, not the real CON."
+  info "  If you need to read the sample BR again: it is in the plugin templates, it is not lost."
 fi
 B="$(br_body "$ID" "$ROOT")"
-[ -z "$B" ] && { bad "không tìm thấy '# $ID: ...' trong ${BF#$ROOT/}"; exit 1; }
+[ -z "$B" ] && { bad "cannot find '# $ID: ...' in ${BF#$ROOT/}"; exit 1; }
 
-# ── Brief nguồn (#34) ─────────────────────────────────────────────────────
-# Ba lớp kiểm của plugin đều đo TRONG specs/: gate-check đo trong specs/, verify
-# đọc trong specs/, ba vai adversarial cố ý mù với brief. Nên sau intake, brief
-# thành file CHỈ-GHI — hai tài liệu cãi nhau nhiều ngày mà không phép kiểm nào
-# có nhiệm vụ nhìn tới. Đây là chỗ duy nhất trong cả bộ nhìn ra ngoài specs/.
+# ── The source brief (#34) ────────────────────────────────────────────────
+# All three checking layers of the plugin measure INSIDE specs/: gate-check measures inside
+# specs/, verify reads inside specs/, the three adversarial roles are deliberately blind to the
+# brief. So after intake the brief becomes a WRITE-ONLY file — two documents contradicting each
+# other for days with no check whose job is to look. This is the only place in the whole set that looks outside specs/.
 BP="$(brief_path "$ROOT")"
 if [ -n "$BP" ]; then
   if [ ! -f "$ROOT/$BP" ]; then
-    bad "brief_path=$BP nhưng file không tồn tại — config khai một nguồn không có thật"
+    bad "brief_path=$BP but the file does not exist — the config declares a source that is not there"
   else
     BS="$(sha "$ROOT/$BP" | cut -c1-12)"
     BREC="$(brief_rec_sha "$ROOT")"
     if [ -z "$BREC" ]; then
-      warn "br.md chưa ghi '**Nguồn brief:** $BP · sha256 <12 hex> · nạp <ngày>' — không truy được BR chuyển ra từ bản brief nào"
+      warn "br.md does not record '**Brief source:** $BP · sha256 <12 hex> · loaded <date>' — there is no way to trace which brief the BR was converted from"
     elif [ "$BREC" != "$BS" ]; then
-      bad "brief đã đổi kể từ lần intake (sha $BREC → $BS) — br.md và brief có thể đang nói ngược nhau"
-      info "đối chiếu rồi cập nhật dòng '**Nguồn brief:**', hoặc chạy lại /sdd-solo:intake $BP"
+      bad "the brief changed since intake (sha $BREC → $BS) — br.md and the brief may now contradict each other"
+      info "compare them and update the '**Brief source:**' line, or run /sdd-solo:intake $BP again"
     else
-      ok "brief nguồn khớp sha đã ghi ($BS)"
+      ok "the source brief matches the recorded sha ($BS)"
     fi
   fi
 fi
 
 sec() { printf '%s' "$B" | awk -v h="$1" 'index($0,h)==1{f=1;next} f&&/^## /{exit} f{print}'; }
-# secre — như sec nhưng nhận MẪU (kwh <tên>), cho tiêu đề mục có hai thứ tiếng
+# secre — like sec but taking a PATTERN (kwh <name>), for a section heading in either language
 secre() { printf '%s' "$B" | awk -v re="$1" '$0 ~ re {f=1;next} f&&/^## /{exit} f{print}'; }
-# nonempty/filled dùng bản chung ở lib.sh (4.0.1)
+# nonempty/filled use the shared version in lib.sh (4.0.1)
 
-# ── 7.0: tầng 0 — BR tự nhận là một lát, và không co lại điều vision.md cấm co ──
-# Ca thật (plan 7.0 §1): BR-003 của runxops bị co ba lần qua ba lượt adversarial — mỗi lần đều đúng luật
-# "không số thì không vào Background" — tới khi "chiều ghi" nằm ở Out of Scope mà không ai thấy, vì không
-# tầng nào giữ ý định. Ba kiểm dưới chỉ chạy ở bố cục 7.0 (repo 6.x chưa migrate không có vision.md).
+# ── 7.0: layer 0 — a BR claims to be a slice, and does not narrow what vision.md forbids narrowing ──
+# Real case (plan 7.0 §1): runxops BR-003 was narrowed three times over three adversarial rounds — each time
+# correctly by the rule "no number, no Background entry" — until "the write direction" sat in Out of Scope
+# with nobody noticing, because no layer held the intent. The three checks below only run on the 7.0 layout
+# (an unmigrated 6.x repo has no vision.md).
 V7=0; [ "$(layout "$ROOT")" = v7 ] && V7=1
 if [ "$V7" = 1 ]; then
   VF="$(find_vision "$ROOT")"
   if [ -z "$VF" ]; then
-    warn "chưa có specs/vision.md — tầng 0 chưa viết; BR không có gì để tự nhận lát (/sdd-solo:intake bước 0)"
+    warn "there is no specs/vision.md yet — layer 0 is unwritten; a BR has nothing to claim a slice against (/sdd-solo:intake step 0)"
   else
-    # (a) **Lát:** <nghề> · <tên lát> — nghề phải là thư mục chứa BR, tên lát phải có ở bảng ## Nghề và lát
+    # (a) **Slice:** <craft> · <slice name> — the craft must be the directory holding the BR, and the slice name must be in the ## Crafts and slices table
     LAT="$(printf '%s' "$B" | grep -oE "^- $(kwl slice) *.*" | head -1 | sed -E "s/^- $(kwl slice) *//")"
     LN="$(printf '%s' "$LAT" | awk -F' · ' '{print $1}' | sed 's/[[:space:]]*$//')"
-    # Tên lát = mọi thứ sau tiền tố nghề ĐẦU TIÊN. Tới 7.0.0 dựng bằng awk -F' · ' '{$1=""…}' — awk ghép lại các
-    # trường bằng OFS (dấu cách), nên lát tên có ' · ' bên trong mất dấu chấm giữa và đỏ oan (runxops: 'core · đăng
-    # nhập · app quản lý (console)' → 'đăng nhập app quản lý (console)'). Cắt đúng một tiền tố, không tách trường.
+    # The slice name is everything after the FIRST craft prefix. Up to 7.0.0 this was built with awk -F' · ' '{$1=""…}' —
+    # awk rejoins the fields with OFS (a space), so a slice name containing ' · ' lost the middle separator and went falsely
+    # red (runxops: 'core · sign in · admin app (console)' → 'sign in admin app (console)'). Cut exactly one prefix, do not split fields.
     LT=""; case "$LAT" in *" · "*) LT="${LAT#* · }";; esac
     LT="$(printf '%s' "$LT" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/ — .*//')"
     OWN="$(owner_of_br "$ID" "$ROOT")"
     VT="$(awk -v re="$(kwh craftslice)" '$0 ~ re {f=1;next} f&&/^## /{exit} f' "$VF" | grep -E '^\|' | grep -vE '^\|[- |]*\|$')"
     if [ -z "$LAT" ]; then
-      bad "thiếu dòng '- **Lát:** <nghề> · <tên lát>' trong ## Metadata — BR nào cũng phải tự nhận là một lát ở specs/vision.md"
+      bad "missing the line '- **Slice:** <craft> · <slice name>' in ## Metadata — every BR must claim to be a slice in specs/vision.md"
     elif ! nonempty "$LT" || printf '%s' "$LT" | grep -qE '^___$|<'; then
-      bad "**Lát:** chưa có tên lát (còn ___ hoặc <...>) — chọn một dòng ở bảng ## Nghề và lát của specs/vision.md"
+      bad "**Slice:** has no slice name yet (still ___ or <...>) — pick a row from the ## Crafts and slices table of specs/vision.md"
     elif [ -n "$OWN" ] && [ "$LN" != "$OWN" ]; then
-      bad "**Lát:** nói nghề '$LN' nhưng BR nằm ở specs/$OWN/ — hai chỗ phải cùng một nghề"
+      bad "**Slice:** names the craft '$LN' but the BR lives in specs/$OWN/ — the two places must name the same craft"
     elif ! printf '%s\n' "$VT" | grep -F -- "$LT" | grep -qE "^\| *$LN *\|"; then
-      bad "**Lát:** '$LN · $LT' không có trong bảng ## Nghề và lát của specs/vision.md — thêm dòng ở đó (chủ dự án) hoặc sửa tên cho khớp"
+      bad "**Slice:** '$LN · $LT' is not in the ## Crafts and slices table of specs/vision.md — add the row there (the owner does that) or fix the name to match"
     else
-      ok "lát: $LN · $LT — có ở specs/vision.md"
+      ok "slice: $LN · $LT — present in specs/vision.md"
     fi
-    # (b) Out of Scope không được chứa từ khoá của ## Không thu hẹp — trừ khi chủ dự án chốt có ngày
+    # (b) Out of Scope may not contain a keyword of ## Do not narrow — unless the owner settled it with a date
     OOS="$(sec '## Out of Scope' | grep -E '^[[:space:]]*[-*] ')"
     KEYS="$(awk -v re="$(kwh nonarrow)" '$0 ~ re {f=1;next} f&&/^## /{exit} f' "$VF" | grep -E '^[[:space:]]*[-*] ' | sed -E 's/^[[:space:]]*[-*] *//' \
            | awk '{ if (match($0, /\*\*[^*]+\*\*/)) print substr($0, RSTART+2, RLENGTH-4); else print }' | grep -vE '^<|^___$' | awk 'NF')"
@@ -117,10 +118,10 @@ if [ "$V7" = 1 ]; then
         while IFS= read -r ln; do
           [ -n "$ln" ] || continue
           if printf '%s' "$ln" | grep -qE "($(kw narrowed)) [0-9]{4}-[0-9]{2}-[0-9]{2}"; then
-            info "Out of Scope thu hẹp '$k' có chủ ý (chủ dự án chốt): $(printf '%s' "$ln" | cut -c1-90)"
+            info "Out of Scope narrows '$k' deliberately (settled by the owner): $(printf '%s' "$ln" | cut -c1-90)"
           else
             HITN=$((HITN+1))
-            bad "Out of Scope co lại điều vision.md không cho co — '$k': $(printf '%s' "$ln" | cut -c1-100)"
+            bad "Out of Scope narrows something vision.md forbids narrowing — '$k': $(printf '%s' "$ln" | cut -c1-100)"
           fi
         done <<EOF_H
 $H
@@ -128,61 +129,61 @@ EOF_H
       done <<EOF_K
 $KEYS
 EOF_K
-      [ "$HITN" -gt 0 ] && info "muốn thu hẹp thật thì dòng đó ghi 'cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD' (quyết định của chủ dự án, có ngày); không thì đưa ra khỏi Out of Scope"
-      [ "$HITN" -eq 0 ] && ok "Out of Scope không co lại điều nào của ## Không thu hẹp ($(printf '%s\n' "$KEYS" | grep -c .) từ khoá)"
+      [ "$HITN" -gt 0 ] && info "to really narrow it, that line must read 'deliberately narrowed — owner decided YYYY-MM-DD' (an owner decision, with a date); otherwise take it out of Out of Scope"
+      [ "$HITN" -eq 0 ] && ok "Out of Scope narrows nothing from ## Do not narrow ($(printf '%s\n' "$KEYS" | grep -c .) keywords)"
     elif [ -z "$KEYS" ]; then
-      warn "specs/vision.md ## Không thu hẹp chưa có điều nào (dạng '- **từ khoá** — giải thích') — không có gì để giữ BR khỏi co"
+      warn "specs/vision.md ## Do not narrow has no item yet (in the form '- **keyword** — explanation') — nothing is holding the BR against narrowing"
     fi
-    # Out of Scope mỗi dòng nói nó đi đâu — cảnh báo (khuôn 7.0 bảo thế; chưa đủ ca thật để chặn)
+    # Every Out of Scope line says where it went — a warning (the 7.0 template says so; not enough real cases to block)
     NOD_OOS="$(printf '%s\n' "$OOS" | grep -vE "→|$(kw narrow)" | grep -vE '<[^>]+>' | grep -c .)"
-    [ "$NOD_OOS" -gt 0 ] && warn "$NOD_OOS dòng Out of Scope chưa nói đi đâu — thêm '→ lát ___' hoặc '→ mở lại khi ___' (hoặc 'cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD')"
+    [ "$NOD_OOS" -gt 0 ] && warn "$NOD_OOS Out of Scope lines do not say where they went — add '→ slice ___' or '→ reopen when ___' (or 'deliberately narrowed — owner decided YYYY-MM-DD')"
   fi
 fi
 
-# 1. tiêu đề
-grep -qE "^# $ID: *[^ <]" "$BF" && ok "có tiêu đề" || bad "dòng '# $ID:' chưa có tên thật"
+# 1. the title
+grep -qE "^# $ID: *[^ <]" "$BF" && ok "has a title" || bad "the line '# $ID:' has no real name yet"
 
-# 2. Background — khẳng định không nguồn thì thuộc Open Questions, không thuộc đây
+# 2. Background — an assertion with no source belongs in Open Questions, not here
 BG="$(sec '## Background')"
-filled "$BG" && ok "## Background có nội dung" || bad "## Background rỗng hoặc còn placeholder"
-# Câu 5 của intake ("có cách nào không xây phần mềm không?") là câu duy nhất chặn
-# được việc xây thứ không cần tồn tại — nhưng trả lời "chưa nghĩ tới" chỉ thành một
-# Open Question, mà Open Question không chặn gì. BR chưa chứng minh được lý do tồn
-# tại đi qua cổng y hệt BR đã chứng minh xong. Cảnh báo, không đỏ. Xem #22.
+filled "$BG" && ok "## Background has content" || bad "## Background is empty or still a placeholder"
+# Question 5 of intake ("is there a way not to build software at all?") is the only question that can
+# stop something that need not exist from being built — but answering "have not thought about it" only
+# produces an Open Question, and an Open Question blocks nothing. A BR that has not proved its reason to
+# exist goes through the gate exactly like one that has. A warning, not red. See #22.
 printf '%s' "$BG" | grep -qE "$(kwl whybuild)" \
-  && ok "Background có dòng 'Vì sao vẫn xây'" \
-  || warn "Background chưa có dòng '**Vì sao vẫn xây:**' — chưa ai chứng minh phần mềm này cần tồn tại; đây là chỗ vai hoài nghi sẽ bấu vào"
-# #46: BR chuyển từ brief phải có lời của người trả tiền, không chỉ lời của agent viết brief.
+  && ok "Background has a 'Why still build' line" \
+  || warn "Background has no '**Why still build:**' line — nobody has shown this software needs to exist; this is where the sceptic role will push"
+# #46: a BR converted from a brief must carry the words of whoever pays, not only the words of the agent who wrote the brief.
 if printf '%s' "$(sec '## Metadata')" | grep -qiE "($(kw source)):\*\* *brief"; then
   printf '%s' "$BG" | grep -qE "$(kwl pain)" \
-    && ok "Background có dòng 'Khổ gì, vì sao rơi' (hỏi bằng lời, #46)" \
-    || warn "BR chuyển từ brief mà Background chưa có dòng '**Khổ gì, vì sao rơi:**' — intake từ brief phải hỏi user bằng lời trước khi điền Goal/In Scope (#46); brief không thay được câu trả lời đó"
+    && ok "Background has a 'What hurts, why it lands here' line (asked in words, #46)" \
+    || warn "a BR converted from a brief whose Background has no '**What hurts, why it lands here:**' line — intake from a brief must ask the user in words before filling Goal/In Scope (#46); a brief cannot stand in for that answer"
 fi
 
-# 3. Goal — một câu, và không được mơ hồ khi chưa có số nào để đo
+# 3. Goal — one sentence, and not vague while there is no number to measure it by
 G="$(sec '## Goal')"
 SM="$(sec '## Success Metrics')"
-if ! filled "$G"; then bad "## Goal rỗng hoặc còn placeholder"
+if ! filled "$G"; then bad "## Goal is empty or still a placeholder"
 else
-  ok "## Goal có nội dung"
-  # 7.4 (P-25): chỉ đếm dấu chấm của CÂU GOAL — dòng khai nguồn (*Nguồn: …*, in nghiêng, blockquote, chú thích) dưới
-  # câu Goal là ghi chú, không phải câu thứ hai.
+  ok "## Goal has content"
+  # 7.4 (P-25): only count the full stops of the GOAL SENTENCE — a source line (*Source: …*, italics, a blockquote,
+  # a footnote) under the Goal sentence is a note, not a second sentence.
   DOTS="$(printf '%s' "$G" | grep -vE "^[[:space:]]*(\*|_|>|<!--|$(kw source))" | grep -o '\.' | wc -l | tr -d ' ')"
-  [ "$DOTS" -gt 1 ] && warn "## Goal có $DOTS dấu chấm — Goal nên gói trong MỘT câu"
+  [ "$DOTS" -gt 1 ] && warn "## Goal has $DOTS full stops — a Goal should fit in ONE sentence"
   V="$(printf '%s' "$G" | grep -oiE "$(kw vague)" | head -1)"
   if [ -n "$V" ]; then
     if printf '%s' "$SM" | grep -qE '[0-9]'; then
-      ok "Goal có từ mơ hồ '$V' nhưng Success Metrics có số — chấp nhận"
+      ok "the Goal uses the vague word '$V' but Success Metrics has numbers — accepted"
     else
-      bad "Goal dùng '$V' mà Success Metrics chưa có số nào — nói rõ tốt hơn ở chỗ nào, đo bằng gì"
+      bad "the Goal uses '$V' while Success Metrics has no number — say what gets better where, and what measures it"
     fi
   fi
 fi
 
-# 4. Success Metrics — SỐ được phép để ___, CÁCH ĐO thì không.
-# Đây là ranh giới của cả tầng: "___" là dốt một cách trung thực; thiếu cách đo
-# là một metric không bao giờ kiểm được, tức một câu nói hay.
-if ! nonempty "$SM"; then bad "## Success Metrics rỗng"
+# 4. Success Metrics — the NUMBER may be ___, HOW IT IS MEASURED may not.
+# This is the boundary of the whole layer: "___" is honest ignorance; a missing measurement method
+# is a metric that can never be checked, that is, a nice-sounding sentence.
+if ! nonempty "$SM"; then bad "## Success Metrics is empty"
 else
   N=0
   while IFS= read -r ln; do
@@ -190,147 +191,146 @@ else
     N=$((N+1))
     M="$(printf '%s' "$ln" | sed -nE "s/.*($(kw measuredby)): *//p" | sed 's/[)·].*//' | tr -d '_ ')"
     if [ -z "$M" ]; then
-      bad "metric thiếu cách đo: $(printf '%s' "$ln" | cut -c1-58)"
+      bad "a metric with no measurement method: $(printf '%s' "$ln" | cut -c1-58)"
     fi
   done <<< "$SM"
-  [ "$N" = 0 ] && bad "## Success Metrics không có dòng '- ' nào" \
-                || ok "$N metric, mỗi cái có cách đo"
+  [ "$N" = 0 ] && bad "## Success Metrics has no '- ' line" \
+                || ok "$N metrics, each with a measurement method"
 fi
 
-# 5. In Scope / Out of Scope — BR không loại trừ gì gần như luôn là BR chưa nghĩ xong
-filled "$(sec '## In Scope')" && ok "## In Scope có nội dung" || bad "## In Scope rỗng hoặc còn placeholder"
-filled "$(sec '## Out of Scope')" && ok "## Out of Scope có nội dung" \
-  || bad "## Out of Scope rỗng — làm một mình thì dòng này là thứ duy nhất cản scope"
+# 5. In Scope / Out of Scope — a BR that excludes nothing is almost always a BR not thought through
+filled "$(sec '## In Scope')" && ok "## In Scope has content" || bad "## In Scope is empty or still a placeholder"
+filled "$(sec '## Out of Scope')" && ok "## Out of Scope has content" \
+  || bad "## Out of Scope is empty — working alone, this line is the only thing holding the scope back"
 
-# 6. CON — phải có phân loại và một câu phát biểu
+# 6. CON — must carry a classification and one statement
 CS="$(sec '## Constraints')"
 for c in $(printf '%s' "$CS" | grep -oE 'CON-[0-9]+' | sort -u); do
   L="$(printf '%s' "$CS" | grep -E "$c")"
   printf '%s' "$L" | grep -qiE "$c *(Technical|Regulatory|Timing|SLA)" \
-    || bad "$c thiếu phân loại (Technical / Regulatory / Timing/SLA)"
+    || bad "$c has no classification (Technical / Regulatory / Timing/SLA)"
   T="$(printf '%s' "$L" | sed -n 's/.*:\*\* *//p' | tr -d ' .')"
-  [ -z "$T" ] && bad "$c chưa có câu phát biểu" || ok "$c có phân loại và nội dung"
+  [ -z "$T" ] && bad "$c has no statement yet" || ok "$c has a classification and content"
 done
 
-# 6b. CON trùng số giữa HAI BR — quét CẢ FILE, không chỉ BR đang kiểm.
-# Số CON đánh riêng trong từng BR, nhưng ID thì dùng chung cả repo: UC trích
-# `CON-002` trống trơn, không kèm BR nào. Hai BR cùng có CON-002 thì mọi phép
-# tra đều trúng cái đứng trước, và cái đứng sau trở thành vô hình — không dòng
-# đỏ nào, vì ID vẫn "có tồn tại".
-# Kiểm này KHÔNG thừa sau khi BR-000 đi: hai BR THẬT cũng đụng nhau y hệt, và
-# đó là ca sẽ tới, vì mỗi BR viết ở một thời điểm khác nhau và không ai nhớ số
-# BR trước đã dùng tới đâu.
+# 6b. A CON number reused across TWO BRs — scan THE WHOLE FILE, not only the BR being checked.
+# CON numbers are allocated per BR, but the ID is used repo-wide: a UC quotes `CON-002` bare, with
+# no BR attached. If two BRs both have a CON-002 then every lookup hits the earlier one and the
+# later one becomes invisible — with no red line, because the ID still "exists".
+# This check is NOT redundant once BR-000 is gone: two REAL BRs collide exactly the same way, and
+# that case is coming, because each BR is written at a different time and nobody remembers how far
+# the previous BR numbered.
 DUP="$(strip_markup < "$BF" | awk '
-  # Bỏ qua BR còn là khuôn (tiêu đề còn `<...>`) — CON của nó cũng là khuôn, và
-  # `CON-001 ...` của khuôn đụng `CON-001` của BR-000 ngay trên repo vừa scaffold.
+  # Skip a BR that is still a template (its title still has `<...>`) — its CONs are templates too, and
+  # the template `CON-001 ...` collides with BR-000 CON-001 on a freshly scaffolded repo.
   /^# BR-/ { match($0, /BR-[0-9]+/); br = substr($0, RSTART, RLENGTH)
              skip = ($0 ~ /<[^>]+>/) ? 1 : 0; next }
   skip { next }
   /^-? *\*\*CON-[0-9]+/ {
     match($0, /CON-[0-9]+/); c = substr($0, RSTART, RLENGTH)
     if (!(c in owner))      { owner[c] = br }
-    else if (owner[c] != br) { print c "  (" owner[c] " và " br ")" }
+    else if (owner[c] != br) { print c "  (" owner[c] " and " br ")" }
   }' | sort -u)"
 if [ -n "$DUP" ]; then
-  bad "CON trùng số giữa hai BR — mọi phép tra chỉ thấy cái đứng trước:"
+  bad "a CON number is reused across two BRs — every lookup only sees the earlier one:"
   printf '%s\n' "$DUP" | sed 's/^/      /'
-  info "  đánh lại số cho bộ đứng sau, rồi sửa mọi chỗ trích nó."
+  info "  renumber the later set, then fix every place quoting it."
 fi
 
-# 7. Impact Map — không có nhánh đứt nghĩa là chưa map gì, chỉ là đường thẳng từ
-# Goal xuống danh sách việc đã định làm sẵn.
+# 7. Impact Map — without a broken-off branch nothing was mapped, it is just a straight line from
+# the Goal down to a list of work already decided on.
 IM="$(sec '## Impact Map')"
 if ! printf '%s' "$IM" | grep -qE '^[[:space:]]*(flowchart|graph)\b'; then
-  bad "## Impact Map chưa có khối mermaid flowchart"
+  bad "## Impact Map has no mermaid flowchart block"
 else
-  printf '%s' "$IM" | grep -qE '\-\.->' && ok "Impact Map có nhánh ngoài scope" \
-    || bad "Impact Map không có nhánh '-.->' nào — mọi thứ đều nối về Goal thì chưa map, chỉ là danh sách việc"
+  printf '%s' "$IM" | grep -qE '\-\.->' && ok "the Impact Map has an out-of-scope branch" \
+    || bad "the Impact Map has no '-.->' branch — if everything connects back to the Goal nothing was mapped, it is just a work list"
 fi
-# 7.5 (P-32): mọi khối mermaid của br.md phải render được — Impact Map vỡ thì cả mục thành chữ đỏ, mà br-check
-# tới 7.4 chỉ đếm dấu mũi tên nên vẫn ✓.
-mmd_lint "$(br_file "$ID" "$ROOT")" || bad "sơ đồ mermaid trong br.md không render được — sửa rồi chạy lại"
+# 7.5 (P-32): every mermaid block of br.md must render — a broken Impact Map turns the whole section into red
+# text, while br-check up to 7.4 only counted arrows and still printed ✓.
+mmd_lint "$(br_file "$ID" "$ROOT")" || bad "a mermaid diagram in br.md does not render — fix it and run again"
 
-# 8. Related Use Cases — hai chiều.
-# Chiều xuôi CHỈ cảnh báo: ở Phase 1 thì UC chưa tồn tại là chuyện bình thường,
-# BR viết trước UC. Đỏ ở đây thì mọi BR trung thực đều đỏ và không sửa được.
+# 8. Related Use Cases — both directions.
+# The forward direction only WARNS: in Phase 1 a UC that does not exist yet is normal, the BR is
+# written before the UC. Going red here would make every honest BR red with no way to fix it.
 RU="$(sec '## Related Use Cases')"
 for u in $(printf '%s' "$RU" | grep -oE 'UC-[0-9]+' | sort -u); do
-  [ -n "$(find_uc "$u" "$ROOT")" ] && ok "$u đã có file" \
-    || warn "$u chưa tồn tại — bình thường ở Phase 1, tạo bằng /sdd-solo:start $u"
-  # 7.4 (P-22): một UC ở bảng Related Use Cases của HAI lát — lát nào chủ? Tới 7.3 không phép kiểm nào đỏ; ca thật
-  # runxops: UC nằm ở hai bảng, /sdd-solo:state gợi hai lát cùng một việc. Lát kia nhắc bằng Upstream UC, không kê bảng.
+  [ -n "$(find_uc "$u" "$ROOT")" ] && ok "$u has a file" \
+    || warn "$u does not exist yet — normal in Phase 1, create it with /sdd-solo:start $u"
+  # 7.4 (P-22): one UC in the Related Use Cases table of TWO slices — which slice owns it? Up to 7.3 no check went red;
+  # real case at runxops: a UC in two tables, and /sdd-solo:state suggested two slices for one piece of work. The other slice points with Upstream UC, it does not list it in the table.
   OTH=""
   for b in $(br_ids "$ROOT" | grep -vx "$ID" | grep -v '^BR-000$'); do
     br_body "$b" "$ROOT" | sed -n '/^## Related Use Cases/,/^## /p' | grep -qE "$u([^0-9]|$)" && OTH="$OTH $b"
   done
-  [ -n "$OTH" ] && bad "$u có ở ## Related Use Cases của 2 bảng BR trở lên ($ID$OTH) — một UC thuộc một lát; lát kia trỏ bằng '**Upstream UC:**' của UC, không kê vào bảng"
+  [ -n "$OTH" ] && bad "$u appears in the ## Related Use Cases of 2 or more BR tables ($ID$OTH) — a UC belongs to one slice; the other slice points with the UC '**Upstream UC:**', it does not list it in the table"
 done
-# Chiều ngược thì ĐỎ: UC đã khai thuộc BR này mà BR không nhận là trôi thật, và
-# luôn sửa được. Cùng bài học hai chiều của #12, #15, #17.
+# The reverse direction IS red: a UC that declares it belongs to this BR while the BR does not claim
+# it is real drift, and it is always fixable. The same both-directions lesson as #12, #15, #17.
 for uf in $(all_uc_files "$ROOT"); do
-  # 7.0: UC nằm trong br-###/use-cases/ của lát là khai thuộc lát đó — không cần dòng Metadata
+  # 7.0: a UC inside the slice br-###/use-cases/ declares itself part of that slice — no Metadata line needed
   { [ "$(br_of "$uf")" = "$ID" ] || grep -qE "($(kw relbr)):.*$ID([^0-9]|$)" "$uf"; } || continue
   uid="$(basename "$uf" .md)"
   printf '%s' "$RU" | grep -qE "$uid([^0-9]|$)" \
-    || bad "$uid khai thuộc $ID nhưng ## Related Use Cases của $ID không liệt kê nó"
+    || bad "$uid declares it belongs to $ID but the ## Related Use Cases of $ID does not list it"
 done
 
-# 9. BR chuyển từ brief phải giữ lại dấu vết của thứ đã loại.
-# Luật 4 của intake trước 3.2.2 chỉ bảo "in danh sách" nên sản phẩm của nó sống
-# trong lời nói: đóng terminal là mất. Luật không để lại dấu vết trong file thì
-# không kiểm được, và cái gì không kiểm được thì cuối cùng sẽ trôi. Xem #21.
+# 9. A BR converted from a brief must keep a trace of what was dropped.
+# Rule 4 of intake before 3.2.2 only said "print the list", so its product lived in speech: closing
+# the terminal lost it. A rule that leaves no trace in a file cannot be checked, and whatever cannot
+# be checked eventually drifts. See #21.
 if printf '%s' "$B" | grep -qiE "$(kwl source).*brief"; then
   DR="$(secre "$(kwh droppedbrief)")"
   if filled "$DR" && printf '%s' "$DR" | grep -qE '^[[:space:]]*[-*] .*—'; then
-    ok "có ## Đã loại khỏi brief"
-    # ĐỊA CHỈ CHUYỂN TIẾP MÀ KHÔNG CÓ GÌ ĐI GIAO (#34). Một dòng ghi "thuộc
-    # tầng thiết kế" đọc như đã xử lý xong, nhưng không cơ chế nào mang nó đi.
-    # Ca thật: 'toàn bộ kiến trúc ba lớp' hoãn sang tầng thiết kế, hai ngày sau
-    # bản thiết kế viết ra kiến trúc NGƯỢC HẲN brief mà không ai đối chiếu.
-    # Từ 4.0.0 đích của loại dòng này là specs/internal/architecture.md, mục
-    # ## Đã chốt từ brief — một chỗ CÓ THẬT và design-check đọc tới.
-    # 7.0 (c): MỌI dòng loại phải có đích — `→ lát ___` (lát nào trong vision.md nhận) · `→ mở lại khi ___` ·
-    # `→ chuyển: <đích>` (mục kiến trúc). Không đích là hoãn vào hư không — plan 7.0 §1: ba thứ bị loại khỏi
-    # BR-003 không ai biết chúng thuộc lát nào. Ở 6.x vẫn chỉ cảnh báo như cũ (khối dưới).
+    ok "has a ## Dropped from brief"
+    # A FORWARDING ADDRESS WITH NOTHING BEING DELIVERED (#34). A line saying "belongs to the design
+    # layer" reads as handled, but no mechanism carries it there.
+    # Real case: "the whole three-layer architecture" was deferred to the design layer, and two days
+    # later the design wrote an architecture DIRECTLY OPPOSED to the brief with nobody comparing.
+    # Since 4.0.0 the destination of this kind of line is specs/architecture.md, section
+    # ## Settled from brief — a place that EXISTS and that design-check reads.
+    # 7.0 (c): EVERY dropped line must have a destination — `→ slice ___` (which slice in vision.md takes it) ·
+    # `→ reopen when ___` · `→ moved to: <destination>` (an architecture section). No destination means deferring into
+    # thin air — plan 7.0 §1: three things dropped from BR-003 and nobody knew which slice they belonged to. On 6.x it still only warns (the block below).
     if [ "$V7" = 1 ]; then
       NOD7="$(printf '%s' "$DR" | grep -E '^[[:space:]]*[-*] ' | grep -vE "→ *($(kw dest))" | grep -vE '^[[:space:]]*[-*] *<' | grep -c .)"
       if [ "$NOD7" -gt 0 ]; then
-        bad "$NOD7 dòng ## Đã loại khỏi brief không có đích — mỗi dòng thêm '→ lát <tên lát>' hoặc '→ mở lại khi <điều kiện>' (hay '→ chuyển: <đích>' nếu là mục kiến trúc)"
+        bad "$NOD7 lines of ## Dropped from brief have no destination — add '→ slice <slice name>' or '→ reopen when <condition>' to each (or '→ moved to: <destination>' for an architecture item)"
         printf '%s' "$DR" | grep -E '^[[:space:]]*[-*] ' | grep -vE "→ *($(kw dest))" | head -3 | cut -c1-110 | sed 's/^/      /'
       else
-        ok "mọi dòng ## Đã loại khỏi brief đều có đích (lát · mở lại khi · chuyển)"
+        ok "every ## Dropped from brief line has a destination (slice · reopen when · moved to)"
       fi
     fi
     FWD="$(printf '%s' "$DR" | grep -iE "speckit-plan|/plan|design\.md|ADR|Phase 5|$(kw deferarch)")"
     if [ "$V7" = 0 ] && [ -n "$FWD" ]; then
       NOD="$(printf '%s\n' "$FWD" | grep -vE "→ *($(kw fwddest))" | grep -c .)"
       if [ "$NOD" -gt 0 ]; then
-        warn "$NOD mục hoãn sang bước sau mà không ghi ĐÍCH — không cơ chế nào tự chuyển chúng đi"
-        info "mỗi dòng như vậy thêm '→ chuyển: <đích có thật>' (ADR-###, CHG-###, Open Question, hoặc một dòng trong plan.md)"
+        warn "$NOD items deferred to a later step with no DESTINATION — no mechanism moves them along"
+        info "add '→ moved to: <a real destination>' to each such line (ADR-###, CHG-###, an Open Question, or a line in plan.md)"
         printf '%s\n' "$FWD" | grep -vE "→ *($(kw fwddest))" | head -3 | sed 's/^/      /'
       else
-        ok "mọi mục hoãn đều ghi đích chuyển tiếp"
+        ok "every deferred item records where it was moved to"
       fi
     fi
   else
-    warn "Nguồn là brief mà không có ## Đã loại khỏi brief (mỗi dòng '- <mục> — <lý do>') — thứ bị bỏ đang không có chỗ nào ghi lại"
+    warn "the source is a brief but there is no ## Dropped from brief (one line each, '- <item> — <reason>') — what was dropped is recorded nowhere"
   fi
 fi
 
-# 10. adversarial pass — CẢNH BÁO, không đỏ. Phase 1 mềm hơn Phase 3: BR viết xong
-# đã dùng được để mở UC; ba vai là bước làm nó chắc, không phải điều kiện tồn tại.
+# 10. the adversarial pass — a WARNING, not red. Phase 1 is softer than Phase 3: a finished BR is
+# already usable to open UCs; the three roles are the step that makes it solid, not a condition of existence.
 AP="$(sec '## Adversarial pass')"
 printf '%s' "$AP" | grep -qE "($(kw rundate)): *[0-9]{4}-[0-9]{2}-[0-9]{2}" \
-  && ok "adversarial pass đã chạy" \
-  || warn "chưa chạy /sdd-solo:adversarial $ID — ba vai tầng BR hay bắt ra 'đây là giải pháp viết ngược thành lý do'"
+  && ok "the adversarial pass has run" \
+  || warn "/sdd-solo:adversarial $ID has not been run — the three BR-layer roles often catch 'this is a solution written backwards into a reason'"
 
-# 10b (5.1.0). Tới 5.0.0 phép kiểm trên là toàn bộ: có chữ "Ngày chạy:" là xanh. Không đếm
-# `→ ___`, không kiểm "→ Open Question" có dòng `- [ ]` nào khớp. Cùng lỗi #12 ("lời khai
-# `→ spec` trống không kiểm được") đã sửa ở gate-check cho UC năm bản trước — chưa bao giờ
-# lan sang BR. Đo ở runxops (peer báo, đo lại đúng): 30 câu, 10 còn `___`, 4 "→ Open
-# Question", và luật "không có để đó" ở skills/adversarial dòng 149 không script nào đọc.
-# Phase 1 ĐƯỢC PHÉP còn `___` (quyết định 3.x, vẫn đúng) — nên ĐẾM RA, không chặn.
-# Sau migrate --evidence thân nằm ở br.evidence.md, mặt tiền là một dòng đếm; đọc cả hai.
+# 10b (5.1.0). Up to 5.0.0 the check above was the whole thing: the words "Run date:" made it green. It did not
+# count `→ ___`, and did not check that a "→ Open Question" had a matching `- [ ]` line. The same bug as #12 ("an
+# empty `→ spec` claim cannot be checked"), fixed in gate-check for UCs five releases earlier — it never spread
+# to the BR. Measured at runxops (reported by a peer, re-measured and correct): 30 questions, 10 still `___`,
+# 4 "→ Open Question", and the rule "nothing is left hanging" at skills/adversarial line 149 that no script read.
+# Phase 1 IS ALLOWED to still hold `___` (a 3.x decision, still right) — so COUNT it, do not block.
+# After migrate --evidence the body lives in br.evidence.md and the front is one counting line; read both.
 APB="$AP"
 EVF="$(evidence_file "$ID" "$ROOT")"
 if printf '%s' "$AP" | grep -qE '→ .*evidence\.md' && [ -f "$EVF" ]; then
@@ -340,60 +340,60 @@ fi
 NQ="$(printf '%s\n' "$APB" | grep -cE '^[[:space:]]*-[[:space:]]*Q[0-9]+\b')"
 NB="$(printf '%s\n' "$APB" | grep -E '^[[:space:]]*-[[:space:]]*Q[0-9]+\b' | grep -cE '→[[:space:]]*`?___|^[^→]*$')"
 if [ "$NQ" -gt 0 ] && [ "$NB" -gt 0 ]; then
-  warn "adversarial: $NB/$NQ câu chưa có đầu ra (→ ___) — treo được ở Phase 1, nhưng đây là số nợ, đừng để nó chìm"
+  warn "adversarial: $NB of $NQ questions have no outcome yet (→ ___) — they may hang in Phase 1, but this is a debt, do not let it sink"
 fi
-# "→ Open Question" là lời khai: phải có một dòng `- [ ]` cùng BR nói về nó. Khớp bằng từ
-# khoá (3 từ dài nhất của câu, cần ≥ 2 trùng) — thưa có chủ ý: chắc chắn mồ côi (không có
-# dòng `- [ ]` nào cả) thì ĐỎ; khớp không ra thì CẢNH BÁO kèm câu, vì diễn đạt lại thì máy
-# chịu và đỏ oan dạy người ta phớt lờ.
+# "→ Open Question" is a claim: there must be a `- [ ]` line in the same BR about it. Matched by keyword
+# (the 3 longest words of the question, needing ≥ 2 hits) — deliberately sparse: a certain orphan (no `- [ ]`
+# line at all) is RED; a failed match is a WARNING with the question quoted, because rewording defeats a
+# machine and a false red teaches people to ignore it.
 OQB="$(sec '## Open Questions' | grep -E '^[[:space:]]*- \[ \]')"
 NOQC="$(printf '%s\n' "$APB" | grep -cE '→[[:space:]]*Open Question')"
 if [ "$NOQC" -gt 0 ]; then
   if [ -z "$OQB" ]; then
-    bad "adversarial khai $NOQC lần '→ Open Question' mà ## Open Questions không có dòng '- [ ]' nào — lời khai trỏ vào chỗ trống"
+    bad "adversarial claims '→ Open Question' $NOQC times but ## Open Questions has no '- [ ]' line — the claim points at empty space"
   else
     printf '%s\n' "$APB" | grep -E '→[[:space:]]*Open Question' | while IFS= read -r q; do
       KW="$(printf '%s' "$q" | sed 's/→.*//' | tr -c '[:alnum:]àáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđÀÁẢÃẠÂẦẤẨẪẬĂẰẮẲẴẶÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐ' '\n' \
             | awk 'length($0)>=5' | awk '{print length($0), $0}' | sort -rn | head -3 | awk '{print $2}')"
       HIT=0
       for w in $KW; do printf '%s\n' "$OQB" | grep -qiF "$w" && HIT=$((HIT+1)); done
-      [ "$HIT" -lt 2 ] && warn "adversarial '→ Open Question' chưa thấy dòng '- [ ]' nào khớp: $(printf '%s' "$q" | cut -c1-70)…"
+      [ "$HIT" -lt 2 ] && warn "adversarial '→ Open Question' with no matching '- [ ]' line found: $(printf '%s' "$q" | cut -c1-70)…"
     done
   fi
 fi
-# 10c (5.1.0). Ba vai đọc BẢN NÀO? Adversarial ghi "trên vN" hoặc chỉ có ngày; History
-# ghi vN mới nhất. Ba vai chạy trên v1 mà BR đã sang v3 thì câu đắt nhất của tầng này
-# ("đây có thật là BR không") được hỏi trên một văn bản không còn tồn tại. Chỉ nói ra.
+# 10c (5.1.0). WHICH VERSION did the three roles read? Adversarial records "on vN" or only a date; History
+# records the latest vN. If the three roles ran on v1 while the BR is already v3, then the most expensive
+# question of this layer ("is this really a BR") was asked about a document that no longer exists. Just say it.
 HV="$(sec '## History' | grep -oE '^- v[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -1)"
 AV="$(printf '%s' "$AP" | grep -oE "($(kw onv))[0-9]+" | grep -oE '[0-9]+' | sort -n | tail -1)"
 if [ -n "$HV" ] && [ -n "$AV" ] && [ "$AV" -lt "$HV" ]; then
-  warn "ba vai chạy trên v$AV, BR đã là v$HV — hai vai kia chưa đọc bản hiện tại; chạy lại hay ghi rõ vì sao không"
+  warn "the three roles ran on v$AV, the BR is already v$HV — the other two roles have not read the current version; run again or record why not"
 elif [ -n "$HV" ] && [ -z "$AV" ]; then
   AD="$(printf '%s' "$AP" | grep -oE "($(kw rundate)): *[0-9-]+" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)"
   HD="$(sec '## History' | grep -oE '\(20[0-9]{2}-[0-9]{2}-[0-9]{2}\)' | tr -d '()' | sort | tail -1)"
-  [ -n "$AD" ] && [ -n "$HD" ] && [ "$AD" \< "$HD" ] && warn "adversarial chạy $AD, History sửa tới $HD — ba vai chưa đọc bản sau; ghi 'trên vN' vào Ngày chạy để đo được"
+  [ -n "$AD" ] && [ -n "$HD" ] && [ "$AD" \< "$HD" ] && warn "adversarial ran $AD, History was edited up to $HD — the three roles have not read the later version; write 'on vN' into the Run date so it can be measured"
 fi
 
-# 11. Bao nhiêu câu treo là treo THẬT, bao nhiêu là chỗ trống.
-# '___' là đầu ra hợp lệ và không được biến mất. Nhưng khi nó chiếm đa số áp đảo
-# thì đó không còn là "đã cân nhắc và chưa quyết được" — đó là "không có gì để
-# cân". Đo được thì nói ra, đừng im lặng. Xem #25.
+# 11. How many hanging questions really hang, and how many are just blank spots.
+# '___' is a valid outcome and must not disappear. But when it is the overwhelming majority it is no
+# longer "weighed and not yet decided" — it is "there was nothing to weigh". If it can be measured,
+# say it, do not stay silent. See #25.
 OQL="$(sec '## Open Questions' | grep -cE '^[[:space:]]*- \[ \]')"; [ -z "$OQL" ] && OQL=0
 OQE="$(sec '## Open Questions' | grep -cE "($(kw interim)): *_{2,}")"; [ -z "$OQE" ] && OQE=0
 if [ "$OQL" -ge 3 ] && [ "$OQE" -gt $((OQL/2)) ]; then
-  warn "$OQE/$OQL câu treo có 'quyết định tạm' rỗng — quá nửa. Câu nào chưa có gì để cân thì nó chưa phải câu hỏi đã chín; /sdd-solo:adversarial $ID sẽ trình từng câu kèm ngữ cảnh."
+  warn "$OQE of $OQL hanging questions have an empty 'interim decision' — more than half. A question with nothing to weigh is not a ripe question yet; /sdd-solo:adversarial $ID will present each one with its context."
 elif [ "$OQL" -gt 0 ]; then
-  ok "$OQL câu treo, $OQE câu chưa có quyết định tạm"
+  ok "$OQL hanging questions, $OQE of them with no interim decision"
 fi
 
 # 12. History
 printf '%s' "$(sec '## History')" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}' \
-  && ok "History có dòng ghi ngày" || bad "## History chưa có dòng 'v1 (YYYY-MM-DD)'"
+  && ok "History has a dated line" || bad "## History has no 'v1 (YYYY-MM-DD)' line"
 
-# 13. ___ là hợp lệ ở Phase 1 — cảnh báo, không đỏ. Ép điền sớm đẻ ra đúng loại
-# số bịa mà cả bước intake đang cố chặn.
+# 13. ___ is legitimate in Phase 1 — a warning, not red. Forcing it filled in early produces exactly the
+# kind of invented number the whole intake step is trying to prevent.
 U="$(printf '%s' "$B" | grep -o '___' | wc -l | tr -d ' ')"
-[ "$U" -gt 0 ] && warn "còn $U chỗ ___ — hợp lệ ở Phase 1, nhưng là nợ: mỗi chỗ nên có một dòng Open Question"
+[ "$U" -gt 0 ] && warn "$U ___ spots left — legitimate in Phase 1, but a debt: each one should have an Open Question line"
 
 echo
-if [ "$FAIL" -eq 0 ]; then echo "BR DÙNG ĐƯỢC ($WARN cảnh báo)."; exit 0; else echo "BR CHƯA DÙNG ĐƯỢC — $FAIL lỗi, $WARN cảnh báo."; exit 1; fi
+if [ "$FAIL" -eq 0 ]; then echo "BR USABLE ($WARN warnings)."; exit 0; else echo "BR NOT USABLE — $FAIL errors, $WARN warnings."; exit 1; fi

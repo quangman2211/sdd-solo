@@ -1,116 +1,117 @@
-<!-- Một lát = một thư mục `specs/<core|nghề>/br-###/` gồm `br.md` (file này) · `evidence.md`
-     (chứng cứ dài, mở khi tranh chấp) · `use-cases/UC-###-slug/`. Từ 7.0 không còn `specs/br.md`
-     gộp: mỗi BR một file, đúng một lát trong `specs/vision.md`.
+<!-- One slice = one folder `specs/<core|craft>/br-###/` holding `br.md` (this file) · `evidence.md`
+     (the long evidence, opened when something is disputed) · `use-cases/UC-###-slug/`. Since 7.0 there
+     is no combined `specs/br.md`: one file per BR, exactly one slice in `specs/vision.md`.
 
-     ĐÂY LÀ MẪU. Đọc để thấy một BR viết đủ trông thế nào, rồi `/sdd-solo:intake` tạo `br-001/`
-     ở đúng nghề. `br-check.sh` bỏ qua `BR-000`. Xoá cả thư mục này khi không cần nữa.
+     THIS IS A SAMPLE. Read it to see what a fully written BR looks like, then `/sdd-solo:intake` creates
+     `br-001/` in the right craft. `br-check.sh` skips `BR-000`. Delete this whole folder when you no
+     longer need it.
 
-     Quy tắc quan trọng nhất của tầng này: `___` là câu trả lời hợp lệ, số bịa thì không.
-     Chưa đo được thì để `___` và ghi cách sẽ đo. Một con số đẹp không nguồn ở đây sẽ được cả
-     bộ 24 kiểm ở cổng DoR bảo vệ rất kỷ luật suốt phần đời còn lại của dự án.
-     Kiểm bằng máy: .sdd/scripts/br-check.sh BR-001 -->
+     The most important rule of this layer: `___` is a valid answer, an invented number is not.
+     Cannot measure it yet? Leave `___` and write down how you will measure. A pretty number with no
+     source here will be defended very diligently by all 24 DoR gate checks for the rest of the project's life.
+     Machine check: .sdd/scripts/br-check.sh BR-001 -->
 
-# BR-000: Khách tự kích hoạt plugin đã mua, không cần hỗ trợ thủ công
+# BR-000: Buyers activate the plugin they paid for, with no manual support
 
 ## Metadata
 - **Status:** approved
-- **Lát:** core · lát 1 "khách tự kích hoạt" — tên lát có ở bảng `## Nghề và lát` của `specs/vision.md`
-- **Nguồn:** phỏng vấn (/sdd-solo:intake)
+- **Slice:** core · slice 1 "self-activation" — the slice name appears in the `## Crafts and slices` table of `specs/vision.md`
+- **Source:** interview (/sdd-solo:intake)
 - **Target release:** v1
 - **Last updated:** 2026-01-15
 
 ## Background
-Tháng 12/2025 bán được 41 đơn plugin. 23 đơn trong đó nhắn tin riêng cho người bán để xin
-kích hoạt, trung bình 2 lượt qua lại mỗi đơn (đếm tay trong inbox, tuần 08–14/12). Người bán
-chỉ trả lời được vào buổi tối, nên khách mua ngoài giờ phải chờ tới hôm sau mới dùng được
-thứ đã trả tiền.
+December 2025 sold 41 plugin orders. 23 of those messaged the seller directly to ask for activation,
+on average 2 round trips per order (hand-counted in the inbox, week of 08–14 Dec). The seller can only
+reply in the evening, so a buyer who purchases outside those hours waits until the next day to use
+what they already paid for.
 
-**Vì sao vẫn xây:** có cách không-phần-mềm — gửi key tay theo lô mỗi tối. Bỏ vì CON-003 giới hạn
-người bán một lần mỗi ngày, nên khách mua buổi sáng vẫn phải chờ tới tối, tức không giải quyết
-được đúng chỗ đau. Hai phương án khác đã cân: thuê người trực (không đủ đơn để trả lương) và bán
-qua sàn có sẵn cơ chế cấp key (mất 20% doanh thu).
+**Why still build:** there is a non-software route — send keys by hand in a batch every evening. Dropped
+because CON-003 limits the seller to once a day, so a morning buyer still waits until evening, which does
+not solve the actual pain. Two other options were weighed: hiring someone to staff it (not enough orders
+to pay a wage) and selling through a marketplace that issues keys (loses 20% of revenue).
 
 ## Goal
-Khách mua plugin kích hoạt được trên thiết bị của mình mà không cần nhắn tin cho người bán.
+A buyer can activate the plugin on their own device without messaging the seller.
 
 ## Success Metrics
-- Tỷ lệ đơn kích hoạt xong không qua hỗ trợ: ___ → ___ (đo qua: đếm tay đơn thanh toán so với thread hỗ trợ, mỗi thứ Hai · baseline tháng ___)
-- Số lượt nhắn tin xin kích hoạt mỗi tháng: ___ (đo qua: đếm thread trong inbox, cùng lúc trên)
+- Share of orders activated with no support contact: ___ → ___ (measured by: hand-counting paid orders against support threads, every Monday · baseline month ___)
+- Activation request messages per month: ___ (measured by: counting threads in the inbox, at the same time)
 
-Số để `___` vì chưa có analytics. Cách đo thì **không** được để trống — đó là thứ quyết định
-metric này có thật hay chỉ là câu nói hay.
+The numbers are `___` because there is no analytics yet. The way of measuring may **not** be left empty —
+that is what decides whether the metric is real or just a nice sentence.
 
 ## In Scope (v1)
-- Sinh và gửi license key ngay khi thanh toán thành công
-- Kích hoạt key trên một thiết bị
-- Khách tự xem trạng thái license của mình
+- Generate and send the license key as soon as payment succeeds
+- Activate a key on one device
+- The buyer can see their own license status
 
 ## Out of Scope
-- Chuyển license sang thiết bị khác → lát 2 "đổi máy", mở khi đo được có bao nhiêu người hỏi
-- Một license dùng chung cho cả đội → mở lại khi có khách đội đầu tiên
-- Kích hoạt hoàn toàn offline, không cần mạng lần đầu — cố ý thu hẹp — chủ dự án chốt 2026-01-15
-- Tự động hoàn tiền khi kích hoạt lỗi — v1 vẫn làm tay → mở lại khi quá 5 ca/tháng
+- Moving a license to another device → slice 2 "device change", opens once we can measure how many people ask
+- One license shared across a team → reopen when the first team customer appears
+- Fully offline activation, no network needed the first time — deliberately narrowed — owner decided 2026-01-15
+- Automatic refunds when activation fails — v1 still does it by hand → reopen when it exceeds 5 cases/month
 
-<!-- Mỗi dòng Out of Scope nói nó đi ĐÂU: `→ lát ___` (một lát trong vision.md) hoặc `→ mở lại khi ___`.
-     Dòng trùng với một điều ở `## Không thu hẹp` của vision.md thì br-check đỏ — trừ khi ghi
-     `cố ý thu hẹp — chủ dự án chốt YYYY-MM-DD`: thu hẹp là quyết định của chủ dự án, có ngày. -->
+<!-- Every Out of Scope line says where it GOES: `→ slice ___` (a slice in vision.md) or `→ reopen when ___`.
+     A line that repeats something in `## Do not narrow` of vision.md makes br-check red — unless it says
+     `deliberately narrowed — owner decided YYYY-MM-DD`: narrowing is the owner's decision, and it is dated. -->
 
 ## Related Use Cases
-| UC | Tên | Actor | BR | Status |
+| UC | Name | Actor | BR | Status |
 |---|---|---|---|---|
-| UC-001 | Kích hoạt license trên một thiết bị | khách vừa mua | BR-000 | draft |
-| UC-002 | Xem trạng thái license | khách | BR-000 | draft |
+| UC-001 | Activate a license on one device | a buyer who just paid | BR-000 | draft |
+| UC-002 | View license status | buyer | BR-000 | draft |
 
-<!-- Bảng này là bảng UC của lát (7.0 — thay use-cases.md của context). Cột Status do
-     pass.sh gate/close/deprecate tự ghi; /sdd-solo:state gợi UC tiếp theo từ đây. -->
+<!-- This is the slice's UC table (7.0 — it replaces a context's use-cases.md). The Status column is written
+     by pass.sh gate/close/deprecate; /sdd-solo:state suggests the next UC from here. -->
 
 ## Constraints
-- **CON-001 Technical:** hosting chia sẻ, không chạy được job nền quá 30 giây.
-  - Từ: 2026-03-14 · Biết qua: bảng giá gói Business, mục "Execution limits" · Kiểm lại: khi đổi gói hosting · Trạng thái: đúng
-- **CON-002 Regulatory:** bản ghi thanh toán phải giữ 10 năm theo quy định kế toán — khách huỷ cũng không xoá.
-  - Từ: 2026-03-14 · Biết qua: Luật Kế toán 2015, Điều 41 · Kiểm lại: khi luật kế toán sửa · Trạng thái: đúng
-- **CON-003 Timing:** người bán chỉ có buổi tối để xử lý, nên mọi việc cần tay người phải gộp một lần mỗi ngày.
-  - Từ: 2026-03-14 · Biết qua: chính người bán nói trong buổi intake · Kiểm lại: khi có người thứ hai phụ trách · Trạng thái: đúng
+- **CON-001 Technical:** shared hosting, cannot run a background job longer than 30 seconds.
+  - From: 2026-03-14 · Known via: the Business plan price page, "Execution limits" · Review on: when the hosting plan changes · State: holds
+- **CON-002 Regulatory:** payment records must be kept for 10 years under accounting rules — not deleted even if the customer cancels.
+  - From: 2026-03-14 · Known via: Accounting Law 2015, Article 41 · Review on: when the accounting law changes · State: holds
+- **CON-003 Timing:** the seller only has the evening to work, so anything needing a human must be batched once a day.
+  - From: 2026-03-14 · Known via: the seller said so during the intake session · Review on: when a second person takes it on · State: holds
 
-<!-- Vì sao CON có `Kiểm lại` mà RULE/ADR không có.
+<!-- Why a CON has `Review on` and a RULE/ADR does not.
 
-     CON-### KHÔNG phải một quyết định. Không cái nào ở trên do ta chọn, và không cái nào
-     chọn khác được. Đó là SỰ THẬT VỀ THẾ GIỚI đang ràng buộc quyết định — khác loại với
-     RULE (ta đặt ra) và ADR (ta chọn phương án).
+     A CON-### is NOT a decision. None of the above was chosen by us, and none of them could have been
+     chosen differently. They are FACTS ABOUT THE WORLD constraining the decisions — a different kind of
+     thing from a RULE (which we set) and an ADR (where we picked an option).
 
-     Khác loại thì hỏng theo cách khác:
-       · Một QUYẾT ĐỊNH hết đúng khi LÝ DO của nó hết đúng — mà lý do nằm ngay trong file,
-         đọc lại là thấy.
-       · Một RÀNG BUỘC hết đúng khi THẾ GIỚI đổi — và thế giới đổi thì KHÔNG CÓ GÌ TRONG
-         REPO ĐỘNG ĐẬY CẢ.
+     Different kinds break differently:
+       · A DECISION stops being right when ITS REASON stops being right — and the reason is in the file,
+         visible on re-reading.
+       · A CONSTRAINT stops being right when THE WORLD changes — and when the world changes, NOTHING IN
+         THE REPO MOVES AT ALL.
 
-     Đổi hosting năm 2028: CON-001 lặng lẽ thành sai. Mọi UC dựng quanh nó vẫn đứng nguyên,
-     vẫn qua mọi phép kiểm, vẫn đọc trôi chảy. Không dòng đỏ nào, vì không phép kiểm nào
-     biết ngoài đời vừa xảy ra chuyện gì. Cùng lớp "báo xanh sai", nhưng nguồn nằm ngoài repo.
+     Change hosting in 2028: CON-001 quietly becomes false. Every UC built around it still stands, still
+     passes every check, still reads fine. Not one red line, because no check knows what just happened
+     outside. Same "green when it should be red" class, with the source outside the repo.
 
-     `Kiểm lại:` là thứ duy nhất biến chuyện đó thành một dòng CÓ THỂ QUÁ HẠN — tức đo được.
-     Nó không cần là ngày; "khi đổi gói hosting" là một mốc hợp lệ và thường tốt hơn ngày.
-     `Biết qua:` trả lời "làm sao ta biết điều này đúng" — năm năm sau đó là thứ cho phép
-     đi kiểm lại, thay vì phải tin. -->
+     `Review on:` is the only thing that turns that into a line that CAN EXPIRE — that is, be measured.
+     It need not be a date; "when the hosting plan changes" is a valid marker and often better than a date.
+     `Known via:` answers "how do we know this is true" — five years later that is what allows going back to
+     check, instead of having to take it on faith. -->
 
-<!-- Định dạng dòng thứ hai là hợp đồng với `decisions.sh`: bốn nhãn `Từ:` `Biết qua:`
-     `Kiểm lại:` `Trạng thái:` ngăn bằng ` · `, nằm trên MỘT dòng, thụt vào dưới CON.
-     Đổi nhãn thì sổ tra không đọc được nữa. Hết hiệu lực thì viết
-     `Trạng thái: hết đúng từ YYYY-MM-DD` — đừng xoá dòng CON, xoá là mất dấu vết. -->
+<!-- The format of the second line is a contract with `decisions.sh`: four labels `From:` `Known via:`
+     `Review on:` `State:` separated by ` · `, on ONE line, indented under the CON.
+     Rename a label and the lookup table stops reading it. When it stops applying, write
+     `State: no longer holds from YYYY-MM-DD` — do not delete the CON line; deleting it loses the trail. -->
 
 
 ## Impact Map
 ```mermaid
 flowchart LR
-  G["<b>WHY</b><br/>BR-000<br/>khách tự kích hoạt"]
-  A1["<b>WHO</b><br/>khách vừa mua"]
-  A2["<b>WHO</b><br/>người bán"]
-  H1["<b>HOW</b><br/>tự lấy được key ngay sau khi trả tiền"]
-  H2["<b>HOW</b><br/>không phải trả lời tin nhắn thủ công"]
-  W1["<b>WHAT</b><br/>UC-001 kích hoạt trên một thiết bị"]
-  W2["<b>WHAT</b><br/>UC-002 xem trạng thái license"]
-  X1["chuyển license sang máy khác"]
-  X2["license dùng chung cho đội"]
+  G["<b>WHY</b><br/>BR-000<br/>buyers self-activate"]
+  A1["<b>WHO</b><br/>a buyer who just paid"]
+  A2["<b>WHO</b><br/>the seller"]
+  H1["<b>HOW</b><br/>gets the key immediately after paying"]
+  H2["<b>HOW</b><br/>no longer answers messages by hand"]
+  W1["<b>WHAT</b><br/>UC-001 activate on one device"]
+  W2["<b>WHAT</b><br/>UC-002 view license status"]
+  X1["move a license to another machine"]
+  X2["one license shared by a team"]
   G --> A1
   G --> A2
   A1 --> H1
@@ -124,26 +125,26 @@ flowchart LR
   class X1,X2 out
 ```
 
-Hai nhánh đứt là Out of Scope. Impact Map không có nhánh đứt nào nghĩa là chưa map gì cả —
-chỉ là đường thẳng từ Goal xuống danh sách việc đã định làm sẵn.
+The two dashed branches are Out of Scope. An Impact Map with no dashed branch means nothing was mapped —
+it is just a straight line from the Goal down to a list of things already decided on.
 
 ## Adversarial pass
-- Ngày chạy: 2026-01-14 · Session mới: [x]
-- Vai người trả tiền:
-  - Q1 Không làm gì thì mất bao nhiêu? → 23 đơn × 2 lượt nhắn × ~6 phút ≈ 4,6 giờ/tháng của người bán → Background
-  - Q2 Baseline "41 đơn" lấy ở đâu? → đếm tay trong trang đơn hàng, tuần 08–14/12 → Background
-- Vai người sẽ vận hành nó mãi:
-  - Q3 Key gửi đi mà email khách sai thì ai xử? → Open Question (quyết định tạm: người bán gửi lại tay)
-  - Q4 "Chuyển license sang máy khác" ở Out of Scope — khách đổi máy sẽ nhắn tin, tức đúng việc BR này định bỏ? → Open Question
-- Vai người hoài nghi:
-  - Q5 Có cách nào không xây phần mềm không? → có: gửi key tay theo lô mỗi tối. Vẫn chọn xây vì CON-003 giới hạn người bán một lần/ngày, khách mua sáng phải chờ tới tối → Background
-  - Q6 Đây là BR hay là giải pháp viết ngược? → là BR: goal nói *khách dùng được thứ đã trả tiền ngay*, không nói phải làm bằng license key
+- Run date: 2026-01-14 · Fresh session: [x]
+- Role the one who pays:
+  - Q1 What does doing nothing cost? → 23 orders × 2 messages × ~6 minutes ≈ 4.6 hours/month of the seller's time → Background
+  - Q2 Where does the "41 orders" baseline come from? → hand-counted in the orders page, week of 08–14 Dec → Background
+- Role the one who operates it forever:
+  - Q3 The key goes out and the buyer's email is wrong — who fixes it? → Open Question (interim decision: the seller resends by hand)
+  - Q4 "Moving a license to another device" is Out of Scope — a buyer changing machines will message, which is exactly what this BR set out to remove? → Open Question
+- Role the sceptic:
+  - Q5 Is there a way without building software? → yes: send keys by hand in a batch every evening. Building still wins because CON-003 limits the seller to once a day, so a morning buyer waits until evening → Background
+  - Q6 Is this a BR or a solution written backwards? → a BR: the goal says *the buyer can use what they paid for immediately*, it does not say it must be done with license keys
 
 ## Open Questions
-- [ ] Một license cho mấy thiết bị? (quyết định tạm: 1, cho tới khi có khách hỏi)
-- [ ] Key hết hạn theo thời gian hay vĩnh viễn? (quyết định tạm: vĩnh viễn ở v1)
-- [ ] Email khách sai thì ai gửi lại key? (quyết định tạm: người bán gửi tay)
-- [ ] Khách đổi máy sẽ nhắn tin — có mâu thuẫn với Out of Scope không? (quyết định tạm: chấp nhận ở v1, đo số lần)
+- [ ] How many devices per license? (interim decision: 1, until a customer asks)
+- [ ] Does a key expire over time or last forever? (interim decision: forever in v1)
+- [ ] Who resends the key when the buyer's email is wrong? (interim decision: the seller, by hand)
+- [ ] A buyer changing machines will message — does that contradict Out of Scope? (interim decision: accept it in v1, count the cases)
 
 ## History
 - v1 (2026-01-15): initial

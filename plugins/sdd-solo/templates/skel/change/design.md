@@ -1,13 +1,13 @@
 # Design — CHG-000
 
-## Hướng kỹ thuật
-<Thay đổi ở domain / port / adapter nào>
+## Technical direction
+<Which domain / port / adapter changes>
 
-## ADR mới (nếu có)
+## New ADR (if any)
 - ADR-###
 
 ## Screens
-- SCR-###-# v2 — thay đổi gì so với v1
+- SCR-###-# v2 — what changed against v1
 
-## Rủi ro và cách lùi
+## Risks and rollback
 - ...

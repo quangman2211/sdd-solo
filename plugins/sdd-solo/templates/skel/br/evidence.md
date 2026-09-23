@@ -1,11 +1,11 @@
-# BR-000 — chứng cứ
+# BR-000 — evidence
 
-Thân chứng cứ của `## Background` và thân `## Adversarial pass` sau khi BR chốt (`migrate.sh
---evidence BR-###` dời sang đây, để lại ở `br.md` một dòng đếm). Mở khi tranh chấp; `context.sh`
-không đọc file này.
+The body of `## Background` and the body of `## Adversarial pass` after the BR is settled
+(`migrate.sh --evidence BR-###` moves them here and leaves one counted line in `br.md`).
+Open it when something is disputed; `context.sh` does not read this file.
 
 ## BR-000 — ## Background
-<đoạn chứng cứ dài: số đếm, nguồn, ngày đo>
+<the long evidence: counts, sources, dates measured>
 
 ## BR-000 — ## Adversarial pass
-<nguyên văn ba vai và đầu ra từng câu>
+<the three roles verbatim, and the output of every question>

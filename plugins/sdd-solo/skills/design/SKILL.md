@@ -1,131 +1,139 @@
 ---
 name: design
-description: Bước ⑩ — thiết kế kỹ thuật cho một UC đã qua cổng DoR. Sinh design.md + tasks.md trong thư mục UC, đối chiếu ngược lên specs/vision.md, specs/architecture.md và brief nguồn. Dùng sau /sdd-solo:gate và TRƯỚC khi viết dòng code đầu tiên.
+description: Step ⑩ — the technical design for a UC that has passed the DoR gate. Produces design.md + tasks.md in the UC folder, checked back against specs/vision.md, specs/architecture.md and the source brief. Use it after /sdd-solo:gate and BEFORE the first line of code.
 disable-model-invocation: true
 argument-hint: "UC-###"
 allowed-tools: Bash Read Write Edit Grep Glob AskUserQuestion
 ---
 
-Thiết kế cho `$1`.
+Reply in whatever language the user writes in; keep file names, IDs and slugs in English.
 
-**Chế độ phiếu (7.3) — khi chạy dưới lời giao của agent khác** (lời giao mở đầu `Vai:`/`Lượt`, hoặc
-`bash .sdd/scripts/role.sh --xem` ra một vai không phải điều phối, hoặc không chắc có người ở đầu kia): **không mở
-`AskUserQuestion`** — không ai bấm, lượt treo tới hết hạn (#53). Mỗi câu lẽ ra hỏi user thành một phiếu:
-`bash .sdd/scripts/phieu.sh new "<việc>" <vai>` với Câu · Đã tra · Nếu chọn sai thì · Agent nghiêng về; chỗ phụ thuộc
-câu đó để `___` + quyết định tạm; rồi **DỪNG** và kết bằng `role.sh --ketqua <khoá> ket=chan hoi=#<n>`. Chủ dự án tự
-gõ lệnh này trong phiên của mình thì hỏi như thường.
+The design for `$1`.
 
-**Vì sao bước này thuộc về sdd-solo chứ không thuê ngoài:** năm tầng yêu cầu (Hướng · BR · UC · Entity · AC)
-trả lời *đi về đâu · vì sao làm lát này · ai làm gì · khái niệm nào · biết đúng bằng cách nào*. **Không tầng nào trả lời
-*dựng bằng gì · chạy ở đâu · ai gọi*.** Trước 4.0.0 câu đó rơi vào một công cụ ngoài, và công cụ ấy
-đọc đúng hai thứ: một file mỏng chỉ chứa ID, và một `constitution.md` mà ở repo thật vẫn nguyên
-placeholder. **Brief không nằm trong hai đầu vào đó và chưa bao giờ nằm** — nên bản thiết kế nói
-ngược lại brief suốt hai ngày mà không ai thấy, vì mỗi tài liệu tự nó nhất quán (#34).
+**Ticket mode (7.3) — when running under another agent's brief** (the brief opens with `Vai:`/`Lượt`, or
+`bash .sdd/scripts/role.sh --xem` reports a role other than the coordinator, or you are not sure there is a human at
+the other end): **do not open `AskUserQuestion`** — nobody clicks it and the turn hangs until it times out (#53).
+Every question you would have asked becomes a ticket: `bash .sdd/scripts/phieu.sh new "<task>" <role>` with
+Question · Already looked up · If chosen wrong · The agent leans towards; leave whatever depends on it as `___` plus
+an interim decision; then **STOP**, ending with `role.sh --ketqua <key> ket=chan hoi=#<n>`. When the owner types this
+command themselves in their own session, ask as normal.
+
+**Why this step belongs to sdd-solo instead of being outsourced:** the five requirement layers (Direction · BR · UC ·
+Entity · AC) answer *where we are going · why this slice · who does what · which concepts · how we know it is right*.
+**No layer answers *built with what · runs where · called by whom*.** Before 4.0.0 that question fell to an outside
+tool, and that tool read exactly two things: a thin file containing only IDs, and a `constitution.md` that in a real
+repo was still all placeholders. **The brief was not among those inputs and never had been** — so the design
+contradicted the brief for two days without anyone seeing it, because every document was internally consistent (#34).
 
 ---
 
-## 1. Cổng vào
+## 1. The entry gate
 
 ```bash
 ls "$(git rev-parse --show-toplevel)/.sdd/gate/$1.ok"
 ```
 
-Không có → **dừng**. Bảo user chạy `/sdd-solo:gate $1` trước. Thiết kế cho một UC chưa qua cổng là
-thiết kế cho một spec còn đang đổi. **Không sinh file nào** trong lượt này.
+Missing → **stop**. Tell the user to run `/sdd-solo:gate $1` first. Designing for a UC that has not passed the gate is
+designing for a spec that is still moving. **Generate no files** on this turn.
 
-## 2. Đọc — MỘT lệnh, rồi brief
+## 2. Reading — ONE command, then the brief
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/context.sh" $1
 ```
-(không thay được biến: `find ~/.claude/plugins -type f -name context.sh -path '*sdd-solo*' | head -1`)
+(if the variable is not substituted: `find ~/.claude/plugins -type f -name context.sh -path '*sdd-solo*' | head -1`)
 
-Nó in ra đúng đủ: UC (bỏ ba mục dấu vết) · flow · **chỉ những** `RULE`/`CON`/`ADR` UC trích · mục BR cha
-không Background · bốn mục `architecture.md` · entity/glossary UC nhắc tên. Tới 4.2.0 chỗ này là một
-lời dặn đọc **13 tên file**, không kiểm được, và đã hụt ở #34 — bản thiết kế nói ngược brief hai ngày
-không ai thấy. Đo ở runxops: UC-009 210 KB / 15 file → một lệnh ≤ 30 KB; UC-014 trích 5 RULE + 9 ADR → 222 KB
-sau khi cắt dấu vết (#43) — dòng kích thước từng nguồn ở cuối output chỉ vào nguồn phình, đọc nó trước.
+It prints exactly enough: the UC (with the three evidence-trail sections stripped) · the flow · **only the**
+`RULE`/`CON`/`ADR` the UC cites · the parent BR's sections without Background · the four `architecture.md` sections ·
+the entities and glossary the UC names. Up to 4.2.0 this spot was an instruction to read **13 file names**,
+unverifiable, and it failed at #34 — a design contradicting the brief for two days with nobody seeing it. Measured at
+runxops: UC-009 210 KB / 15 files → one command of ≤ 30 KB; UC-014 cites 5 RULEs + 9 ADRs → 222 KB after the evidence
+trail is cut (#43) — the per-source size lines at the end of the output point at whichever source is bloating, read
+that first.
 
-Rồi đọc **brief nguồn** — dòng cuối output có `brief_path` và sha. Đây là nguồn duy nhất nằm ngoài
-`specs/` mà không phép kiểm nào khác được giao nhìn tới; `context.sh` cố ý không in nó.
+Then read **the source brief** — the last output line carries `brief_path` and its sha. It is the only source outside
+`specs/` that no other check is allowed to look at; `context.sh` deliberately does not print it.
 
-Và đọc **`specs/vision.md`** — hai mục, không cần cả file: dòng của lát UC này trong bảng `## Nghề và lát`
-(nghề nào, lát nào, đang mở hay đang chờ) và `## Không thu hẹp`. Thiết kế là chỗ một điều "không thu hẹp"
-chết lặng lẽ nhất: nó không bị ai bỏ khỏi spec, chỉ là bản thiết kế chọn một đường không đỡ nổi nó, và sáu
-tháng sau việc mở lại tốn bằng viết lại. UC ở một lát đang **chờ** (chưa mở) → nói với user trước khi thiết kế.
+And read **`specs/vision.md`** — two sections, not the whole file: this UC's slice row in the `## Crafts and slices`
+table (which craft, which slice, open or waiting) and `## Do not narrow`. The design is where a "do not narrow" item
+dies most quietly: nobody removes it from the spec, the design simply takes a route that cannot carry it, and six
+months later reopening it costs as much as rewriting. A UC in a slice that is still **waiting** (not open) → say so to
+the user before designing.
 
-Output có dòng `! architecture.md … còn placeholder` hoặc `! thiếu specs/architecture.md` →
-**dừng và làm nó trước**, cùng user. Một `design.md` đối chiếu lên một hiến pháp trống là một lượt
-đối chiếu rỗng, và phép thử rỗng trông y hệt phép thử qua. Dòng `! RULE-### — UC trích nhưng
-rules.md không có` cũng là dừng: thiết kế trên một luật không tồn tại.
+The output carries `! architecture.md … still has placeholders` or `! specs/architecture.md is missing` →
+**stop and do that first**, with the user. A `design.md` checked against an empty constitution is an empty check, and
+an empty test looks exactly like a passing one. A line `! RULE-### — the UC cites it but rules.md does not have it` is
+also a stop: that is designing on a rule that does not exist.
 
-## 3. Viết `design.md`
+## 3. Write `design.md`
 
-Copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.design.md` sang `<thư mục UC>/design.md`, đổi `UC-000` thành
-`$1`, rồi điền cùng user. Sáu mục, và hai mục giữa là lý do cả bước này tồn tại:
+Copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.design.md` to `<UC folder>/design.md`, replace `UC-000` with
+`$1`, then fill it in with the user. Six sections, and the two in the middle are the reason this whole step exists:
 
-- `## Tóm tắt` · `## Bối cảnh kỹ thuật` (ngôn ngữ · phụ thuộc · lưu trữ · test · nền chạy)
-- **`## Đối chiếu architecture.md`** — bảng sáu dòng. Mỗi chỗ **đi khác** hiến pháp phải nằm ở đây
-  kèm lý do và một `ADR-###` có thật. Không lệch chỗ nào thì vẫn phải viết ra là không lệch.
-- **`## Đối chiếu brief`** — brief đòi gì mà thiết kế này **không** làm, và vì sao. Không có brief
-  thì ghi thẳng *"dự án không có brief nguồn"*. **Cùng mục này ghi luôn đối chiếu `vision.md`:** mỗi điều
-  ở `## Không thu hẹp` một dòng — thiết kế này đỡ nó bằng cách nào, hay tạm chưa đỡ và mở lại bằng cách
-  nào. Không đỡ được điều nào → **dừng và hỏi chủ dự án**, đừng ghi một dòng nghe như đã cân nhắc xong.
-- `## Cấu trúc code` (đường dẫn thật) — **và chữ ký của mỗi cổng / hàm use-case** (tên · tham số · kiểu trả · lỗi
-  ném), không chỉ tên file (#39). Vai T viết harness + fake **từ mục này** trước khi D có code; design chỉ nêu tên
-  file thì T phải đoán chữ ký → `HỎI-T1` ở runxops ngay lượt đầu. Làm một mình cũng có lợi: chữ ký viết ra trước là
-  thứ test đỏ bám vào.
-- `## Rủi ro & độ phức tạp`
+- `## Summary` · `## Technical context` (language · dependencies · storage · test · runtime platform)
+- **`## Checked against architecture.md`** — a six-row table. Every **departure** from the constitution belongs here
+  with a reason and a real `ADR-###`. No departures still has to be written down as no departures.
+- **`## Checked against brief`** — what the brief asks for that this design does **not** do, and why. No brief → write
+  *"the project has no source brief"*. **Record the `vision.md` check in the same section:** one line per item in
+  `## Do not narrow` — how this design carries it, or that it does not yet and how it gets reopened. An item that
+  cannot be carried → **stop and ask the owner**; do not write a line that sounds as if it had been weighed.
+- `## Code structure` (real paths) — **and the signature of every port / use-case function** (name · parameters ·
+  return type · errors thrown), not just file names (#39). Role T writes the harness and the fakes **from this
+  section** before D has any code; a design that only names files forces T to guess signatures → `HỎI-T1` at runxops
+  on the very first round. It pays off solo too: a signature written first is what the red test attaches to.
+- `## Risks and complexity`
 
-**Gặp quyết định kỹ thuật mà cả UC lẫn `architecture.md` đều chưa nói** (chọn thư viện, chọn kiểu
-lưu trữ, chọn giao thức) → **DỪNG và hỏi user** bằng `AskUserQuestion`, đúng luật đã áp cho quyết
-định nghiệp vụ. Đừng chọn mặc định rồi ghi vào file như thể đã bàn.
+**Hitting a technical decision that neither the UC nor `architecture.md` states** (choosing a library, a storage kind,
+a protocol) → **STOP and ask the user** with `AskUserQuestion`, the same rule as for a business decision. Do not pick a
+default and write it into the file as if it had been discussed.
 
-Quyết định nào **đổi hiến pháp** chứ không chỉ áp dụng nó → ghi vào `specs/architecture.md` (gốc, xuyên
-suốt), không giấu trong `design.md` của một UC. Một quyết định cấp dự án nằm trong thư mục một UC là chỗ
-UC thứ hai sẽ không bao giờ tìm thấy. ADR đi kèm: `specs/adr/` nếu nó ràng buộc cả dự án,
-`specs/<nghề>/adr/` nếu chỉ nghề đó — một dãy `ADR-###` cho cả dự án.
+A decision that **changes the constitution** rather than applying it → write it into `specs/architecture.md` (root,
+project-wide), do not hide it in one UC's `design.md`. A project-level decision inside one UC's folder is a place the
+second UC will never find. Its ADR goes with it: `specs/adr/` if it binds the whole project, `specs/<craft>/adr/` if
+only that craft — one `ADR-###` sequence for the whole project.
 
-**UC ở `core` không được trích ID của nghề nào** — không `RULE-###`/`ADR-###`/`UC-###`/`BR-###` sống trong
-`specs/<nghề>/`, không tên entity ở `specs/<nghề>/entities/`. Ở `## Cấu trúc code` thì `src/core` **không
-import** `src/<nghề>/`. `design-check` gọi `layer-check --file` và **cảnh báo** chỗ vi phạm; cảnh báo ở
-đây nghĩa là đọc lại, không phải bỏ qua — lõi trích nghề là chỗ nghề thứ hai sẽ không dùng lại được lõi.
+**A UC in `core` may cite no craft's IDs** — no `RULE-###`/`ADR-###`/`UC-###`/`BR-###` living under `specs/<craft>/`,
+no entity name in `specs/<craft>/entities/`. In `## Code structure`, `src/core` **does not import** `src/<craft>/`.
+`design-check` calls `layer-check --file` and **warns** where this is violated; a warning here means read it again,
+not ignore it — the core citing a craft is where the second craft finds it can no longer reuse the core.
 
-## 4. Viết `tasks.md`
+## 4. Write `tasks.md`
 
-Copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.tasks.md` sang `<thư mục UC>/tasks.md`. **Mỗi AC một dòng,
-một việc, một file test** `tests/use-cases/<core|nghề>/$1/AC-#.test.*` — `<core|nghề>` là nghề của lát chứa UC. Không chép nội dung AC sang —
-chép là tạo bản thứ hai để sau này lệch nhau. Việc không gắn AC nào (dựng khung, cấu hình) xuống
-mục riêng ở cuối.
+Copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/UC-000.tasks.md` to `<UC folder>/tasks.md`. **One row, one task and
+one test file per AC**, `tests/use-cases/<core|craft>/$1/AC-#.test.*` — `<core|craft>` is the craft of the slice holding
+the UC. Do not copy the AC text across — a copy is a second copy to drift. Tasks tied to no AC (scaffolding,
+configuration) go in their own section at the end.
 
-## 5. Kiểm bằng máy, in nguyên output
+## 5. Check it mechanically and print the output verbatim
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/design-check.sh" $1
 ```
-(nếu `${CLAUDE_PLUGIN_ROOT}` không được thay: `find ~/.claude/plugins -type f -name design-check.sh -path '*sdd-solo*' | head -1`)
+(if `${CLAUDE_PLUGIN_ROOT}` is not substituted: `find ~/.claude/plugins -type f -name design-check.sh -path '*sdd-solo*' | head -1`)
 
-Đỏ → sửa rồi chạy lại. Không viết code khi còn một dòng ✗.
+Red → fix and run again. Do not write code while a single ✗ line remains.
 
-## 6. Commit riêng
+## 6. Its own commit
 
 ```bash
-git add <thư mục UC>/design.md <thư mục UC>/tasks.md && git commit --only -m "docs($1): thiết kế — design.md + tasks.md" -- <thư mục UC>/design.md <thư mục UC>/tasks.md
+git add <UC folder>/design.md <UC folder>/tasks.md && git commit --only -m "docs($1): design — design.md + tasks.md" -- <UC folder>/design.md <UC folder>/tasks.md
 ```
 
-## 7. Nói với user
+## 7. Tell the user
 
-Bước tiếp là ⑪ **viết code theo `tasks.md`**, test đỏ trước. Nhắc ba chỗ hay sai khi đọc `design.md`:
-RULE có được kiểm **trước** khi tạo record không · logic RULE nằm ở domain hay lỡ rơi xuống adapter ·
-chuyển trạng thái có đúng state diagram trong file entity (`specs/<core|nghề>/entities/<Tên>.md`) không.
+Next is step ⑪ **writing the code against `tasks.md`**, red test first. Point out the three usual mistakes when reading
+`design.md`: is the RULE checked **before** the record is created · does the RULE's logic sit in the domain or has it
+slipped into an adapter · do the state transitions follow the state diagram in the entity file
+(`specs/<core|craft>/entities/<Name>.md`).
 
 ---
 
-## Giới hạn — nói với user, không giấu
+## Limits — tell the user, do not hide them
 
-1. **`design-check` đo sự CÓ MẶT, không đo sự ĐÚNG.** Nó biết mục `## Đối chiếu architecture.md`
-   có nội dung; nó **không** biết nội dung ấy có thật là kết quả của một lượt đối chiếu hay không.
-   Thứ duy nhất bắt được chỗ đó là user đọc. Đừng nói "đã đối chiếu xong" khi ý là "script xanh".
-2. **Không viết code trong bước này.** Kể cả một hàm nhỏ để "thử xem có chạy không".
-3. **Không tự sửa spec.** Thiết kế lộ ra một chỗ UC sai → nói ra, để user quyết; sửa UC đã qua cổng
-   là việc của `/sdd-solo:gate` chạy lại, hoặc của Phase 5 nếu UC đã `implemented`.
+1. **`design-check` measures PRESENCE, not CORRECTNESS.** It knows the `## Checked against architecture.md` section has
+   content; it does **not** know whether that content is really the result of a check. The only thing that catches that
+   is the user reading it. Do not say "checked" when you mean "the script is green".
+2. **Write no code in this step.** Not even a small function to "see if it runs".
+3. **Do not edit the spec yourself.** The design exposes something wrong in the UC → say so and let the user decide;
+   editing a UC that has passed the gate is a job for re-running `/sdd-solo:gate`, or for Phase 5 if the UC is already
+   `implemented`.

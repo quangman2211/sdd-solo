@@ -1,14 +1,14 @@
-# STATE — cập nhật cuối mỗi buổi
+# STATE — update at the end of every session
 
-Đang làm:            ___ (Phase 1: BR-### · hoặc Phase 3: UC-### + bước nào trong 14 bước)
-<!-- Repo mới: chưa có BR thì việc đang làm là /sdd-solo:intake, không phải UC nào cả -->
-Quyết định gần nhất: ___ (→ ADR-### hoặc specs/decisions.md)
-Câu hỏi treo:        ___ (quyết định tạm: ___)
-Việc tiếp theo:      ___
-Bỏ dở vì:            ___
+Working on:       ___ (Phase 1: BR-### · or Phase 3: UC-### + which of the 14 steps)
+<!-- New repo: with no BR yet, the work in progress is /sdd-solo:intake, not any UC -->
+Latest decision:  ___ (→ ADR-### or specs/decisions.md)
+Open question:    ___ (interim decision: ___)
+Next:             ___
+Stopped because:  ___
 
-<!-- Mục Retro chỉ có khi vừa release; xoá khi release sau -->
+<!-- The Retro section exists only right after a release; delete it at the next one -->
 ## Retro (release ___)
-- Adversarial pass bắt được / bỏ lọt: ___
-- Lần code trước spec (git log): ___
-- Bước bị bỏ qua nhiều nhất: ___ → sửa quy trình: ___
+- Adversarial pass caught / missed: ___
+- Times code came before spec (git log): ___
+- Most skipped step: ___ → process fix: ___

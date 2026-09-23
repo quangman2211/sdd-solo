@@ -1,10 +1,11 @@
-# Business Rules — <nghề>
+# Business Rules — <craft>
 
-Luật chỉ nghề này. Luật xuyên suốt nằm ở `specs/rules.md` gốc. **ID không trùng gốc**: một dãy
-`RULE-###` cho cả dự án; `id_exists` tra gốc rồi mọi `specs/<nghề>/rules.md`, trùng số là đỏ ở cổng.
+Rules for this craft only. Cross-cutting rules live in the root `specs/rules.md`. **IDs never
+collide with the root**: one `RULE-###` sequence for the whole project; `id_exists` looks in the
+root and then in every `specs/<craft>/rules.md`, and a repeated number is red at the gate.
 
-## RULE-###: <tên rule>
-- **Phát biểu:** <một câu, kiểm được>
-- **Áp dụng cho:** UC-###
-- **Ngoại lệ:** <không có | ...>
-- **Nguồn:** BR-### · CON-### · <ai nói, khi nào>
+## RULE-###: <rule name>
+- **Statement:** <one sentence, checkable>
+- **Applies to:** UC-###
+- **Exceptions:** <none | ...>
+- **Source:** BR-### · CON-### · <who said it, when>

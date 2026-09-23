@@ -7,6 +7,6 @@ chk "exit 0 (được $R)" '[ $R = 0 ]'
 chk "bảng UC-009 → deprecated" 'grep -q "^| UC-009 .*| deprecated |$" specs/orders/br-001/br.md'
 chk "decisions có dòng Bỏ UC-009" 'grep -q "Bỏ UC-009 (" specs/decisions.md'
 chk "đã commit, cây sạch" '[ -z "$(git status --porcelain specs)" ] && git log -1 --format=%s | grep -q "^docs(UC-009): deprecated"'
-chk "nói chưa có file UC" 'has "chưa có file UC"'
+chk "nói chưa có file UC" 'has "has no UC file"'
 S pass.sh deprecate UC-077 x
 chk "ID không có ở đâu → exit 1 (được $R)" '[ $R = 1 ]'

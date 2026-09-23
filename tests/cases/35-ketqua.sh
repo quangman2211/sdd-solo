@@ -1,11 +1,11 @@
 # 7.2 P-26: KETQUA — xong không neo → đỏ; neo giả → đỏ; chan không hoi → đỏ; đọc được từ worktree khác
 nr kq
 S role.sh --ketqua d-uc-001-p3 ket=xong
-chk "ket=xong thiếu neo → đỏ (exit $R)" '[ $R = 1 ] && has "bắt buộc có neo"'
+chk "ket=xong thiếu neo → đỏ (exit $R)" '[ $R = 1 ] && has "requires neo="'
 S role.sh --ketqua d-uc-001-p3 ket=xong neo=deadbeef1
-chk "neo là hash không có thật → đỏ (exit $R)" '[ $R = 1 ] && has "không phải commit có thật"'
+chk "neo là hash không có thật → đỏ (exit $R)" '[ $R = 1 ] && has "is not a real commit"'
 S role.sh --ketqua d-uc-001-p3 ket=chan
-chk "ket=chan thiếu hoi → đỏ (exit $R)" '[ $R = 1 ] && has "bắt buộc có hoi"'
+chk "ket=chan thiếu hoi → đỏ (exit $R)" '[ $R = 1 ] && has "requires hoi="'
 S role.sh --ketqua "Khoá Xấu" ket=xong neo=x
 chk "khoá có dấu cách/hoa → từ chối (exit $R)" '[ $R = 2 ]'
 S role.sh --ketqua d-uc-001-p3 ket=chan hoi=#4

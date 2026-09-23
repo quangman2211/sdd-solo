@@ -1,99 +1,99 @@
-# sdd-solo — Spec-Driven Development cho một dev + AI
+# sdd-solo — Spec-Driven Development for one developer + an AI
 
-Plugin Claude Code đóng gói quy trình SDD-Solo: giữ nguyên bốn tầng yêu cầu của Spec-Driven Development (BR → Use Case → Entity → Acceptance Criteria), thêm biểu đồ chuẩn ở mỗi tầng (flow và state bằng Mermaid, DMN, UML, Impact Map, Story Map), chèn Claude Design thành một bước chính thức, và thay mọi cơ chế cần người thứ hai bằng cơ chế một người làm được: adversarial pass ba vai, cổng Definition of Ready trước khi viết code, tầng thiết kế hai mức, `STATE.md` thay standup, git hook thay reviewer.
+A Claude Code plugin packaging the SDD-Solo process: it keeps the four requirement layers of Spec-Driven Development (BR → Use Case → Entity → Acceptance Criteria), adds a standard diagram at every layer (flow and state in Mermaid, DMN, UML, an Impact Map, a Story Map), makes Claude Design an official step, and replaces every mechanism that needs a second person with one a single person can run: a three-role adversarial pass, a Definition of Ready gate before any code, a two-level design layer, `STATE.md` instead of a standup, git hooks instead of a reviewer.
 
-Nền: ebook *Spec Driven Development* (Nguyễn Thế Huy) · AI Unified Process · GitHub Spec Kit · OpenSpec — đọc để học **hình dạng artifact**; từ 4.0.0 plugin không phụ thuộc lệnh của cái nào.
+Background: the ebook *Spec Driven Development* (Nguyễn Thế Huy) · AI Unified Process · GitHub Spec Kit · OpenSpec — read them to learn the **shape of the artifacts**; since 4.0.0 the plugin depends on none of their commands.
 
-## Cài
+## Install
 
 ```
 /plugin marketplace add quangman2211/sdd-solo
 /plugin install sdd-solo@sdd-solo
 ```
 
-Rồi trong repo dự án: `/sdd-solo:init`. Phụ thuộc bắt buộc chỉ có `git` — không cần cài thêm plugin nào.
+Then, in the project repo: `/sdd-solo:init`. The mandatory dependencies are `git`, `bash` and `node` (>= 18) — no other plugin is needed.
 
-Rồi **`/sdd-solo:intake`** — nó hỏi bảy câu (khổ gì · ai khổ · tốn gì · không làm thì sao · có cách nào không xây phần mềm · cố ý không làm gì · đo bằng gì) và viết `specs/br.md` giúp bạn. Đang cầm brief do một AI khác viết thì `/sdd-solo:intake brief.md`.
+Then **`/sdd-solo:intake`** — it asks seven questions (what hurts · who hurts · what it costs · what happens if nothing is done · is there a way not to build software · what is deliberately left out · what measures it) and writes `specs/br.md` for you. Already holding a brief written by another AI: `/sdd-solo:intake brief.md`.
 
-Tuỳ chọn, **không cái nào nằm trong 14 bước** (từ 4.0.0):
-- **Claude Design** — cần cho Phase 0 và bước ⑤ (Design System, màn hình SCR). Đây là thứ tuỳ chọn đáng cài nhất.
-- **GitHub Spec Kit** — nguồn tham khảo thiết kế tốt và update thường xuyên; cứ cài và cứ đọc. Chỉ một luật: nó ghi vào `.speckit/`, không ghi vào `specs/`. Xem [Vì sao Spec Kit ra khỏi chuỗi](#vì-sao-spec-kit-ra-khỏi-chuỗi).
-- **AIUP** · **Camunda Modeler** — không cần. AIUP ghi ra cây `docs/` và đụng hệ ID; sơ đồ luồng vẽ bằng Mermaid nên không cần app nào.
+Optional, and **none of these is part of the 14 steps** (since 4.0.0):
+- **Claude Design** — needed for Phase 0 and step ⑤ (the Design System, the SCR screens). It is the optional piece most worth installing.
+- **GitHub Spec Kit** — a good design reference, updated often; install it and read it. Only one rule: it writes into `.speckit/`, not into `specs/`. See [Why Spec Kit left the chain](#why-spec-kit-left-the-chain).
+- **AIUP** · **Camunda Modeler** — not needed. AIUP writes into a `docs/` tree and collides with the ID system; the flow diagrams are drawn in Mermaid, so no app is required.
 
-## Dùng
+## Use
 
-Trong repo dự án:
+In the project repo:
 
-| Lúc nào | Lệnh |
+| When | Command |
 |---|---|
-| Lần đầu / sau khi update plugin | `/sdd-solo:init` · `/sdd-solo:init --update` |
-| Mở session | hook tự đọc `STATE.md`, nói đang ở bước nào |
-| **Bắt đầu dự án — chưa biết viết gì** | `/sdd-solo:intake` (phỏng vấn 7 câu) hoặc `/sdd-solo:intake brief.md` (chuyển brief của agent khác) |
-| BR viết xong | `/sdd-solo:adversarial BR-###` — ba vai người trả tiền / vận hành mãi / hoài nghi |
-| Bắt đầu một use case | `/sdd-solo:start UC-### [ctx] [slug]` rồi viết nội dung UC cùng AI |
-| Sau khi viết RULE, AC, vẽ flow, vẽ màn hình | `/sdd-solo:adversarial UC-###` → `/sdd-solo:verify UC-###` (hoặc **đóng máy**, đọc lại buổi sau) |
-| Đọc lại xong | `/sdd-solo:gate UC-###` → xanh thì `/sdd-solo:design UC-###` → viết code theo `tasks.md` |
-| Code xong | `/sdd-solo:close UC-###` |
-| Cuối buổi | `/sdd-solo:state` |
-| Đang tới đâu · có đang chạy bản cũ không | `/sdd-solo:status` |
-| Có bản mới | `/sdd-solo:init --plugin` — chạy trọn ba khe, rồi mở session mới |
+| First time / after updating the plugin | `/sdd-solo:init` · `/sdd-solo:init --update` |
+| Opening a session | the hook reads `STATE.md` and says which step you are at |
+| **Starting a project — nothing written yet** | `/sdd-solo:intake` (a 7-question interview) or `/sdd-solo:intake brief.md` (converting another agent's brief) |
+| The BR is written | `/sdd-solo:adversarial BR-###` — the three roles: whoever pays / whoever runs it forever / the sceptic |
+| Starting a use case | `/sdd-solo:start UC-### [ctx] [slug]`, then write the UC content with the AI |
+| After writing the RULEs, the ACs, drawing the flow and the screens | `/sdd-solo:adversarial UC-###` → `/sdd-solo:verify UC-###` |
+| The re-read is done | `/sdd-solo:gate UC-###` → green means `/sdd-solo:design UC-###` → write the code from `tasks.md` |
+| The code is done | `/sdd-solo:close UC-###` |
+| End of the session | `/sdd-solo:state` |
+| Where things stand · am I running an old version | `/sdd-solo:status` |
+| There is a new version | `/sdd-solo:init --plugin` — runs all three slots, then open a new session |
 
-Bốn câu để nhớ: **Viết xong chưa? Vẽ xong chưa? Soi xong chưa? Qua cổng chưa?**
+Four questions to remember: **Written? Drawn? Reviewed? Through the gate?**
 
-## Cái gì nằm ở đâu
+## What lives where
 
-Từ 2.0.0, repo dự án chỉ còn **hai thư mục của quy trình** (+ `notes/` cho vết quá trình từ 7.0):
+Since 2.0.0 the project repo holds only **two process directories** (+ `notes/` for the process trail since 7.0):
 
 ```
-.sdd/     bộ máy — config, gate/, scripts/, hooks/, checklists/, prompts/
-specs/    toàn bộ nội dung — ba tầng chỗ (7.0):
-  vision.md · glossary.md · rules.md · architecture.md · decisions.md · adr/ · changes/   ← gốc: xuyên suốt cả dự án
-  core/{entities/<Tên>.md, br-###/{br.md, evidence.md, use-cases/UC-###-slug/}}        ← lõi, ngang hàng nghề
-  <nghề>/{glossary.md, rules.md, adr/, entities/, br-###/…}                             ← mỗi nghề một thư mục
-notes/    hoi-dap/ · soat/ · ban-do/ — vết quá trình giữa các agent, ngoài specs/
-STATE.md  CLAUDE.md  <code>/  <tests>/use-cases/<core|nghề>/UC-###/
+.sdd/     the machinery — config, gate/, scripts/, hooks/, checklists/, prompts/
+specs/    all the content — three levels of place (7.0):
+  vision.md · glossary.md · rules.md · architecture.md · decisions.md · adr/ · changes/   ← the root: project-wide
+  core/{entities/<Name>.md, br-###/{br.md, evidence.md, use-cases/UC-###-slug/}}        ← the core, a peer of a craft
+  <craft>/{glossary.md, rules.md, adr/, entities/, br-###/…}                             ← one directory per craft
+notes/    hoi-dap/ · soat/ · ban-do/ — the process trail between agents, outside specs/
+STATE.md  CLAUDE.md  <code>/  <tests>/use-cases/<core|craft>/UC-###/
 ```
 
-Tầng 0 `specs/vision.md` (7.0): chủ dự án viết bằng lời thường — định vị · **không thu hẹp** · bảng nghề và lát ·
-"xong" mỗi nghề. Mỗi BR là **một lát** của một nghề (`specs/<nghề>/br-###/`) và tự nhận `**Lát:**`; `br-check` đỏ khi
-Out of Scope co lại điều vision.md không cho co. Lõi không biết nghề, nghề biết lõi — `layer-check.sh` kiểm, githook
-`pre-commit.d/20-layer-boundary` chặn khi bật. Repo 6.x (`specs/contexts/`, `specs/br.md` gộp) dời bằng
-`migrate.sh --layout v7` với file map `.sdd/migrate-v7.map`; script vẫn đọc được cả hai bố cục.
+Layer 0, `specs/vision.md` (7.0): the owner writes it in plain words — the positioning · **what must not be narrowed** ·
+the crafts and slices table · what "done" means per craft. Every BR is **one slice** of one craft
+(`specs/<craft>/br-###/`) and claims it with `**Slice:**`; `br-check` goes red when Out of Scope narrows something
+vision.md forbids narrowing. The core does not know a craft, a craft knows the core — `layer-check.sh` checks it and
+the `pre-commit.d/20-layer-boundary` githook blocks it once enabled. A 6.x repo (`specs/contexts/`, one merged
+`specs/br.md`) moves with `migrate.sh --layout v7` and a `.sdd/migrate-v7.map` file; the scripts still read both layouts.
 
-- **`.sdd/`** giữ bộ máy, kể cả **một bản sao script kiểm** — nên `bash .sdd/scripts/gate-check.sh UC-###` chạy được ở CI và trên máy người clone repo, không cần cài plugin. Lệch version so với plugin thì hook và `status` cảnh báo.
-- **`specs/`** giữ mọi thứ mô tả hệ thống. Ranh giới spec↔doc không mất, nó tụt một tầng: khách cảm nhận được → `core/` · `<nghề>/`, chỉ người xây quan tâm → `architecture.md` · `adr/` · `decisions.md` ở gốc. Đang sửa dở → `changes/`. Vết quá trình (hỏi đáp, soát) → `notes/`, ngoài specs/.
-- Artifact của một UC nằm **trọn trong thư mục UC**: `UC-###.md` · `UC-###.flow.md` · `screens/` · và từ 4.0.0 là `design.md` + `tasks.md` (bước ⑩).
-- Thiết kế kỹ thuật có **hai mức**: `specs/architecture.md` cho cả dự án (ngăn xếp · nơi chạy · ai gọi · ranh giới · cái gì cấm), và `design.md` mỗi UC đối chiếu ngược lên nó.
-- Plugin không bao giờ ghi đè file bạn đã sửa — `init --update` để bản mới cạnh dưới tên `.new`.
+- **`.sdd/`** holds the machinery, including **a copy of the checking scripts** — so `bash .sdd/scripts/gate-check.sh UC-###` runs in CI and on the machine of whoever clones the repo, with no plugin installed. If that copy drifts from the plugin version, the hook and `status` warn.
+- **`specs/`** holds everything that describes the system. The spec↔doc boundary does not disappear, it drops one level: what the customer can feel → `core/` · `<craft>/`, what only the builder cares about → `architecture.md` · `adr/` · `decisions.md` at the root. Work in progress → `changes/`. The process trail (questions, reviews) → `notes/`, outside specs/.
+- The artifacts of a UC live **entirely inside the UC directory**: `UC-###.md` · `UC-###.flow.md` · `screens/` · and since 4.0.0 `design.md` + `tasks.md` (step ⑩).
+- The technical design has **two levels**: `specs/architecture.md` for the whole project (the stack · where it runs · who calls it · the boundaries · what is forbidden), and each UC's `design.md` checked back against it.
+- The plugin never overwrites a file you edited — `init --update` puts the new version next to it as `.new`.
 
-## Vì sao Spec Kit ra khỏi chuỗi
+## Why Spec Kit left the chain
 
-Tới 3.x, bước ⑩ của vòng 14 bước là `/speckit-plan`. Từ **4.0.0** nó là `/sdd-solo:design`. Đổi vì
-ba thứ đo được, không phải vì sở thích:
+Up to 3.x, step ⑩ of the 14-step round was `/speckit-plan`. Since **4.0.0** it is `/sdd-solo:design`. The change came
+from three measurements, not from a preference:
 
-**① Hai hệ tranh nhau một thư mục.** `speckit-specify/SKILL.md:84,88,91,93` dặn agent **bằng lời văn**:
-specs nằm dưới `specs/`, số tiếp theo lấy bằng cách *"scanning existing directories in `specs/`"*, rồi
-`mkdir -p specs/<NNN>-<slug>`. Ở `runxops`: `specs/001-assign-product-key/` nằm cạnh `specs/contexts/`.
-Hai hệ ID (`001-` và `UC-###`), một thư mục, không bên nào biết bên kia — và phép đếm số của họ đang
-quét cả `br.md`, `contexts/`, `changes/` của mình.
+**① Two systems fighting over one directory.** `speckit-specify/SKILL.md:84,88,91,93` tells the agent **in prose**:
+the specs live under `specs/`, the next number comes from *"scanning existing directories in `specs/`"*, then
+`mkdir -p specs/<NNN>-<slug>`. At `runxops`: `specs/001-assign-product-key/` sat next to `specs/contexts/`.
+Two ID systems (`001-` and `UC-###`), one directory, neither side aware of the other — and their numbering scan
+was counting our own `br.md`, `contexts/` and `changes/`.
 
-**② Bước quyết kiến trúc chạy trên hai đầu vào rỗng.** `speckit-plan` đọc đúng hai thứ: `FEATURE_SPEC`
-và `.specify/memory/constitution.md`. `FEATURE_SPEC` là bản mỏng sdd-solo sinh ra, **chỉ chứa ID**.
-Còn `constitution.md` ở repo thật vẫn nguyên placeholder `[PROJECT_NAME]`. **Brief không nằm trong
-hai đầu vào đó và chưa bao giờ nằm** — nên bản thiết kế nói ngược lại brief suốt hai ngày mà không
-ai thấy, vì mỗi tài liệu tự nó nhất quán.
+**② The step that decides the architecture ran on two empty inputs.** `speckit-plan` reads exactly two things:
+`FEATURE_SPEC` and `.specify/memory/constitution.md`. `FEATURE_SPEC` is the thin file sdd-solo generates, holding
+**only IDs**. And in a real repo `constitution.md` was still the `[PROJECT_NAME]` placeholder. **The brief is not
+among those two inputs and never was** — so the design contradicted the brief for two days with nobody seeing it,
+because each document was internally consistent.
 
-**③ "Spec Kit" không phải một thứ.** Bốn repo trên cùng một máy: 10 · 24 · 25 · 35 lệnh `speckit-*`.
-Đặt tên lệnh của người khác vào **quy tắc cứng** là để quy tắc hỏng theo lịch release của người khác.
+**③ "Spec Kit" is not one thing.** Four repos on one machine: 10 · 24 · 25 · 35 `speckit-*` commands.
+Putting someone else's command name into a **hard rule** means the rule breaks on their release schedule.
 
-Nên: quy tắc cứng của sdd-solo giờ nói về **trạng thái repo** (`.sdd/gate/UC-###.ok` có chưa,
-`design.md` có chưa), không nói về tên lệnh nào cả. Spec Kit vẫn đáng cài và đáng đọc — chỉ cần nó
-ghi vào `.speckit/`. Repo đang trộn hai cây thì `bash .sdd/scripts/migrate.sh --dry-run` tách ra,
-giữ nguyên git history.
+So: the hard rules of sdd-solo now talk about **repo state** (is there a `.sdd/gate/UC-###.ok`, is there a
+`design.md`) and name no command at all. Spec Kit is still worth installing and reading — it only has to write into
+`.speckit/`. A repo mixing the two trees is separated by `bash .sdd/scripts/migrate.sh --dry-run`, keeping the git history.
 
-## Repo của bạn đặt code ở đâu
+## Where your repo keeps its code
 
-`.sdd/config` — sinh một lần lúc `init` bằng cách dò repo, và `init --update` **không bao giờ ghi đè**:
+`.sdd/config` — generated once at `init` by probing the repo, and `init --update` **never overwrites it**:
 
 ```
 code_paths=src app lib
@@ -101,67 +101,75 @@ test_paths=tests
 uc_test_dir=tests/use-cases
 ```
 
-Githook và mọi script kiểm đều đọc file này. Trước 1.5.0 hai đường dẫn viết chết là `src`/`tests`, nên repo đặt code ở `app/` thì hook **cho qua mọi commit code không ID mà không nói một lời** — chặn cứng thành không chặn gì. Giờ commit có file nguồn mà không thư mục nào trong `code_paths` tồn tại thì hook **chặn** và chỉ vào `.sdd/config`; `/sdd-solo:status` cũng kiểm lại.
+The githooks and every checking script read this file. Before 1.5.0 those two paths were hard-coded as `src`/`tests`, so a repo with its code in `app/` had the hook **wave through every code commit with no ID without a word** — a hard block turned into no block at all. Now a commit holding source files while no directory in `code_paths` exists is **blocked**, pointing at `.sdd/config`; `/sdd-solo:status` checks it again too.
 
-## Nâng cấp 1.x → 2.0.0
+## Upgrading 1.x → 2.0.0
 
-**Thứ tự bắt buộc: migrate TRƯỚC, `init --update` SAU.** Ngược lại thì `init` dựng sẵn cây đích bằng template rỗng, migrate thấy đích đã có nên bỏ qua, và nội dung thật kẹt ở chỗ cũ. Từ 2.0.1 cả hai lệnh đều tự chặn nếu gọi sai thứ tự.
+**The order is mandatory: migrate FIRST, `init --update` AFTER.** The other way round, `init` builds the destination tree out of empty templates, the migration finds the destination already there and skips it, and the real content stays stuck in the old place. Since 2.0.1 both commands refuse to run in the wrong order.
 
 ```bash
-/plugin marketplace update sdd-solo && /plugin update sdd-solo   # lấy 2.0.x
-bash <plugin>/scripts/migrate.sh --dry-run                       # xem trước
-bash <plugin>/scripts/migrate.sh                                 # git mv, giữ history
-/sdd-solo:init --update                                          # rồi mới tới bước này
-git add -A && git commit -m "chore(sdd): migrate bố cục 2.0.0"
+/plugin marketplace update sdd-solo && /plugin update sdd-solo   # get 2.0.x
+bash <plugin>/scripts/migrate.sh --dry-run                       # preview
+bash <plugin>/scripts/migrate.sh                                 # git mv, keeping the history
+/sdd-solo:init --update                                          # only then this step
+git add -A && git commit -m "chore(sdd): migrate to the 2.0.0 layout"
 ```
 
-Script dừng ngay từ đầu nếu working tree bẩn hoặc nếu cây cũ và cây mới cùng tồn tại — trong cả hai ca nó chưa đụng file nào.
+The script stops at the very start if the working tree is dirty or if the old and the new tree both exist — in both cases it has touched no file.
 
-## Đang chạy bản nào
+## Which version am I running
 
-Bốn chỗ giữ version, lệch chỗ nào thì lệnh sửa khác nhau:
+Four places hold a version, and each mismatch has a different fix:
 
 ```
-GitHub ─①─▶ marketplace đã tải ─②─▶ bản đã cài ─③─▶ .sdd/ của dự án
-                                        └───④─▶ phiên Claude Code đang mở
+GitHub ─①─▶ the downloaded marketplace ─②─▶ the installed version ─③─▶ the project .sdd/
+                                                └───④─▶ the open Claude Code session
 ```
 
-| Khe | Lệnh |
+| Slot | Command |
 |---|---|
-| ③ `.sdd/` cũ hơn bản đã cài | `/sdd-solo:init --update` |
-| ② bản đã cài cũ hơn bản đã tải | `/plugin update sdd-solo` |
-| ① GitHub có bản mới | `/plugin marketplace update sdd-solo` |
-| ④ phiên đang mở còn chạy bản cũ | **không lệnh nào sửa được** — mở session mới |
+| ③ `.sdd/` older than the installed version | `/sdd-solo:init --update` |
+| ② the installed version older than the downloaded one | `/plugin update sdd-solo` |
+| ① GitHub has a newer version | `/plugin marketplace update sdd-solo` |
+| ④ the open session still runs an old version | **no command can fix it** — open a new session |
 
-Khe ④ là khe nguy hiểm nhất: vừa `/plugin update` xong, `.sdd/` đã mới, mọi thứ trên đĩa đều đúng, nhưng phiên đang mở vẫn chạy code cũ nạp lúc mở — gõ `/sdd-solo:gate` là nhận logic cũ. Chỉ hook SessionStart biết được phiên nạp bản nào, nên nó ghi lại để `version-check` đọc.
+Slot ④ is the dangerous one: you have just run `/plugin update`, `.sdd/` is new, everything on disk is right, and the open session still runs the code it loaded when it opened — typing `/sdd-solo:gate` gets the old logic. Only the SessionStart hook can know which version a session loaded, so it records it for `version-check` to read.
 
-`/sdd-solo:status` tự kiểm cả ba (hỏi GitHub tối đa 3 giây, nhớ 24 tiếng) và chỉ nói khi lệch. `/sdd-solo:init --plugin` chạy đúng những khe đang lệch trong một lệnh — nhưng **bản mới chỉ có hiệu lực ở session sau**, giống hệt cách Claude Code tự update chính nó. Hook mở session cũng cảnh báo, nhưng **chỉ so cục bộ, không gọi mạng** — nên khe ① chỉ lộ ra khi chạy `status`.
+`/sdd-solo:status` checks all three (asking GitHub for at most 3 seconds, remembering for 24 hours) and only speaks when something is out of step. `/sdd-solo:init --plugin` runs exactly the slots that are out of step, in one command — but **a new version only takes effect in the next session**, exactly like Claude Code updating itself. The session-open hook warns too, but **it only compares locally and makes no network call** — so slot ① only shows up when you run `status`.
 
-## Mức chặn — nói thật
+## How hard the blocks are — honestly
 
-- **Chặn cứng**: git hook `commit-msg` từ chối commit code không có ID hoặc UC chưa qua cổng; `pre-commit` từ chối trộn spec và code. Không có cờ bỏ qua.
-- **Chặn mềm**: không lệnh nào của công cụ ngoài bị gọi tên nữa (từ 4.0.0). Khối `CLAUDE.md` và hook SessionStart dạy session từ chối **viết code** khi chưa có marker `.sdd/gate/UC-###.ok` hoặc chưa có `design.md`; AI tuân, người thì có thể ép.
+- **Hard blocks**: the `commit-msg` githook refuses a code commit with no ID or for a UC that has not passed the gate; `pre-commit` refuses to mix spec and code. There is no skip flag.
+- **Soft blocks**: no external tool's command is named anywhere any more (since 4.0.0). The `CLAUDE.md` block and the SessionStart hook teach the session to refuse to **write code** while there is no `.sdd/gate/UC-###.ok` marker or no `design.md`; an AI obeys, a human can override.
 
-## Tài liệu
+## Documentation
 
-- `plugins/sdd-solo/docs/playbook-example-khoskill.html` — playbook đầy đủ với ví dụ xuyên suốt (luồng license của một dự án mẫu).
-- `plugins/sdd-solo/skills/sdd-process/SKILL.md` — kiến thức nền, cũng là thứ AI đọc khi làm việc trong repo.
+- `plugins/sdd-solo/docs/playbook-example-khoskill.html` — the full playbook with one worked example throughout (the licence flow of a sample project). Written in Vietnamese.
+- `plugins/sdd-solo/skills/sdd-process/SKILL.md` — the background knowledge, and also what the AI reads while working in a repo.
 
-## Cấu trúc
+## Layout
 
 ```
 sdd-solo/
 ├── .claude-plugin/marketplace.json
 └── plugins/sdd-solo/
     ├── .claude-plugin/plugin.json
-    ├── skills/  sdd-process · init · intake · start · adversarial · verify · gate · design · change · close · state · status
+    ├── skills/  sdd-process · init · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · role · phieu · queue · state · status
     ├── hooks/hooks.json            SessionStart → scripts/session-start.sh
-    ├── scripts/                    scaffold · br-check · gate-check · design-check · change-check · close-check · pass · status · metrics · migrate
+    ├── scripts/                    scaffold · br-check · gate-check · design-check · change-check · close-check · pass · status · metrics · migrate · role · phieu · queue · js/
     ├── templates/
-    │   ├── project/                specs/ docs/ changes/ checklists/ prompts/ STATE.md .gitmessage
-    │   ├── CLAUDE.md.tmpl          khối quy tắc, ghép vào CLAUDE.md của repo
+    │   ├── project/                specs/ notes/ .sdd/ STATE.md
+    │   ├── CLAUDE.md.tmpl          the rules block, spliced into the repo CLAUDE.md
     │   └── githooks/               commit-msg · pre-commit
     └── docs/
 ```
+
+## Language
+
+The plugin itself is English: the skills, the printed messages, the comments and the templates. The documentation
+keywords are bilingual (`scripts/kw.tsv`) — a gate reads a spec written in either English or Vietnamese and returns
+the same verdict, and a new project writes English because `scaffold` sets `doc_lang=en` in a new `.sdd/config`.
+A project already writing in Vietnamese changes nothing: `doc_lang` defaults to `vi` and the git history stays readable.
+The skills reply in whatever language you type in.
 
 MIT.

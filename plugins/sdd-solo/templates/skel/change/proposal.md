@@ -1,22 +1,22 @@
-# CHG-000: <Tên thay đổi>
+# CHG-000: <change name>
 
 ## Status
 proposed | specified | designed | applying | verified | archived | dropped
 
 ## Why
-<Vì sao đổi — feedback nào, BR nào, số liệu nào (nếu có)>
+<Why it changes — which feedback, which BR, which numbers (if any)>
 
 ## Scope
-- UC bị ảnh hưởng: UC-### (AC-# bị lật), UC-###
-- RULE bị ảnh hưởng: RULE-###
-- Không đổi: ...
+- UCs affected: UC-### (AC-# overturned), UC-###
+- RULEs affected: RULE-###
+- Unchanged: ...
 
 ## Impact on customers
-<Khách đang dựa vào hành vi cũ sẽ thấy gì thay đổi>
+<What customers relying on the old behaviour will see change>
 
-## Đọc lại
-<!-- /sdd-solo:verify CHG-### ghi vào đây (6.0.0). Cổng Phase 5 đòi ≥ 1 dòng
-     `- F# <phát hiện> [neo: <chỗ>] → <đầu ra>` — không còn cửa qua đêm. -->
+## Re-read
+<!-- /sdd-solo:verify CHG-### writes here (6.0.0). The Phase 5 gate wants at least one
+     `- F# <finding> [anchor: <where>] → <output>` line — there is no overnight door. -->
 
 ## History
 - YYYY-MM-DD: proposed

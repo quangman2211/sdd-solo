@@ -1,386 +1,399 @@
-# Verify pass — đọc tài liệu bằng một cái đầu chưa bị neo
+# Verify pass — reading the documents with an unprimed head
 
-Prompt này chạy trong **subagent riêng**, không dùng context của session đang viết spec. Đó là
-toàn bộ giá trị của nó: người viết không đọc được cái mình vừa viết, vì mắt đọc **ý định**, không
-đọc **chữ**.
+This prompt runs in **its own subagent**, not in the context of the session that wrote the spec. That is
+the whole value of it: the writer cannot read what they just wrote, because the eye reads **intent**, not
+**words**.
 
-Cùng nhu cầu với ba vai ở bước ⑦. Khác chỗ: ba vai hỏi *"spec chưa trả lời gì"*; verify pass hỏi
-*"spec có tự mâu thuẫn không, và có khai điều không có thật không"*.
+Same need as the three roles at step ⑦. The difference: the three roles ask *"what has the spec not
+answered"*; a verify pass asks *"does the spec contradict itself, and does it claim things that are not
+true"*.
 
-## Luật
+## Rules
 
-1. **Chỉ báo, không sửa.** Không sửa file, không đề xuất code, không viết lại giúp. Sửa là việc
-   của người quyết, sau khi đọc phát hiện.
-2. **Mỗi phát hiện phải trích NGUYÊN VĂN hai chỗ đang cãi nhau**, kèm đường dẫn và số dòng. Tóm
-   tắt không được — tóm tắt là chỗ lén thêm giả định vào, và một phát hiện không trích nguyên văn
-   thì người đọc không kiểm lại được, nên chỉ còn cách tin. (Cùng luật với #25.)
-3. **Mỗi phát hiện phải có đầu ra mang ID**: `→ sửa UC-009 Main 7` · `→ sửa RULE-001` ·
-   `→ Open Question` · `→ không phải lỗi vì <lý do>`. Không có "để đó". (Cùng luật với #12.)
-4. **Phạm vi là cả cây, không phải một file.** Phần lớn loại sai này nằm **giữa** các file — một
-   file đọc riêng thì hoàn toàn hợp lý. Kiểm từng file riêng sẽ không thấy gì.
+1. **Report only, never fix.** Do not edit files, do not propose code, do not helpfully rewrite. Fixing is
+   the job of whoever decides, after reading the findings.
+2. **Every finding must quote VERBATIM the two places that disagree**, with path and line number. A summary
+   is not allowed — a summary is where an assumption sneaks in, and a finding without verbatim quotes
+   cannot be re-checked by the reader, so all they can do is believe it. (Same rule as #25.)
+3. **Every finding must have an output carrying an ID**: `→ fix UC-009 Main 7` · `→ fix RULE-001` ·
+   `→ Open Question` · `→ false positive because <reason>`. There is no "leave it". (Same rule as #12.)
+4. **The scope is the whole tree, not one file.** Most of this class of error lives **between** files — each
+   file on its own reads perfectly. Checking files one at a time finds nothing.
 
-## Các loại sai phải soi
+## The kinds of error to look for
 
-*(Tiêu đề này cố ý **không đếm**. Bản 3.6.0 thêm một dòng vào bảng dưới mà quên sửa chữ "Sáu"
-cách đó hai dòng — một cái nhãn mang số thì mỗi lần thêm dòng là một lần nó có thể mục.)*
+*(This heading deliberately **carries no count**. Version 3.6.0 added a row to the table below and forgot to
+change the word "Six" two lines above it — a label carrying a number can rot every time a row is added.)*
 
-| # | Loại | Câu hỏi |
+| # | Kind | Question |
 |---|---|---|
-| 1 | **Khai điều không có thật** | Tài liệu nói *"X chưa tồn tại"* / *"đã thêm Y"* — X, Y có thật không? Mở file ra xem, đừng tin câu văn. |
-| 2 | **Commit khai một đằng, file một nẻo** | Thông điệp commit khai đã thêm/sửa **nội dung** nào — nội dung đó có trong diff không? `git show <hash>` rồi so **nội dung khai với diff**, không so danh sách file. |
-| 3 | **Hai tầng nói ngược nhau** | BR ↔ RULE ↔ UC ↔ AC. Một quyết định đổi ở tầng dưới mà tầng trên còn câu cũ là ca hay gặp nhất. |
-| 4 | **Đã bác nhưng còn dạy** | Một phương án bị loại ở Q#/CON-###/History mà chỗ khác vẫn hướng dẫn làm theo nó. Ai đọc chỗ đó sẽ dựng lại đúng cái vừa bị loại. |
-| 5 | **Thứ tự nói ngược nội dung** | Bước đánh số 1→N đọc xuôi có ra đúng trình tự không? Đổi nội dung mà giữ số thì mọi phép kiểm cơ học đều xanh. |
-| 6 | **Hứa mà không có đường** | AC/Postcondition hứa hệ thống *biết* hoặc *không đổi* một thứ — có bước nào thật sự đi lấy hoặc thật sự không ghi không? |
-| 7 | **Con số đã mục** | Số mô tả **dữ liệu thật** (đếm dòng, tỉ lệ, "427 dòng", "10/1986") — đo lại hôm nay có ra đúng thế không? |
-| 8 | **Nhãn không đi theo nội dung** | Tiêu đề, câu tóm tắt, số đếm trong tiêu đề — có còn đúng với thân bên dưới không? Ai sửa thân thường không sửa nhãn. |
-| 9 | **Số đúng, chủ ngữ sai** | Phép đo hợp lệ, nhưng nó trả lời một câu hỏi **khác** câu hỏi trong văn bản. Đo lại vẫn ra đúng số đó, mãi mãi. |
+| 1 | **Claiming something untrue** | The document says *"X does not exist yet"* / *"Y was added"* — do X and Y exist? Open the file and look; do not trust the sentence. |
+| 2 | **The commit says one thing, the file another** | The commit message claims which **content** was added or changed — is that content in the diff? `git show <hash>` and compare **the claimed content against the diff**, not the file list. |
+| 3 | **Two layers saying opposite things** | BR ↔ RULE ↔ UC ↔ AC. A decision changed at a lower layer while the upper layer still carries the old sentence is the most common case. |
+| 4 | **Rejected but still being taught** | An option rejected in a Q#/CON-###/History while somewhere else still instructs people to do it. Whoever reads that place will rebuild exactly what was just rejected. |
+| 5 | **The ordering contradicts the content** | Read steps 1→N in order: is that really the sequence? Change the content and keep the numbers and every mechanical check stays green. |
+| 6 | **A promise with no path** | An AC/Postcondition promises the system *knows* or *does not change* something — is there actually a step that fetches it, or that really does not write? |
+| 7 | **A rotted number** | A number describing **real data** (line counts, ratios, "427 rows", "10/1986") — measured again today, does it still come out the same? |
+| 8 | **The label did not follow the content** | Headings, summary sentences, counts inside headings — are they still true of the body below? Whoever edits the body usually does not edit the label. |
+| 9 | **Right number, wrong subject** | A valid measurement, but it answers a **different** question from the one in the text. Measure again and you get the same number, forever. |
 
-Loại #2 có **hai nửa, chỉ một nửa là lỗi** (#42). Khai một khối mà diff không có khối đó, hoặc diff sửa
-`AC-3` mà thông điệp nói `AC-5` → **lỗi thật**, thành `F#`. Diff chạm thêm file bên cạnh (glossary, flow,
-entities) mà thông điệp không kể tên → **không phải loại này**: thông điệp vẫn khai đúng cái nó làm, chỉ
-kể thiếu. Gộp mọi ca như vậy thành **một dòng cảnh báo mức thấp** cuối báo cáo — *"3 commit chạm thêm
-file bên cạnh không kể trong thông điệp: `7b452e1` (glossary) …"* — không thành `F#`. Ca thật runxops
-UC-014 F16: hai commit bị xếp loại #2 vì "không kể glossary, flow"; `git show` cho thấy cả hai chứa đúng
-khối chúng khai; agent chính bác được nhưng tốn một lượt đối chiếu. Cách kiểm đúng: đọc thông điệp, liệt
-kê **những gì nó khai đã làm**, rồi tìm từng cái trong diff — không đếm file.
+Kind #2 has **two halves, and only one is an error** (#42). Claiming a block the diff does not contain, or a
+diff that changes `AC-3` while the message says `AC-5` → **a real error**, and it becomes an `F#`. A diff that
+also touches a neighbouring file (glossary, flow, entities) the message does not name → **not this kind**:
+the message still describes correctly what it did, it just did not list everything. Collect all such cases
+into **one low-level warning line** at the end of the report — *"3 commits also touched neighbouring files not
+named in the message: `7b452e1` (glossary) …"* — not an `F#`. Real runxops case, UC-014 F16: two commits were
+classed as #2 for "not naming glossary, flow"; `git show` showed both contained exactly the block they
+claimed; the main agent could reject it, but it cost a round of checking. The right method: read the message,
+list **what it claims it did**, then find each of those in the diff — do not count files.
 
-Loại #9 **không phải** loại #7. Loại #7 là *"số từng đúng, dữ liệu đổi bên dưới"* — chữa bằng **đo
-lại**. Loại #9 đo lại vẫn ra đúng con số ấy: hỏng không nằm ở con số, nằm ở **cái câu nó được gắn
-vào**. Chữa bằng **đọc lại câu**, không bằng đo.
+Kind #9 is **not** kind #7. Kind #7 is *"the number was right, the data changed underneath"* — cured by
+**measuring again**. Kind #9 measures the same every time: what is broken is not the number, it is **the
+sentence it is attached to**. Cured by **re-reading the sentence**, not by measuring.
 
-Và không tầng nào trong bốn tầng của loại #7 bắt được: vân tay khớp · lệnh đo có thật và in đúng số
-· cấu trúc không đổi · phép cộng khớp. **Cả bốn kiểm quan hệ số ↔ dữ liệu; không tầng nào kiểm quan
-hệ số ↔ CÂU.**
+And none of the four layers guarding kind #7 catch it: the fingerprint matches · the measuring command exists
+and prints the right number · the structure is unchanged · the addition works out. **All four check the
+relationship between the number and the data; none checks the relationship between the number and the SENTENCE.**
 
-Ca thật (`runxops`): cùng một cột `Variant` sinh ra **ba mẫu số đều hợp lệ** — `249` dòng có *tổng
-giá trị* > 1 · `215` dòng *gom nhiều Variant* · `469` dòng *có hay không có* trục. Câu trong tài
-liệu nói về listing **gom nhiều Variant**, nên đúng là `215`; `249` bị dán vào giữa đường. Cùng
-kiểu: `1006` (tổng giá trị, phép **cộng**) và `920` (tổ hợp, phép **nhân**) — dùng `1006` cho phép
-bung là sai, dùng nó cho tổng giá trị là đúng.
+Real case (`runxops`): the same `Variant` column produced **three equally valid denominators** — `249` rows
+whose *total value* > 1 · `215` rows *grouping several Variants* · `469` rows *with or without* an axis. The
+sentence in the document was about listings that **group several Variants**, so `215` is the right one; `249`
+got pasted in along the way. Same shape: `1006` (total values, an **addition**) and `920` (combinations, a
+**multiplication**) — using `1006` for the expansion is wrong, using it for total value is right.
 
-**Kiểm rẻ:** cột nào sinh ra **nhiều hơn một mẫu số hợp lệ** thì mọi con số lấy từ nó **phải mang
-nhãn mẫu số, không được đứng trần**. Và câu hỏi phải hỏi là: *con số này trả lời câu hỏi nào, và
-câu trong tài liệu đang hỏi câu nào?*
+**The cheap check:** any column producing **more than one valid denominator** means every number taken from it
+**must carry the denominator's label and never stand bare**. And the question to ask is: *which question does
+this number answer, and which question is the sentence in the document asking?*
 
-Loại #8 đáng tách riêng khỏi #3 vì nó có **chữ ký riêng và chỗ nấp riêng**: cái sai do chính lần
-sửa trước gây ra, và nó nằm cách chỗ sửa vài dòng tới vài trăm dòng nên không lọt vào mắt người
-vừa sửa. Ba ca đo được trong một ngày ở `runxops` và trong plugin này, ba người khác nhau, cùng
-một hình: *"Sáu loại sai"* trên bảng bảy dòng · một `AC` có tiêu đề nói một đằng thân nói một nẻo ·
-`entities.md` sửa `7 → 10` trong bảng và History nhưng bỏ sót câu văn xuôi cách đó **190 dòng**.
+Kind #8 deserves its own row apart from #3 because it has **its own signature and its own hiding place**: the
+error is caused by the previous fix itself, and it sits anywhere from a few lines to a few hundred lines away
+from the edit, so it never enters the eye of the person who just made it. Three measured cases in one day, in
+`runxops` and in this plugin, by three different people, all the same shape: *"Six kinds of error"* over a
+seven-row table · an `AC` whose heading says one thing and whose body says another · `entities.md` updated
+`7 → 10` in the table and in History while missing a prose sentence **190 lines** away.
 
-Cách soi: với mỗi lần một con số hoặc một quyết định vừa đổi, **quét cả cây tìm mọi chỗ khác nhắc
-tới nó** — đừng sửa theo chỗ mình nhớ là có. Trí nhớ của người vừa sửa là thứ dở nhất để dựa vào,
-vì nó nhớ **ý định** chứ không nhớ **chữ**.
+How to look: for every number or decision that just changed, **sweep the whole tree for every other place that
+mentions it** — do not fix the places you remember. The memory of whoever just made the edit is the worst thing
+to rely on, because it remembers the **intent**, not the **words**.
 
-**PHÂN LOẠI hit, đừng chỉ tìm hit** — và đừng bỏ qua chỗ nào. Luật này kéo ngược luật 9 của loại
-#7 (*giữ số cũ kèm lý do lệch*): càng tuân thủ luật 9 thì cây càng đầy số cũ **hợp lệ**, nên quét
-số cũ sẽ ra càng nhiều hit đúng-mà-phải-bác. Sau vài tháng, mỗi số đổi kéo theo hàng chục hit lịch
-sử, và lúc đó *"bác một phát hiện phải rẻ"* không còn đủ — **cái rẻ phải là không phải bác.**
+**CLASSIFY the hits, do not just find them** — and do not skip any. This rule pulls against rule 9 of kind #7
+(*keep the old number with the reason it differs*): the better rule 9 is followed, the more the tree fills with
+**legitimate** old numbers, so sweeping for old numbers produces more and more correct-but-must-be-rejected
+hits. After a few months, every changed number drags dozens of historical hits with it, and at that point
+*"rejecting a finding must be cheap"* is no longer enough — **what must be cheap is not having to reject at all.**
 
-Cách giải: chia hit làm hai loại ngay khi tìm ra, **máy tự dán nhãn**, và chỉ loại thứ hai mới
-thành `F#`:
+The fix: split the hits into two kinds the moment they are found, **labelled by machine**, and only the second
+kind becomes an `F#`:
 
-| Hit nằm ở | Xử lý |
+| Hit sitting in | Handling |
 |---|---|
-| Mục `## History`, hoặc một câu có dạng `<số cũ> → <số mới>` / *"số cũ … vì …"* | **hit lịch sử hợp lệ** — liệt kê gọn thành một dòng đếm, không thành `F#` |
-| Bất kỳ chỗ nào khác — văn xuôi sống, bảng, tiêu đề, `RULE`, `AC` | **`F#`** — đây là số chết nằm trong câu sống |
+| A `## History` section, or a sentence shaped `<old number> → <new number>` / *"the old number … because …"* | **a legitimate historical hit** — list them compactly as one counted line, not an `F#` |
+| Anywhere else — live prose, tables, headings, a `RULE`, an `AC` | **an `F#`** — this is a dead number inside a live sentence |
 
-Không **loại bỏ** loại một khỏi phép quét, chỉ **hạ nó xuống một dòng đếm**: *"12 hit ở History và
-các câu `cũ → mới` — hợp lệ theo luật 9"*. Loại bỏ hẳn thì một câu văn xuôi sống vô tình mang dấu
-`→` sẽ tàng hình vĩnh viễn, và đó lại đúng là loại lỗi cả tài liệu này sinh ra để bắt.
+Do not **exclude** the first kind from the sweep, only **demote** it to one counted line: *"12 hits in History
+and in `old → new` sentences — legitimate under rule 9"*. Excluding it outright makes a live prose sentence that
+happens to contain a `→` invisible forever, and that is exactly the class of error this whole document exists
+to catch.
 
-**Câu định tính đứng thay một con số cũng là hit.** *"sẽ nhiều hơn 1986 dòng"* không sai — nhưng
-số thật là **2437**, tức **+23%**, và *"nhiều hơn"* che mất đúng cái phần khiến người ta phải quyết
-khác đi. Cùng hình với `13/13` ở luật 10: câu không sai, chỉ là không đủ để ai quyết được gì.
+**A qualitative phrase standing in for a number is also a hit.** *"will be more than 1986 rows"* is not wrong —
+but the real number is **2437**, that is **+23%**, and *"more than"* hides precisely the part that would make
+someone decide differently. Same shape as `13/13` in rule 10: the sentence is not wrong, it is just not enough
+for anyone to decide anything.
 
-## Vai thứ hai: đối chiếu tài liệu với DỮ LIỆU THẬT
+## The second role: checking the documents against REAL DATA
 
-Mọi loại trên đều đọc tài liệu so với tài liệu. Loại #7 khác hẳn và cần một vai riêng, vì **con số là
-chỗ mục nhanh nhất trong cả spec**: nó đúng lúc viết, không ai sửa nó khi dữ liệu đổi, và một con
-số đã mục **trông y hệt** một con số đúng. Không phép kiểm cấu trúc nào phân biệt được.
+Everything above reads documents against documents. Kind #7 is different and needs its own role, because **a
+number is the fastest-rotting thing in a whole spec**: it was right when written, nobody updates it when the
+data changes, and a rotted number **looks exactly like** a correct one. No structural check can tell them apart.
 
-Ca thật (`runxops`, 2026-09-09): `entities.md` ghi *"427 dòng đang có trục nằm kẹt trong
-`Product Name`"*. Câu đó **qua adversarial pass và ba lượt cổng**. Thứ bắt được nó không phải
-script nào, mà là một câu của người biết dữ liệu: *"dữ liệu chưa chuẩn"*. Đo lại — và chú ý ca mẫu
-này cố ý trưng **hai tầng**, vì mỗi tầng dạy một thứ:
-
-```
-ĐƠN VỊ = Ô          (phân rã, các nhóm rời nhau, cộng lại phải đúng)
-  ô có nội dung ngoài tên + link      982
-    chỉ mang định danh                513
-    chỉ mang trục biến thể            454
-    mang CẢ HAI                        15
-    không rơi vào nhóm nào              0
-                              cộng →  982  ✓
-
-ĐƠN VỊ = MÃ / DÒNG  (KHÔNG phân rã — lớn hơn số ô, vì một ô chứa được nhiều)
-  mã định danh                        545
-  dòng trục biến thể                  601
-  giá trị biến thể (CỘNG)            1006
-  tổ hợp biến thể  (NHÂN)             920   ← số Variant thật khi bung
-```
-
-**Ba con số trong cùng một câu có thể mang ba đơn vị khác nhau, và không có gì trong văn bản nói
-ra điều đó.** Câu cũ *"982 ô — 545 định danh và 601 trục"* đọc như một phép chia đôi; ai thử cộng
-sẽ ra `545 + 601 − 982 = 164` ô mang cả hai, mà **số thật là 15**. Sai hơn mười lần, chỉ vì ba
-đơn vị đứng cạnh nhau không ai khai.
-
-**Thử phép phân rã ở CẢ HAI phía — và đây là chỗ ca mẫu dạy nhiều nhất, vì một phía gãy:**
+Real case (`runxops`, 2026-09-09): `entities.md` said *"427 rows currently have an axis stuck inside
+`Product Name`"*. That sentence **passed an adversarial pass and three gate runs**. What caught it was not a
+script but a sentence from someone who knew the data: *"the data isn't clean"*. Measured again — and note that
+this worked example deliberately shows **two levels**, because each teaches something different:
 
 ```
-phía biến thể   454 + 15 = 469  ✓ khớp số ô có Variant đo độc lập
-phía định danh  513 + 15 = 528  ✗ số ô có Identifiers là 555 — hụt 27
+UNIT = CELL         (a partition; the groups are disjoint and must add up)
+  cells with content beyond name + link   982
+    identifier only                        513
+    variant axis only                      454
+    BOTH                                    15
+    in no group                              0
+                                  sum →    982  ✓
+
+UNIT = CODE / ROW   (NOT a partition — larger than the cell count, since one cell can hold several)
+  identifier codes                         545
+  variant axis rows                        601
+  variant values (SUM)                    1006
+  variant combinations (PRODUCT)            920   ← the real Variant count when expanded
 ```
 
-Không phải bộ số hỏng. Là **thiếu hai số hạng mà `982` theo định nghĩa không thể chứa**:
+**Three numbers in one sentence can carry three different units, and nothing in the text says so.** The old
+sentence *"982 cells — 545 identifiers and 601 axes"* reads like a split in two; anyone doing the arithmetic
+gets `545 + 601 − 982 = 164` cells carrying both, while **the real number is 15**. Off by more than ten times,
+purely because three units stood side by side and nobody declared them.
+
+**Try the partition on BOTH sides — and this is where the worked example teaches most, because one side breaks:**
 
 ```
-513  chỉ định danh, trong 982
- 15  cả hai, trong 982
- 10  từ cột `Product ID` gốc của file — không nằm trong ô tên
- 17  ô MỘT dòng, định danh dính sau dấu `|` ngay trên dòng tên
+variant side      454 + 15 = 469  ✓ matches the independently measured count of cells with a Variant
+identifier side   513 + 15 = 528  ✗ the count of cells with Identifiers is 555 — 27 short
+```
+
+The set of numbers is not broken. **Two terms are missing that `982` cannot contain by definition**:
+
+```
+513  identifier only, within 982
+ 15  both, within 982
+ 10  from the file's original `Product ID` column — not in the name cell at all
+ 17  ONE-line cells where the identifier trails after a `|` on the name line itself
      ("The Early Church Was the Catholic Church | 9781683572466")
 ───
 555  ✓
 ```
 
-Con số **17** là chỗ đắt: nó nằm ngoài `982` **theo đúng định nghĩa của 982** — `982` đếm ô *có nội
-dung ngoài tên+link*, mà 17 ô này chỉ có **một** dòng; định danh nằm cùng dòng với tên, sau một dấu
-`|`.
+The number **17** is the expensive one: it falls outside `982` **by the very definition of 982** — `982` counts
+cells *with content beyond name+link*, and these 17 cells have only **one** line; the identifier shares the line
+with the name, after a `|`.
 
-Nên phát biểu đúng là: **`982` KHÔNG phải tập cha của định danh.** Nó là tập cha của *trục biến
-thể* (469 nằm trọn trong đó), nhưng chỉ chứa 528/555 ô mang định danh. Bộ số cũ đọc như thể `982`
-bao cả hai — **đó chính là ảo giác mà `536 + 525` tạo ra từ đầu, và nó sống nguyên qua ba lần
-sửa.**
+So the correct statement is: **`982` is NOT the parent set of identifiers.** It is the parent set of the
+*variant axis* (469 sits entirely inside it), but it holds only 528 of the 555 cells carrying an identifier.
+The old numbers read as if `982` covered both — **that is exactly the illusion `536 + 525` created in the first
+place, and it survived three rounds of fixes intact.**
 
-Ca này mạnh hơn ca `13/13` một bậc: `13/13` là mẫu số đã lọc mà **không nói đã lọc gì** — nó *giấu
-thông tin*. `982` là mẫu số **bị tưởng là bao cả hai thứ trong khi chỉ bao một** — nó *tạo ra một
-quan hệ không tồn tại*, và một quan hệ sai kéo theo **mọi suy luận dựng trên nó**, chứ không chỉ
-một con số.
+This case is one level beyond the `13/13` case: `13/13` is a filtered denominator that **does not say what was
+filtered** — it *hides information*. `982` is a denominator **believed to cover two things while covering one** —
+it *creates a relationship that does not exist*, and a wrong relationship drags **every inference built on it**
+with it, not just one number.
 
-Quan hệ giữa `555` và `545` — **hai câu, hai lý do khác nhau, và câu thứ hai là chỗ dễ tưởng là
-hiển nhiên nhất trong cả bảng:**
+The relationship between `555` and `545` — **two sentences, two different reasons, and the second is the one
+most easily mistaken for obvious in the whole table:**
 
 ```
-545 mã gỡ từ ô `Name Product`  +  10 mã từ cột `Product ID` gốc  =  555 mã
-555 mã = 555 ô     VÌ ĐO ĐƯỢC rằng mọi ô chỉ mang MỘT mã ({1: 555})
+545 codes extracted from the `Name Product` cell  +  10 from the original `Product ID` column  =  555 codes
+555 codes = 555 cells     BECAUSE IT WAS MEASURED that every cell carries exactly ONE code ({1: 555})
 ```
 
-Câu đầu là phép cộng. Câu sau **không suy ra được** — nó là một tính chất của dữ liệu, phải đo mới
-biết: chỉ cần một ô mang hai ISBN là đẳng thức gãy, và với dữ liệu này điều đó hoàn toàn có thể.
-`545` và `555` **cùng đơn vị (mã)**, khác nhau ở **phạm vi nguồn**, không phải ở đơn vị.
+The first sentence is addition. The second **cannot be derived** — it is a property of the data that has to be
+measured: one cell carrying two ISBNs breaks the equality, and with this data that is entirely possible.
+`545` and `555` share the **same unit (codes)** and differ in **source scope**, not in unit.
 
-Bản 3.14.0 để chỗ này là **một ô trống có nhãn** *"chưa có phép đo nào"* thay vì viết
-*"555 ô ứng với 545 mã cộng 10"*. Câu đó **đúng** — và vẫn sẽ là bịa, vì tính chất một-ô-một-mã
-đang chống đỡ cả câu lúc ấy chưa ai đo. **Kết quả giống hệt, giá trị khác hẳn.** Đó là lý do một
-chỗ trống có nhãn tốt hơn một quan hệ nghe hợp lý: **không viết ra thứ mình chưa đo, kể cả khi nó
-chắc chắn đúng.**
+Version 3.14.0 left this spot as **a labelled empty box** saying *"no measurement yet"* instead of writing
+*"555 cells correspond to 545 codes plus 10"*. That sentence is **true** — and would still have been invented,
+because the one-cell-one-code property holding the whole sentence up had not been measured at the time.
+**The same result, an entirely different value.** That is why a labelled blank beats a plausible relationship:
+**do not write down what you have not measured, even when it is certainly true.**
 
-Ca mẫu này từng mang đúng cái lỗi nó dạy cách bắt. Bản 3.6.0–3.11.0 ghi `536 / 525`, hai con số ra
-từ **script khảo sát đầu tiên** — chạy trước khi bỏ ký tự vô hình `U+200E` và trước khi bắt được
-32 giá trị biến thể không mang tên trục. Sai **cùng một chiều, cùng một nguyên nhân**, đúng chữ ký
-mà đoạn này đang mô tả. `/sdd-solo:verify` tìm ra nó ở lần chạy thật đầu tiên — còn `536 + 525 ≠
-982` thì **đáng lẽ đã bắt được nó sáu bản trước, không cần verify.**
+This worked example once carried the very error it teaches you to catch. Versions 3.6.0–3.11.0 recorded
+`536 / 525`, two numbers out of the **first survey script** — run before the invisible `U+200E` characters were
+stripped and before 32 variant values with no axis name were caught. Wrong in **the same direction, from the
+same cause**, exactly the signature this section describes. `/sdd-solo:verify` found it on its first real run —
+while `536 + 525 ≠ 982` **should have caught it six versions earlier, with no verify needed.**
 
-Và `601 dòng` đứng cạnh `1006 giá trị` là ca *hai mẫu số cho cùng một thứ*: một ô ghi
-`Color: Brown | Dark Grey` là **một** dòng trục nhưng **hai** giá trị. Dán nhầm số nọ vào câu của
-số kia thì cả hai đều là số thật, câu vẫn trôi chảy, và không phép so nào bắt được — **luôn nói rõ
-đang đếm ĐƠN VỊ nào.**
+And `601 rows` next to `1006 values` is the *two denominators for the same thing* case: one cell saying
+`Color: Brown | Dark Grey` is **one** axis row but **two** values. Paste one into the other's sentence and both
+are real numbers, the sentence still reads well, and no comparison catches it — **always say which UNIT is being
+counted.**
 
-Cách làm:
+How to do it:
 
-**Một con số kiểm lại được cần BA thứ, thiếu một là mục lặng:** *dữ liệu nào* (vân tay) ·
-*lệnh nào* (luật 5b) · *lệnh đó còn đúng với hình dạng hiện tại không* (chốt cấu trúc, dưới đây).
-**Hai thứ đầu bắt được số sai; chỉ thứ ba bắt được số đúng-trên-thế-giới-cũ.**
+**A re-checkable number needs THREE things, and missing one means it rots silently:** *which data* (fingerprint) ·
+*which command* (rule 5b) · *is that command still right for the current shape* (the structure assertion, below).
+**The first two catch a wrong number; only the third catches a number that is right about a world that is gone.**
 
-1. **Tìm mọi con số mô tả dữ liệu thật** trong phạm vi đọc. Số nghiệp vụ đã chốt (ngưỡng, thời
-   hạn trong `RULE-###`) **không** thuộc loại này — đó là quyết định, không phải phép đo.
-2. **Mỗi con số đó phải có một lệnh đo lại được.** Không có → **đó đã là một phát hiện**:
-   `F# con số <X> không có cách đo lại → sửa <file> ghi kèm lệnh đo`. Đừng tự bịa lệnh rồi coi
-   như xong; lệnh do mình nghĩ ra không phải lệnh tác giả đã dùng.
-3. **Chạy lệnh, so kết quả.** Khớp → im. Lệch → `F#` với hai phía: **A** là nguyên văn dòng trong
-   spec kèm `đường dẫn:dòng`, **B** là **lệnh vừa chạy và đầu ra của nó hôm nay**. Đây đúng là
-   luật "trích nguyên văn hai phía", chỉ khác chỗ phía B là một lệnh chứ không phải một dòng file.
-4. **Lệch không có nghĩa là spec sai.** Có thể dữ liệu đã đổi, có thể lệnh cũ đếm hụt. Báo cả hai
-   số, **đừng kết luận bên nào đúng** — người biết dữ liệu quyết.
+1. **Find every number describing real data** within the reading scope. A settled business number (a threshold,
+   a deadline in a `RULE-###`) is **not** one of these — that is a decision, not a measurement.
+2. **Each of those numbers must have a command that re-measures it.** None → **that is already a finding**:
+   `F# the number <X> has no way to be re-measured → fix <file> to record the measuring command`. Do not invent
+   a command and call it done; a command you thought up is not the command the author used.
+3. **Run the command, compare the result.** Matches → say nothing. Differs → an `F#` with two sides: **A** is the
+   verbatim line in the spec with `path:line`, **B** is **the command you just ran and its output today**. This
+   is exactly the "quote both sides verbatim" rule; only side B is a command rather than a line in a file.
+4. **A difference does not mean the spec is wrong.** The data may have changed, or the old command may have
+   undercounted. Report both numbers and **do not conclude which one is right** — whoever knows the data decides.
 
-   **Lệnh đo nên in dấu vân tay của chính dữ liệu nó đọc**, và spec ghi lại vân tay đó cạnh bảng số:
-
-   ```
-   Nguồn: itemsell-flat.csv · 1986 dòng · sha256 70daf43f · sửa lần cuối 2026-09-09 22:22
-   Đo lúc: 2026-09-09 22:26
-   ```
-
-   Có vân tay thì câu *"lệch không có nghĩa spec sai"* thôi là một luật người phải nhớ và trở
-   thành **một dòng máy in ra**: vân tay khác → dữ liệu đã đổi; vân tay khớp mà số khác → spec
-   sai hoặc lệnh sai. Không có vân tay thì mọi lần lệch đều phải đoán lại từ đầu.
-
-   Chỗ vân tay **không** bịt được, nói thẳng ra trong `F#` nếu gặp: nó bắt được **dữ liệu** đổi,
-   **không** bắt được **lệnh** đổi. Sửa chính lệnh đo cho nó đếm sai đi thì vân tay vẫn khớp và cả
-   bảng số vẫn mục cùng một chiều — lần này còn khó thấy hơn, vì tài liệu trông như *đã được kiểm*.
-   **Có lệnh đo làm số kiểm lại được, không làm số đúng.**
-4b. **Chốt cấu trúc: lệnh đo phải khai hình dạng nó đang giả định, và kiểm trước khi đếm.**
-   Đây là loại mục thứ ba, khác hẳn hai loại kia: không phải *dữ liệu đổi*, không phải *lệnh sai*,
-   mà là **lệnh đúng với thế giới cũ**. Nó chạy trơn và ra một con số hoàn toàn hợp lý — nên không
-   phép so số nào bắt được. Ca thật: một phép đếm ra `132` thay vì `215` vì nó chỉ thấy dấu `|`
-   nằm cùng dòng với `Color:`; regex không sai, **cấu trúc nó đang đếm chưa tồn tại lúc ấy**.
-
-   Cách chặn được **một nửa**: bắt lệnh khai ra giả định của nó (tên cột phải có · dấu ngăn trục là
-   gì · ô có còn xuống dòng không), kiểm trước khi đếm, và **không khớp thì DỪNG, không in con số
-   nào**:
+   **A measuring command should print a fingerprint of the very data it reads**, and the spec records that
+   fingerprint next to the table of numbers:
 
    ```
-   itemsell-flat.csv không còn hình dạng mà lệnh này giả định — KHÔNG đếm,
-   vì một con số đếm trên cấu trúc đã đổi trông y hệt một con số đúng:
-     ✗ không ô Variant nào chứa ' ; ' — dấu ngăn trục có thể đã đổi
+   Source: itemsell-flat.csv · 1986 rows · sha256 70daf43f · last modified 2026-09-09 22:22
+   Measured at: 2026-09-09 22:26
+   ```
+
+   With a fingerprint, *"a difference does not mean the spec is wrong"* stops being a rule a person has to
+   remember and becomes **a line the machine prints**: different fingerprint → the data changed; matching
+   fingerprint but a different number → the spec is wrong or the command is wrong. Without one, every difference
+   has to be guessed at from scratch.
+
+   What a fingerprint **cannot** close, say so plainly in the `F#` when it comes up: it catches **the data**
+   changing, **not the command** changing. Edit the measuring command so that it counts wrongly and the
+   fingerprint still matches while the whole table rots the same direction — harder to see this time, because the
+   document looks *as if it had been checked*. **A measuring command makes a number re-checkable; it does not
+   make it right.**
+4b. **The structure assertion: a measuring command must declare the shape it assumes, and check it before
+   counting.** This is the third kind of rot, unlike the other two: not *the data changed*, not *the command is
+   wrong*, but **the command is right about a world that is gone**. It runs cleanly and produces a perfectly
+   plausible number — so no numeric comparison catches it. Real case: a count returned `132` instead of `215`
+   because it only saw `|` characters on the same line as `Color:`; the regex was not wrong, **the structure it
+   was counting did not exist yet**.
+
+   How to block **half** of it: make the command declare its assumptions (which column must exist · what the axis
+   separator is · whether cells still contain newlines), check them before counting, and **on a mismatch STOP and
+   print no number at all**:
+
+   ```
+   itemsell-flat.csv no longer has the shape this command assumes — NOT counting,
+   because a number counted on a changed structure looks exactly like a correct one:
+     ✗ no Variant cell contains ' ; ' — the axis separator may have changed
    EXIT = 1
    ```
 
-   Đây là nguyên tắc mở đầu của cả repo áp vào chỗ hẹp nhất: **báo xanh sai tệ hơn không có phép
-   kiểm**, nên một lệnh đo không chắc mình đang đo đúng thứ thì việc đúng đắn là **im, không phải
-   đoán**.
+   This is the whole repo's founding principle applied at its narrowest point: **a wrong green is worse than no
+   check**, so a measuring command that is not sure it is measuring the right thing should **stay silent, not
+   guess**.
 
-   Nửa còn hở, khai cho đủ: chốt cấu trúc bắt được **cấu trúc dữ liệu** đổi. Nó **không** bắt được
-   người sửa cả lệnh lẫn phần khai giả định cùng lúc cho khớp nhau — lúc đó nó lại là một lệnh
-   đúng với thế giới cũ, chỉ khác là thế giới cũ vừa được viết lại cho hợp. **Ba tầng, tầng nào
-   cũng chỉ đẩy chỗ mù lùi một bậc chứ không xoá được.** Nói ra chỗ mù còn lại, đừng hứa nó đã hết.
+   The half that stays open, declared in full: the structure assertion catches **the data structure** changing. It
+   does **not** catch someone editing both the command and its declared assumptions at once to match — at that
+   point it is again a command that is right about a world that is gone, except the old world has just been
+   rewritten to fit. **Three layers, and each only pushes the blind spot back one step rather than removing it.**
+   Name the remaining blind spot; do not promise it is gone.
 
-5. **Soi kỹ chỗ phép đếm không thấy được.** Đây là chỗ ca thật ở trên trượt: phép đếm cũ **không
-   sai công thức**, nó grep `Color:`/`Size:` và đếm đúng thứ nó grep. Nó trượt vì hai thứ nằm
-   ngoài tầm với của mọi phép grep:
-   - **ký tự vô hình** (`U+200E`, `U+FEFF`, khoảng trắng không ngắt) dính vào giá trị — một ISBN
-     có `U+200E` ở đầu **nhìn y hệt** một dãy số bình thường;
-   - **giá trị không có nhãn** — `Paperback`, `M | L | XL` là giá trị biến thể mà không mang tên
-     trục nào, nên mọi phép đếm theo `<tên trục>:` đều không thấy.
+5. **Look hard at what a count cannot see.** This is where the real case above slipped: the old count was **not
+   wrong as a formula**, it grepped `Color:`/`Size:` and correctly counted what it grepped. It slipped because two
+   things are out of reach of any grep:
+   - **invisible characters** (`U+200E`, `U+FEFF`, non-breaking space) stuck to a value — an ISBN with a leading
+     `U+200E` **looks exactly like** an ordinary digit string;
+   - **values with no label** — `Paperback`, `M | L | XL` are variant values carrying no axis name, so every count
+     keyed on `<axis name>:` misses them.
 
-   Khi số đo lại khác số trong spec, hỏi trước hết: *phép đếm này không nhìn thấy cái gì?*
+   When a re-measured number differs from the one in the spec, ask first: *what can this count not see?*
 
-6. **Nhiều số cùng một nguồn thiếu lệnh đo → gộp thành MỘT `F#`, không tách thành năm.** Năm dòng
-   đỏ giống hệt nhau là thứ người ta học cách phớt lờ nhanh nhất, và phớt lờ xong thì phớt lờ luôn
-   dòng thứ sáu khác hẳn. Dạng đúng: *"5 con số trong `entities.md` (1459 tên · 281 nhóm · 7 lệch
-   cờ · 427 biến thể · 1559 thoái hoá) đều dẫn từ `itemsell-flat.csv` và không số nào có lệnh đo"*.
-   Cụm khoanh đúng vùng, và **khoanh đúng vùng đã đủ để người biết dữ liệu đi kiểm** — vai này
-   không cần tự tìm ra con số đúng.
+6. **Several numbers from one source with no measuring command → ONE `F#`, not five.** Five identical red lines are
+   what people learn to ignore fastest, and once they are ignored the sixth, quite different, line is ignored too.
+   The right shape: *"5 numbers in `entities.md` (1459 names · 281 groups · 7 flag mismatches · 427 variants · 1559
+   degenerate) all derive from `itemsell-flat.csv` and none has a measuring command"*. The phrase circles the right
+   area, and **circling the right area is enough for whoever knows the data to go and check** — this role does not
+   have to find the correct number itself.
 
-7. **Xem HƯỚNG lệch, không chỉ xem có lệch không.** Nhiều số cùng lệch **một chiều** là chữ ký của
-   một nguồn chung đã mục, không phải của nhiều sai sót rời rạc. Ca thật (`runxops`): cả năm số
-   đều đếm **thiếu**, và đều thiếu theo hướng làm vấn đề trông **nhẹ hơn** thực tế — `7 nhóm lệch
-   cờ tồn` là con số dùng để lập luận phải tách một entity, và nó nhỏ hơn sự thật 43%. Nói rõ
-   chiều lệch trong `F#`: một lập luận đứng trên số đếm thiếu vẫn có thể đúng, nhưng người quyết
-   phải biết nó đang đứng trên cái gì.
+7. **Look at the DIRECTION of the difference, not just whether there is one.** Several numbers all off in **one
+   direction** is the signature of a shared source that has rotted, not of several unrelated mistakes. Real case
+   (`runxops`): all five numbers **undercounted**, and all of them in the direction that made the problem look
+   **smaller** than it was — `7 groups with stock-flag mismatches` was the number used to argue for splitting an
+   entity, and it was 43% below the truth. State the direction in the `F#`: an argument standing on undercounted
+   numbers can still be right, but whoever decides has to know what it is standing on.
 
-8. **Một con số trông vô lý là một phát hiện, kể cả khi nó CÓ lệnh đo.** Lệnh sai vẫn chạy trơn.
-   Ca thật: ghép mọi dòng biến thể bằng ` | ` trong khi ` | ` đã mang nghĩa *"nhiều giá trị cùng
-   một trục"* — `Color: Brown | Dark Grey` (một trục) đọc ra thành hai, và phép đếm ra `437 dòng
-   không tên trục` thay vì `32`. Thứ bắt được nó là **con số trông vô lý**, không phải phép kiểm
-   nào. Nên: thấy số lệch một bậc độ lớn so với chỗ khác trong cùng tài liệu thì hỏi, đừng chép.
+8. **A number that looks implausible is a finding, even when it DOES have a measuring command.** A wrong command
+   runs cleanly too. Real case: joining every variant row with ` | ` while ` | ` already meant *"several values on
+   the same axis"* — `Color: Brown | Dark Grey` (one axis) read as two, and the count returned `437 rows with no
+   axis name` instead of `32`. What caught it was **a number that looked implausible**, not any check. So: a number
+   an order of magnitude away from others in the same document is a question, not something to copy.
 
-   **Và một PHÉP THỬ cũng là một phép đo — phép thử rỗng trông y hệt phép thử qua.** Ca thật: một
-   phép thử githook cho `exit=0` cả ba dòng, kết luận *"hook cho qua, không có vấn đề"* — thật ra
-   nó dùng `touch` nên **không file nào được stage**, hook không có gì để kiểm. Nếu tin kết quả đó
-   thì cả issue đã không tồn tại và kết luận sẽ **ngược hoàn toàn**. Thứ bắt được: ba dòng `exit=0`
-   trông vô lý cạnh một nhánh `exit 1` đọc thấy rõ trong code. Nên trước khi tin một phép thử,
-   **in ra thứ nó đang đo** — danh sách file đã stage, số dòng đầu vào, đường dẫn thật của lệnh.
+   **And a TEST is a measurement too — an empty test looks exactly like a passing one.** Real case: a githook test
+   returned `exit=0` on all three lines and concluded *"the hook lets it through, no problem"* — in fact it used
+   `touch`, so **no file was staged** and the hook had nothing to check. Believing that result would have meant the
+   issue never existed and the conclusion would have been **exactly backwards**. What caught it: three `exit=0`
+   lines looking implausible next to an `exit 1` branch plainly visible in the code. So before believing a test,
+   **print what it is actually measuring** — the staged file list, the number of input lines, the real path of the
+   command.
 
-9. **Sửa số thì GIỮ số cũ kèm lý do lệch, đừng xoá.** *"1459 → 1388 (số cũ nhóm theo `Product
-   Name` khi cột đó còn dính trục biến thể, nên một sản phẩm hai màu đếm thành hai tên)"* dạy được
-   nhiều hơn `1388` trơ trọi: nó nói phép đo cũ hỏng ở đâu, nên lần sau khỏi hỏng lại. Đây cũng là
-   thứ duy nhất còn lại sau khi đóng terminal.
+9. **When fixing a number, KEEP the old one with the reason it differs; do not delete it.** *"1459 → 1388 (the old
+   number grouped by `Product Name` while that column still had the variant axis stuck in it, so one product in two
+   colours counted as two names)"* teaches far more than a bare `1388`: it says where the old measurement broke, so
+   it does not break the same way next time. It is also the only thing left after the terminal is closed.
 
-10. **Một con số ĐÚNG vẫn là phát hiện, nếu nó là mẫu số đã lọc mà không nói đã lọc gì.** Chín
-   dòng trên đều đi tìm số **sai**; dòng này khác hẳn, và nó là dòng duy nhất mà bước 3
-   (*"khớp → im"*) sẽ **bỏ sót**, vì chạy lại vẫn ra đúng con số đó.
+10. **A number that is RIGHT is still a finding, if it is a filtered denominator that does not say what was
+   filtered.** The nine rules above all hunt **wrong** numbers; this one is different, and it is the only one step 3
+   (*"matches → say nothing"*) will **miss**, because re-running produces exactly the same number.
 
-   Ca thật (`runxops`): `RULE-004` khai *"phân định được 13/13 nhóm"*. Đo lại: **đúng 13/13**.
-   Nhưng mẫu số thô là **16** — ba nhóm bị loại vì khoá là chữ giữ chỗ (`Does not apply`, thứ eBay
-   tự điền khi người bán bỏ trống). Loại chúng ra là **quyết định đúng**. Vấn đề là `13` một mình
-   giấu mất **9 listing không nhóm được bằng bất cứ khoá nào** — mà đúng chín cái đó là phần việc
-   gán khoá tay của `UC-009`, tức chỗ đau chính của cả BR.
+   Real case (`runxops`): `RULE-004` claimed *"13/13 groups can be distinguished"*. Measured again: **13/13, exactly**.
+   But the raw denominator is **16** — three groups were excluded because their key was a placeholder string
+   (`Does not apply`, what eBay fills in when a seller leaves it blank). Excluding them is **the right decision**. The
+   problem is that `13` alone hides **9 listings that cannot be grouped by any key at all** — and those nine are
+   precisely the manual key-assignment work of `UC-009`, that is, the central pain of the whole BR.
 
-   Hỏi hai câu: *phép đếm này bỏ ra bao nhiêu?* và *cái bị bỏ ra có phải chính là thứ tài liệu
-   đang bàn không?* Nếu có → `F#`, dù con số không sai một chữ.
+   Ask two questions: *how much does this count throw away?* and *is what it throws away exactly the thing the
+   document is discussing?* If yes → `F#`, even though the number is right to the letter.
 
-   **Hệ quả cho lệnh đo:** in **mẫu số thô và mẫu số đã lọc cùng lúc**, kèm cái gì bị lọc và vì
-   sao — đừng chỉ in kết quả. Một tỉ lệ `13/13` trông hoàn hảo; `16 thô → loại 3 giữ chỗ → 13` nói
-   thật. Cùng họ với ca `437 / 32`: thứ bắt được nó là **một con số thứ hai đứng cạnh**. Khác ở
-   chỗ ca kia con số trông vô lý, còn ca này **cả hai đều hợp lý** — nên không có con số thứ hai
-   thì không có gì để mà nghi.
+   **What follows for the measuring command:** print **the raw and the filtered denominator together**, with what was
+   filtered and why — do not print only the result. A ratio of `13/13` looks perfect; `16 raw → 3 placeholders
+   removed → 13` tells the truth. Same family as the `437 / 32` case: what catches it is **a second number standing
+   next to it**. The difference is that there the number looked implausible, while here **both look plausible** — so
+   without a second number there is nothing to be suspicious of.
 
-11. **Lệnh đo phải THẬT SỰ in ra con số nó được gắn vào.** Kiểm bằng cách chạy lệnh rồi tìm con
-   số đó trong đầu ra. Không thấy → **nhãn sai**, và một **nhãn xác thực sai tệ hơn không có
-   nhãn**: không có nhãn thì con số trông như chưa ai kiểm, đúng như nó vốn thế; dán nhãn sai thì
-   nó trông **như đã được kiểm**.
+11. **A measuring command must ACTUALLY print the number it is attached to.** Check by running it and looking for that
+   number in the output. Not there → **the label is wrong**, and a **wrong authenticity label is worse than none**:
+   with no label the number looks unchecked, which is exactly what it is; with a wrong one it looks **as if it had
+   been checked**.
 
-   Ca thật (`runxops`): hai con số được gắn `python3 scripts/measure-catalog.py` làm lệnh đo, mà
-   lệnh đó **không in ra con số nào trong hai**. Người dán nhãn chính là người vừa dành cả ngày
-   thuyết phục rằng mọi số phải kèm lệnh đo.
+   Real case (`runxops`): two numbers carried `python3 scripts/measure-catalog.py` as their measuring command, and that
+   command **printed neither of them**. The person who attached the labels was the person who had just spent a day
+   arguing that every number needs a measuring command.
 
-   **Vế thứ ba — rẻ hơn cả hai vế kia: thử phép phân rã ở CẢ HAI phía.** Một phía cộng đúng
-   **chưa chứng minh được gì** — nó chỉ chứng minh phía ấy đúng. **Phía gãy mới là phía chỉ ra tập
-   cha thật sự bao cái gì.** Xem ca mẫu ở trên: một phía khớp đẹp, phía kia hụt 27, và chính chỗ
-   hụt đó lộ ra rằng con số tưởng là tập cha thì không phải.
+   **The third part — cheaper than either of the other two: try the partition on BOTH sides.** One side adding up
+   **proves nothing** — it only proves that side. **The side that breaks is the side that shows what the parent set
+   really covers.** See the worked example above: one side matched neatly, the other was 27 short, and that shortfall
+   is what revealed that the supposed parent set was not one.
 
-   **Vế thứ hai:** con số nào **tự nhận là phân rã** của một con số khác thì **phải cộng lại
-   đúng**, và chỗ trình bày nó phải **trưng ra phép cộng**. Cộng không ra → hoặc thiếu một nhóm,
-   hoặc các nhóm chồng nhau, hoặc — hay gặp nhất — **chúng không cùng đơn vị**. Kiểm được bằng máy,
-   và rẻ hơn mọi thứ khác trong danh sách này.
+   **The second part:** any number **claiming to be a partition** of another number **must add up**, and wherever it is
+   presented, the addition must be **shown**. It does not add up → either a group is missing, or the groups overlap,
+   or — most often — **they are not the same unit**. Machine-checkable, and cheaper than anything else on this list.
 
-   Luật này đóng chỗ hở mà **ba tầng kia không với tới**: vân tay hỏi *dữ liệu nào* · luật 5b hỏi
-   *lệnh nào* · chốt cấu trúc hỏi *lệnh còn đúng hình dạng không* — cả ba đều **giả định lệnh và
-   số là một cặp đúng**, và không tầng nào kiểm chính cái cặp đó. Nó rẻ và kiểm được bằng máy.
+   This rule closes the gap **the other three layers cannot reach**: the fingerprint asks *which data* · rule 5b asks
+   *which command* · the structure assertion asks *is the command still right for the shape* — all three **assume the
+   command and the number are a correct pair**, and none of them checks that pair. It is cheap and machine-checkable.
 
-## Luật dừng — chặn hay nợ chữ (6.3.0, #49)
+## The stop rule — blocking or wording debt (6.3.0, #49)
 
-Mỗi `F#` mang **một trong hai mức**, ghi ngay sau số. Chủ dự án chốt sau sáu lần đọc lại UC-014 ở runxops
-(19 → 23 → 11 → 7 → 7 → 10 phát hiện, mỗi đợt áp sửa lại lộ chữ/nhãn mới ở file bên cạnh): *lặp tới khi
-**chặn = 0***, và chỉ hai thứ là chặn.
+Every `F#` carries **one of two levels**, written right after the number. The owner settled this after six re-reads
+of UC-014 in runxops (19 → 23 → 11 → 7 → 7 → 10 findings, each round of fixes exposing new wording or labels in
+neighbouring files): *repeat until **blocking = 0***, and only two things block.
 
-| Mức | Là gì | Sau khi áp |
+| Level | What it is | After applying |
 |---|---|---|
-| **chặn** | (a) **mâu thuẫn hai chỗ về hành vi** — Main Flow · Alternative · Exceptions · Postconditions · AC · flow · phát biểu RULE · state/class của entities nói ngược nhau; (b) **AC không test được** — Given/When/Then thiếu một vế đo được, hoặc hứa thứ không bước nào sinh ra (loại #6) | phải verify lại (`--since`) |
-| **nợ chữ** | nhãn, tên, tiêu đề, số đếm trong tiêu đề, `Áp dụng cho`, glossary, câu văn xuôi lặp lại một quyết định đã đổi, thiếu file bên cạnh trong thông điệp commit (#42) — sửa xong **không** có hành vi nào khác đi | áp thẳng, cổng cho qua không cần verify lại |
+| **blocking** | (a) **two places contradicting each other about behaviour** — Main Flow · Alternative · Exceptions · Postconditions · AC · flow · a RULE statement · an entity's state/class diagram saying opposite things; (b) **an AC that cannot be tested** — Given/When/Then missing a measurable half, or promising something no step produces (kind #6) | must be verified again (`--since`) |
+| **wording debt** | labels, names, headings, counts inside headings, `Applies to`, the glossary, a prose sentence repeating a decision that changed, a neighbouring file missing from a commit message (#42) — once fixed, **no** behaviour is different | apply directly; the gate passes with no re-verification |
 
-Bài kiểm một câu: *sửa chỗ này xong, test nào phải viết khác đi, hoặc khách thấy gì khác?* Có → chặn. Không →
-nợ chữ. Không chắc → **chặn** (đọc lại một lần rẻ hơn một AC sai đi vào code). Loại #7 (số đã mục) là chặn
-khi số đó đứng trong RULE/AC, nợ chữ khi đứng trong Background/ghi chú.
+The one-sentence test: *once this is fixed, which test has to be written differently, or what does the customer see
+differently?* Yes → blocking. No → wording debt. Unsure → **blocking** (one extra read is cheaper than a wrong AC
+reaching the code). Kind #7 (a rotted number) is blocking when the number stands in a RULE/AC, wording debt when it
+stands in Background or a note.
 
-## Đầu ra
+## Output
 
-Một danh sách `F#`, **chặn trước, nợ chữ sau**, trong mỗi mức xếp theo hậu quả (tiền · quyền · dữ liệu khách
-trước). Cuối báo cáo một dòng đếm: `<n> phát hiện · <m> chặn · <k> nợ chữ`. Mỗi dòng:
+A list of `F#`, **blocking first, wording debt after**, and within each level ordered by consequence (money ·
+permissions · customer data first). One counted line at the end of the report:
+`<n> findings · <m> blocking · <k> wording debt`. Each line:
 
 ```
-F1 [chặn] <phát hiện một câu>
-   A: <đường dẫn:dòng> "<nguyên văn>"
-   B: <đường dẫn:dòng> "<nguyên văn>"
-   [neo: Main 7 · RULE-003]
-   → đầu ra: ___
-F2 [nợ chữ] <phát hiện một câu>
+F1 [blocking] <the finding in one sentence>
+   A: <path:line> "<verbatim>"
+   B: <path:line> "<verbatim>"
+   [anchor: Main 7 · RULE-003]
+   → output: ___
+F2 [wording debt] <the finding in one sentence>
    …
 ```
 
-`đầu ra: ___` để **người quyết** điền, không tự điền.
+`output: ___` is for **whoever decides** to fill in; do not fill it in yourself.
 
-**Chạy trong mô hình nhiều agent** (`/sdd-solo:orchestrate`, có vai R xếp mức): mỗi `F#` thêm ba dòng đúng khuôn
-phiếu của `notes/hoi-dap/hoi-dap.md` — `Đã tra: <file:dòng>` · `Nếu chọn sai thì: <hậu quả>` · `Agent nghiêng về:
-<lựa chọn + vì sao>` — để R xếp L0–L3 không phải dịch lại (#39).
+**Running in the multi-agent model** (`/sdd-solo:orchestrate`, with role R grading): give each `F#` the three lines of
+the `notes/hoi-dap/hoi-dap.md` ticket skeleton — `Already looked up: <file:line>` · `If chosen wrong: <consequence>` ·
+`The agent leans towards: <option + why>` — so R can grade L0–L3 without translating it again (#39).
 
-## Giới hạn — nói thẳng, không giấu
+## Limits — stated plainly, not hidden
 
-1. **Lý do bác phải đến từ người ĐỌC phát hiện, không từ người VIẾT spec.** Đưa trước cho verify
-   một danh sách *"ngữ cảnh giúp bác nhanh"* do tác giả spec soạn là lấy mất chỗ đứng của nó: nó
-   sẽ bác đúng những phát hiện mà tác giả đã có sẵn câu trả lời — tức đúng những chỗ tác giả tin
-   là mình không sai. Ca thật: một danh sách như vậy bị từ chối, và **hai mục trong đó tự rơi vào
-   nhóm "khớp / đã bác" bằng phép đo riêng của verify** — bằng chứng đó chỉ tồn tại **vì** nó
-   không nghe.
+1. **The reason to reject must come from the person READING the findings, not from the person who WROTE the spec.**
+   Handing verify a list of *"context to help you reject quickly"* written by the spec's author takes away its
+   standing: it will reject exactly those findings the author already has an answer for — that is, exactly the places
+   the author believes they are not wrong. Real case: such a list was refused, and **two of its items landed in the
+   "matches / already rejected" group by verify's own measurement** — evidence that exists only **because** it did not
+   listen.
 
-2. **Nó sinh dương tính giả.** Đó là cái giá của việc đọc nghĩa thay vì đếm. Nên **bác một phát
-   hiện phải rẻ** — một dòng `→ không phải lỗi vì <lý do>` là đủ, và **lý do đó được ghi lại**,
-   để lần chạy sau không moi lại đúng câu đó.
-3. **"Không thấy gì" là bằng chứng yếu.** Không được in ra câu nào nghe như bảo chứng — không
-   *"tài liệu nhất quán"*, không *"đã kiểm toàn bộ"*. Đúng câu được phép nói là: *"lần đọc này
-   không tìm ra gì trong phạm vi đã đọc"*, kèm **liệt kê phạm vi đã đọc**.
-4. **Chi phí tăng theo cây.** Cây 2.000 dòng đọc hết được; 20.000 dòng thì không. Khi cây lớn,
-   thu phạm vi theo **thứ vừa đổi** (`git diff` từ lần verify trước) cộng mọi file mà nó trích ID
-   tới — chứ đừng đọc thưa cả cây, vì đọc thưa là cách chắc chắn nhất để bỏ sót loại 3 và loại 4.
+2. **It produces false positives.** That is the price of reading meaning rather than counting. So **rejecting a finding
+   must be cheap** — one line `→ false positive because <reason>` is enough, and **that reason is recorded**, so the
+   next run does not dig up the same sentence again.
+3. **"Found nothing" is weak evidence.** Never print anything that sounds like a guarantee — no *"the documents are
+   consistent"*, no *"everything was checked"*. The one sentence allowed is: *"this reading found nothing within the
+   scope read"*, together with **a list of the scope read**.
+4. **Cost grows with the tree.** A 2,000-line tree can be read whole; a 20,000-line one cannot. When the tree is large,
+   narrow the scope to **what just changed** (`git diff` since the last verify) plus every file whose IDs it cites —
+   do not skim the whole tree, because skimming is the surest way to miss kinds 3 and 4.

@@ -1,188 +1,188 @@
 #!/usr/bin/env bash
-# design-check.sh UC-### — bước ⑩: tầng thiết kế đã có và đã đối chiếu chưa.
-# exit 0 = đủ để viết code.
+# design-check.sh UC-### — step ⑩: does the design layer exist and has it been checked back.
+# exit 0 = enough to write code.
 #
-# Kiểm HAI mức trong một script, cố ý: thứ kiểm `design.md` bắt buộc phải đọc
-# `architecture.md` để biết nó đối chiếu với cái gì. Tách đôi là tạo hai script
-# đọc cùng một bộ file rồi trôi khỏi nhau — đúng cái đã xảy ra với `uc-ready` và
-# `gate-check` trước 4.0.0.
+# TWO levels in one script, deliberately: whatever checks `design.md` has to read
+# `architecture.md` to know what it is being checked against. Splitting it in two creates two
+# scripts reading the same set of files and then drifting apart — exactly what happened to
+# `uc-ready` and `gate-check` before 4.0.0.
 #
-# Vì sao tầng này tồn tại (#34, #35): bốn tầng BR/UC/Entity/AC không có ngăn nào
-# cho "dựng bằng gì · chạy ở đâu · ai gọi". Nên thiết kế rơi vào một bước NGOÀI
-# quy trình, và ở đó nó có thể nói ngược lại brief nhiều ngày mà không phép kiểm
-# nào có nhiệm vụ nhìn tới.
+# Why this layer exists (#34, #35): the four layers BR/UC/Entity/AC have no drawer for
+# "built with what · runs where · called by whom". So the design fell to a step OUTSIDE the
+# process, and there it could contradict the brief for days with no check whose job was to
+# look at it.
 ID=""
 for a in "$@"; do case "$a" in UC-[0-9]*) ID="$a";; esac; done
-[ -z "$ID" ] && { echo "dùng: design-check.sh UC-###"; exit 2; }
+[ -z "$ID" ] && { echo "usage: design-check.sh UC-###"; exit 2; }
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 ROOT="$(project_root)"; F="$(find_uc "$ID" "$ROOT")"
-echo "Tầng thiết kế — $ID"
-[ -z "$F" ] && { bad "không tìm thấy file UC"; exit 1; }
+echo "Design layer — $ID"
+[ -z "$F" ] && { bad "cannot find the UC file"; exit 1; }
 DIR="$(dirname "$F")"; CTX="$(owner_of "$F")"
 DS="$DIR/design.md"; TK="$DIR/tasks.md"; AR="$(arch_file "$ROOT")"
 
-# 4.2.0: `strip_tags()` cục bộ đã bỏ — mọi chỗ dùng `strip_markup()` của lib.sh.
-# Hai hàm chỉ khác nhau ở một điểm, và đúng điểm đó gây lỗi: strip_tags bỏ THẺ,
-# strip_markup bỏ cả KHỐI `<!-- … -->`. Giữ lại một hàm chỉ-bỏ-thẻ nằm cạnh là
-# mời người sau dùng lại đúng cái vừa hỏng.
+# 4.2.0: the local `strip_tags()` is gone — everything uses `strip_markup()` from lib.sh.
+# The two functions differed in one point, and that point was the bug: strip_tags removed TAGS,
+# strip_markup removes the `<!-- … -->` BLOCK as well. Keeping a tags-only function next to it
+# invites the next person to reuse exactly the one that just broke.
 
-# ── 0. cổng DoR phải qua trước ────────────────────────────────────────────
-# Thiết kế cho một UC chưa qua cổng là thiết kế cho một spec còn đang đổi.
-[ -f "$ROOT/.sdd/gate/$ID.ok" ] && ok "đã qua cổng DoR" \
-  || bad "chưa có .sdd/gate/$ID.ok — chạy /sdd-solo:gate $ID trước"
+# ── 0. the DoR gate must have been passed ─────────────────────────────────
+# Designing for a UC that has not passed the gate is designing for a spec that is still moving.
+[ -f "$ROOT/.sdd/gate/$ID.ok" ] && ok "the DoR gate was passed" \
+  || bad "there is no .sdd/gate/$ID.ok — run /sdd-solo:gate $ID first"
 
-# ── 1. architecture.md — cấp dự án ────────────────────────────────────────
+# ── 1. architecture.md — project level ────────────────────────────────────
 if [ ! -f "$AR" ]; then
-  bad "thiếu ${AR#$ROOT/} — không có gì để design.md đối chiếu ngược lên"
+  bad "missing ${AR#$ROOT/} — design.md has nothing to check back against"
 else
   MISS=""
   for k in stack runswhere callers boundaries forbidden settledbrief; do
     grep -qE "$(kwh "$k")" "$AR" || MISS="$MISS '## $(kw_w "$k")'"
   done
-  if [ -n "$MISS" ]; then bad "architecture.md thiếu mục:$MISS"
-  else ok "architecture.md có đủ sáu mục"; fi
-  # 7.0: design.md của UC ở core không được kéo nghề vào lõi — cảnh báo (layer-check.sh)
+  if [ -n "$MISS" ]; then bad "architecture.md is missing sections:$MISS"
+  else ok "architecture.md has all six sections"; fi
+  # 7.0: the design.md of a core UC may not pull a craft into the core — a warning (layer-check.sh)
   if [ "$CTX" = core ] && [ -f "$DS" ] && [ -f "$HERE/layer-check.sh" ]; then
     LCO="$(bash "$HERE/layer-check.sh" --file "$DS" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep '✗' | head -3)"
-    [ -n "$LCO" ] && { warn "design.md của UC ở core trích ID/entity của nghề — lõi không biết nghề:"; printf '%s\n' "$LCO" | cut -c1-110 | sed 's/^/      /'; }
+    [ -n "$LCO" ] && { warn "the design.md of a core UC quotes a craft ID/entity — the core does not know a craft:"; printf '%s\n' "$LCO" | cut -c1-110 | sed 's/^/      /'; }
   fi
-  # Placeholder <...> = chưa ai quyết. '___' thì HỢP LỆ (chưa quyết được, nhưng đã
-  # biết là mình chưa quyết) — cùng luật với tầng BR: '___' là câu trả lời, '<...>'
-  # là chỗ chưa ai đụng tới. Bỏ dòng trích dẫn '>' của phần hướng dẫn đầu file.
+  # A <...> placeholder = nobody decided. '___' IS legitimate (not decided, but known to be
+  # undecided) — the same rule as the BR layer: '___' is an answer, '<...>' is a spot nobody has
+  # touched. Skip the '>' quotation lines of the guidance block at the top of the file.
   #
-  # `<br/>` trong khối mermaid KHÔNG phải placeholder — nó là cú pháp. Bản đầu
-  # tính nó là placeholder, nên một architecture.md đã điền xong vẫn đỏ, và dòng
-  # đỏ oan thì bị học cách phớt lờ, rồi kéo theo cả những dòng đỏ thật.
-  # strip_MARKUP, không strip_tags: bộ lọc cũ chỉ bỏ dòng BẮT ĐẦU bằng `<!--`, nên
-  # một `<ID>` nằm ở dòng GIỮA một khối chú thích nhiều dòng vẫn bị tính là
-  # placeholder. Chính khuôn architecture.md 4.2.0 dính: khối giải thích mục ## Cấm
-  # có câu "thay bởi <ID> từ YYYY-MM-DD", và design-check tố oan một repo vừa
-  # scaffold. Lần thứ ba cùng một bẫy (4.0.1, 4.0.x, giờ 4.2.0) — chú thích không
-  # bao giờ là placeholder, nên lọc phải bỏ CẢ KHỐI chứ không bỏ từng dòng mở.
-  # strip_markup giữ nguyên số dòng (97→97, đã đo) nên `grep -n` vẫn trỏ đúng file gốc.
-  # 7.4 (I-8): `<core|nghề>` trong nháy mã là QUY ƯỚC đường dẫn (tests/use-cases/<core|nghề>/UC-###/), không phải chỗ
-  # chưa quyết — bỏ nháy mã trước khi tìm; số dòng giữ nguyên vì sed chỉ xoá trong dòng.
+  # A `<br/>` inside a mermaid block is NOT a placeholder — it is syntax. The first version counted
+  # it as one, so a fully filled architecture.md still went red, and a falsely red line gets ignored,
+  # taking the genuinely red ones with it.
+  # strip_MARKUP, not strip_tags: the old filter only removed lines STARTING with `<!--`, so an
+  # `<ID>` on a line in the MIDDLE of a multi-line comment block still counted as a placeholder.
+  # The 4.2.0 architecture.md template itself was caught: the block explaining ## Forbidden contains
+  # the sentence "replaced by <ID> from YYYY-MM-DD", and design-check falsely accused a freshly
+  # scaffolded repo. The third time for the same trap (4.0.1, 4.0.x, now 4.2.0) — a comment is never
+  # a placeholder, so the filter must drop THE WHOLE BLOCK, not each opening line.
+  # strip_markup keeps the line count (97→97, measured) so `grep -n` still points into the real file.
+  # 7.4 (I-8): `<core|craft>` inside code ticks is a path CONVENTION (tests/use-cases/<core|craft>/UC-###/), not an
+  # undecided spot — drop the code ticks before searching; the line count is preserved because sed only edits within a line.
   PH="$(strip_markup < "$AR" | sed -E 's/`[^`]*`//g' | grep -nE '<[^>]+>' | grep -vE '^[0-9]+:>' \
         | grep -vE '^[0-9]+:[[:space:]]*(<!--|```)' | head -6)"
   if [ -n "$PH" ]; then
-    bad "architecture.md còn placeholder <...> — chưa ai quyết, không phải đã quyết là không có:"
+    bad "architecture.md still has a <...> placeholder — nobody decided, which is not the same as deciding there is none:"
     printf '%s\n' "$PH" | sed 's/^/      /'
   else
-    ok "architecture.md không còn placeholder"
+    ok "architecture.md has no placeholder left"
   fi
 
-  # Mọi ID architecture.md trích phải có thật. Tới 4.0.3 luật này chỉ áp cho
-  # design.md (§2) — cùng một script, hai văn bản, một cái được kiểm một cái
-  # không. `architecture.md` mới là chỗ hay trích CON/ADR/BR nhất, vì nó là chỗ
-  # duy nhất buộc phải nêu nguồn cho một điều cấm.
+  # Every ID architecture.md quotes must be real. Up to 4.0.3 this rule only applied to design.md
+  # (§2) — one script, two documents, one checked and one not. And `architecture.md` is the place
+  # most likely to quote a CON/ADR/BR, because it is the only place required to name the source of
+  # a prohibition.
   #
-  # NÓI RÕ NÓ ĐO GÌ: đây là phép kiểm ID CÓ TỒN TẠI, không phải ID CÓ NÓI ĐÚNG
-  # THỨ ĐANG GẮN NÓ. Một dòng trích `BR-001` có thật mà chép ngược nghĩa của
-  # BR-001 vẫn đi qua đây. Chỗ đó chỉ người đọc bắt được — và mục ## Cấm đòi
-  # trích NGUYÊN VĂN chính là để việc đọc đó rẻ đi.
-  # strip_markup TRƯỚC: khối <!-- … --> của template chính nó có nhắc CON-002,
-  # ADR-001, BR-001 làm ví dụ. Quét cả chú thích là tự tố oan một repo vừa
-  # scaffold — đúng loại đỏ oan mà 4.0.1 vừa đi chữa ở chỗ khác.
+  # SAY PLAINLY WHAT IT MEASURES: this checks THAT THE ID EXISTS, not THAT IT SAYS WHAT IT IS
+  # ATTACHED TO. A line quoting a real `BR-001` while reversing the meaning of BR-001 still passes
+  # here. Only a reader catches that — and the ## Forbidden section demanding a VERBATIM quotation
+  # is exactly what makes that reading cheap.
+  # strip_markup FIRST: the template <!-- … --> block itself mentions CON-002, ADR-001 and BR-001
+  # as examples. Scanning the comments means falsely accusing a freshly scaffolded repo — the same
+  # kind of false red 4.0.1 had just fixed elsewhere.
   for x in $(printf '%s\n' "$(cat "$AR")" | strip_markup /dev/stdin \
              | grep -oE '(RULE|ADR|BR|CHG|CON)-[0-9]+' | sort -u); do
-    id_exists "$x" "$ROOT" && ok "$x có thật (architecture.md)" \
-      || bad "architecture.md trích $x nhưng không có heading/thư mục nào cho nó"
+    id_exists "$x" "$ROOT" && ok "$x is real (architecture.md)" \
+      || bad "architecture.md quotes $x but there is no heading/directory for it"
   done
 
-  # ## Cấm: dòng nào NÊU NGUỒN thì phải kèm nguyên văn. Chỉ CẢNH BÁO — thiếu
-  # trích dẫn là một thói quen chưa có, không phải một artifact hỏng; cho nó đỏ
-  # là báo đỏ trên một file đang đúng.
+  # ## Forbidden: a line that NAMES A SOURCE must carry the verbatim text. A WARNING only — a
+  # missing quotation is a habit not yet formed, not a broken artifact; making it red means
+  # reporting red on a file that is correct.
   #
-  # Vì sao đáng nhắc (ca thật, runxops): một dòng trong ## Cấm viết "không tự
-  # động hoá chạy TRONG phiên Multilogin — BR-001 Out of Scope", trong khi
-  # BR-001 cấm chạy NGOÀI phiên và In Scope thì CHO PHÉP chạy trong. Vừa đảo
-  # nghĩa một điều cấm, vừa dán nguồn cho câu mà nguồn không nói — và nó đọc
-  # trôi chảy. Không phép kiểm nào bắt được vì không phép kiểm nào đọc hai
-  # nguồn cùng lúc. Thứ làm nó lộ ra là động tác CHÉP NGUYÊN VĂN.
+  # Why it is worth saying (a real case at runxops): a line in ## Forbidden read "no automation
+  # running INSIDE a Multilogin session — BR-001 Out of Scope", while BR-001 forbade running
+  # OUTSIDE the session and In Scope EXPLICITLY ALLOWED running inside. It both reversed the
+  # meaning of a prohibition and attached a source that did not say it — and it read smoothly.
+  # No check caught it because no check reads two sources at once. What exposes it is the act of
+  # QUOTING VERBATIM.
   CAM="$(printf '%s\n' "$(cat "$AR")" | strip_markup /dev/stdin \
          | awk -v re="$(kwh forbidden)" '$0 ~ re {f=1;next} f&&/^## /{exit} f{print}')"
   NOQ="$(printf '%s\n' "$CAM" | grep -nE '(RULE|ADR|BR|CHG|CON)-[0-9]+' \
          | grep -vE "$(kw verbatim)" | head -5)"
   if [ -n "$NOQ" ]; then
-    warn "## Cấm: có dòng nêu nguồn mà không trích nguyên văn — không đối chiếu ngược lên nguồn được:"
+    warn "## Forbidden: a line names a source without quoting it verbatim — it cannot be checked back against the source:"
     printf '%s\n' "$NOQ" | sed 's/^/      /'
-    info "thêm 'nguyên văn: \"<trích đúng chữ>\"'. Một điều cấm chép sai nghĩa vẫn đọc rất trôi chảy."
+    info "add 'verbatim: \"<the exact words>\"'. A prohibition copied with the wrong meaning still reads perfectly smoothly."
   fi
 fi
 
-# ── 2. design.md của UC ───────────────────────────────────────────────────
+# ── 2. the UC design.md ───────────────────────────────────────────────────
 if [ ! -f "$DS" ]; then
-  bad "thiếu $ID/design.md — chạy /sdd-solo:design $ID"
+  bad "missing $ID/design.md — run /sdd-solo:design $ID"
 else
-  ok "có design.md"
+  ok "has a design.md"
   DMISS=""
   for k in summary techcontext vsarch vsbrief codestruct risks; do
     grep -qE "$(kwh "$k")" "$DS" || DMISS="$DMISS '## $(kw_w "$k")'"
   done
-  if [ -n "$DMISS" ]; then bad "design.md thiếu mục:$DMISS"
-  else ok "design.md có đủ mục bắt buộc"; fi
+  if [ -n "$DMISS" ]; then bad "design.md is missing sections:$DMISS"
+  else ok "design.md has every required section"; fi
 
-  # Hai mục đối chiếu KHÔNG được rỗng. Một tiêu đề trống trông y hệt một lượt
-  # đối chiếu đã làm và không thấy gì — mà hai thứ đó khác nhau hoàn toàn.
+  # The two check-back sections may NOT be empty. An empty heading looks exactly like a check that
+  # was carried out and found nothing — and those two are entirely different things.
   for k in vsarch vsbrief; do
     HRE="$(kwh "$k")"; sec="## $(kw_w "$k")"
     if grep -qE "$HRE" "$DS"; then
       BODY="$(awk -v re="$HRE" '$0 ~ re {f=1;next} f&&/^## /{exit} f{print}' "$DS" \
               | grep -vE '^[[:space:]]*$' | grep -vE '^[[:space:]]*<!--')"
       if [ -z "$BODY" ]; then
-        bad "$sec rỗng — mục trống và 'đã đối chiếu, khớp' trông giống hệt nhau"
+        bad "$sec is empty — an empty section and 'checked, it matches' look identical"
       elif printf '%s\n' "$BODY" | strip_markup | grep -qE '<[^>]+>'; then
-        bad "$sec còn placeholder <...>"
+        bad "$sec still has a <...> placeholder"
       else
-        ok "$sec có nội dung"
+        ok "$sec has content"
       fi
     fi
   done
 
-  # Mọi ID design.md trích phải có thật. Cùng luật §4/§7 của gate-check (#12, #16).
+  # Every ID design.md quotes must be real. The same rule as §4/§7 of gate-check (#12, #16).
   for x in $(grep -oE '(RULE|ADR|BR|CHG)-[0-9]+' "$DS" | sort -u); do
-    id_exists "$x" "$ROOT" && ok "$x có thật" \
-      || bad "design.md trích $x nhưng không có heading/thư mục nào cho nó"
+    id_exists "$x" "$ROOT" && ok "$x is real" \
+      || bad "design.md quotes $x but there is no heading/directory for it"
   done
 fi
 
-# ── 3. tasks.md — mỗi AC một việc ─────────────────────────────────────────
+# ── 3. tasks.md — one task per AC ─────────────────────────────────────────
 if [ ! -f "$TK" ]; then
-  bad "thiếu $ID/tasks.md — mỗi AC phải có một việc và một file test"
+  bad "missing $ID/tasks.md — every AC must have a task and a test file"
 else
-  ok "có tasks.md"
+  ok "has a tasks.md"
   ACS="$(grep -oE '^### AC-[0-9]+' "$F" | awk '{print $2}' | sort -u)"
   if [ -z "$ACS" ]; then
-    warn "UC chưa có AC nào — tasks.md không có gì để đối chiếu"
+    warn "the UC has no AC yet — tasks.md has nothing to be checked against"
   else
     LACK=""
     for ac in $ACS; do
       grep -qE "(^|[^A-Za-z0-9-])$ac([^0-9]|$)" "$TK" || LACK="$LACK $ac"
     done
-    if [ -n "$LACK" ]; then bad "tasks.md thiếu việc cho:$LACK"
-    else ok "mọi AC ($(printf '%s' "$ACS" | wc -w | tr -d ' ')) đều có việc trong tasks.md"; fi
-    # Chiều ngược: AC bịa trong tasks.md. Bài học #12/#15 — nhãn không có thật đi
-    # qua mọi cổng nếu không ai đối chiếu ngược lại.
+    if [ -n "$LACK" ]; then bad "tasks.md has no task for:$LACK"
+    else ok "every AC ($(printf '%s' "$ACS" | wc -w | tr -d ' ')) has a task in tasks.md"; fi
+    # The reverse direction: an AC invented in tasks.md. The #12/#15 lesson — a label that is not real
+    # passes every gate if nobody checks the other way.
     FAKE=""
     for ac in $(grep -oE 'AC-[0-9]+' "$TK" | sort -u); do
       printf '%s\n' $ACS | grep -qxF "$ac" || FAKE="$FAKE $ac"
     done
-    [ -n "$FAKE" ] && bad "tasks.md nhắc$FAKE nhưng UC không có AC đó"
+    [ -n "$FAKE" ] && bad "tasks.md mentions$FAKE but the UC has no such AC"
   fi
   grep -q "tests/use-cases/$CTX/$ID/" "$TK" \
-    || warn "tasks.md chưa nêu đường dẫn test đúng quy ước tests/use-cases/$CTX/$ID/"
+    || warn "tasks.md does not give a test path following the convention tests/use-cases/$CTX/$ID/"
 fi
 
-# ── 4. giả định triển khai của UC vs architecture.md — CẢNH BÁO ───────────
-# Máy không đọc được nghĩa, nên đây chỉ là lời nhắc đối chiếu bằng mắt. Cho nó
-# đỏ là hứa một phép kiểm không làm được — đúng loại "báo xanh sai" ngược dấu.
+# ── 4. the UC implementation assumption vs architecture.md — A WARNING ────
+# A machine cannot read meaning, so this is only a reminder to compare by eye. Making it red would
+# promise a check that cannot be done — the same "falsely green" bug with the sign flipped.
 GD="$(grep -E "^$(kwl implassum)" "$F" | head -1)"
 if [ -n "$GD" ] && [ -f "$AR" ]; then
-  info "đối chiếu bằng mắt: $GD"
-  info "  với ## Ngăn xếp / ## Nơi chạy / ## Ai gọi của architecture.md — máy không đọc được nghĩa"
-  info "  một màn hình mọi thứ $ID trích: .sdd/scripts/context.sh $ID --why"
+  info "compare by eye: $GD"
+  info "  against ## Stack / ## Runs where / ## Callers of architecture.md — a machine cannot read meaning"
+  info "  everything $ID quotes on one screen: .sdd/scripts/context.sh $ID --why"
 fi
 
 echo
-if [ "$FAIL" -eq 0 ]; then echo "ĐỦ THIẾT KẾ — viết code được ($WARN cảnh báo)."; exit 0; fi
-echo "CHƯA ĐỦ — $FAIL lỗi, $WARN cảnh báo."; exit 1
+if [ "$FAIL" -eq 0 ]; then echo "DESIGN COMPLETE — you can write code ($WARN warnings)."; exit 0; fi
+echo "NOT COMPLETE — $FAIL errors, $WARN warnings."; exit 1

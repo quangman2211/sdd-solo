@@ -1,17 +1,20 @@
-# Hàng đợi — bảng chạy của điều phối
+# Queue — the coordinator's running board
 
-<!-- File CỦA điều phối (vai A), trong git, máy đọc bằng .sdd/scripts/queue.sh. Agent KHÔNG ghi file này — agent ghi
-     KETQUA (role.sh --ketqua); `queue.sh done` đọc KETQUA, kiểm neo, rồi mới ghi dòng. Worktree phụ chỉ đọc, qua
-     `git show main:notes/hang-doi.md`, để không đọc bản cũ của nhánh mình (queue.sh tự làm).
-     Trạng thái là tập đóng: chờ · đang · xong · bỏ · DỪNG-<tên>  (tên khai ở notes/uy-quyen.md ## Điểm dừng).
-     `xong` mà cột Neo trống là đỏ — thời gian trôi không phải bằng chứng. Cần: nhiều khoá cách nhau bằng dấu cách. -->
+<!-- The coordinator's file (role A), kept in git, read by machine with .sdd/scripts/queue.sh. Agents do
+     NOT write this file — an agent writes a KETQUA (role.sh --ketqua); `queue.sh done` reads the KETQUA,
+     checks the anchor, and only then writes the row. A secondary worktree only reads, through
+     `git show main:notes/hang-doi.md`, so it never reads its own branch's stale copy (queue.sh does this).
+     State is a closed set: waiting · active · done · dropped · STOP-<name>  (names declared in
+     notes/uy-quyen.md ## Stop points).
+     `done` with an empty Anchor column is red — elapsed time is not evidence. Needs: several keys
+     separated by spaces. -->
 
-## Làn
-| Làn | Sức chứa | Vùng ghi |
+## Lanes
+| Lane | Capacity | Write area |
 |---|---|---|
 | spec | 1 | specs/** |
 | code | 2 | src/** tests/** |
 
-## Việc
-| Khoá | Làn | Vai | Cần | Trạng thái | Neo | Ghi chú |
+## Work
+| Key | Lane | Role | Needs | State | Anchor | Note |
 |---|---|---|---|---|---|---|

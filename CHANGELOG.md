@@ -1,5 +1,39 @@
 # Changelog
 
+## 7.8.0 — 2026-09-23
+
+**Plugin nói tiếng Anh; giọng trả lời đi theo ngôn ngữ anh gõ.** 7.7.0 dựng cơ chế (bảng từ khoá song ngữ,
+hướng ghi theo `doc_lang`); bản này *dùng* nó: vỏ của plugin — khuôn, skill, thông điệp in ra, chú thích mã,
+README — chuyển sang tiếng Anh. Không một luật nào đổi, không một đường dẫn nào đổi. **Repo đang chạy không
+đổi một byte**: `doc_lang` của nó vẫn là `vi` (không có dòng đó thì rơi về `vi`), chiều ĐỌC vẫn nhận cả hai
+thứ tiếng, và mọi cổng cho cùng verdict như 7.7.0.
+
+- **`templates/` sạch chữ tiếng Việt** — 47 file, 0 ký tự có dấu. Dự án MỚI sinh ra tài liệu tiếng Anh từ
+  đầu; `scaffold.sh` nay thật sự ghi `doc_lang=en` vào `.sdd/config` mới. (7.7.0 nói nó ghi, nhưng nó không
+  ghi — lỗi im lặng đúng loại đắt nhất: khuôn tiếng Anh mà script vẫn ghi tiếng Việt vào, và không phép kiểm
+  nào đỏ vì chiều đọc nhận cả hai.)
+- **17/17 skill viết bằng tiếng Anh**, mỗi skill mở đầu bằng một dòng: *Reply in whatever language the user
+  writes in; keep file names, IDs and slugs in English.* Văn skill không còn là chỗ giữ tiếng Việt — từ khoá
+  tài liệu đã có chỗ riêng ở `kw.tsv`.
+- **36 script + 10 `js/*.mjs` + 3 githook**: chú thích và thông điệp in ra sang tiếng Anh. Logic không đụng.
+- **9 dòng mới trong `kw.tsv`** (162 dòng): sáu nhãn ô của phiếu · `c_ticket_w` · `In Scope` / `Out of Scope`.
+  `c_ticket_w` có vì `kw_w c_ticket` trả về *mẫu đọc* `phi[eế]u #` và mẫu đó đang được ghi thẳng vào tiêu đề
+  commit của `phieu.sh` — một dòng `write` riêng là cách duy nhất không lẫn hai chiều.
+- `br-scope-diff.sh` đọc tên mục qua `kw` (In Scope · Out of Scope · Dropped), `uc-steps.sh` và `phieu.sh`
+  cũng vậy. `js/brief.mjs` sinh lời giao sáu phần bằng tiếng Anh, tên mục lấy qua `kwW` nên vẫn khớp phiếu
+  của dự án.
+- **Ở lại tiếng Việt, có lý do:** khoá và giá trị trong `.sdd/roles` (`vai` · `.ghi` · `.cam` · `ket=xong`…)
+  — đó là *định danh* mà githook bash trần đọc, không phải văn; mọi chuỗi `migrate.mjs` đọc từ hoặc ghi vào
+  một repo 6.x (`Liên quan tới BR:` · `**Lát:**`…) — đổi là migrate hụt; `docs/playbook-example-khoskill.html`
+  — nó là một tài liệu mẫu, không phải mã.
+
+**Phép đo.** Bản này đổi *mọi* thông điệp in ra, nên `tests/snap.sh` so chữ thành vô nghĩa. Thay bằng so
+**verdict**: mỗi lệnh một dòng `exit · số ✓ · số ✗ · số !` trên bản sao runxops, 7.7.0 so với bản này —
+93 lệnh trên 30 UC · 0 dòng khác. Bộ test: **46 ca · 208 xanh · 0 đỏ**; ca 46 mới, ba phép đo cơ học để 7.8.0 không trôi
+ngược: `templates/` không còn ký tự có dấu · mọi skill có dòng *Reply in whatever language* · `scaffold`
+trên repo trắng ghi `doc_lang=en`. `tests/lib.sh` ghim bản nền của bộ test về `doc_lang=vi` ngay sau
+scaffold — nếu không, chiều ghi ra tiếng Anh thì bản nền tự nó thành bản đã dịch và ca 45 không còn gì để so.
+
 ## 7.7.0 — 2026-09-23
 
 **Từ khoá tài liệu thành song ngữ.** Khuôn của plugin sẽ sinh ra tài liệu tiếng Anh (7.8.0), nhưng repo đang viết

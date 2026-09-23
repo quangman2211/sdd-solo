@@ -1,47 +1,48 @@
 ---
 name: start
-description: Bước ① của vòng lặp UC — tạo folder use case từ template trong lát (br-###) của nó, gán ID, kiểm ID chưa trùng và BR tồn tại, ghi STATE.md. Dùng khi user bắt đầu một use case mới.
+description: Step ① of the UC loop — create the use case folder from the skeleton inside its slice (br-###), assign the ID, check the ID is free and the BR exists, update STATE.md. Use it when the user starts a new use case.
 disable-model-invocation: true
-argument-hint: "UC-### [BR-###] [<slug-tieng-anh>]"
+argument-hint: "UC-### [BR-###] [<english-slug>]"
 allowed-tools: Bash Read Write Edit Glob Grep AskUserQuestion
 ---
 
-Tạo khung cho use case `$1`.
+Reply in whatever language the user writes in; keep file names, IDs and slugs in English.
 
-**Chế độ phiếu (7.3) — khi chạy dưới lời giao của agent khác** (lời giao mở đầu `Vai:`/`Lượt`, hoặc
-`bash .sdd/scripts/role.sh --xem` ra một vai không phải điều phối, hoặc không chắc có người ở đầu kia): **không mở
-`AskUserQuestion`** — không ai bấm, lượt treo tới hết hạn (#53). Mỗi câu lẽ ra hỏi user thành một phiếu:
-`bash .sdd/scripts/phieu.sh new "<việc>" <vai>` với Câu · Đã tra · Nếu chọn sai thì · Agent nghiêng về; chỗ phụ thuộc
-câu đó để `___` + quyết định tạm; rồi **DỪNG** và kết bằng `role.sh --ketqua <khoá> ket=chan hoi=#<n>`. Chủ dự án tự
-gõ lệnh này trong phiên của mình thì hỏi như thường.
+Create the skeleton for use case `$1`.
 
-Khuôn nằm trong plugin: `${CLAUDE_PLUGIN_ROOT}/templates/skel/` (không thay được biến: `find ~/.claude/plugins -type d -name skel -path '*sdd-solo*' | head -1`). Từ 5.0.0 khuôn không còn được chép vào
-`.sdd/templates/` của dự án — chỉ skill đọc khuôn, mà skill chỉ chạy khi có plugin, nên bản sao trong dự án
-là 13 file không ai đụng tới (đo ở runxops: nguyên byte sau nhiều tuần).
+**Ticket mode (7.3) — when running under another agent's brief** (the brief opens with `Vai:`/`Lượt`, or
+`bash .sdd/scripts/role.sh --xem` reports a role other than the coordinator, or you are not sure there is a human at
+the other end): **do not open `AskUserQuestion`** — nobody clicks it and the turn hangs until it times out (#53).
+Every question you would have asked becomes a ticket: `bash .sdd/scripts/phieu.sh new "<task>" <role>` with
+Question · Already looked up · If chosen wrong · The agent leans towards; leave whatever depends on it as `___` plus
+an interim decision; then **STOP**, ending with `role.sh --ketqua <key> ket=chan hoi=#<n>`. When the owner types this
+command themselves in their own session, ask as normal.
 
-1. Xác định root repo (`git rev-parse --show-toplevel`). Nếu thiếu `specs/` → bảo chạy `/sdd-solo:init` trước.
-2. ID: `$1` phải dạng `UC-###`. Kiểm chưa tồn tại: `find specs -path "*/br-*/use-cases/$1-*"`. Trùng → dừng, báo.
-3. **Lát (`$2`) — UC nào cũng thuộc đúng một lát `BR-###`.** Không có `$2`, hoặc không rõ, thì liệt kê các lát đang có (`ls -d specs/*/br-*/`) và hỏi user chọn **bằng `AskUserQuestion`**: mỗi lát một lựa chọn, ghi kèm nghề và tên lát lấy từ dòng `**Lát:**` của `br.md`.
+The skeleton lives in the plugin: `${CLAUDE_PLUGIN_ROOT}/templates/skel/` (if the variable is not substituted: `find ~/.claude/plugins -type d -name skel -path '*sdd-solo*' | head -1`). Since 5.0.0 the skeleton is no longer copied into the project's `.sdd/templates/` — only skills read it, and a skill only runs when the plugin is there, so the copy in the project was 13 files nobody ever touched (measured at runxops: byte-identical after weeks).
 
-   **Nghề suy ra từ thư mục của BR**, không hỏi riêng: `specs/core/br-007/` là lát của lõi, `specs/ebay/br-012/` là lát của nghề `ebay`.
+1. Find the repo root (`git rev-parse --show-toplevel`). No `specs/` → tell them to run `/sdd-solo:init` first.
+2. ID: `$1` must be `UC-###`. Check it is free: `find specs -path "*/br-*/use-cases/$1-*"`. Taken → stop and say so.
+3. **The slice (`$2`) — every UC belongs to exactly one `BR-###` slice.** No `$2`, or unclear, → list the existing slices (`ls -d specs/*/br-*/`) and ask the user to choose **with `AskUserQuestion`**: one option per slice, showing the craft and the slice name taken from the `**Slice:**` line of its `br.md`.
 
-   BR user chọn **chưa có thư mục** → **dừng, bảo user chạy `/sdd-solo:intake` trước**. Không tự tạo `br-###/`: BR là tầng trên, viết nó là việc của intake cùng chủ dự án, và một `br.md` khung do skill này đẻ ra sẽ đứng đó như thể đã có người viết.
-4. Slug (`$3`): tiếng Anh, kebab-case, là động từ + danh từ theo glossary (ví dụ `activate-device`). Không có → đề xuất từ tên UC trong bảng `## Related Use Cases` của `br.md` lát đó nếu UC đã có stub, rồi hỏi xác nhận.
-5. Tạo:
-   - `specs/<core|nghề>/br-###/use-cases/$1-<slug>/` từ `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/` (copy `UC-000.md` → `$1.md`, `UC-000.flow.md` → `$1.flow.md`, `UC-000.sequence.md` → `$1.sequence.md`, `screens/README.md`). Thay mọi `UC-000` thành `$1`, `Last updated` thành hôm nay, `Status: draft`.
-   - Metadata của UC: `- **Nghề:** <core | nghề> · **Lát:** BR-###` — nghề đúng bằng thư mục chứa lát. Kiểm BR có thật: `br.md` của lát phải tồn tại và có heading `# BR-###`.
-   - Thêm/cập nhật dòng của UC trong bảng `## Related Use Cases` của `br.md` lát đó, cột `| UC | Tên | Actor | BR | Status |`.
-6. STATE.md: sửa dòng `Đang làm:` thành `$1 · bước ① — khung đã tạo, chưa có nội dung`; `Việc tiếp theo:` thành `điền nội dung $1 cùng user (bước ②) rồi viết RULE + AC`.
-7. Báo user: đường dẫn file, và bước tiếp là **điền nội dung cùng user** theo skill `sdd-process` — **ghi vào file vừa tạo**, không tạo file mới.
-8. **Hỏi user có câu nghiệp vụ nào chưa trả lời được không, rồi phân loại giúp** — đây là chỗ user hay đứng lại mà không biết nên nghiên cứu tiếp hay bắt đầu viết Main Flow:
-   - Câu đổi **hình dạng** của UC (actor là ai · dữ liệu đến từ đâu · ai được làm) → **chốt trước**, vì Main Flow viết theo giả định sai sẽ phải vứt chứ không sửa lời được. **Trình nhóm này bằng `AskUserQuestion`** — ≤ 4 câu một lượt, mỗi câu 2–4 hướng kèm hệ quả, đề nghị đặt đầu "(Recommended)", và luôn có lựa chọn "chưa quyết — dừng ở đây, đi hỏi/đo, quay lại sau". Không viết chúng thành bullet cuối tin nhắn (ca UC-012, #36: user phải tự đánh số trả lời).
-   - Câu đổi **giá trị** trong một bước (ngưỡng · thời hạn · enum · khoá) → **treo được**. **Không hỏi.** Ghi ngay vào `## Open Questions` dạng `- [ ] <câu> (quyết định tạm: ___)` rồi chạy tiếp. `___` ở đó là hợp lệ, `gate-check.sh --pre` không tính là chưa điền.
-   Bài kiểm một câu: *câu trả lời ngược lại thì Main Flow có phải viết lại không?*
-9. **Entity UC nhắc tên mà chưa có file** → copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/entity.md` thành `<Tên>.md`, một file một entity. Hỏi user **bằng `AskUserQuestion`** mỗi entity thuộc đâu:
-   - `specs/core/entities/<Tên>.md` — mọi nghề đều dùng khái niệm này;
-   - `specs/<nghề>/entities/<Tên>.md` — chỉ nghề này dùng.
+   **The craft follows from the BR's folder**, never asked separately: `specs/core/br-007/` is a core slice, `specs/ebay/br-012/` is a slice of the `ebay` craft.
 
-   Không tự chọn: entity đặt nhầm vào `core` thì nghề khác thừa kế một khái niệm không phải của nó, mà đặt nhầm vào nghề thì lõi không được trích nó (luật ranh giới). Tên file = tên entity trong code = tên trong glossary. Điền nội dung là việc của bước ③ cùng user, skill này chỉ dựng khung.
-10. Nếu file entity nào còn nguyên khuôn, hoặc `specs/glossary.md` (gốc) và `specs/<nghề>/glossary.md` còn là template, nói cho user biết ngay: chúng là đầu vào của ba vai ở bước ⑦ và là điều kiện cứng ở cổng ⑨. Viết chúng ở bước ③ rẻ hơn nhiều so với sau bước ⑦ — đổi mô hình sau đó thì AC phải sửa lời.
-11. **UC nằm ở `specs/core/` thì không được trích ID của nghề nào** — `RULE-###`/`ADR-###`/`UC-###`/`BR-###` sống trong `specs/<nghề>/`, hay tên entity ở `specs/<nghề>/entities/`. Lõi không biết nghề. Nói điều này với user ngay khi lát chọn là `core`; `gate-check` và `design-check` gọi `layer-check` và sẽ cảnh báo.
-12. Không viết code. Không commit (commit docs đầu tiên do `/sdd-solo:adversarial` làm).
+   The BR the user picks **has no folder** → **stop and tell the user to run `/sdd-solo:intake` first**. Do not create `br-###/` yourself: a BR is the layer above, writing it is intake's job together with the owner, and a skeleton `br.md` produced by this skill would sit there as if somebody had written it.
+4. Slug (`$3`): English, kebab-case, verb + noun from the glossary (e.g. `activate-device`). None given → propose one from the UC's name in the `## Related Use Cases` table of that slice's `br.md` if the UC already has a stub, then ask for confirmation.
+5. Create:
+   - `specs/<core|craft>/br-###/use-cases/$1-<slug>/` from `${CLAUDE_PLUGIN_ROOT}/templates/skel/use-case/` (copy `UC-000.md` → `$1.md`, `UC-000.flow.md` → `$1.flow.md`, `UC-000.sequence.md` → `$1.sequence.md`, `screens/README.md`). Replace every `UC-000` with `$1`, `Last updated` with today, `Status: draft`.
+   - The UC's Metadata: `- **Craft:** <core | craft> · **Slice:** BR-###` — the craft is exactly the folder holding the slice. Check the BR is real: the slice's `br.md` must exist and contain the heading `# BR-###`.
+   - Add or update the UC's row in the `## Related Use Cases` table of that slice's `br.md`, columns `| UC | Name | Actor | BR | Status |`.
+6. STATE.md: set `Working on:` to `$1 · step ① — skeleton created, no content yet`; `Next:` to `fill in $1's content with the user (step ②) then write the RULEs and ACs`.
+7. Tell the user: the file paths, and that the next step is **filling in the content together with the user** per the `sdd-process` skill — **writing into the file just created**, not creating a new one.
+8. **Ask the user whether any business question is still unanswered, then classify it for them** — this is where a user usually stalls, not knowing whether to research further or start writing Main Flow:
+   - A question that changes the **shape** of the UC (who the actor is · where the data comes from · who is allowed) → **settle it first**, because a Main Flow written on a wrong assumption gets thrown away, not reworded. **Put this group through `AskUserQuestion`** — at most 4 questions per turn, each with 2–4 directions and their consequences, the recommended one first with "(Recommended)", and always an option "undecided — stop here, go ask or measure, come back". Do not write them as bullets at the end of a message (the UC-012 case, #36: the user had to number their own answers).
+   - A question that changes a **value** inside a step (a threshold · a deadline · an enum · a key) → **it can wait.** **Do not ask.** Write it straight into `## Open Questions` as `- [ ] <question> (interim decision: ___)` and carry on. `___` there is valid, and `gate-check.sh --pre` does not count it as unfilled.
+   The one-sentence test: *if the answer were the opposite, would Main Flow have to be rewritten?*
+9. **An entity the UC names that has no file** → copy `${CLAUDE_PLUGIN_ROOT}/templates/skel/entity.md` to `<Name>.md`, one file per entity. Ask the user **with `AskUserQuestion`** where each entity belongs:
+   - `specs/core/entities/<Name>.md` — every craft uses this concept;
+   - `specs/<craft>/entities/<Name>.md` — only this craft uses it.
+
+   Do not choose for them: an entity wrongly placed in `core` makes every other craft inherit a concept that is not theirs, and one wrongly placed in a craft cannot be cited by the core at all (the boundary rule). File name = entity name in the code = name in the glossary. Filling in the content is step ③ with the user; this skill only builds the skeleton.
+10. If any entity file is still the untouched skeleton, or `specs/glossary.md` (root) and `specs/<craft>/glossary.md` are still templates, say so immediately: they are the input to the three roles at step ⑦ and a hard condition at gate ⑨. Writing them at step ③ is far cheaper than after step ⑦ — changing the model later means rewording the ACs.
+11. **A UC under `specs/core/` may cite no craft's IDs** — a `RULE-###`/`ADR-###`/`UC-###`/`BR-###` living under `specs/<craft>/`, or an entity name in `specs/<craft>/entities/`. Core knows nothing of a craft. Say this to the user as soon as the chosen slice is `core`; `gate-check` and `design-check` call `layer-check` and will warn.
+12. Do not write code. Do not commit (the first docs commit is made by `/sdd-solo:adversarial`).

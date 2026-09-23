@@ -14,4 +14,4 @@ ins_after "$UC1" "- F1 Main 2" "- F2 E1 thử lại mấy lần [neo: E1] → Ch
 cm "docs(UC-001): đọc lại — 2 phát hiện, 0 phải sửa" 2026-01-06
 S gate-check.sh UC-001
 chk "P-20 · cổng vẫn mở với dòng Chưa quyết (#53) (exit $R)" '[ $R = 0 ]'
-chk "P-20 · cổng NÓI RA 1/2 phát hiện còn Chưa quyết (cảnh báo)" 'has "1/2 phát hiện còn"'
+chk "P-20 · cổng NÓI RA 1/2 phát hiện còn Chưa quyết (cảnh báo)" 'has "1 of 2 findings still"'
