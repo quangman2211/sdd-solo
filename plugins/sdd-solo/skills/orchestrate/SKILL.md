@@ -31,10 +31,12 @@ từ lượt hiện tại. Không tham số → in bảng vai (§2) và hỏi us
 2. Sổ hỏi đáp: `notes/hoi-dap/hoi-dap.md` (vết quá trình, **ngoài `specs/`** từ 7.0). Chưa có → copy từ
    `${CLAUDE_PLUGIN_ROOT}/templates/skel/hoi-dap.md` (không thay được biến: `find ~/.claude/plugins -name hoi-dap.md
    -path '*sdd-solo*' | head -1`). Có rồi → không đụng.
-3. Hook ranh giới: `.sdd/hooks/pre-commit.d/10-role-boundary.sh` chưa có → `cp .sdd/hooks/pre-commit.d/10-role-boundary.sh.example
-   .sdd/hooks/pre-commit.d/10-role-boundary.sh && chmod +x …` (#50). Nhắc: hook nằm trong git, worktree chỉ thấy nó
-   sau khi `merge main`.
-4. Commit `chore(sdd): orchestrate setup — hoi-dap.md + hook ranh giới vai`.
+3. Vai (7.2): `.sdd/roles` chưa có → `/sdd-solo:init --update` chép bộ vai mẫu (A B R D T); đọc lại cùng user, sửa vùng
+   ghi/cấm cho đúng repo. Hook `commit-msg.d/10-vai.sh` đọc nó — mặc định `vai_bat_buoc=khong` chỉ nhắc; chạy
+   `bash .sdd/scripts/role.sh --kiem-lich-su` (chỉ đọc, 300 commit) rồi mới bật `nhanh-vai`. Bản cũ
+   `pre-commit.d/10-role-boundary.sh` (theo nhánh) còn thì `git rm`, kẻo hai mảnh cùng chặn. Hook nằm trong git, worktree
+   chỉ thấy nó sau khi `merge main`.
+4. Commit `chore(sdd): orchestrate setup — hoi-dap.md + .sdd/roles`.
 5. Hỏi user bằng `AskUserQuestion` **hai câu**: (a) quyền tự quyết của R — *tới L2 (Recommended, runxops chốt) ·
    tới L1 · chỉ L0*; (b) có vai Q (QA e2e) ngay không — *bật khi compose/deploy chạy được (Recommended) · bật ngay ·
    không có*. Ghi hai câu trả lời vào đầu `hoi-dap.md` (dòng *Quyền tự quyết mặc định*) và `decisions.md`.
@@ -78,6 +80,16 @@ từ lượt hiện tại. Không tham số → in bảng vai (§2) và hỏi us
    mà muốn hỏi thẳng thì chạy adversarial trong **phiên của A** với `--hoi`, không giao.
 
 ## 3. Khuôn lời giao
+
+**Từ 7.2 lời giao việc sinh bằng máy:** `bash .sdd/scripts/role.sh <vai> notes/hoi-dap/phieu/NNN-*.md [--luot N]` in sáu
+phần (mục tiêu · gói đọc `file:mục` qua lib · việc chép nguyên phần `Cho: <vai>` + mọi `[neo:]` · vùng cấm từ `.sdd/roles` ·
+lệnh kiểm + commit kê đích danh + đuôi `Vai:` · dòng `KETQUA`). Chỉ nhận **file phiếu** — 137 lượt giao tay ở runxops
+đều là chép lại phiếu, và chỗ hay rơi là neo. A sửa câu mục tiêu nếu cần rồi gửi; > 1.500 ký tự thì ghi file, `prompt
+"$(cat file)"`. Agent kết lượt bằng `role.sh --ketqua <khoá> ket=xong neo=<hash>` **trước** khi gửi tin — file ở
+`git-common-dir/sdd-ketqua/`, tin nhắn mất thì file còn (P-26); A đọc `role.sh --ketqua <khoá>`, không đọc màn hình.
+Mỗi vai một worktree: `role.sh --worktree D UC-###` · `role.sh --worktree T UC-###`; **B giữ checkout chính trên
+`main`** (cái B viết là sự thật chung); R và C đặt dấu bằng `role.sh R` / `role.sh C` ở worktree của mình.
+Hai khuôn dưới là để đọc hiểu sáu phần đó nói gì, và để dùng khi chưa có phiếu (lời giao vai lần đầu).
 
 **Lời giao vai** (một lần khi khởi động agent, ≤ 1.500 ký tự):
 ```
@@ -136,7 +148,9 @@ hình cho kết quả dài); (2) kiểm ranh giới bằng máy (§2 luật 2); 
 (`hoi-dap.md`, file soát) — `chore(sdd): hoi-dap #n` hoặc `docs(UC-###): soát lượt N`; (4) `STATE.md` một dòng:
 lượt nào đang chạy, phiếu nào chờ Duyệt.
 
-**Luồng phiếu:** agent ghi `HỎI-<vai>#` vào `notes/hoi-dap/hoi-<vai>.md` (trong worktree của nó) rồi DỪNG → A đọc
+**Luồng phiếu:** phiếu mới cấp số bằng `bash .sdd/scripts/phieu.sh new "<việc>" <vai>` (khoá nguyên tử chung mọi
+worktree, commit dòng giữ chỗ ngay — P-21 trùng số bốn lần một ngày khi cấp tay); đóng bằng `phieu.sh close <n>` (đếm
+F#/K# trên file, đòi KETQUA từng vai — P-33). Agent ghi `HỎI-<vai>#` vào `notes/hoi-dap/hoi-<vai>.md` (trong worktree của nó) rồi DỪNG → A đọc
 worktree, giao R: *"phiếu #n: xếp mức L0–L3, tra spec/ADR/design, ghi Cho: từng vai, thứ tự áp; chỉ ghi
 hoi-dap.md, không commit"* → L0–L2: A phát phần `Cho:` cho từng vai · L3: A hỏi chủ dự án `AskUserQuestion` (2–4
 lựa chọn, hệ quả một câu, có "Chưa quyết") → A ghi `decisions.md`/spec trước khi D bắt đầu lượt kế. Agent lặp lại
@@ -147,8 +161,9 @@ diff của D so với thân việc và với chỗ khác đang nói). R gộp v�
 
 ## 5. Giới hạn — nói với user
 
-1. Skill này **không đo được** agent có tuân lời giao không; thứ đo được là githook `.d` (ranh giới đường dẫn) và
-   hai lệnh `git diff`/`git log` ở §2 luật 2. Còn lại là kỷ luật của A.
+1. Skill này **không đo được** agent có tuân lời giao không; thứ đo được là githook `commit-msg.d/10-vai.sh` (ranh
+   giới vai theo `.sdd/roles`, đuôi `Vai:` trong `git log`), file KETQUA, và hai lệnh `git diff`/`git log` ở §2 luật 2.
+   Còn lại là kỷ luật của A.
 2. Agent tự nén ngữ cảnh giữa lượt thì `wait` vẫn đúng nhưng nó có thể quên luật vai → lời giao việc **nhắc lại luật
    cũ một dòng** mỗi lượt, không chỉ lúc khởi động.
 3. Không thay được `/sdd-solo:verify` và ba vai adversarial: C soát **code**; verify soát **spec**. Hai việc khác nhau.

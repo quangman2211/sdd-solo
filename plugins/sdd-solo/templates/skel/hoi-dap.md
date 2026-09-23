@@ -47,3 +47,11 @@ cần chữ của phiếu.
 
 ## Phiếu
 
+Mỗi phiếu một file `phieu/NNN-<slug>.md` + một dòng ở bảng dưới. **Cấp số bằng máy, không đọc bảng rồi đoán:**
+`bash .sdd/scripts/phieu.sh new "<việc>" <từ-vai>` — khoá nguyên tử chung mọi worktree, tạo file theo khuôn, thêm dòng,
+commit dòng giữ chỗ ngay; xong mới viết thân (7.2, P-21: trùng số bốn lần một ngày khi cấp tay). Đóng phiếu:
+`phieu.sh close <n>` đếm F#/K# **trên file** và đòi KETQUA của từng vai trong `Cho:` (P-33). Soát: `phieu.sh muc-luc`.
+
+| # | Việc | Từ | Ngày | Trạng thái | File |
+|---|---|---|---|---|---|
+

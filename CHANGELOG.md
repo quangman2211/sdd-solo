@@ -1,5 +1,61 @@
 # Changelog
 
+## 7.2.0 — 2026-09-23
+
+Đội agent, phần một (kế hoạch 2026-09-23 sau phỏng vấn điều phối runxops): sdd-solo viết cho một dev + một AI, runxops
+chạy một điều phối + 11 vai song song trên một repo, và mọi cơ chế cho việc đó (hợp đồng vai 291 dòng, hàng đợi ngoài
+repo, cấp số phiếu tay, 137 lượt giao tay) đều phải tự dựng. Bản này đưa **cơ chế** vào plugin, **chính sách** ở lại repo
+(`.sdd/roles`). Repo không khai vai thì hành vi y hệt 7.1 — đo bằng `tests/` (ca 30–37, 61 phép đo mới) và không ca cũ
+nào đổi. Không đụng cây `specs/`, runxops nhận giữa chừng được. Bốn điều chủ dự án chốt: làm ngay sau bộ test · cơ chế
+kèm bộ vai mẫu · dấu vai theo worktree, mỗi vai ghi một worktree · hàng đợi là file trong git (7.3).
+
+- **`.sdd/roles`** — khai vai theo `khoá=giá trị` như `.sdd/config` (githook bash trần đọc được): `vai=A B R D T`,
+  `<V>.ten .ghi .cam .nhanh .commit .kiem`, `vai_bat_buoc=khong|nhanh-vai|moi`. Vùng ghi nhận `@code_paths`
+  `@test_paths` `@uc_test_dir` `@tool_paths` nở từ `.sdd/config` — đường dẫn không chép hai nơi. Cấm thắng ghi. Bộ vai
+  mẫu ship trong `templates/project/` (init --update chép, không đè bản đã sửa). `lib.sh`: `role_list` `role_paths`
+  `role_deny` `role_checks` `role_may_commit` `role_of_path` `role_current` `glob_re` (chỉ `*` và `**`, không `case` để
+  gọi được trong `$( )`; tắt glob của shell khi duyệt — `specs/**` không quote từng nở thành 11 đường dẫn thật).
+- **Dấu vai theo worktree** — `role.sh <vai>` ghi `$(git rev-parse --git-path sdd-role)`: `.git/sdd-role` ở checkout
+  chính, `.git/worktrees/<tên>/sdd-role` ở worktree phụ. Không vào git, không theo nhánh — nhánh không đủ vì spec/soi/trọng
+  tài cùng ở `main` và đã cuốn file của nhau hai lần một ngày (P-29). `role.sh --worktree D UC-###` dựng
+  `../<repo>-d-uc-###` trên nhánh theo `<V>.nhanh`, đặt dấu. Vai không có mẫu nhánh (B spec) **giữ checkout chính**:
+  cái B viết là sự thật chung, ngồi worktree riêng thì vai khác đọc `main` cũ (ca D chọn ngược quyết định của R).
+- **Hook chặn thật — `commit-msg.d/10-vai.sh`** gọi `role.sh --commit <msg>`: suy vai `$SDD_ROLE` → đuôi `Vai: <V>` →
+  dấu worktree → mẫu nhánh; file stage ngoài vùng → thông điệp *"chỗ này của vai T"* (`role_of_path`), `commit=khong`
+  (R) → không được commit. Mặc định `vai_bat_buoc=khong` chỉ nhắc — bản phát hành là minor, repo tự chọn lúc bật sau khi
+  `role.sh --kiem-lich-su` (chỉ đọc, 300 commit) cho số chấp nhận được. Hook ghi thêm đuôi `Vai: <V>` để `git log --grep`
+  đo được. Đặt ở commit-msg (không pre-commit) vì chỉ ở đó đọc được cả message lẫn file stage. Commit merge bỏ qua.
+  `pre-commit.d/10-role-boundary.sh.example` (theo nhánh, 6.2) gỡ; bản user đã bật thì scaffold nhắc `git rm`.
+  **`commit-msg` mẹ:** `Merge`/`Revert`/`chore(sdd)` vẫn miễn kiểm ID nhưng **không còn `exit 0` trước vòng `.d/`** — tới
+  7.1 mọi mảnh `.d` mù với ba loại commit đó.
+- **`role.sh <vai> <file phiếu> [--luot N]`** — lời giao **sáu phần** sinh bằng máy: mục tiêu · gói đọc `file:mục` (tra
+  qua lib từ ID ở dòng đầu phiếu, kiểm tồn tại) · việc chép nguyên phần `Cho: <vai>` (mục đậm `- **B (…):**`, mục inline
+  `B (…) · A (…)`, bảng `| K | … | Cho |`) + mọi `[neo:]` · vùng cấm từ `.sdd/roles` · lệnh kiểm + commit `--only` kê
+  đích danh + đuôi `Vai:` · dòng KETQUA với khoá `<vai>-<id>-p<n>[-l<lượt>]`. **Chỉ nhận file phiếu**, chuỗi tự do bị từ
+  chối — 35% công của điều phối runxops là soạn lời giao, và chỗ hay rơi là neo, mà neo chỉ có trong phiếu. Trần 1.500
+  ký tự: vượt thì cảnh báo (dán vào một số công cụ không tự gửi).
+- **KETQUA — `role.sh --ketqua <khoá> ket=xong|chan|do neo=… [kiem= hoi= con=]`** ghi một dòng khoá=giá trị vào
+  `$(git rev-parse --git-common-dir)/sdd-ketqua/<khoá>.txt` — **chung mọi worktree, ngoài git**: đặt ở `notes/` thì vai
+  code ghi trong worktree của nó, điều phối ngồi `main` không thấy gì; đưa vào git thì mỗi lượt một commit một xung đột.
+  `ket=xong` bắt buộc `neo` **có thật** (hash `cat-file -e` · marker `.sdd/gate/…` · file); `ket=chan` bắt buộc `hoi=`.
+  Agent ghi file **trước** rồi gửi tin — bốn báo cáo mất trắng một buổi (P-26) và tám việc xong giả lúc hết hạn mức
+  22:16 ngày 22/09 là hai ca nó chữa. Khoá `[a-z0-9][a-z0-9._-]{1,39}`.
+- **`phieu.sh new|close|muc-luc|list`** — cấp số phiếu có khoá: `mkdir` nguyên tử ở `git-common-dir/sdd-lock/`
+  (`.sdd/` nằm trong cây làm việc, mỗi worktree một bản — khoá ở đó vô hình với đúng đối tượng nó phải chặn); số = max
+  của mục lục ∪ tên file ∪ `git log --all "phiếu #n"` (bắt cả phiếu ở worktree chưa merge); tạo file theo khuôn, thêm dòng
+  mục lục, **commit dòng giữ chỗ ngay** bằng `--only`, xong mới viết thân — P-21, trùng số bốn lần một ngày khi cấp tay. Đo:
+  hai worktree × 8 lượt song song → 17 số khác nhau. `close <n>` đếm `F#`/`K#` **trên file** so với số tự khai (P-33, kê số
+  thiếu) và đòi KETQUA `ket=xong` của từng vai trong `Cho:` (mục *"không có việc"* miễn); `muc-luc` bắt số trùng · số nhảy
+  · file không dòng · dòng không file. Sổ 6.x `specs/internal/hoi-dap.md` nhận như 7.0. `templates/skel/hoi-dap.md` có
+  bảng mục lục sẵn. Slug bỏ dấu bằng python (iconv macOS không dịch được tiếng Việt).
+- **P-29 — bảy chỗ commit qua vùng stage chung**: `adversarial` (2) · `intake` (2) · `design` · `verify` (2) đổi từ
+  `git add specs/ && git commit` sang `git add <file> && git commit --only -m … -- <file>` **kê đích danh** — `--only --
+  specs/` vẫn cuốn mọi thay đổi dưới `specs/` của vai khác, nên không dùng thư mục. Ca 37 chặn hồi quy.
+- Skill mới `/sdd-solo:role` · `/sdd-solo:phieu`; `orchestrate` §1 setup dùng `.sdd/roles`, §3 trỏ sang lời giao sinh
+  bằng máy + KETQUA, luồng phiếu qua `phieu.sh`. Scaffold: `KEEP` + `role.sh phieu.sh`; `chmod +x` mảnh `.d/*.sh`.
+- Chưa có trong bản này (7.3): sổ hỏi có địa chỉ cho D/T, sổ uỷ quyền có khuôn, hàng đợi `notes/hang-doi.md` +
+  `queue.sh`, `session-start.sh` bơm hợp đồng vai, năm skill còn `AskUserQuestion` (start · design · intake · deprecate · close).
+
 ## 7.1.0 — 2026-09-23
 
 Bộ test cho script — việc (1) trong bản đánh giá 10 ngày của runxops (`notes/sdd-solo-danh-gia-2026-09-23.md`): 73 bản

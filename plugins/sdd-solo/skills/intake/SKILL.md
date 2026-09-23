@@ -60,7 +60,7 @@ File chưa có, hoặc các mục còn nguyên khuôn (`<Một câu: sản phẩ
 Đã có `vision.md` viết thật rồi → đọc `## Không thu hẹp` và `## Nghề và lát`, nói lại cho chủ dự án nghe
 một câu, rồi đi tiếp. Không sửa gì.
 
-Commit riêng: `git add specs/vision.md && git commit -m "docs(vision): tầng 0 — <định vị một câu>"`.
+Commit riêng: `git add specs/vision.md && git commit --only -m "docs(vision): tầng 0 — <định vị một câu>" -- specs/vision.md`.
 
 ---
 
@@ -287,7 +287,7 @@ ls -d specs/*/br-*/ 2>/dev/null | sed 's|.*/br-||; s|/$||' | sort -n | tail -1
 (nếu `${CLAUDE_PLUGIN_ROOT}` không được thay: `find ~/.claude/plugins -type f -name br-check.sh -path '*sdd-solo*' | head -1`).
 Còn ✗ thì sửa cùng user rồi chạy lại. Cảnh báo `___` là **bình thường ở Phase 1** — nói rõ điều
 đó cho user, đừng để user tưởng mình làm sai.
-6. Commit: `git add specs/ && git commit -m "docs(BR-###): intake — <tên BR>"`.
+6. Commit: `git add <br.md, evidence.md, vision.md nếu sửa> && git commit --only -m "docs(BR-###): intake — <tên BR>" -- <đúng các file đó>` — kê đích danh, không `specs/` (P-29: `git add specs/` cuốn file dở của vai khác).
 7. STATE.md: `Đang làm: BR-### · Phase 1 — BR đã viết`. `Việc tiếp theo: /sdd-solo:adversarial BR-### (ba vai tầng BR), rồi /sdd-solo:start UC-### cho UC đầu tiên`.
 6. Nói với user hai điều: những chỗ còn `___` là nợ đã ghi sổ chứ không phải lỗi; và bước sau
    `/sdd-solo:adversarial BR-###` sẽ hỏi ngược lại chính BR này bằng ba vai, đặc biệt là vai

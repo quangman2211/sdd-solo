@@ -166,10 +166,17 @@ if [ -d "$ROOT/.git" ]; then
   for d in pre-commit.d commit-msg.d; do
     mkdir -p "$ROOT/.sdd/hooks/$d"
     for h in "$PLUGIN/templates/githooks/$d/"*; do [ -f "$h" ] && cp "$h" "$ROOT/.sdd/hooks/$d/"; done
+    chmod +x "$ROOT/.sdd/hooks/$d/"*.sh 2>/dev/null || true   # set -e: pre-commit.d không có *.sh
   done
+  # 7.2: ranh giới vai dời từ pre-commit.d/10-role-boundary (theo nhánh) sang commit-msg.d/10-vai.sh (theo .sdd/roles).
+  # Khuôn .example cũ là của plugin → dọn. Bản user đã bật (10-role-boundary.sh) là file của repo → không xoá, chỉ nhắc:
+  # hai mảnh cùng chặn thì D/T bị chặn hai lần với hai thông điệp khác nhau.
+  rm -f "$ROOT/.sdd/hooks/pre-commit.d/10-role-boundary.sh.example"
+  [ -f "$ROOT/.sdd/hooks/pre-commit.d/10-role-boundary.sh" ] && \
+    warn "pre-commit.d/10-role-boundary.sh (chặn theo nhánh, tới 7.1) còn đó — 7.2 chặn theo .sdd/roles ở commit-msg.d/10-vai.sh; xoá bản cũ: git rm .sdd/hooks/pre-commit.d/10-role-boundary.sh"
   git -C "$ROOT" config core.hooksPath .sdd/hooks
   [ -f "$ROOT/.sdd/gitmessage" ] && git -C "$ROOT" config commit.template .sdd/gitmessage
-  ok "git hooks: commit-msg, pre-commit (core.hooksPath=.sdd/hooks) + pre-commit.d/ commit-msg.d/ cho luật riêng"
+  ok "git hooks: commit-msg, pre-commit (core.hooksPath=.sdd/hooks) + pre-commit.d/ commit-msg.d/ (10-vai.sh: ranh giới vai theo .sdd/roles, 7.2)"
 else
   warn "chưa có .git — git init rồi chạy lại để cài hook"
 fi
@@ -224,7 +231,7 @@ fi
 # plugin (CI, người clone repo). Đổi lại: bản sao có thể trôi version — .sdd/version
 # so với version plugin, lệch thì session-start và status cảnh báo.
 mkdir -p "$ROOT/.sdd/scripts"
-KEEP="lib.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
+KEEP="lib.sh role.sh phieu.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
 for f in $KEEP; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done

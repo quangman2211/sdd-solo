@@ -127,7 +127,7 @@ grep -rn '<giá trị cũ>' specs/ scripts/ *.md
 
 7. Rồi commit **riêng, đúng tiêu đề này** — cổng nhận diện bằng nó:
 ```bash
-git add specs/ && git commit -m "docs($1): đọc lại — <n> phát hiện, <m> phải sửa"
+git commit --only -m "docs($1): đọc lại — <n> phát hiện, <m> phải sửa" -- <file UC-###.md (hoặc proposal.md)>
 ```
    Có `--no-commit` → **vẫn ghi** `## Đọc lại` ở bước 5 (đó là sản phẩm của lượt), chỉ bỏ commit này; nói
    rõ với user: cổng ⑨ **chưa mở** cho tới khi chính commit đó tồn tại và là commit spec mới nhất. Không có
@@ -203,7 +203,7 @@ Dùng khi tài liệu vừa đổi nhiều và cần biết còn chỗ nào nói
 4. Ghi kết quả vào `notes/soat/verify-<YYYY-MM-DD>.md` (vết quá trình, ngoài `specs/`): phạm vi đã đọc, từng `F#` kèm nguyên
    văn hai phía, đầu ra. **Cả những dòng bị bác cũng ghi, kèm lý do bác** — đó là thứ làm lần chạy
    sau rẻ đi, và là thứ duy nhất còn lại sau khi đóng terminal.
-5. `git add notes/soat/ && git commit -m "docs: verify pass <ngày> — <n> phát hiện"` (6.x: `specs/internal/`), rồi in
+5. `git add notes/soat/verify-<ngày>.md && git commit --only -m "docs: verify pass <ngày> — <n> phát hiện" -- notes/soat/verify-<ngày>.md` (6.x: `specs/internal/`), rồi in
    danh sách `Chưa quyết` như phần A bước 8. Sửa spec theo câu trả lời là một lượt riêng.
 
 ---

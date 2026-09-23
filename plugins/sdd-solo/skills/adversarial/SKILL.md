@@ -149,7 +149,7 @@ Lời khai `→ spec` trống không kiểm được, và `gate-check` sẽ bắ
    - Sổ **không** nằm trong commit bước 6: dưới orchestrate A commit sổ (R/B không commit sổ); chạy tay thì commit
      riêng `chore(sdd): sổ hỏi đáp — phiếu #<n>`. Báo cuối lượt: số phiếu, số `K#`, số Open Question mới.
    Không được để câu nào không có đầu ra — `Chưa quyết — Open Question (phiếu …)` là một đầu ra.
-6. Kết thúc: `git add specs/ && git commit -m "docs($1): spec vN — sau adversarial pass"`. Commit này là mốc để `/sdd-solo:gate` biết spec vừa đổi hôm nay.
+6. Kết thúc: `git add <file UC và file anh em đã sửa> && git commit --only -m "docs($1): spec vN — sau adversarial pass" -- <đúng các file đó>` — kê đích danh, không `specs/`: vùng stage là của cả cây, `git add specs/` cuốn file dở của vai khác (P-29). Commit này là mốc để `/sdd-solo:gate` biết spec vừa đổi hôm nay.
 7. STATE.md: `Đang làm: $1 · bước ⑧ — chờ đọc lại bằng đầu chưa neo`. Nói với user bước tiếp là
    **`/sdd-solo:verify $1`** — subagent đọc lại, ghi `## Đọc lại`, commit riêng; xong là chạy cổng được.
    Từ 6.0.0 (#38) đây là đường **duy nhất**: cửa "đóng máy, buổi sau đọc lại" đã bỏ, vì một đêm đo thời
@@ -226,7 +226,7 @@ Còn dòng ✗ → **dừng**, in output, bảo user viết xong BR rồi chạy
    brief` — chúng thành `K#` trong phiếu, đầu ra `Chưa quyết`. Nên `br-scope-diff.sh` phải **rỗng**; nó in dòng nào
    thì đó là phép co mình vừa tự áp — hoàn lại (`git checkout -- <br.md>` rồi áp lại phần không đụng phạm vi), đừng
    ghi History. Diff rỗng → ghi History v+1 *"sau adversarial pass — phiếu #<n> chờ chủ dự án"* và đi tiếp bước 7.
-7. Chạy lại `br-check.sh $1`, rồi `git add specs/ && git commit -m "docs($1): BR sau adversarial pass"`.
+7. Chạy lại `br-check.sh $1`, rồi `git add <br.md và file đã sửa> && git commit --only -m "docs($1): BR sau adversarial pass" -- <đúng các file đó>` (kê đích danh, không `specs/` — P-29).
 8. STATE.md: `Đang làm: $1 · Phase 1 xong`. `Việc tiếp theo: /sdd-solo:start UC-### cho UC đầu tiên trong ## Related Use Cases của lát`.
 
 Không viết code. Không tạo thư mục UC.

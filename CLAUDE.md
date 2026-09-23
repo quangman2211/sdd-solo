@@ -7,16 +7,17 @@ Repo này là **plugin Claude Code** (đồng thời là marketplace một plugi
 .claude-plugin/marketplace.json      version phải khớp plugin.json
 plugins/sdd-solo/
   .claude-plugin/plugin.json         version
-  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · state · status
+  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · role · phieu · state · status
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
-  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start
+  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá, 7.2)
   templates/project/                 16 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16)
   templates/skel/                    khuôn use-case/ · br/ · nghe/ · entity.md · change/ · hoi-dap.md — skill copy khi tạo, KHÔNG rơi vào dự án
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
-  templates/githooks/                commit-msg · pre-commit — chặn cứng; pre-commit.d/ commit-msg.d/ chỉ README + .example (luật riêng của repo, 6.2.0)
+  templates/githooks/                commit-msg · pre-commit — chặn cứng; pre-commit.d/ commit-msg.d/ README + .example (luật riêng của repo, 6.2.0) + commit-msg.d/10-vai.sh (ranh giới vai theo .sdd/roles, 7.2)
   docs/playbook-example-khoskill.html
 CHANGELOG.md                         mỗi bản một mục — đây là ## History của plugin
+tests/                               bộ test (7.1): run.sh · lib.sh · fixtures/v7 · cases/NN-<slug>.sh · snap.sh — PASS/FAIL/XFAIL/XPASS, xem tests/README.md
 ```
 
 ## Ranh giới — quyết định đã chốt, không mở lại tuỳ tiện
@@ -42,6 +43,12 @@ CHANGELOG.md                         mỗi bản một mục — đây là ## Hi
   bản sao runxops chưa migrate (CHANGELOG 7.0.0).
 - **`specs/vision.md` là của chủ dự án** (7.0, T1–T3): skill hỏi và chép, không tự viết; số ở đó miễn luật "không số".
   Nghề là thư mục ngang hàng `core/`; lát là một BR; không còn context như đơn vị thư mục. Lõi không biết nghề.
+- **Plugin giữ cơ chế, repo giữ chính sách của đội agent** (7.2). Có vai nào · ghi đâu · cấm đâu · bật chặn hay chưa nằm
+  ở `.sdd/roles` của dự án; plugin chỉ có `role.sh` · `phieu.sh` · hook `10-vai.sh` · KETQUA. Không có `.sdd/roles` thì
+  mọi thứ im lặng. Khoá nguyên tử và KETQUA đặt ở `$(git rev-parse --git-common-dir)/` — chung mọi worktree, ngoài git;
+  `.sdd/` là file trong cây làm việc nên mỗi worktree một bản. Dấu vai theo worktree (`--git-path sdd-role`), không theo
+  nhánh. Vai spec giữ checkout chính trên `main`. Plugin **không cấp runner** (ai mở pane, đổi model) — đúng luật không
+  gọi tên lệnh của plugin khác.
 - **`scaffold.sh` không bao giờ ghi đè file không có trong manifest** (7.0). Bản tới 6.6.x coi "không có dòng manifest"
   là "chưa cài" và chép đè — trên repo vừa migrate, `specs/architecture.md` thật (dời từ `internal/`) bị thay bằng khuôn
   trong im lặng. Giờ: không dòng manifest mà file đã có → `.new` + cảnh báo; `migrate --layout v7` đổi tên đường dẫn
@@ -52,6 +59,8 @@ CHANGELOG.md                         mỗi bản một mục — đây là ## Hi
 ## Quy trình sửa
 1. Sửa file trong repo này.
 2. Test:
+   - **`bash tests/run.sh` — bắt buộc trước mỗi bản (7.1).** FAIL là chặn phát hành; XPASS nghĩa là một lỗi đã hết —
+     đổi ca sang `chk` và ghi CHANGELOG. Sửa một lỗi P-## thì viết ca `xfail` **trước**, thấy XFAIL, sửa, thấy XPASS.
    - script: `cd <repo dự án> && bash <đường dẫn repo này>/plugins/sdd-solo/scripts/gate-check.sh UC-###`
    - skill/hook: `cd <repo dự án> && claude --plugin-dir <đường dẫn repo này>/plugins/sdd-solo`
    - smoke test đầy đủ: tạo repo tạm, chạy scaffold → viết UC giả → gate (đỏ) → điền đủ, commit docs lùi ngày → gate (xanh) → gate-pass → commit feat (hook phải chặn khi thiếu marker, cho qua khi có) → close-check/-pass. Xem CHANGELOG 1.0.0 cho kịch bản gốc.

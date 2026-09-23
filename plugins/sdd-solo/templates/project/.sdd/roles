@@ -1,0 +1,53 @@
+# sdd-solo — vai của đội agent (7.2). Cú pháp khoá=giá trị như .sdd/config; danh sách cách nhau bằng dấu cách.
+# Đây là CHÍNH SÁCH của repo: có vai nào, ghi đâu, cấm đâu. Sửa tay thoải mái, init --update không đè bản đã sửa.
+# Dự án một người: để nguyên, không đặt dấu vai thì không có gì xảy ra.
+#
+# Vùng ghi: đường dẫn (không dấu * = thư mục đó và mọi thứ dưới), * trong một đoạn, ** mọi độ sâu.
+# @code_paths @test_paths @uc_test_dir @tool_paths nở từ .sdd/config — không chép đường dẫn hai nơi.
+# Cấm THẮNG được ghi. Thông điệp chặn nói "chỗ này của vai X" (role.sh tra bằng role_of_path).
+#
+# vai_bat_buoc: khong (mặc định — hook chỉ NHẮC khi commit chạm ngoài vùng) · nhanh-vai (chặn khi suy được vai)
+#               · moi (không suy được vai cũng chặn). Bật sau khi `role.sh --kiem-lich-su` cho số chấp nhận được.
+vai_bat_buoc=khong
+vai=A B R D T
+
+# A · điều phối — giao việc, commit sổ thay vai không commit, hỏi chủ dự án khi L3. Không viết spec, không viết code.
+A.ten=điều phối
+A.ghi=STATE.md specs/decisions.md notes/** .sdd/**
+A.cam=@code_paths @test_paths specs/vision.md
+A.nhanh=
+A.commit=co
+A.kiem=
+
+# B · spec — áp chữ theo phiếu đã có trả lời. Giữ CHECKOUT CHÍNH trên main: cái B viết là sự thật chung, ngồi worktree
+# riêng thì C/R/D/T đọc main cũ tới khi merge (ca D chọn ngược quyết định của R). Không ghi decisions/vision/STATE.
+B.ten=spec
+B.ghi=specs/** notes/hoi-dap/**
+B.cam=specs/decisions.md specs/vision.md STATE.md @code_paths @test_paths
+B.nhanh=
+B.commit=co
+B.kiem=gate-check.sh --pre UC-### · layer-check.sh khi sửa gốc/core
+
+# R · trọng tài — chỉ ghi ô **Trả lời (R):** của phiếu, KHÔNG commit (A commit).
+R.ten=trọng tài
+R.ghi=notes/hoi-dap/**
+R.cam=specs/** @code_paths @test_paths STATE.md
+R.nhanh=
+R.commit=khong
+R.kiem=
+
+# D · code — worktree riêng, nhánh code/uc-###. Test của cổng (uc_test_dir) là của T: D cần fake khác → TEST-# trong hoi-D.md.
+D.ten=code
+D.ghi=@code_paths @test_paths notes/hoi-dap/hoi-D.md
+D.cam=@uc_test_dir specs/** STATE.md
+D.nhanh=code/*
+D.commit=co
+D.kiem=lệnh test của repo — in số ca xanh/đỏ
+
+# T · test — worktree riêng, nhánh test/uc-###. Không đọc code của D: tên bảng/chữ ký lấy từ design.md.
+T.ten=test
+T.ghi=@uc_test_dir notes/hoi-dap/hoi-T.md
+T.cam=@code_paths specs/** STATE.md
+T.nhanh=test/*
+T.commit=co
+T.kiem=lệnh test của repo — test ĐỎ trước khi có code

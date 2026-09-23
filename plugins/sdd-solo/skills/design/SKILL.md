@@ -103,7 +103,7 @@ mục riêng ở cuối.
 ## 6. Commit riêng
 
 ```bash
-git add specs/ && git commit -m "docs($1): thiết kế — design.md + tasks.md"
+git add <thư mục UC>/design.md <thư mục UC>/tasks.md && git commit --only -m "docs($1): thiết kế — design.md + tasks.md" -- <thư mục UC>/design.md <thư mục UC>/tasks.md
 ```
 
 ## 7. Nói với user

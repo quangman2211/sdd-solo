@@ -14,8 +14,10 @@ chỉ có hiệu lực ở nhánh khác sau khi nhánh đó `merge main`. Ca th�
 **Thử luật `.d` ở worktree:** hook mẹ tìm `.d/` dưới `git rev-parse --show-toplevel` **của worktree đó**,
 nên `git -c core.hooksPath=<repo chính>/.sdd/hooks commit` ở worktree vẫn **không** chạy luật `.d` (thư mục
 `.d` của worktree chưa có file) — commit lọt. Hai cách đúng: `merge main` vào worktree trước, hoặc gọi thẳng
-script với env: `SDD_STAGED="$(git diff --cached --name-only)" SDD_CODE_PATHS=src SDD_UC_TEST_DIR=tests/use-cases
-bash .sdd/hooks/pre-commit.d/10-role-boundary.sh`.
+script với env: `SDD_STAGED="$(git diff --cached --name-only)" SDD_ROOT=$(git rev-parse --show-toplevel)
+bash .sdd/scripts/role.sh --staged`.
 
-Khuôn có sẵn: `10-role-boundary` (ranh giới vai theo nhánh, #50) · `20-layer-boundary` (7.0: gốc/core không trích nghề,
+Khuôn có sẵn: `20-layer-boundary` (7.0: gốc/core không trích nghề,
 `src/core` không import `src/<nghề>` — chỉ xét file đang stage, gọi `.sdd/scripts/layer-check.sh --staged`).
+
+Ranh giới **vai** từ 7.2 nằm ở `commit-msg.d/10-vai.sh`; `10-role-boundary.sh` cũ (theo nhánh) — xoá nếu còn.

@@ -423,3 +423,102 @@ plugin_script() {
   find "$HOME/.claude/plugins/cache" -type f -name "$1" -path '*sdd-solo*' 2>/dev/null \
     | sort -t/ -k7 -V | tail -1
 }
+
+# ── 7.2 · đội agent: vai · dấu vai theo worktree · khoá nguyên tử · KETQUA ────────────────────────
+# .sdd/roles: khoá=giá trị như .sdd/config (githook bash trần đọc được), danh sách cách nhau bằng dấu cách.
+#   vai=A B R D T · <V>.ten · <V>.ghi · <V>.cam · <V>.nhanh · <V>.commit=co|khong · <V>.kiem
+#   vai_bat_buoc=khong|nhanh-vai|moi — khong (mặc định): hook chỉ nhắc, không chặn.
+# Không có file → mọi hàm trả rỗng, hành vi y hệt 7.1. Vùng ghi nhận @code_paths @test_paths @uc_test_dir
+# @tool_paths nở từ .sdd/config, để đường dẫn không chép hai nơi.
+roles_file() { [ -f "$1/.sdd/roles" ] && printf '%s' "$1/.sdd/roles"; }
+role_get() { # role_get <khoá> <root> [mặc định]
+  local v; v="$(sed -n "s/^$1=//p" "$2/.sdd/roles" 2>/dev/null | tail -1 | sed 's/[[:space:]]*$//')"
+  if [ -n "$v" ]; then printf '%s' "$v"; else printf '%s' "$3"; fi
+}
+role_list()     { role_get vai "$1" ""; }
+role_name()     { role_get "$1.ten" "$2" "$1"; }
+role_branch()   { role_get "$1.nhanh" "$2" ""; }
+role_checks()   { role_get "$1.kiem" "$2" ""; }
+role_required() { role_get vai_bat_buoc "$1" khong; }
+role_may_commit() { [ "$(role_get "$1.commit" "$2" co)" != khong ]; }
+role_known()    { local v; for v in $(role_list "$2"); do [ "$v" = "$1" ] && return 0; done; return 1; }
+# Mẫu như `specs/**` đi qua `for x in $1` KHÔNG quote → shell nở thành tên file thật (đo: `specs/**` thành 11 đường).
+# Tắt glob trong lúc duyệt (set -f) rồi trả lại như cũ.
+_noglob_on()  { case $- in *f*) _NG=1;; *) _NG=0; set -f;; esac; }
+_noglob_off() { [ "${_NG:-1}" = 0 ] && set +f; }
+_role_expand() { # nở @code_paths … từ .sdd/config
+  local x out=""
+  _noglob_on
+  for x in $1; do
+    case "$x" in
+      @code_paths)  out="$out $(code_paths "$2")";;
+      @test_paths)  out="$out $(test_paths "$2")";;
+      @uc_test_dir) out="$out $(uc_test_dir "$2")";;
+      @tool_paths)  out="$out $(tool_paths "$2")";;
+      *) out="$out $x";;
+    esac
+  done
+  _noglob_off
+  printf '%s' "$out" | sed 's/^ *//'
+}
+role_paths() { _role_expand "$(role_get "$1.ghi" "$2" "")" "$2"; }
+role_deny()  { _role_expand "$(role_get "$1.cam" "$2" "")" "$2"; }
+# glob_re <mẫu> → ERE neo hai đầu. Chỉ hai ký tự: ** = mọi độ sâu · * = trong một đoạn. Không có * thì khớp
+# đúng đường dẫn hoặc mọi thứ dưới thư mục đó. Không dùng case, để gọi được trong $( ) (bash 3.2).
+glob_re() {
+  local p="${1%/}" r
+  r="$(printf '%s' "$p" | sed -e 's/\./\\./g' -e 's/+/\\+/g' -e 's/?/\\?/g' -e 's/(/\\(/g' -e 's/)/\\)/g' -e 's/{/\\{/g' -e 's/}/\\}/g' -e 's/|/\\|/g' -e 's/\$/\\$/g' \
+        -e 's#\*\*/#__DSS__#g' -e 's#\*\*#__DS__#g' -e 's#\*#[^/]*#g' -e 's#__DSS__#(.*/)?#g' -e 's#__DS__#.*#g')"
+  if printf '%s' "$p" | grep -q '\*'; then printf '^%s$' "$r"; else printf '^%s(/.*)?$' "$r"; fi
+}
+# path_in <đường dẫn> "<mẫu …>" → 0 nếu khớp một mẫu
+path_in() { local m r=1; _noglob_on; for m in $2; do printf '%s' "$1" | grep -qE "$(glob_re "$m")" && { r=0; break; }; done; _noglob_off; return $r; }
+# role_allows <vai> <đường dẫn> <root> → 0 nếu vai được ghi. Cấm thắng được ghi.
+role_allows() { path_in "$2" "$(role_deny "$1" "$3")" && return 1; path_in "$2" "$(role_paths "$1" "$3")"; }
+# role_of_path <đường dẫn> <root> → các vai được ghi chỗ đó (để thông điệp chặn nói "chỗ này của T")
+role_of_path() { local v out=""; for v in $(role_list "$2"); do role_allows "$v" "$1" "$2" && out="$out $v"; done; printf '%s' "$out" | sed 's/^ *//'; }
+# role_marker_file <root> → file dấu vai RIÊNG worktree này: .git/sdd-role ở checkout chính,
+# .git/worktrees/<tên>/sdd-role ở worktree phụ. Không vào git, không theo nhánh (đo trên runxops, 7.2).
+role_marker_file() { local m; m="$(cd "$1" && git rev-parse --git-path sdd-role 2>/dev/null)"; [ -n "$m" ] || return 1; case "$m" in /*) ;; *) m="$1/$m";; esac; printf '%s' "$m"; }
+# role_current <root> → vai của phiên: SDD_ROLE → dấu worktree → mẫu nhánh <V>.nhanh; rỗng nếu không suy được
+role_current() {
+  local v m br p
+  [ -n "$SDD_ROLE" ] && { printf '%s' "$SDD_ROLE"; return; }
+  m="$(role_marker_file "$1")"; [ -n "$m" ] && [ -f "$m" ] && { head -1 "$m" | tr -d '[:space:]'; return; }
+  br="$(git -C "$1" symbolic-ref --quiet --short HEAD 2>/dev/null)"
+  for v in $(role_list "$1"); do
+    p="$(role_branch "$v" "$1")"; [ -n "$p" ] || continue
+    printf '%s' "$br" | grep -qE "$(glob_re "$p")" && { printf '%s' "$v"; return; }
+  done
+}
+# git_common <root> → thư mục git CHUNG mọi worktree (.git của checkout chính). Khoá và KETQUA đặt ở đây:
+# .sdd/ nằm trong cây làm việc nên mỗi worktree một bản — khoá ở đó vô hình với đúng đối tượng nó phải chặn.
+git_common() { local d; d="$(cd "$1" && git rev-parse --git-common-dir 2>/dev/null)"; case "$d" in /*) ;; *) d="$1/$d";; esac; printf '%s' "$d"; }
+lock_dir()   { printf '%s/sdd-lock' "$(git_common "$1")"; }
+ketqua_dir() { printf '%s/sdd-ketqua' "$(git_common "$1")"; }
+# lock_take <tên> <root> — mkdir nguyên tử (POSIX). Chờ tới 10 s; khoá quá 2 phút coi là mồ côi và gỡ.
+lock_take() {
+  local d i=0; mkdir -p "$(lock_dir "$2")"; d="$(lock_dir "$2")/$1"
+  while ! mkdir "$d" 2>/dev/null; do
+    i=$((i+1))
+    if [ "$i" -gt 100 ]; then
+      [ -n "$(find "$d" -maxdepth 0 -mmin +2 2>/dev/null)" ] && { rm -rf "$d"; i=0; continue; }
+      return 1
+    fi
+    sleep 0.1
+  done
+  printf '%s\n' "$$" > "$d/pid"
+}
+lock_drop() { rm -rf "$(lock_dir "$2")/$1"; }
+# plugin_file <đường dẫn tương đối trong plugin> — như plugin_script nhưng cho khuôn (templates/skel/…)
+plugin_file() {
+  local p="$1" root="$2" ip
+  [ -f "$root/$p" ] && { printf '%s' "$root/$p"; return; }
+  ip="$(installed_path sdd-solo)"; [ -n "$ip" ] && [ -f "$ip/$p" ] && { printf '%s' "$ip/$p"; return; }
+  find "$HOME/.claude/plugins/cache" -type f -path "*sdd-solo*/$p" 2>/dev/null | sort -t/ -k7 -V | tail -1
+}
+# hoi_dap_file <root> → sổ hỏi đáp: 7.0 notes/hoi-dap/hoi-dap.md · 6.x specs/internal/hoi-dap.md (đường dù chưa có file)
+hoi_dap_file() {
+  if [ -f "$1/notes/hoi-dap/hoi-dap.md" ] || [ ! -f "$1/specs/internal/hoi-dap.md" ]; then printf '%s/notes/hoi-dap/hoi-dap.md' "$1"
+  else printf '%s/specs/internal/hoi-dap.md' "$1"; fi
+}
