@@ -6,15 +6,16 @@ S phieu.sh hoi D "Verb receive tính là nhận được không"
 chk "hoi D lần hai: HỎI-D2" 'grep -q "^### HỎI-D2 " notes/hoi-dap/hoi-D.md'
 S hoi-check.sh D
 chk "hoi-check: bốn ô còn khuôn → đỏ (exit $R)" '[ $R = 1 ] && has "ô \"Nguồn\" trống hoặc còn khuôn"'
-python3 - <<'PY'
-import io, re
-p = 'notes/hoi-dap/hoi-D.md'; s = io.open(p, encoding='utf-8').read()
-s = s.replace('- **Nguồn:** <file:mục đã tra>', '- **Nguồn:** UC-001 ## Open Questions · RULE-001 tham số phút')
-s = s.replace('- **Chặn không:** <chặn | không chặn> — <vì sao>', '- **Chặn không:** không chặn — mọi ngày như nhau cho tới khi spec nói')
-s = s.replace('- **Đang làm gì trong lúc chờ:** <…>', '- **Đang làm gì trong lúc chờ:** ca AC-1, giả định ghi ĐOÁN trong code')
-s = s.replace('- **Việc cho spec khi trả lời:** <…>', '- **Việc cho spec khi trả lời:** RULE-001 dòng tham số phút · UC-001 Open Question tick [x]')
-io.open(p, 'w', encoding='utf-8').write(s)
-PY
+node - <<'JS'
+const fs = require('fs');
+const p = 'notes/hoi-dap/hoi-D.md';
+let s = fs.readFileSync(p, 'utf8');
+s = s.replaceAll('- **Nguồn:** <file:mục đã tra>', '- **Nguồn:** UC-001 ## Open Questions · RULE-001 tham số phút');
+s = s.replaceAll('- **Chặn không:** <chặn | không chặn> — <vì sao>', '- **Chặn không:** không chặn — mọi ngày như nhau cho tới khi spec nói');
+s = s.replaceAll('- **Đang làm gì trong lúc chờ:** <…>', '- **Đang làm gì trong lúc chờ:** ca AC-1, giả định ghi ĐOÁN trong code');
+s = s.replaceAll('- **Việc cho spec khi trả lời:** <…>', '- **Việc cho spec khi trả lời:** RULE-001 dòng tham số phút · UC-001 Open Question tick [x]');
+fs.writeFileSync(p, s);
+JS
 S hoi-check.sh D
 chk "đủ bốn ô → xanh (exit $R)" '[ $R = 0 ] && has "2 mục HỎI-D, đủ bốn ô"'
 S pass.sh gate UC-001

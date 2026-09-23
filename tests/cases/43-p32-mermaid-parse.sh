@@ -36,11 +36,13 @@ rep specs/orders/entities/Order.md '[*] --> new : UC-001 báo đơn' '[*] --> ne
 cm "docs(UC-001): đọc lại — sửa entity" 2026-01-06
 S gate-check.sh UC-001
 chk "P-32 · cổng đỏ khi ; làm mất nhãn state diagram (exit $R)" '[ $R = 1 ] && hasE "mất khi render|không render được"'
-# ⑦ không có python3 thì mọi thứ im lặng, hành vi như 7.4
+# ⑦ không có node thì mọi thứ im lặng, hành vi như 7.4
 nr p32d
-mkdir -p "$W/nopy" && printf '#!/bin/sh\nexit 127\n' > "$W/nopy/python3" && chmod +x "$W/nopy/python3"
-O="$(PATH="$W/nopy:$PATH" bash "$P/scripts/gate-check.sh" UC-001 2>&1 | clean)"; R=$?
-chk "P-32 · không có python3: cổng vẫn qua, không đỏ oan (exit $R)" '[ $R = 0 ]'
+# PATH chỉ còn thư mục giả + các thư mục hệ thống KHÔNG có node: dựng bằng cách chặn node bằng một file
+# thực thi thoát 127 đứng trước trong PATH thì `command -v node` vẫn thấy — nên bỏ hẳn thư mục chứa node.
+NODEDIR="$(dirname "$(command -v node)")"
+O="$(PATH="$(printf '%s' "$PATH" | tr ':' '\n' | grep -vxF "$NODEDIR" | paste -sd: -)" bash "$P/scripts/gate-check.sh" UC-001 2>&1)"; R=$?; O="$(printf '%s\n' "$O" | clean)"
+chk "P-32 · không có node: cổng vẫn qua, không đỏ oan (exit $R)" '[ $R = 0 ]'
 # ⑧ bản sao .sdd/scripts/ của dự án phải có parser, kẻo cổng chạy ở CI rơi về grep im lặng
 nr p32e
-chk "P-32 · scaffold chép mermaid.py + mermaid.sh sang .sdd/scripts/" '[ -f .sdd/scripts/mermaid.py ] && [ -x .sdd/scripts/mermaid.sh ]'
+chk "P-32 · scaffold chép js/mermaid.mjs + mermaid.sh sang .sdd/scripts/" '[ -f .sdd/scripts/js/mermaid.mjs ] && [ -x .sdd/scripts/mermaid.sh ]'

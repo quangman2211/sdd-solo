@@ -19,7 +19,7 @@ for a in "$@"; do
   [ "$a" = "--no-cache" ] && { NOCACHE=1; REMOTE=1; }
 done
 
-PNAME="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["name"])' "$PLUGIN/.claude-plugin/plugin.json" 2>/dev/null || echo sdd-solo)"
+PNAME="$(jver "$PLUGIN/.claude-plugin/plugin.json" name 2>/dev/null || echo sdd-solo)"
 MKTNAME="$(mkt_of "$PLUGIN")"
 DEV=0; [ -z "$MKTNAME" ] && { MKTNAME="$PNAME"; DEV=1; }   # chạy bằng --plugin-dir
 

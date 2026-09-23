@@ -4,7 +4,7 @@
 # Bản mới KHÔNG áp vào phiên đang mở — giống hệt Claude Code, phải mở session mới.
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 PLUGIN="${SDD_PLUGIN:-$(dirname "$HERE")}"; ROOT="$(project_root)"
-PNAME="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["name"])' "$PLUGIN/.claude-plugin/plugin.json" 2>/dev/null || echo sdd-solo)"
+PNAME="$(jver "$PLUGIN/.claude-plugin/plugin.json" name 2>/dev/null || echo sdd-solo)"
 MKTNAME="$(mkt_of "$PLUGIN")"
 
 if [ -z "$MKTNAME" ]; then
@@ -47,14 +47,7 @@ else
 fi
 
 # ③ .sdd/ của dự án ← scaffold của bản MỚI NHẤT, không phải bản đang chạy
-NEW="$(python3 -c '
-import json,sys,os
-p=os.path.expanduser("~/.claude/plugins/installed_plugins.json")
-d=json.load(open(p))["plugins"]
-for k,v in d.items():
-    if k.split("@")[0]==sys.argv[1] and v:
-        print(v[-1].get("installPath",""));break
-' "$PNAME" 2>/dev/null)"
+NEW="$(installed_path "$PNAME")"
 [ -n "$NEW" ] && [ -x "$NEW/scripts/scaffold.sh" ] || NEW="$PLUGIN"
 echo "③ cập nhật .sdd/ và template của dự án (scaffold từ $(jver "$NEW/.claude-plugin/plugin.json" version))…"
 "$NEW/scripts/scaffold.sh" "$NEW" "$ROOT" --update 2>&1 | sed 's/^/    /'

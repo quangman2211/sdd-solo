@@ -2,7 +2,14 @@
 # deps-check.sh — phụ thuộc ngoài của SDD-Solo.
 #
 # Từ 4.0.0 danh sách này gần như rỗng, và đó là chủ đích: quy trình chạy trọn
-# vòng bằng chính nó. Phụ thuộc BẮT BUỘC chỉ còn `git` và `bash`.
+# vòng bằng chính nó. Phụ thuộc BẮT BUỘC là `git`, `bash` và `node` (>= 18).
+#
+# Vì sao có node từ 7.6.0: bảy script đọc/sửa file có cấu trúc (mermaid, bảng
+# markdown, lời giao, dấu vết, gói context, migrate). Tới 7.5.0 phần đó là python
+# nhúng trong heredoc — 1.185 dòng python trong 4.953 dòng bash, hai ngôn ngữ cho
+# một plugin, và ngôn ngữ thứ hai KHÔNG phải ngôn ngữ của dự án dùng nó. Bỏ python,
+# giữ bash: chỗ nào có đường lùi (mermaid, đọc JSON) thì không có node vẫn chạy,
+# chỗ nào SỬA file (context · pass · migrate) thì `need_node` dừng có lời.
 #
 # Vì sao Spec Kit rời khỏi cột bắt buộc — ba phép đo, không phải sở thích:
 #   ① `speckit-specify/SKILL.md` dặn agent BẰNG LỜI VĂN: specs nằm dưới `specs/`,
@@ -25,6 +32,13 @@ echo "=== Phụ thuộc ==="
 # ── bắt buộc ────────────────────────────────────────────────────────────
 command -v git >/dev/null 2>&1 && ok "git" || bad "git — chưa có; githook và mọi phép đếm đều cần"
 [ -d "$ROOT/.git" ] && ok "repo đã git init" || bad "chưa git init — githook không gắn được"
+if command -v node >/dev/null 2>&1; then
+  NV="$(node -p 'process.versions.node' 2>/dev/null)"
+  if [ "$(printf '%s\n' "${NV%%.*}")" -ge 18 ] 2>/dev/null; then ok "node $NV"
+  else bad "node $NV — cần >= 18 (parser mermaid, bảng markdown, migrate đều chạy ở đó)"; fi
+else
+  bad "node — chưa có; cần >= 18 cho gate-check (mermaid), context.sh, pass.sh close, migrate.sh"
+fi
 
 # ── tuỳ chọn: nói một dòng, không bao giờ đỏ ────────────────────────────
 if [ -d "$ROOT/.specify" ]; then

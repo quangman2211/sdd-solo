@@ -10,7 +10,8 @@ plugins/sdd-solo/
   skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · role · phieu · queue · state · status
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh)
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
-  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3) · mermaid.sh + **mermaid.py** (parser + lint khối mermaid, 7.5 — file python DUY NHẤT trong scripts/)
+  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3) · mermaid.sh (vỏ của parser mermaid, 7.5)
+  scripts/js/                        **mã node của plugin** (7.6, ESM, 0 gói npm): mermaid · mermaid-real (mượn mermaid của dự án khi có) · context · migrate · pass · brief · hoi · table · util
   templates/project/                 19 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16; 7.2–7.3: + .sdd/roles · notes/hang-doi.md · notes/uy-quyen.md)
   templates/skel/                    khuôn use-case/ · br/ · nghe/ · entity.md · change/ · hoi-dap.md · hoi-vai.md — skill/script copy khi tạo, KHÔNG rơi vào dự án
   templates/CLAUDE.md.tmpl           khối chèn vào CLAUDE.md của dự án giữa <!-- sdd-solo:begin/end -->
@@ -53,10 +54,15 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   là "chưa cài" và chép đè — trên repo vừa migrate, `specs/architecture.md` thật (dời từ `internal/`) bị thay bằng khuôn
   trong im lặng. Giờ: không dòng manifest mà file đã có → `.new` + cảnh báo; `migrate --layout v7` đổi tên đường dẫn
   trong manifest cho file khuôn vừa dời để lần `init --update` sau vẫn phân biệt được "chưa sửa" với "đã sửa".
-- **Luật lint mermaid đo bằng mermaid thật, không đoán** (7.5). `mermaid.py` chỉ báo những gì đã kiểm bằng
+- **Phần đọc/sửa file có cấu trúc viết bằng node, phần gọi hệ thống viết bằng bash** (7.6). Tới 7.5.0 đó là 1.193
+  dòng python nhúng trong heredoc; giờ là `scripts/js/*.mjs`, không gói npm nào. Lý do là của DỰ ÁN dùng plugin, không
+  phải của plugin: dự án viết bằng node, và plugin dùng mermaid rất nhiều để kiểm luồng — một ngôn ngữ thứ hai chỉ để
+  đọc sơ đồ là một thứ nữa phải cài trên mọi máy clone repo. Đừng thêm python trở lại. Chỗ nào CÓ đường lùi (mermaid,
+  đọc JSON) thì không có node vẫn chạy; chỗ nào SỬA file thì gọi `need_node` để dừng có lời.
+- **Luật lint mermaid đo bằng mermaid thật, không đoán** (7.5). `js/mermaid.mjs` chỉ báo những gì đã kiểm bằng
   `mermaid.parse` + `getDiagramFromText` (node 25, jsdom) trên 88 khối thật của runxops cộng ma trận 27 ký tự ×
   13 ngữ cảnh: 17/17 khối vỡ bắt được, 0 khối lành báo oan. Thêm luật mới thì thêm bằng cách ĐO lại, không bằng
-  suy đoán từ tài liệu mermaid — nới tay ở đây là đổi đỏ oan lấy hụt đỏ thật. Không có `python3` thì mọi chỗ gọi
+  suy đoán từ tài liệu mermaid — nới tay ở đây là đổi đỏ oan lấy hụt đỏ thật. Không có `node` thì mọi chỗ gọi
   rơi về đường grep của bản trước: một phép kiểm không chạy được không bao giờ được thành một phép kiểm đỏ.
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
@@ -105,8 +111,17 @@ Quy tắc bump: sửa lỗi → patch (1.0.0 → 1.0.1) · thêm lệnh, thêm k
 Cả bảng này chỉ đúng khi đã bump version. Chưa bump thì `/plugin update` không tải gì, mọi dòng trên thành vô nghĩa.
 
 ## Khi viết script
+### Bash hay node
+Bash: gọi git, gọi script khác, đọc `.sdd/*`, in kết quả. Node (`scripts/js/*.mjs`): đọc/sửa file có cấu trúc —
+markdown theo heading, bảng, mermaid, JSON. Mỗi `.mjs` là một lệnh có lệnh con, bash truyền tham số và đọc stdout;
+không nhúng mã node vào heredoc trong bash (đó chính là thứ 7.6.0 vừa dọn). Không thêm gói npm: plugin phải chạy trên
+repo trắng. **Bẫy tiếng Việt khi viết regex trong JS** — `\b` chỉ biết `[A-Za-z0-9_]`, nên nó cho kết quả NGƯỢC với
+python/grep quanh chữ có dấu (đo được: 126 dòng lệch ở `context.sh`, xem CHANGELOG 7.6.0). Dùng
+`(?<![\p{L}\p{N}_])` … `(?![\p{L}\p{N}_])` với cờ `u`. Ba bẫy khác: không có cờ inline `(?m)` `(?s)`; `$` với cờ
+`m` là cuối DÒNG; `String.split` bỏ lát rỗng đầu khi khớp rỗng ở vị trí 0, `re.split` thì không.
+
 - bash 3.2: không dùng mảng kết hợp, `mapfile`, `${var,,}`. `sed -i.bak` rồi `rm .bak`. `shasum -a 256` có fallback `sha256sum` trong `lib.sh`.
-- **Không đặt biến sát ký tự nhiều byte.** `echo "$VAR…"` trong bash 3.2 (macOS) dưới locale UTF-8 nuốt mất nội dung biến và byte đầu của ký tự theo sau — không riêng `…`, mà cả `→`, `✓`, chữ có dấu. Dùng `printf '…%s…\n' "$VAR"`, hoặc chèn một ký tự ASCII vào giữa. Bảng đo ở CHANGELOG 1.6.2 và issue #6. Mọi script ở đây đều bash và mọi thông điệp đều tiếng Việt, nên bẫy này còn lặp lại.
+- **Không đặt biến sát ký tự nhiều byte.** `echo "$VAR…"` trong bash 3.2 (macOS) dưới locale UTF-8 nuốt mất nội dung biến và byte đầu của ký tự theo sau — không riêng `…`, mà cả `→`, `✓`, chữ có dấu. Dùng `printf '…%s…\n' "$VAR"`, hoặc chèn một ký tự ASCII vào giữa. Bảng đo ở CHANGELOG 1.6.2 và issue #6. Vỏ ngoài mọi script đều bash và mọi thông điệp đều tiếng Việt, nên bẫy này còn lặp lại.
 - Mọi kiểm cơ học in `✓ / ✗ / !` qua `ok/bad/warn` của `lib.sh`; exit 1 nếu có ✗.
 - Commit từ script dùng `git commit --only -- <file>` để không kéo theo thứ user đang stage.
 - Đường dẫn dự án lấy từ `project_root()` (`$CLAUDE_PROJECT_DIR` → `git rev-parse --show-toplevel` → `pwd`).

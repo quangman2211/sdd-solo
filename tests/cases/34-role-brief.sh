@@ -2,12 +2,12 @@
 nr brief
 S phieu.sh new "UC-001 F-gửi trùng" soi
 F=notes/hoi-dap/phieu/001-uc-001-f-gui-trung.md
-python3 - "$F" <<'PY'
-import sys, io
-p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
-s = s.replace('Cho: <mỗi vai một dòng: - **B:** … · - **D:** … · - **T:** …>', 'Cho:\n- **B:** thêm AC-3 "gửi trùng" [neo: UC-001 ## Acceptance Criteria] · sửa Main 2 [neo: UC-001 ## Main Flow bước 2]\n  chi tiết dòng con của B\n- **D:** chờ B\n- **T:** không có việc')
-io.open(p, 'w', encoding='utf-8').write(s)
-PY
+node - "$F" <<'JS'
+const fs = require('fs');
+const p = process.argv[2];
+const s = fs.readFileSync(p, 'utf8');
+fs.writeFileSync(p, s.replaceAll('Cho: <mỗi vai một dòng: - **B:** … · - **D:** … · - **T:** …>', 'Cho:\n- **B:** thêm AC-3 "gửi trùng" [neo: UC-001 ## Acceptance Criteria] · sửa Main 2 [neo: UC-001 ## Main Flow bước 2]\n  chi tiết dòng con của B\n- **D:** chờ B\n- **T:** không có việc'));
+JS
 S role.sh B "$F"
 chk "in đủ sáu phần (exit $R)" '[ $R = 0 ] && hasE "^1\. Mục tiêu" && hasE "^2\. Đọc" && hasE "^3\. Việc" && hasE "^4\. KHÔNG ghi" && hasE "^5\. Kiểm" && hasE "^6\. Kết"'
 chk "gói đọc trỏ file UC thật và phiếu" 'has "specs/orders/br-001/use-cases/UC-001-notify-order/UC-001.md" && has "phần Cho: B"'

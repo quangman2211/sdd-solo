@@ -177,65 +177,6 @@ EOS
     esac
   done
   export SDD_PK="$PK"
-  python3 - "$PF" <<'PY'
-import sys, io, os, re
-pf = sys.argv[1]; V = os.environ['SDD_V']; VN = os.environ['SDD_VN']; root = os.environ['SDD_ROOT']
-s = io.open(pf, encoding='utf-8').read()
-m = re.search(r'^###?\s*#(\d+)\s*·\s*từ:\s*([^·\n]+?)\s*·\s*việc:\s*([^·\n]+?)\s*·\s*(\S+)', s, re.M)
-n = m.group(1) if m else '?'; viec = (m.group(3) if m else '').strip()
-ids = re.findall(r'\b(?:UC|BR|CHG|RULE|ADR)-\d+\b', viec) or re.findall(r'\b(?:UC|BR|CHG)-\d+\b', s[:400])
-idmain = ids[0] if ids else 'viec'
-cm = re.search(r'(?ms)^Cho:(.*?)(?=^Duyệt:|\Z)', s)
-cho = cm.group(1) if cm else ''
-lines = [l.rstrip() for l in cho.split('\n') if l.strip()]
-tok = r'(^|[\s·,/])' + re.escape(V) + r'([\s·,/:(]|$)'
-def for_role(l):
-    # chỉ so ở PHẦN ĐẦU MỤC: `- **B (BR-006):**` / `- **D · T:**` / mục inline `B (…)`. Không so cả dòng —
-    # `- **D:** chờ B` là việc của D, chữ "B" ở thân không đổi chủ.
-    m = re.match(r'\s*[-*]\s*\*\*([^*]+)\*\*', l)
-    h = m.group(1) if m else re.sub(r'^\s*\**', '', l)[:40]
-    return re.search(tok, h) or re.search(r'\b' + re.escape(VN) + r'\b', h, re.I)
-mine = []
-if lines and ' · ' in lines[0] and not lines[0].lstrip().startswith(('-', '*')):
-    mine += [x.strip() for x in lines[0].split(' · ') if for_role(x.strip())]
-    lines = lines[1:]
-cur = None
-for l in lines:
-    if l.lstrip().startswith(('-', '*')):
-        cur = bool(for_role(l))
-    if cur: mine.append(l)
-# bảng | K | Mức | Quyết | Cho | — dòng có V ở ô cuối
-for l in s.split('\n'):
-    if l.startswith('|') and re.match(r'\|\s*[KF]\d+', l):
-        cells = [c.strip() for c in l.strip('|').split('|')]
-        if cells and for_role(cells[-1]): mine.append(l.strip())
-whole = False
-if not mine and lines: mine = lines; whole = True
-if any(re.search(r'không có việc', l, re.I) for l in mine) and len(mine) == 1:
-    print(f'Phiếu #{n}: Cho: {V} — "không có việc". Không giao.'); sys.exit(0)
-neo = []
-for x in re.findall(r'\[neo:[^\]]*\]', s):
-    if x not in neo and x.strip('[]').replace('neo:', '').strip(): neo.append(x)
-pk = [p for p in os.environ.get('SDD_PK', '').split() if p]
-missing = [p for p in pk if not os.path.exists(os.path.join(root, p.split(':')[0]))]
-deny = os.environ['SDD_DENY']; checks = os.environ['SDD_CHECKS'].replace('UC-###', idmain).replace('BR-###', idmain); branch = os.environ['SDD_BRANCH']; luot = os.environ['SDD_LUOT']
-key = f"{V.lower()}-{idmain.lower()}-p{n}" + (f"-l{luot}" if luot != '1' else '')
-key = re.sub(r'[^a-z0-9._-]', '-', key)[:40]
-rel = os.path.relpath(pf, root) if os.path.isabs(pf) else pf
-out = []
-out.append(f'Vai {V} · {VN} · phiếu #{n} · việc {" ".join(ids) or viec} · lượt {luot}')
-out.append(f'1. Mục tiêu: áp đúng phần "Cho: {V}" của phiếu #{n} vào {idmain} — không thêm ý, chỗ phiếu không nói thì phiếu mới rồi dừng.')
-out.append('2. Đọc (trỏ, không chép): ' + ' · '.join(pk + [f'{rel} phần Cho: {V}']) + '. Không đọc phiếu khác, không đọc sổ điều phối.')
-out.append('3. Việc, đuôi đã chốt (chép nguyên phiếu' + (' — KHÔNG tìm thấy dòng riêng cho vai, đưa cả khối Cho:' if whole else '') + '):')
-for l in mine: out.append('   ' + l)
-if neo: out.append('   Neo: ' + ' '.join(neo))
-out.append('4. KHÔNG ghi: ' + (deny or '(không khai)') + ' · không tự quyết nghiệp vụ (số/enum/quyền thiếu → bash .sdd/scripts/phieu.sh new, rồi DỪNG) · không AskUserQuestion · không push.' + (' Bước 0: git merge main.' if branch else ''))
-out.append('5. Kiểm trước commit: ' + (checks or '(theo .sdd/roles)') + ' — in số ✓/✗, không nói "xanh" suông. Commit <type>(' + idmain + '): … kê đích danh file: git commit --only -m … -- <file>; đuôi Vai: ' + V + '.')
-out.append(f'6. Kết: bash .sdd/scripts/role.sh --ketqua {key} ket=xong neo=<hash commit> kiem=<✓/✗> hoi=- con=- (chặn: ket=chan hoi=<#phiếu>) rồi gửi đúng dòng KETQUA về điều phối, ≤ 10 dòng. Xong thì DỪNG.')
-txt = '\n'.join(out)
-print(txt)
-if missing: print('\n! gói đọc có đường dẫn không tồn tại: ' + ' '.join(missing), file=sys.stderr)
-if len(txt) > 1500: print(f'\n! lời giao {len(txt)} ký tự > 1.500 — dán vào một số công cụ sẽ không tự gửi (orchestrate phụ lục); ghi ra file rồi prompt "$(cat file)"', file=sys.stderr)
-PY
+  node "$HERE/js/brief.mjs" "$PF"
   ;;
 esac

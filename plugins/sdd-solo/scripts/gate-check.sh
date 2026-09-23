@@ -209,7 +209,7 @@ if [ -f "$FL" ]; then
   # làm cổng tin rằng đường lỗi E1 đã được vẽ, trong khi nhánh ngoại lệ thật
   # không còn nhãn nào. ✓ giả, và sai về đúng phía nguy hiểm. Xem #17.
   # 7.5 (P-32): nhãn cạnh lấy từ PARSER (mermaid.py --edges) — nó biết đâu là nhãn, đâu là tên node, đâu là
-  # chữ trong nháy kép. Không có python3 thì rơi về grep của bản trước (đường lùi, không đỏ oan).
+  # chữ trong nháy kép. Không có node thì rơi về grep của bản trước (đường lùi, không đỏ oan).
   if mmd_ok; then LBL="$(mmd --edges "$FL")"
   else LBL="$(grep -E '(-->|==>|-\.->|--x|--o)' "$FL" 2>/dev/null | grep -oE '\|[^|]*\|')"; fi
   # chiều xuôi: E# khai trong UC phải có một mũi tên mang nhãn đó

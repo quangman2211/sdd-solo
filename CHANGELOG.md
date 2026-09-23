@@ -1,5 +1,55 @@
 # Changelog
 
+## 7.6.0 — 2026-09-23
+
+Mã nguồn của plugin **bỏ python, chạy bằng node**. Tới 7.5.0 plugin là hai ngôn ngữ: 4.953 dòng bash cộng **1.193 dòng
+python** (872 dòng nhúng trong heredoc ở 9 script + `mermaid.py` 321 dòng). Bản này chuyển trọn phần đó sang
+`scripts/js/*.mjs` — 9 file, 1.798 dòng, **không một gói npm nào**, ESM, chạy thẳng bằng `node`. Bash ở lại: nó vẫn là
+thứ githook và CI gọi.
+
+Lý do là của dự án, không phải của plugin: **dự án dùng sdd-solo viết bằng node**, và sdd-solo dùng mermaid rất nhiều
+để kiểm luồng (parser 7.5.0, bốn chỗ gọi). Ngôn ngữ thứ hai chỉ để đọc sơ đồ là một ngôn ngữ nữa phải cài trên mọi máy
+clone repo, trong khi node thì đằng nào cũng có. Từ nay plugin nói đúng một thứ tiếng với dự án nó phục vụ — sửa một
+phép kiểm mermaid không còn phải đổi ngữ cảnh sang python.
+
+- **`scripts/js/`** — `mermaid.mjs` (parser + lint, bản chuyển từ `mermaid.py`, luật giữ y nguyên) · `context.mjs` ·
+  `migrate.mjs` · `pass.mjs` · `brief.mjs` · `hoi.mjs` · `table.mjs` · `util.mjs` · `mermaid-real.mjs`.
+- **`mermaid-real.mjs`** — mới: khi dự án đã có `mermaid` + `jsdom` trong `node_modules` của nó, đặt
+  `SDD_MERMAID_REAL=1` thì `--lint` gọi **chính mermaid** thay vì luật lint. Không tra được thì trả 3 và vỏ bash rơi về
+  parser trong plugin. Đây là thứ chỉ làm được vì đã sang node: plugin mượn mermaid của dự án, không tự cài gì.
+- **`need_node`** (lib.sh) — ba script SỬA/ĐỌC file không có đường lùi (`context.sh` · `pass.sh` · `migrate.sh`) dừng có
+  lời khi máy không có node, thay cho `node: command not found` của shell. Chỗ CÓ đường lùi giữ nguyên nếp 7.5.0: không
+  có node thì `mermaid.sh` exit 0 im lặng, `jver`/`mkt_field`/`installed_*` rơi về `grep` — **một phép kiểm không chạy
+  được không bao giờ thành một phép kiểm đỏ**.
+- `deps-check.sh` kiểm `node >= 18`; `scaffold.sh` chép cả `scripts/js/` sang `.sdd/scripts/js/` và **dọn `mermaid.py`**
+  của bản 7.5.0 (hai parser cạnh nhau thì cái không được cập nhật nữa vẫn chạy được).
+
+**Cái bẫy đắt nhất khi chuyển, và cách bắt được nó.** `\b` của JS chỉ biết `[A-Za-z0-9_]`, của python biết cả chữ có
+dấu — nên cùng một biểu thức cho hai kết quả NGƯỢC nhau trên tiếng Việt: `\b[A-Z][A-Za-z]{2,}\b` trên `Khoá API` thì
+python không khớp (sau `Kho` còn `á`), JS khớp `Kho`; còn `\bđiều phối\b` sau dấu `*` thì python khớp, JS **không**
+(với JS cả `*` lẫn `đ` đều không phải chữ, nên không có biên). Chỗ thứ nhất làm `context.sh` gói thừa hai entity không
+ai nhắc — **126 dòng lệch trên bản sao runxops 6.x**, và chỉ lộ ra ở phép so snapshot, không lộ ở bộ test. Đã thay mọi
+`\b` quanh chữ bằng biên từ hiểu chữ có dấu (`(?<![\p{L}\p{N}_])` … `(?![\p{L}\p{N}_])`) ở `context.mjs`,
+`brief.mjs`, `migrate.mjs`. Ba bẫy nhỏ hơn đã ghi tại chỗ trong mã: cờ `(?m)` inline không có ở JS (phải là tham số thứ
+hai của `RegExp`), `$` với cờ `m` là cuối DÒNG chứ không phải cuối chuỗi, và `String.split` bỏ lát rỗng đầu khi khớp
+rỗng ở vị trí 0 còn `re.split` của python thì không (hàm `splitAt` trong `migrate.mjs`).
+
+**Cách kiểm — chạy thật cả hai bản, so từng byte, không đọc mã đoán:**
+- `migrate --layout v7` trên **bản sao runxops 6.x chưa migrate** (75 phép dời thật): bản python 7.5.0 và bản node cho
+  đầu ra **khớp từng byte** (254 dòng `--dry-run`, và bản chạy thật), **cây khớp hoàn toàn** (`diff -r`), git index
+  khớp. `migrate --evidence` chạy trên cả ba BR, hai lượt liên tiếp (kiểm cả tính idempotent): khớp từng byte.
+- Snapshot đầu ra **mọi** script trên hai bản sao runxops (bản 7.0 và bản 6.x), 7.5.0 ↔ 7.6.0: **0 dòng khác** ở cả
+  hai. Đây là phép đo đã bắt được lỗi `\b` ở trên.
+
+Bộ test: **ca 44 — `migrate.sh`, script tới 7.5.0 KHÔNG có một ca nào**, trong khi nó là script dời cây thật của người
+ta và khó hoàn tác nhất. 19 phép đo trên một repo 6.x thu nhỏ: thiếu map thì đỏ và kê đích danh · `--dry-run` không
+đụng một byte · BR thành lát của nghề · UC ghi `Nghề · Lát` · bảng Related Use Cases có cả UC chưa mở · `internal/` về
+gốc và `notes/` · `entities.md` tách mỗi entity một file · rules/glossary theo nghề · test UC dời theo nghề và import
+tương đối được sửa (#56) · index trả về trống và in hai lệnh commit (#57) · chạy lại thì dừng · `--evidence` tách rồi
+không tách lại · không có node thì dừng có lời chứ không dời nửa chừng. Ca 43 sửa một phép đo đo nhầm exit của pipe
+thay vì exit của script. Bộ test cũng bỏ python (`tests/lib.sh` và 4 ca) — repo giờ cần đúng `git`, `bash`, `node`.
+**44 ca · 194 xanh · 0 FAIL · 0 XFAIL.**
+
 ## 7.5.0 — 2026-09-23
 
 Parser mermaid (**P-32**) — bốn chỗ đọc sơ đồ bằng `grep` từng dòng đổi sang đọc bằng một parser thật. Ca gốc, đo được:

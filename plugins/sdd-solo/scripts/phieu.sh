@@ -35,10 +35,7 @@ max_n() {
     git -C "$ROOT" log --all --format=%s 2>/dev/null | grep -oiE 'phi[eế]u #[0-9]+' | grep -oE '[0-9]+'
   } | sort -n | tail -1
 }
-slugify() { python3 -c 'import sys,unicodedata,re
-s=sys.argv[1].replace("đ","d").replace("Đ","D")
-s=unicodedata.normalize("NFD",s); s="".join(c for c in s if not unicodedata.combining(c))
-print(re.sub(r"-+","-",re.sub(r"[^a-z0-9]","-",s.lower())).strip("-")[:40])' "$1"; }
+slugify() { node "$HERE/js/util.mjs" slug "$1" 2>/dev/null; }
 find_pf() { ls "$PD"/"$(printf '%03d' "$1")"-*.md 2>/dev/null | head -1; }
 
 case "$CMD" in
@@ -54,16 +51,7 @@ new)
     printf 'Câu: <một câu>\nĐã tra: <file:dòng, …>\nNếu chọn sai thì: <hậu quả>\nAgent nghiêng về: <lựa chọn + vì sao>\n\n'
     printf '**Trả lời (R):** <mức L0–L3> · <câu trả lời>\nNguồn / lý do: <file:dòng hoặc lý do>\nCho: <mỗi vai một dòng: - **B:** … · - **D:** … · - **T:** …>\nDuyệt:\n'; } > "$F"
   ROW="| #$N | $VIEC | $TU | $TD | mở | [$NNN-$SL.md](phieu/$NNN-$SL.md) |"
-  python3 - "$HD" "$ROW" <<'PY'
-import sys, io, re
-p, row = sys.argv[1:3]; s = io.open(p, encoding='utf-8').read()
-rows = list(re.finditer(r'(?m)^\| *#\d+ \|.*$', s))
-if rows: i = rows[-1].end(); s = s[:i] + '\n' + row + s[i:]
-elif '| # | Việc |' in s:
-    m = re.search(r'(?m)^\|---\|.*$', s[s.index('| # | Việc |'):]); i = s.index('| # | Việc |') + m.end(); s = s[:i] + '\n' + row + s[i:]
-else: s = s.rstrip('\n') + '\n\n| # | Việc | Từ | Ngày | Trạng thái | File |\n|---|---|---|---|---|---|\n' + row + '\n'
-io.open(p, 'w', encoding='utf-8').write(s)
-PY
+  node "$HERE/js/table.mjs" addrow "$HD" "$ROW"
   git -C "$ROOT" add "$F" "$HD" 2>/dev/null
   git -C "$ROOT" commit -q --only -m "chore(sdd): phiếu #$N giữ chỗ — $VIEC" -- "$F" "$HD" 2>/dev/null \
     || warn "chưa commit được dòng giữ chỗ (hook chặn hay repo không có git?) — số $N vẫn đã ghi vào file và mục lục"
@@ -98,12 +86,7 @@ close)
     else bad "vai $v có việc trong Cho: nhưng chưa có KETQUA ket=xong (role.sh --ketqua $(printf '%s' "$v" | tr 'A-Z' 'a-z')-${ID:-<id>}-p$N …)"; MISS=1; fi
   done
   if [ "$FAIL" -eq 0 ]; then
-    python3 - "$HD" "$N" <<'PY'
-import sys, io, re
-p, n = sys.argv[1:3]; s = io.open(p, encoding='utf-8').read()
-s2 = re.sub(r'(?m)^(\| *#' + n + r' \|(?:[^|]*\|){3}) *[^|]* *(\|)', r'\1 đã áp \2', s, count=1)
-io.open(p, 'w', encoding='utf-8').write(s2)
-PY
+    node "$HERE/js/table.mjs" mark "$HD" "$N" "đã áp"
     git -C "$ROOT" commit -q --only -m "chore(sdd): phiếu #$N đã áp — $NF F# · $NK K# đếm trên file" -- "$HD" 2>/dev/null || true
     echo "ĐÃ ĐÓNG #$N — mục lục → đã áp."
   else

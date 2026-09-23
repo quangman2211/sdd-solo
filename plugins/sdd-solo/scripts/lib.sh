@@ -218,11 +218,11 @@ find_chg() {
 
 # ── 7.5 — mermaid qua parser, không qua grep (P-32) ───────────────────────
 # mmd <--lint|--edges|--nodes|--states|--kinds> <file…> — in đầu ra của mermaid.py.
-# mmd_ok → 0 khi chạy được (có python3 + mermaid.py cạnh lib.sh). Không chạy được thì MỌI chỗ gọi
+# mmd_ok → 0 khi chạy được (có node + js/mermaid.mjs cạnh lib.sh). Không chạy được thì MỌI chỗ gọi
 # phải rơi về đường grep của bản trước: một phép kiểm không chạy được không bao giờ thành một phép kiểm đỏ.
 SDD_LIBDIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-mmd_ok() { command -v python3 >/dev/null 2>&1 && [ -f "$SDD_LIBDIR/mermaid.py" ]; }
-mmd() { local m="$1"; shift; mmd_ok || return 0; python3 "$SDD_LIBDIR/mermaid.py" "$m" "$@"; }
+mmd_ok() { command -v node >/dev/null 2>&1 && [ -f "$SDD_LIBDIR/js/mermaid.mjs" ]; }
+mmd() { local m="$1"; shift; mmd_ok || return 0; bash "$SDD_LIBDIR/mermaid.sh" "$m" "$@"; }
 # mmd_lint <file…> — in các dòng lỗi qua bad(), trả 1 nếu có. Bỏ file không tồn tại.
 mmd_lint() {
   local f ff="" out
@@ -278,40 +278,33 @@ rr_tail() {
 
 # ── version ─────────────────────────────────────────────────────────────
 CLAUDE_PLUGINS_DIR="$HOME/.claude/plugins"
-# jver <file.json> <đường.dẫn> — đọc version, fallback grep nếu không có python3
+# need_node <tên việc> — ba script SỬA/ĐỌC file bằng js/ (context · pass · migrate) không có đường lùi.
+# Không có node thì dừng có lời, đừng để shell in `node: command not found` rồi exit 127 im ỉm.
+need_node() {
+  command -v node >/dev/null 2>&1 && return 0
+  bad "cần Node.js (>= 18) để chạy ${1:-script này} — cài node rồi chạy lại"
+  exit 127
+}
+# nodejs <lệnh util> … — gọi js/util.mjs; im lặng nếu máy không có node (mọi chỗ gọi đều có đường lùi)
+nodejs() { command -v node >/dev/null 2>&1 || return 1; node "$SDD_LIBDIR/js/util.mjs" "$@" 2>/dev/null; }
+# jver <file.json> <đường.dẫn> — đọc version, fallback grep nếu không có node
 jver() {
-  python3 -c 'import json,sys
-d=json.load(open(sys.argv[1]))
-for k in sys.argv[2].split("."):
-    d = d[int(k)] if isinstance(d,list) else d[k]
-print(d)' "$1" "$2" 2>/dev/null \
-  || grep -oE '"version" *: *"[^"]+"' "$1" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"$/\1/'
+  local v; v="$(nodejs json "$1" "$2")"
+  if [ -n "$v" ]; then printf '%s\n' "$v"
+  else grep -oE '"version" *: *"[^"]+"' "$1" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"$/\1/'; fi
 }
 # vcmp a b → -1 nếu a<b, 0 bằng, 1 nếu a>b. Chuỗi lạ ('-', '?') coi như 0.0.0
 vcmp() { awk -v a="$1" -v b="$2" 'BEGIN{na=split(a,x,".");nb=split(b,y,".");
   for(i=1;i<=3;i++){va=(i<=na?x[i]+0:0);vb=(i<=nb?y[i]+0:0);
   if(va<vb){print "-1";exit}if(va>vb){print "1";exit}}print "0"}'; }
 # mkt_field <tên marketplace> <đường.dẫn> — đọc known_marketplaces.json
-mkt_field() { python3 -c 'import json,sys
-d=json.load(open(sys.argv[1])).get(sys.argv[2],{})
-for k in sys.argv[3].split("."): d = d.get(k,{}) if isinstance(d,dict) else ""
-print(d if isinstance(d,str) else "")' "$CLAUDE_PLUGINS_DIR/known_marketplaces.json" "$1" "$2" 2>/dev/null; }
+mkt_field() { nodejs mkt "$1" "$2"; }
 # mkt_of <plugin_root> → tên marketplace suy từ cache/<mkt>/<plugin>/<ver>, rỗng nếu chạy --plugin-dir
 mkt_of() { echo "$1" | sed -nE 's#.*/plugins/cache/([^/]+)/[^/]+/[^/]+$#\1#p'; }
 # installed_ver <tên plugin> → version đang cài trên đĩa (installed_plugins.json)
-installed_ver() { python3 -c 'import json,sys,os
-p=os.path.expanduser("~/.claude/plugins/installed_plugins.json")
-try: d=json.load(open(p))["plugins"]
-except Exception: sys.exit(0)
-for k,v in d.items():
-    if k.split("@")[0]==sys.argv[1] and v: print(v[-1].get("version","")); break' "$1" 2>/dev/null; }
+installed_ver() { nodejs installed "$1" version; }
 # installed_path <tên plugin> → thư mục bản đang cài
-installed_path() { python3 -c 'import json,sys,os
-p=os.path.expanduser("~/.claude/plugins/installed_plugins.json")
-try: d=json.load(open(p))["plugins"]
-except Exception: sys.exit(0)
-for k,v in d.items():
-    if k.split("@")[0]==sys.argv[1] and v: print(v[-1].get("installPath","")); break' "$1" 2>/dev/null; }
+installed_path() { nodejs installed "$1" path; }
 # Bản mà PHIÊN Claude Code đang mở thật sự nạp. Chỉ hook SessionStart biết được
 # (nó chạy từ thư mục plugin đã nạp), nên hook ghi lại, ai cần thì đọc.
 # CLAUDE_PLUGIN_ROOT KHÔNG phải env var — nó là token Claude Code thay trong

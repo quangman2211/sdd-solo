@@ -32,21 +32,8 @@ row_of() { rows | awk -F'|' -v k="$1" '$1==k'; }
 status_of() { row_of "$1" | cut -d'|' -f5; }
 lane_cap() { lanes | awk -F'|' -v l="$1" '$1==l{print $2}'; }
 lane_busy() { rows | awk -F'|' -v l="$1" '$2==l && $5=="đang"' | grep -c .; }
-set_row() { # set_row <khoá> <cột 5..7 theo tên> — python sửa đúng dòng
-  python3 - "$Q" "$@" <<'PY'
-import sys, io, re
-p, key = sys.argv[1:3]; kv = dict(a.split('=', 1) for a in sys.argv[3:])
-col = {'trangthai': 4, 'neo': 5, 'ghichu': 6}
-L = io.open(p, encoding='utf-8').read().split('\n')
-for i, l in enumerate(L):
-    if re.match(r'\|\s*' + re.escape(key) + r'\s*\|', l):
-        c = [x.strip() for x in l.strip().strip('|').split('|')]
-        while len(c) < 7: c.append('')
-        for k, v in kv.items(): c[col[k]] = v
-        L[i] = '| ' + ' | '.join(c) + ' |'; break
-else: sys.exit('không có dòng ' + key)
-io.open(p, 'w', encoding='utf-8').write('\n'.join(L))
-PY
+set_row() { # set_row <khoá> <cột 5..7 theo tên> — node sửa đúng dòng (7.6.0)
+  node "$HERE/js/table.mjs" setcell "$Q" "$@"
 }
 ready_list() { # việc chờ mà mọi Cần đã xong và làn còn chỗ
   rows | while IFS='|' read -r k l v c s n g; do

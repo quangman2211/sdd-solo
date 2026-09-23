@@ -59,11 +59,7 @@ $( [ -x "$HD/queue.sh" ] && bash "$HD/queue.sh" board 2>/dev/null | sed 's/\x1b\
 === STATE.md ===
 $STATE"
   fi
-  if command -v python3 >/dev/null 2>&1; then
-    python3 - "$CTX" <<'PY2'
-import json,sys
-print(json.dumps({"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":sys.argv[1]}},ensure_ascii=False))
-PY2
+  if command -v node >/dev/null 2>&1; then node "$HD/js/util.mjs" hookjson "$CTX"
   else printf '%s\n' "$CTX"; fi
   exit 0
 fi
@@ -71,11 +67,8 @@ CTX="[sdd-solo v$VER] Repo này chạy quy trình SDD-Solo.${BRW}${BFW} Việc �
 
 === STATE.md ===
 $STATE"
-if command -v python3 >/dev/null 2>&1; then
-  python3 - "$CTX" <<'PY'
-import json,sys
-print(json.dumps({"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":sys.argv[1]}},ensure_ascii=False))
-PY
+if command -v node >/dev/null 2>&1; then
+  node "$HD/js/util.mjs" hookjson "$CTX"
 else
   printf '%s\n' "$CTX"
 fi

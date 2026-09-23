@@ -56,70 +56,8 @@ close)
   # Nén ở ⑭ chứ không ở ⑨: lúc UC còn mở, F# là danh sách việc và cổng đọc nó bằng
   # máy. Idempotent — dòng tóm tắt đã có đuôi "→ UC-###.trace.md" thì không nén lại.
   TRACE="$(dirname "$F")/$ID.trace.md"
-  python3 - "$F" "$TRACE" "$ID" "$(today)" <<'PY'
-import sys, re, io
-f, tr, ID, today = sys.argv[1:5]
-s = io.open(f, encoding='utf-8').read()
-def section(name):
-    return re.search(r'(?ms)^## ' + re.escape(name) + r'[ \t]*\n(.*?)(?=^## |\Z)', s)
-moved = []
-def replace(name, summary):
-    global s
-    m = section(name)
-    if not m: return
-    body = m.group(1)
-    if ('→ ' + ID + '.trace.md') in body: return          # đã nén
-    if not body.strip(): return                              # rỗng — không có gì để dời
-    # Còn là KHUÔN (YYYY-MM-DD, <...>) thì không phải dấu vết — không dời. Bắt được
-    # vì chạy close trên một UC khuôn trống: nó "dời 3 mục" toàn placeholder.
-    # 7.4 (P-40): `<hash>`, `<label for="np-go">`, chữ trong nháy mã là NỘI DUNG (thân F# chép commit/HTML), không phải
-    # khuôn — tới 7.3 mọi <...> đều bị coi là khuôn nên ## Đọc lại có một chữ <hash> không bao giờ được dời (UC-014).
-    # Khuôn thật: YYYY-MM-DD · Ngày chạy: ___ · <...> còn lại sau khi bỏ nháy mã và thẻ dạng HTML (tên ASCII + thuộc tính).
-    t = re.sub(r'`[^`\n]*`', '', body)
-    t = re.sub(r"</?[A-Za-z][A-Za-z0-9-]*(\s+[A-Za-z_:-]+(=(\"[^\"]*\"|'[^']*'|[^\s>]+))?)*\s*/?>", '', t)
-    if re.search(r'YYYY-MM-DD|Ngày chạy:\s*_|<[^>\n]+>', t): return
-    moved.append((name, body.rstrip('\n') + '\n'))
-    s = s[:m.start(1)] + summary + '\n\n' + s[m.end(1):]
-def date_in(body):
-    m = re.search(r'Ngày chạy:\s*(\d{4}-\d{2}-\d{2})', body)
-    return m.group(1) if m else today
-m = section('Adversarial pass')
-if m and 'Ngày chạy' in m.group(1):
-    b = m.group(1); n = len(re.findall(r'(?m)^\s*-\s*Q\d+\b', b))
-    replace('Adversarial pass', f'- Ngày chạy: {date_in(b)} · 3 vai · {n} câu, đã áp hết → {ID}.trace.md')
-m = section('Đọc lại')
-if m and re.search(r'(?m)^- F\d+ ', m.group(1)):
-    b = m.group(1); n = len(re.findall(r'(?m)^- F\d+ ', b))
-    k = len(re.findall(r'(?m)^- F\d+ .*không phải lỗi', b))
-    replace('Đọc lại', f'- Ngày chạy: {date_in(b)} · {n} phát hiện · {k} dương tính giả · đã áp hết → {ID}.trace.md')
-m = section('History')
-if m and re.search(r'(?m)^- v\d+ ', m.group(1)):
-    vs = [int(x) for x in re.findall(r'(?m)^- v(\d+) ', m.group(1))]
-    replace('History', f'- v{max(vs)+1} ({today}): implemented · lịch sử đầy đủ → {ID}.trace.md')
-m = section('Open Questions')
-if m:
-    b = m.group(1)
-    closed = re.findall(r'(?m)^[ \t]*[-*] \[x\].*\n?', b, flags=re.I)
-    if closed:
-        moved.append(('Open Questions (đã đóng)', ''.join(closed)))
-        nb = re.sub(r'(?m)^[ \t]*[-*] \[x\].*\n?', '', b, flags=re.I)
-        s = s[:m.start(1)] + nb + s[m.end(1):]
-if moved:
-    head = ''
-    try: old = io.open(tr, encoding='utf-8').read()
-    except FileNotFoundError:
-        old = ''
-        head = (f'# {ID} — dấu vết\n\n'
-                f'<!-- Sinh bởi pass.sh close ngày {today}. Đây là GIẤY NHÁP của {ID}: adversarial, đọc lại,\n'
-                f'     history, câu hỏi đã đóng. Không phải file đọc thường — mở khi cần tra vì sao một\n'
-                f'     dòng trong {ID}.md ra như thế. context.sh và decisions.sh không đọc file này. -->\n')
-    out = old + head
-    for h, b in moved:
-        out += f'\n## {h} — {today}\n{b}'
-    io.open(tr, 'w', encoding='utf-8').write(out)
-    io.open(f, 'w', encoding='utf-8').write(s)
-    print(f'  dời {len(moved)} mục sang {ID}.trace.md')
-PY
+  need_node "pass.sh"
+  node "$HERE/js/pass.mjs" trace "$F" "$TRACE" "$ID" "$(today)"
   BR="$(grep -oE 'BR-[0-9]+' "$F" | head -1)"
   RULES="$(grep -oE 'RULE-[0-9]+' "$F" | sort -u | tr '\n' ' ')"
   ADRS="$(grep -oE 'ADR-[0-9]+' "$F" | sort -u | tr '\n' ' ')"
@@ -157,20 +95,8 @@ deprecate)
   if [ -n "$F" ]; then
   sed -i.bak -E 's/(\*\*Status:\*\* *)(draft|reviewed|implemented)/\1deprecated/' "$F" && rm -f "$F.bak"
   sed -i.bak -E "s/(\*\*Last updated:\*\* *).*/\1$(today)/" "$F" && rm -f "$F.bak"
-  python3 - "$F" "$(today)" "$REASON" "$BY" <<'PY'
-import sys, re, io
-f, today, reason, by = sys.argv[1:5]
-s = io.open(f, encoding='utf-8').read()
-vs = [int(x) for x in re.findall(r'(?m)^- v(\d+) ', s)]
-line = f'- v{max(vs, default=0)+1} ({today}, anh): deprecated — {reason}' + (f' · thay bằng {by}' if by != '-' else ' · không có UC thay thế')
-m = re.search(r'(?ms)^## History[ \t]*\n(.*?)(?=^## |\Z)', s)
-if m:
-    body = m.group(1).rstrip('\n')
-    s = s[:m.start(1)] + body + '\n' + line + '\n' + ('\n' if m.end(1) < len(s) else '') + s[m.end(1):]
-else:
-    s = s.rstrip('\n') + '\n\n## History\n' + line + '\n'
-io.open(f, 'w', encoding='utf-8').write(s)
-PY
+  need_node "pass.sh"
+  node "$HERE/js/pass.mjs" deprecate "$F" "$(today)" "$REASON" "$BY"
   fi
   T="$(uc_table_file "$ID" "$ROOT")"; TF=""
   if uc_table_set "$ID" deprecated "$ROOT"; then TF="$T"; else
@@ -202,15 +128,8 @@ PY
 change)
   D="$(find_chg "$ID" "$ROOT")"; [ -z "$D" ] && exit 1
   P="$D/proposal.md"
-  python3 - "$P" "$(today)" <<'PY'
-import sys,re
-p,d=sys.argv[1],sys.argv[2]; s=open(p,encoding='utf-8').read()
-s=re.sub(r'(?m)^(## Status\n+)[a-z]+\s*$', r'\1applying', s)
-s=re.sub(r'(?m)^(## History\n)', r'\1', s)
-if '## History' in s and f'{d}: designed -> applying' not in s:
-    s=s.rstrip('\n')+f'\n- {d}: designed -> applying (qua cổng Phase 5)\n'
-open(p,'w',encoding='utf-8').write(s)
-PY
+  need_node "pass.sh"
+  node "$HERE/js/pass.mjs" change "$P" "$(today)"
   git -C "$ROOT" commit -q --only -m "docs($ID): change reviewed — qua cổng Phase 5" -- "$P" || true
   mark "$ID"
   printf 'QUA CỔNG PHASE 5. Status -> applying · marker .sdd/gate/%s.ok · đã commit.\n' "$ID"

@@ -19,45 +19,6 @@ if [ "$2" = --lich-su ] || [ "$3" = --lich-su ]; then
   done
   [ "$N" = 0 ] && ok "không commit nào sửa dòng HỎI đã có"
 fi
-python3 - "$F" "$V" "$ROOT" <<'PY'
-import sys, io, re, os
-f, V, root = sys.argv[1:4]
-s = io.open(f, encoding='utf-8').read()
-blocks = re.split(r'(?m)^(?=### HỎI-)', s)
-nums = []; bad = 0; warn = 0
-def out(k, m): print(('  \x1b[31m✗\x1b[0m ' if k == 'bad' else '  \x1b[33m!\x1b[0m ' if k == 'warn' else '  \x1b[32m✓\x1b[0m ') + m)
-fields = ['Nguồn', 'Chặn không', 'Đang làm gì trong lúc chờ', 'Việc cho spec khi trả lời']
-for b in blocks:
-    m = re.match(r'### HỎI-' + re.escape(V) + r'(\d+)[ ·]', b)
-    if not m: continue
-    n = int(m.group(1)); nums.append(n); tag = f'HỎI-{V}{n}'
-    for fl in fields:
-        mm = re.search(r'\*\*' + re.escape(fl) + r':\*\*\s*(.*)', b)
-        val = mm.group(1).strip() if mm else ''
-        if not val or re.match(r'^<[^>]*>\s*$', val) or val in ('-', '___'):
-            out('bad', f'{tag}: ô "{fl}" trống hoặc còn khuôn'); bad += 1
-    mm = re.search(r'\*\*Chặn không:\*\*\s*(chặn|không chặn)\b', b)
-    if not mm and re.search(r'\*\*Chặn không:\*\*', b): out('bad', f'{tag}: "Chặn không" phải bắt đầu bằng chặn | không chặn'); bad += 1
-    ans = re.search(r'\*\*Trả lời \(A/R\):\*\*\s*(.*)', b)
-    ansv = ans.group(1).strip() if ans else ''
-    ansv_core = re.sub(r'·\s*\*\*đích:\*\*.*$', '', ansv).strip()
-    if ansv_core and not re.match(r'^<[^>]*>$', ansv_core):
-        d = re.search(r'\*\*đích:\*\*\s*(.*)', b)
-        dv = d.group(1).strip() if d else ''
-        if not dv or re.match(r'^<[^>]*>$', dv): out('bad', f'{tag}: đã trả lời mà không có đích: (design.md · decisions.md · UC-### AC-# khi AC đổi)'); bad += 1
-        else:
-            uc = re.search(r'\bUC-\d+\b', dv)
-            if uc and 'design.md' not in dv and 'decisions' not in dv and not re.search(r'\bAC-?\d*\b|AC đổi|History', dv):
-                if os.path.exists(os.path.join(root, '.sdd/gate', uc.group(0) + '.ok')):
-                    out('bad', f'{tag}: cổng {uc.group(0)} đã mở mà đích trỏ vào thân UC ({dv[:50]}) — sau cổng trả lời ở design.md/decisions.md; thân UC chỉ mở khi một AC đổi'); bad += 1
-dup = sorted(set(x for x in nums if nums.count(x) > 1))
-if dup: out('bad', 'số HỎI trùng: ' + ' '.join(map(str, dup))); bad += 1
-if nums:
-    gaps = [i for i in range(1, max(nums)) if i not in nums]
-    if gaps: out('warn', 'số HỎI nhảy: ' + ' '.join(map(str, gaps))); warn += 1
-    if bad == 0: out('ok', f'{len(nums)} mục HỎI-{V}, đủ bốn ô')
-else: print('  – chưa có mục HỎI nào')
-sys.exit(1 if bad else 0)
-PY
+node "$HERE/js/hoi.mjs" "$F" "$V" "$ROOT"
 R=$?; [ "$R" != 0 ] && FAIL=$((FAIL+1))
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

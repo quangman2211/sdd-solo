@@ -32,25 +32,24 @@ cm() {
 cmv() { git add -A; git commit -q -m "$1" 2>"$W/hookerr.txt"; }
 
 # rep <file> <cũ> <mới> — thay đúng MỘT chuỗi, lỗi nếu không có (đừng để ca đo trên file không đổi)
-rep() { python3 - "$1" "$2" "$3" <<'PY'
-import sys, io
-p, a, b = sys.argv[1:4]
-s = io.open(p, encoding='utf-8').read()
-if a not in s: sys.exit('rep: không thấy chuỗi trong ' + p + ': ' + a[:60])
-io.open(p, 'w', encoding='utf-8').write(s.replace(a, b, 1))
-PY
+rep() { node - "$1" "$2" "$3" <<'JS'
+const fs = require('fs');
+const [p, a, b] = process.argv.slice(2);
+const s = fs.readFileSync(p, 'utf8');
+if (!s.includes(a)) { console.error('rep: không thấy chuỗi trong ' + p + ': ' + a.slice(0, 60)); process.exit(1); }
+fs.writeFileSync(p, s.replace(a, () => b));
+JS
 }
 # ins_after <file> <dòng mốc (chuỗi con)> <dòng mới> — chèn sau dòng đầu tiên chứa mốc
-ins_after() { python3 - "$1" "$2" "$3" <<'PY'
-import sys, io
-p, m, t = sys.argv[1:4]
-L = io.open(p, encoding='utf-8').read().split('\n')
-for i, l in enumerate(L):
-    if m in l:
-        L.insert(i + 1, t); break
-else: sys.exit('ins_after: không thấy mốc trong ' + p + ': ' + m[:60])
-io.open(p, 'w', encoding='utf-8').write('\n'.join(L))
-PY
+ins_after() { node - "$1" "$2" "$3" <<'JS'
+const fs = require('fs');
+const [p, m, t] = process.argv.slice(2);
+const L = fs.readFileSync(p, 'utf8').split('\n');
+const i = L.findIndex((l) => l.includes(m));
+if (i < 0) { console.error('ins_after: không thấy mốc trong ' + p + ': ' + m.slice(0, 60)); process.exit(1); }
+L.splice(i + 1, 0, t);
+fs.writeFileSync(p, L.join('\n'));
+JS
 }
 app() { printf '%s\n' "$2" >> "$1"; }
 
@@ -83,24 +82,26 @@ mkbase() {
   bash "$P/scripts/scaffold.sh" "$P" "$W/base" >"$W/scaffold.log" 2>&1 || { cat "$W/scaffold.log"; echo "scaffold hỏng"; exit 1; }
   cp -R "$T/fixtures/v7/." "$W/base/"
   # commit 1: chưa có adversarial/đọc lại/v2
-  python3 - "$UC1" <<'PY'
-import sys, io, re
-p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
-s = s.replace('- Ngày chạy: 2026-01-03 · Session mới: [x]\n', '- Ngày chạy: ___ · Session mới: [ ]\n')
-s = re.sub(r'(?ms)^## Đọc lại\n.*?(?=^## History)', '## Đọc lại\n- Ngày chạy: ___ · Đầu chưa neo: subagent\n\n', s)
-s = s.replace('- v2 (2026-01-03, anh): sau adversarial pass\n', '')
-io.open(p + '.v1', 'w', encoding='utf-8').write(s)
-PY
+  node - "$UC1" <<'JS'
+const fs = require('fs');
+const p = process.argv[2];
+let s = fs.readFileSync(p, 'utf8');
+s = s.replace('- Ngày chạy: 2026-01-03 · Session mới: [x]\n', '- Ngày chạy: ___ · Session mới: [ ]\n');
+s = s.replace(/^## Đọc lại\n[\s\S]*?(?=^## History)/m, '## Đọc lại\n- Ngày chạy: ___ · Đầu chưa neo: subagent\n\n');
+s = s.replace('- v2 (2026-01-03, anh): sau adversarial pass\n', '');
+fs.writeFileSync(p + '.v1', s);
+JS
   cp "$UC1" "$UC1.final"; mv "$UC1.v1" "$UC1"
   cm "chore(sdd): init" 2026-01-02
   # commit 2: adversarial + v2
-  python3 - "$UC1" <<'PY'
-import sys, io
-p = sys.argv[1]; s = io.open(p, encoding='utf-8').read()
-s = s.replace('- Ngày chạy: ___ · Session mới: [ ]\n', '- Ngày chạy: 2026-01-03 · Session mới: [x]\n')
-s = s.replace('- v1 (2026-01-02, anh): initial\n', '- v1 (2026-01-02, anh): initial\n- v2 (2026-01-03, anh): sau adversarial pass\n')
-io.open(p, 'w', encoding='utf-8').write(s)
-PY
+  node - "$UC1" <<'JS'
+const fs = require('fs');
+const p = process.argv[2];
+let s = fs.readFileSync(p, 'utf8');
+s = s.replace('- Ngày chạy: ___ · Session mới: [ ]\n', '- Ngày chạy: 2026-01-03 · Session mới: [x]\n');
+s = s.replace('- v1 (2026-01-02, anh): initial\n', '- v1 (2026-01-02, anh): initial\n- v2 (2026-01-03, anh): sau adversarial pass\n');
+fs.writeFileSync(p, s);
+JS
   cm "docs(UC-001): spec v2 — sau adversarial pass" 2026-01-03
   # commit 3: đọc lại
   mv "$UC1.final" "$UC1"

@@ -10,7 +10,8 @@ if [ -z "$PLUGIN" ] || [ -z "$ROOT" ] || [ ! -f "$PLUGIN/scripts/lib.sh" ]; then
   exit 2
 fi
 . "$PLUGIN/scripts/lib.sh"
-VER="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$PLUGIN/.claude-plugin/plugin.json" 2>/dev/null || grep -oE '"version": *"[^"]+"' "$PLUGIN/.claude-plugin/plugin.json" | head -1 | sed -E 's/.*"([^"]+)"$/\1/')"
+VER="$(node "$PLUGIN/scripts/js/util.mjs" json "$PLUGIN/.claude-plugin/plugin.json" version 2>/dev/null || true)"
+[ -z "$VER" ] && VER="$(grep -oE '"version": *"[^"]+"' "$PLUGIN/.claude-plugin/plugin.json" | head -1 | sed -E 's/.*"([^"]+)"$/\1/')"
 # Chiều ngược: plugin CŨ chạy trên repo MỚI. Bản 1.x scaffold vào repo 2.x sẽ
 # dựng lại cả cây 1.x (checklists/ prompts/ .githooks/) cạnh cây 2.x — rồi lần
 # migrate sau lại thấy "hai cây cùng tồn tại". Chặn hạ cấp ngay từ đây.
@@ -143,12 +144,7 @@ done
 CL="$ROOT/CLAUDE.md"; B='<!-- sdd-solo:begin -->'; E='<!-- sdd-solo:end -->'
 BLOCK="$(cat "$PLUGIN/templates/CLAUDE.md.tmpl")"
 if [ -f "$CL" ] && grep -q "$B" "$CL"; then
-  python3 - "$CL" "$B" "$E" "$BLOCK" <<'PY'
-import sys,re
-p,b,e,block=sys.argv[1:5]; s=open(p,encoding='utf-8').read()
-s=re.sub(re.escape(b)+r'.*?'+re.escape(e), b+'\n'+block+'\n'+e, s, flags=re.S)
-open(p,'w',encoding='utf-8').write(s)
-PY
+  node "$PLUGIN/scripts/js/util.mjs" marker "$CL" "$B" "$E" "$BLOCK"
   ok "CLAUDE.md — thay khối sdd-solo"
 else
   { [ -f "$CL" ] && printf '\n'; printf '%s\n%s\n%s\n' "$B" "$BLOCK" "$E"; } >> "$CL"; ok "CLAUDE.md — thêm khối sdd-solo"
@@ -231,10 +227,16 @@ fi
 # plugin (CI, người clone repo). Đổi lại: bản sao có thể trôi version — .sdd/version
 # so với version plugin, lệch thì session-start và status cảnh báo.
 mkdir -p "$ROOT/.sdd/scripts"
-KEEP="lib.sh mermaid.sh mermaid.py role.sh phieu.sh queue.sh hoi-check.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
+KEEP="lib.sh mermaid.sh role.sh phieu.sh queue.sh hoi-check.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
 for f in $KEEP; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done
+# 7.6.0: js/ — mã node của plugin (mermaid.mjs · mermaid-real.mjs …). Chép cả thư mục, cùng lý do như
+# KEEP: cổng phải chạy được ở CI và trên máy người clone, nơi không có plugin.
+if [ -d "$PLUGIN/scripts/js" ]; then
+  mkdir -p "$ROOT/.sdd/scripts/js"
+  for f in "$PLUGIN/scripts/js/"*.mjs; do [ -f "$f" ] && cp "$f" "$ROOT/.sdd/scripts/js/"; done
+fi
 chmod +x "$ROOT/.sdd/scripts/"*.sh 2>/dev/null
 ok ".sdd/scripts/ — bản sao $VER, chạy được không cần plugin (CI dùng .sdd/scripts/gate-check.sh)"
 
@@ -256,6 +258,11 @@ for f in $RETIRED; do
   [ -f "$ROOT/.sdd/scripts/$f" ] && { rm -f "$ROOT/.sdd/scripts/$f"; RM="$RM $f"; }
 done
 [ -n "$RM" ] && ok ".sdd/scripts/ — dọn bản cũ đã gộp:$RM"
+# 7.6.0: mermaid.py (7.5.0) đã thành js/mermaid.mjs. Bản sao cũ còn nằm đó thì repo có HAI parser,
+# và cái không được cập nhật nữa vẫn chạy được — cùng lý do với RETIRED ở trên, nên cũng đích danh.
+for f in mermaid.py; do
+  [ -f "$ROOT/.sdd/scripts/$f" ] && { rm -f "$ROOT/.sdd/scripts/$f"; ok ".sdd/scripts/ — dọn $f (7.6.0: parser mermaid chạy bằng node)"; }
+done
 echo "$VER" > "$ROOT/.sdd/version"
 echo; echo "Xong. Commit: git add -A && git commit -m \"chore(sdd): init sdd-solo $VER\""
 # Dòng này là câu chỉ đường ĐẦU TIÊN user đọc, trước khi biết bất cứ thứ gì khác.
