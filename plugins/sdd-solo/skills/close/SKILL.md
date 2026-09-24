@@ -10,7 +10,7 @@ Reply in whatever language the user writes in; keep file names, IDs and slugs in
 
 Close `$1`.
 
-**Never delegated to an agent:** `close` is the owner's job (orchestrate §2 rule 7). Running under another agent's brief → stop and write `KETQUA ket=chan hoi=-` saying plainly "close is the owner's job".
+**The owner's job unless the repo says otherwise** (8.4.0). The default is unchanged: `close` belongs to the owner (orchestrate §2 rule 7), and under another agent's brief you run `close-check` and report, nothing more. A repo that has declared signing authority — a `<role>.ky` line in `.sdd/roles`, e.g. `A.ky=gate close` — lets the named role run `pass.sh` too; `pass.sh` itself refuses any role not listed, and now runs `close-check` before it changes a Status, so a delegated signature is a VERIFIED one. Granting it is the owner's act: keep `.sdd/roles` out of the coordinator's write area, record it in `notes/uy-quyen.md` and `specs/decisions.md`.
 
 1. Go through the five self-review questions with the user first (from `.sdd/checklists/self-review.md`), especially question 5 *"who decided, the AI or me?"* — if there is a technical decision worth remembering, append one line to `specs/decisions.md` (root) in the format that file uses.
 2. Run it and print the output:

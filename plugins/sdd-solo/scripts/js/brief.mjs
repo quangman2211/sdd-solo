@@ -5,6 +5,10 @@
 // exists in a ticket. The environment variables role.sh passes in: SDD_V (the role code) · SDD_VN (the role name) · SDD_ROOT ·
 // SDD_DENY · SDD_CHECKS · SDD_BRANCH · SDD_LUOT · SDD_PK (the reading pack, space separated).
 //
+// 8.4.0 (P-51): part 6 says PRINT, never "send back to the coordinator". Read literally, an agent addressed that
+// as an instruction to message another session — measured: an arbiter posted `KETQUA key=r-214` into the plugin
+// repo session at 02:47, which has no queue and no ticket #214. The KETQUA FILE under git-common-dir is the
+// channel; it was built for exactly this (P-26, four reports lost in one afternoon) and it needs no messaging.
 // KEEP every word of the python version it replaced — a brief is what the agent reads, and changing the words changes the behaviour.
 import fs from 'node:fs';
 import { kw, kwW } from './kw.mjs';
@@ -122,7 +126,7 @@ if (ANSWER) {
   o.push(`5. No commit: ${V} does not commit — A commits the ticket. Write into ${rel}: the "${ANS}:" box (the level of each K and the decision),`
     + ` "${SRC}:" with a file:line for every L0 — no source means it is not L0 — and "${FORW}:" with one line per role saying what to do.`);
   o.push(`6. Ending: bash .sdd/scripts/role.sh --ketqua ${key} ket=xong neo=${rel} kiem=<how many L0/L1/L2/L3> hoi=- con=-`
-    + ` (blocked: ket=chan hoi=<#ticket>) then send exactly that KETQUA line back to the coordinator, ≤ 10 lines. Then STOP.`);
+    + ` (blocked: ket=chan hoi=<#ticket>) then PRINT that KETQUA line as the first line of your last message IN THIS SESSION, ≤ 10 lines. Then STOP. Do not send it to another pane or session: the file above is how it reaches the coordinator`);
   const t = o.join('\n');
   process.stdout.write(t + '\n');
   if (missing.length) process.stderr.write('\n! the reading pack has a path that does not exist: ' + missing.join(' ') + '\n');
@@ -139,7 +143,7 @@ for (const l of mine) out.push('   ' + l);
 if (neo.length) out.push('   Anchors: ' + neo.join(' '));
 out.push('4. MAY NOT write: ' + (deny || '(not declared)') + ' · decide no business question yourself (a missing number/enum/permission → bash .sdd/scripts/phieu.sh new, then STOP) · no AskUserQuestion · no push.' + (branch ? ' Step 0: git merge main.' : ''));
 out.push('5. Checks before committing: ' + (checks || '(per .sdd/roles)') + ' — print the ✓/✗ counts, do not just say "green". Commit <type>(' + idmain + '): … listing the files by name: git commit --only -m … -- <file>; trailer Vai: ' + V + '.');
-out.push(`6. Ending: bash .sdd/scripts/role.sh --ketqua ${key} ket=xong neo=<commit hash> kiem=<✓/✗> hoi=- con=- (blocked: ket=chan hoi=<#ticket>) then send exactly that KETQUA line back to the coordinator, ≤ 10 lines. Then STOP.`);
+out.push(`6. Ending: bash .sdd/scripts/role.sh --ketqua ${key} ket=xong neo=<commit hash> kiem=<✓/✗> hoi=- con=- (blocked: ket=chan hoi=<#ticket>) then PRINT that KETQUA line as the first line of your last message IN THIS SESSION, ≤ 10 lines. Then STOP. Do not send it to another pane or session: the file above is how it reaches the coordinator`);
 
 const txt = out.join('\n');
 process.stdout.write(txt + '\n');

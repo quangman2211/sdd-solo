@@ -4,7 +4,7 @@
 #   queue.sh add <key> <lane> <role> [--can "k1 k2"] [note]   add a work item, state waiting
 #   queue.sh next                                           what CAN GO OUT NOW: every Need is done, the lane has room
 #   queue.sh take <key> [who]                               waiting → active, records who holds it + the time (default: the current role/worktree)
-#   queue.sh done <key>                                     reads the KETQUA of the key (role.sh --ketqua); ket=xong + an anchor → done
+#   queue.sh done <key> [--theo-phieu #n]                                     reads the KETQUA of the key (role.sh --ketqua); ket=xong + an anchor → done
 #   queue.sh stop <key> <stop name> [reason]                → STOP-<name>; the name must be declared in notes/uy-quyen.md ## Stop points
 #   queue.sh board [--qua-han <minutes>]                    the assignment board: active (who, how long, is there a KETQUA) · ready · waiting · stopped
 #   queue.sh list                                           print the table
@@ -80,6 +80,22 @@ take)
 done)
   need_q; need_main; K="$2"; valid_key "$K"
   [ -n "$(row_of "$K")" ] || { bad "there is no $K"; exit 1; }
+  # 8.4.0 (P-50): a job that ended `ket=chan hoi=#n` and was then settled BY THE TICKET had no way to close. `done`
+  # wanted a fresh `ket=xong` (so the agent had to be sent round again to produce one) and `stop` wanted a declared
+  # stop name (it is not stopped, it is finished). --theo-phieu is the second SHAPE of evidence, not an exemption:
+  # the ticket must carry the `Applied:` stamp that `phieu.sh close` writes onto the file (8.3.0) — and that stamp is
+  # only written after close has counted F#/K# on the file and demanded a KETQUA from every role in For:. The ticket
+  # file then becomes the anchor. Time passing is still not evidence; a closed ticket is.
+  if [ "$3" = --theo-phieu ]; then
+    PN="${4#\#}"; [ -n "$PN" ] || { echo "usage: queue.sh done <key> --theo-phieu #n" >&2; exit 2; }
+    HD="$(hoi_dap_file "$ROOT")"; PF="$(ls "$(dirname "$HD")/phieu/$(printf '%03d' "$PN")"-*.md 2>/dev/null | head -1)"
+    [ -n "$PF" ] || { bad "there is no file for ticket #$PN"; exit 1; }
+    grep -qE "^($(kw p_applied)):[[:space:]]*[^[:space:]<]" "$PF" \
+      || { bad "ticket #$PN is not closed — it carries no $(kw_w p_applied "$ROOT"): stamp. Run phieu.sh close $PN first; an unclosed ticket does not finish a job"; exit 1; }
+    set_row "$K" "trangthai=$W_DONE" "neo=${PF#$ROOT/}" "ghichu=$(kw_w c_ticket_w "$ROOT")$PN"
+    commit_q "$K done (ticket #$PN)"; ok "$K → done · anchor ${PF#$ROOT/} (settled by ticket #$PN, not by redoing the work)"
+    exit 0
+  fi
   KF="$(ketqua_dir "$ROOT")/$K.txt"
   [ -f "$KF" ] || { bad "$K has no KETQUA yet ($KF) — until the agent writes one it is not 'done'; time passing is not evidence"; exit 1; }
   LAST="$(tail -1 "$KF")"; KET="$(printf '%s' "$LAST" | grep -oE 'ket=[a-z]+' | cut -d= -f2)"; NEO="$(printf '%s' "$LAST" | grep -oE 'neo=[^ ]+' | cut -d= -f2)"

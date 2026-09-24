@@ -10,7 +10,7 @@ Reply in whatever language the user writes in; keep file names, IDs and slugs in
 
 The DoR gate for `$1`.
 
-**Never delegated to an agent:** `gate` is the owner's job (orchestrate §2 rule 7). Running under another agent's brief → only run `gate-check` and report; do not run `pass.sh gate`.
+**The owner's job unless the repo says otherwise** (8.4.0). The default is unchanged: `gate` belongs to the owner (orchestrate §2 rule 7), and under another agent's brief you run `gate-check` and report, nothing more. A repo that has declared signing authority — a `<role>.ky` line in `.sdd/roles`, e.g. `A.ky=gate close` — lets the named role run `pass.sh` too; `pass.sh` itself refuses any role not listed, and now runs the check before stamping anything, so a delegated signature is a VERIFIED one. Granting it is the owner's act: keep `.sdd/roles` out of the coordinator's write area, record it in `notes/uy-quyen.md` and `specs/decisions.md`, and remember the marker and the gate commit then carry who signed.
 
 1. Run it and print the output verbatim:
 ```bash

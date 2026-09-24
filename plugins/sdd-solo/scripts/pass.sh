@@ -19,10 +19,60 @@ esac
 [ -z "$ID" ] && { echo "Usage: pass.sh $MODE <ID>" >&2; exit 2; }
 ROOT="$(project_root)"
 
+# 8.4.0 (P-52) - pass.sh VERIFIES. Up to 8.3.0 the header above said "run AFTER the matching check exits 0" and that
+# was the whole guarantee: nothing here called gate-check, close-check or change-check, so `pass.sh gate UC-###`
+# stamped .sdd/gate/UC-###.ok on a UC with no Acceptance Criteria at all - and the commit-msg hook then trusted that
+# marker to let `feat(UC-###)` through. What kept the marker honest was the SKILL TEXT a person read, not the person.
+# So the rule "only the owner may type it" bought no check; measured at runxops on 2026-09-24 it bought a 5-hour wait
+# (03:30 to 08:50) on a UC that was already green. This is the same reasoning that removed the overnight door at 6.0.0:
+# a night measures time passing, a keystroke measures presence, and neither measures whether anything was checked.
+#
+# There is no flag and no environment escape, exactly as for gate-check itself. `deprecate` is deliberately exempt:
+# dropping a UC must not require it to be green - being not-green is often the reason it is being dropped.
+CHK=""
+case "$MODE" in gate) CHK=gate-check.sh;; close) CHK=close-check.sh;; change) CHK=change-check.sh;; esac
+if [ -n "$CHK" ]; then
+  CO="$(bash "$HERE/$CHK" "$ID" 2>&1)" && CR=0 || CR=$?
+  if [ "$CR" != 0 ]; then
+    printf %s\\n "$CO" | grep -E "^ *.\[31m" || printf %s\\n "$CO" | tail -20
+    bad "$CHK $ID is not green - pass.sh does not stamp a pass it has not seen happen (8.4.0)"
+    info "fix every mark above, then run it in full yourself: bash .sdd/scripts/$CHK $ID"
+    exit 1
+  fi
+  ok "$CHK $ID verified here: green"
+fi
+
+# Who may SIGN. Opt-in in both directions (lib: role_sign_declared): a repo with no `<V>.ky` line anywhere behaves
+# exactly as before, marker or no marker, so a solo project and every repo running today change by nothing. Once one
+# `.ky` line exists, a session whose role CAN be inferred must list this pass. A session with no role inferred is
+# still allowed - that is the owner in an unmarked checkout, and the plugin cannot tell a person from an agent.
+SIGNED_BY=""
+case "$MODE" in
+  gate|close)
+    if role_sign_declared "$ROOT"; then
+      SV="$(role_current "$ROOT")"
+      if [ -n "$SV" ]; then
+        SOK=0; for m in $(role_sign "$SV" "$ROOT"); do [ "$m" = "$MODE" ] && SOK=1; done
+        if [ "$SOK" = 0 ]; then
+          bad "role $SV may not sign $MODE: .sdd/roles has no \"$SV.ky\" listing it"
+          info "this repo has declared signing authority (a <role>.ky line exists), so a session with a known role signs only what it is given"
+          info "the owner grants it in .sdd/roles - never the agent itself; record it in notes/uy-quyen.md and specs/decisions.md too"
+          exit 1
+        fi
+        SIGNED_BY="$SV"
+      fi
+    fi
+    ;;
+esac
+
 # the marker + the marker commit — shared by gate and change
 mark() {
   mkdir -p "$ROOT/.sdd/gate"
+  # LINE 1 STAYS EXACTLY THE COMMIT HASH. Nothing parses this file today (every reader only tests -f, and the
+  # fingerprint finds the gate commit by its SUBJECT), but a second line is a record, not a field: six months on,
+  # "who signed this" is the question nobody can answer from a bare hash.
   git -C "$ROOT" rev-parse HEAD > "$ROOT/.sdd/gate/$1.ok"
+  [ -n "$SIGNED_BY" ] && printf 'signed-by: %s (.sdd/roles %s.ky) %s\n' "$SIGNED_BY" "$SIGNED_BY" "$(today)" >> "$ROOT/.sdd/gate/$1.ok"
   git -C "$ROOT" add ".sdd/gate/$1.ok" \
     && git -C "$ROOT" commit -q --only -m "chore(sdd): gate marker $1" -- ".sdd/gate/$1.ok" || true
 }
@@ -37,7 +87,9 @@ gate)
   T="$(uc_table_file "$ID" "$ROOT")"; TF=""
   if uc_table_set "$ID" reviewed "$ROOT"; then TF="$T"; else
     printf '  ! the table %s has no row for %s — add one so /sdd-solo:state suggests the right next UC\n' "${T#$ROOT/}" "$ID"; fi
-  git -C "$ROOT" commit -q --only -m "docs($ID): spec reviewed — $(kw_w c_dor "$ROOT")" -- "$F" $TF || true
+  # The SUBJECT is untouched on purpose: gate-check §9 and close-check find this commit by matching it.
+  git -C "$ROOT" commit -q --only -m "docs($ID): spec reviewed — $(kw_w c_dor "$ROOT")" \
+    ${SIGNED_BY:+-m "$(kw_w c_role "$ROOT"): $SIGNED_BY"} -- "$F" $TF || true
   mark "$ID"
   printf 'THROUGH THE GATE. Status -> reviewed · marker .sdd/gate/%s.ok · committed.\n' "$ID"
   printf 'Next: /sdd-solo:design %s — design before the first line of code.\n' "$ID"
@@ -72,7 +124,8 @@ close)
   if uc_table_set "$ID" implemented "$ROOT"; then TF="$T"; else
     printf '  ! the table %s has no row for %s — add one so /sdd-solo:state suggests the right next UC\n' "${T#$ROOT/}" "$ID"; fi
   [ -f "$TRACE" ] && git -C "$ROOT" add "$TRACE"
-  git -C "$ROOT" commit -q --only -m "docs($ID): implemented — traceability" -- "$F" "$TR" $TF $( [ -f "$TRACE" ] && printf '%s' "$TRACE" ) || true
+  git -C "$ROOT" commit -q --only -m "docs($ID): implemented — traceability" \
+    ${SIGNED_BY:+-m "$(kw_w c_role "$ROOT"): $SIGNED_BY"} -- "$F" "$TR" $TF $( [ -f "$TRACE" ] && printf '%s' "$TRACE" ) || true
   echo "CLOSED $ID. Status → implemented${TF:+ (the UC file + the UC table)} · traceability +$(grep -cE '^### AC-' "$F") rows · committed."
   echo "Remember: update STATE.md (/sdd-solo:state) before you stop."
   ;;

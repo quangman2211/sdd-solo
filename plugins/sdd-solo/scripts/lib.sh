@@ -579,6 +579,14 @@ role_branch()   { role_get "$1.nhanh" "$2" ""; }
 role_checks()   { role_get "$1.kiem" "$2" ""; }
 role_required() { role_get vai_bat_buoc "$1" khong; }
 role_may_commit() { [ "$(role_get "$1.commit" "$2" co)" != khong ]; }
+# role_sign <role> <root> -> the passes this role may SIGN (`<V>.ky=gate close`), empty when it may sign none.
+# role_sign_declared <root> -> true when ANY role declares a `.ky` line. Signing authority is opt-in in BOTH
+# directions (8.4.0, P-52): a repo that declares nothing keeps exactly the behaviour it had, marker or no marker.
+# The moment one `.ky` line exists the repo has said "signing is a declared authority", and a session whose role
+# is known but not listed is refused. Delegating a signature to an agent is the OWNER decision, never the agent
+# own: keep `.sdd/roles` OUT of the coordinator write area, or the delegation is self-granted and means nothing.
+role_sign()   { role_get "$1.ky" "$2" ""; }
+role_sign_declared() { _rsd="$(roles_file "$1")"; [ -n "$_rsd" ] && grep -qE "^[A-Za-z0-9_-]+\.ky=[[:space:]]*[^[:space:]]" "$_rsd"; }
 role_known()    { local v; for v in $(role_list "$2"); do [ "$v" = "$1" ] && return 0; done; return 1; }
 # A pattern like `specs/**` passed through an unquoted `for x in $1` → the shell expands it into real file names
 # (measured: `specs/**` became 11 paths). Turn globbing off while iterating (set -f) and restore it afterwards.

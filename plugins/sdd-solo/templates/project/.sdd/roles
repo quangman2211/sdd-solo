@@ -19,6 +19,14 @@
 #               · nhanh-vai (blocks once a role can be inferred)
 #               · moi (blocks even when no role can be inferred).
 # Turn it on after `role.sh --kiem-lich-su` reports a number you are willing to accept.
+# <V>.ky — which passes this role may SIGN: `gate` · `close` (8.4.0). NO LINE ANYWHERE = today's behaviour, and a
+# solo project never notices. Declare one and signing becomes a named authority: a session whose role can be
+# inferred signs only what it is listed for. `pass.sh` runs gate-check/close-check itself before stamping anything,
+# so a delegated signature is a verified one — but WHO may sign is still the owner's decision. That is why
+# `.sdd/roles` is in A.cam above: a coordinator that can edit this file grants itself the authority, and a
+# self-granted delegation is not a delegation. Turning it on: add `A.ky=gate close` here, and write down when and
+# why in notes/uy-quyen.md plus one line in specs/decisions.md.
+# A.ky=gate close
 vai_bat_buoc=khong
 vai=A B R D T
 
@@ -26,7 +34,7 @@ vai=A B R D T
 # Writes no spec and no code.
 A.ten=coordinator
 A.ghi=STATE.md specs/decisions.md notes/** .sdd/**
-A.cam=@code_paths @test_paths specs/vision.md
+A.cam=@code_paths @test_paths specs/vision.md .sdd/roles
 A.nhanh=
 A.commit=co
 A.kiem=

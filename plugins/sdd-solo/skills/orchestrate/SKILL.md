@@ -87,7 +87,9 @@ work → commit the logs other agents may not commit → update STATE → ask th
 6. **At most two writing agents at a time** in the same area; do not run two UCs from different slices in parallel if
    both write the same `glossary.md`/`rules.md` (the root one or the same craft's); do not run a large rename in
    parallel with any coding.
-7. **Never handed to an agent:** setting a number/threshold/price · settling the shape of a UC · `gate`/`close` ·
+7. **Never handed to an agent:** setting a number/threshold/price · settling the shape of a UC · `gate`/`close`
+   (unless the OWNER has declared `<role>.ky=gate close` in `.sdd/roles` — 8.4.0; `pass.sh` then verifies the check
+   itself and refuses any role not listed, and the marker records who signed. A itself may not write that line) ·
    push/deploy/delete. Those are the L3 of `hoi-dap.md`, and they are A's job to ask the owner about.
 8. **A subagent may not open `AskUserQuestion`** — nobody is there to click and the turn hangs until it times out
    (#53). A brief that runs `/sdd-solo:adversarial` writes **`--phieu`**: shape questions become one ticket K1…Kn at
@@ -163,7 +165,7 @@ spec ‖ D ‖ T — the three roles apply AT THE SAME TIME, each reading exactl
 … repeat: D round n → C review → R → spec ‖ D ‖ T … until both suites are green on the real code and C has no K left at L0/L1
 C full review — a fresh session, the whole branch, measuring a migration into an empty DB too (green numbers on an already-migrated cluster prove nothing)
 D runs the five self-review questions (.sdd/checklists/self-review.md) — three of the four items became work at runxops, do not skip it
-merge code/uc-### → main (A or the owner) → /sdd-solo:close (the owner, never an agent)
+merge code/uc-### → main (A or the owner) → /sdd-solo:close (the owner — or A when .sdd/roles declares A.ky=close)
 clean the lanes  — bash .sdd/scripts/role.sh --don UC-### : removes the role worktrees of this UC, prunes, deletes its
                    <role>.nhanh branches. It never forces: a worktree with uncommitted files or an unmerged branch is
                    KEPT and named, which is the one report you want here. Run it right after close — measured at

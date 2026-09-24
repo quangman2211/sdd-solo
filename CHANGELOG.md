@@ -1,5 +1,77 @@
 # Changelog
 
+## 8.4.0 — 2026-09-24
+
+### P-52 — hoá ra `pass.sh` chưa bao giờ kiểm gì cả
+
+A đề nghị một cờ cho phép agent chạy `pass.sh gate|close` **kèm** ba bằng chứng bắt buộc. Đo trước khi làm thì
+tiền đề của cả hai bên đều hụt một chỗ: đầu `pass.sh` ghi *"run AFTER the matching check exits 0"* và **nó tin
+người gọi** — không nhánh nào gọi `gate-check` · `close-check` · `change-check`. Ca kiểm 57 dựng lại được: xoá
+hẳn mục `## Acceptance Criteria` của UC-001, `gate-check` đỏ, rồi `pass.sh gate UC-001` **vẫn đóng dấu**
+`.sdd/gate/UC-001.ok` — và githook `commit-msg` tin đúng cái dấu đó để cho `feat(UC-001)` đi qua.
+
+Nghĩa là thứ giữ marker trung thực không phải phím bấm của chủ dự án, mà là **văn skill** người ta đọc rồi làm
+theo. Luật "chỉ người thật được gõ" không mua được một phép kiểm nào; ở runxops 24/09 nó mua **5 tiếng chờ**
+(03:30 → 08:50) trên một UC đã xanh. Đúng lập luận 6.0.0 đã dùng để bỏ cửa "qua đêm" (#38): một đêm đo thời
+gian trôi, một phím bấm đo sự có mặt, không cái nào đo việc đã-kiểm.
+
+Nên tách làm hai thứ A đang gộp:
+
+**(1) `pass.sh` tự chạy phép kiểm tương ứng và từ chối khi có ✗ — cho mọi người, không cờ nào.** Đây là **siết**,
+không phải nới: nó bịt một lỗ đang mở cho cả chủ dự án. Không có cờ bỏ qua và không có biến môi trường, y như
+`gate-check`. `deprecate` **cố ý miễn**: bỏ một UC không được đòi nó xanh — không xanh thường chính là lý do bỏ.
+
+**(2) Ai được ký là câu hỏi riêng**, và nó là **chính sách đội agent** nên ở `.sdd/roles`, không ở `.sdd/config`:
+`A.ky=gate close`. **Bật hai chiều**: repo không khai dòng `.ky` nào thì hành vi y hệt hôm nay, có dấu vai hay
+không cũng vậy — repo một người không đổi một byte. Có một dòng `.ky` thì repo đã nói "chữ ký là một quyền có
+khai báo", và phiên nào suy ra được vai mà không được liệt kê thì bị từ chối. Phiên **không** suy ra được vai
+vẫn qua — đó là chủ dự án ở một checkout không đánh dấu, và plugin không phân biệt được người với agent.
+
+Có (1) rồi thì (2) không còn là "tin agent đã kiểm" — máy kiểm — mà chỉ là **ghi lại ai bấm một cái nút đã
+được xác minh**. Marker thêm dòng `signed-by:` (dòng 1 vẫn **đúng hash**, không gì đọc nội dung file này) và
+commit cổng thêm đuôi `Vai:` trong thân. **Chủ đề commit không đổi một ký tự** — `gate-check` §9 và githook
+nhận commit theo chủ đề, có ca kiểm giữ.
+
+**Một lỗ A không nêu, và nó nghiêm trọng nhất:** `.sdd/roles` mẫu cho `A.ghi=… .sdd/**`, tức agent điều phối
+ghi được chính file cấp quyền cho nó. **Uỷ quyền tự cấp thì không phải uỷ quyền.** `.sdd/roles` giờ nằm trong
+`A.cam`. Repo `doc_lang=vi` không nhận thay đổi khuôn (P-45) nên phải sửa tay — và nên sửa **trước** khi khai
+`.ky`.
+
+**"0 ✗ ngoài dòng marker" không cần thành ngoại lệ.** Em chạy `close-check.sh UC-031` trên runxops thật, chỉ
+đọc: `CAN BE CLOSED (3 warnings)`, 0 ✗. Cái ✗ lúc 03:30 là dòng 9 — *"no .sdd/gate/UC-031.ok marker"* — tức
+close-check đỏ **vì cổng chưa đóng dấu**. Đó là thứ tự, không phải xung đột: chạy gate trước thì close-check tự
+xanh. Khoét ngoại lệ vào đúng dòng marker sẽ là một lỗ im lặng, và không cần khoét.
+
+**Cái vỡ, nói thẳng:** ca 20 của bộ test đỏ ngay — nó sửa một AC *sau* cổng rồi đóng, đúng thứ close-check §9
+vẫn luôn gọi là sai. Đó là tính năng chạy đúng. Trạng thái ấy chỉ repo đóng bằng bản cũ mới có, nên ca tự dựng
+nó (`close_cu` trong chính file ca). Đây là giàn giáo của bộ test, **không** phải cửa thoát của plugin.
+
+### P-50 — `queue.sh done <key> --theo-phieu #n`
+
+Việc kết `ket=chan hoi=#n` rồi được phiếu giải quyết thì tới 8.3.0 không có đường đóng: `done` đòi một
+`ket=xong` mới (phải giao lại agent chỉ để sinh ra nó) và `stop` đòi tên điểm dừng (nó không dừng, nó xong).
+`--theo-phieu` là **hình dạng bằng chứng thứ hai, không phải miễn trừ**: phiếu #n phải mang dấu `Đã áp` do
+`phieu.sh close` đóng vào **file** (8.3.0) — mà `close` chỉ đóng dấu sau khi đếm F#/K# trên file và đòi đủ
+KETQUA của mọi vai trong `Cho:`. File phiếu thành neo. "Thời gian trôi không phải bằng chứng" vẫn nguyên.
+
+### P-51 — lời giao bảo IN, không bảo gửi
+
+Mục 6 viết *"send exactly that KETQUA line back to the coordinator"*. Đọc đúng chữ, agent hiểu là nhắn sang
+phiên khác — đo được: một vai trọng tài gửi `KETQUA key=r-214` vào **phiên repo plugin** lúc 02:47, nơi không
+có hàng đợi và không có phiếu #214. Giờ: *"PRINT that KETQUA line as the first line of your last message IN
+THIS SESSION … Do not send it to another pane or session"*. File KETQUA dưới `git-common-dir` mới là kênh, và
+nó dựng ra đúng cho việc này (P-26).
+
+### Một dòng dọn
+
+`hooks.json` đặt `${CLAUDE_PLUGIN_ROOT}` trong nháy kép (8.3.0 đã làm, ghi lại cho đủ).
+
+### Test
+
+Hai ca mới: `57-pass-tu-kiem` (12 phép, **6 đỏ trên 8.3.0** trước khi sửa — gồm cả việc đóng dấu lên UC không
+còn AC) · `58-done-theo-phieu` (7 phép). Ca 20 và ca 42 đổi theo, đều vì luật đổi chứ không vì ca sai.
+Bộ test: **58 ca · 313 PASS · 0 FAIL**.
+
 ## 8.3.0 — 2026-09-24
 
 ### P-49 — mục lục phiếu thôi làm nguồn, nó được SINH RA
