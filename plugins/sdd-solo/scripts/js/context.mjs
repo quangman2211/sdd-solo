@@ -74,9 +74,11 @@ const isTrace = (title) => TRACE.some((x) => title.trim().toLowerCase().startsWi
 
 /** #43: cut the evidence sections at EVERY heading level of a quoted source, plus the [x] answered questions. */
 function dropTrace(s) {
+  const lines = s.split('\n');
   const keep = [];
   let cut = 0;
-  for (const ln of s.split('\n')) {
+  for (let i = 0; i < lines.length; i++) {
+    const ln = lines[i];
     const m = /^(#{1,6}) (.*)/.exec(ln);
     if (m) {
       const lvl = m[1].length;
@@ -84,7 +86,27 @@ function dropTrace(s) {
       if (!cut && isTrace(m[2])) { cut = lvl; continue; }
     }
     if (cut) continue;
-    if (/^\s*[-*] \[x\]/i.test(ln)) continue;
+    // 8.4.1 (P-54): drop the WHOLE answered item, not just the line the `[x]` is on. Up to 8.4.0 this dropped the
+    // opening line and kept every indented continuation, so the brief carried a fragment with no subject:
+    // measured while C verified UC-032, `iv, R xếp \`L0\`): \`entity ScheduledRun\`…` arrived as if it were a live
+    // sentence (UC-015 showed two more). That is worse than leaving the question in: a reviewing subagent reads a
+    // claim belonging to no item at all, and invents a finding about it or steps around it.
+    const q = /^([ \t]*)[-*] \[x\]/i.exec(ln);
+    if (q) {
+      const ind = q[1].length;
+      let j = i + 1, blanks = 0;
+      while (j < lines.length) {
+        const nx = lines[j];
+        // A blank line may sit INSIDE a loose list item, so hold it: it is only part of the item if something
+        // more-indented follows. Otherwise it is the separator before the next item and has to stay.
+        if (/^[ \t]*$/.test(nx)) { blanks++; j++; continue; }
+        if (/^#{1,6} /.test(nx)) break;
+        if (/^([ \t]*)/.exec(nx)[1].length > ind) { blanks = 0; j++; continue; }
+        break;
+      }
+      i = j - 1 - blanks;
+      continue;
+    }
     keep.push(ln);
   }
   return keep.join('\n');

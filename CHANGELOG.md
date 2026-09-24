@@ -1,5 +1,34 @@
 # Changelog
 
+## 8.4.1 — 2026-09-24
+
+### P-54 — `context.sh --brief` bỏ dòng mở của một Open Question đã đóng nhưng giữ khối nối tiếp
+
+`js/context.mjs` bỏ **đúng một dòng**: `if (/^\s*[-*] \[x\]/i.test(ln)) continue;`. Mục đích đúng — câu đã
+đóng không nên đưa cho vai đọc — nhưng các dòng nối tiếp thụt lề của chính mục đó ở lại, nên bản ngữ cảnh mang
+một mảnh câu **không thuộc mục nào và không có chủ ngữ**. C gặp khi verify UC-032:
+
+```
+  iv, R xếp `L0`): `entity ScheduledRun` chỉ có một mũi tên ra khỏi `phat` cho ca không ai hỏi — `treo`, đúng
+```
+
+Đây tệ hơn là cứ để nguyên câu đã đóng: một subagent đang soi đọc một khẳng định **không thuộc mục nào**, rồi
+hoặc sinh một `F#` giả về nó, hoặc lách qua nó. Đúng lớp lỗi mà cả `--brief` sinh ra để tránh.
+
+Giờ bỏ **cả khối**: từ dòng `- [x]` tới dòng đầu tiên không thụt sâu hơn nó, hoặc một heading. Dòng trống được
+**giữ lại rồi mới quyết**: nó chỉ thuộc mục khi sau nó còn dòng thụt sâu hơn, không thì nó là dấu cách trước
+mục kế và phải ở lại. Câu còn mở và khối nối tiếp của nó không đụng tới.
+
+**Đo trên chính hai ca của C**, chạy `context.sh --brief` bản cũ và bản mới trên runxops thật: diff **chỉ có
+dòng bị bỏ, không có dòng nào thêm** — UC-032 mất đúng 3 dòng mảnh cụt (33,3 → 33,0 KB), UC-015 mất 5 dòng ở
+ba mảnh (29,9 → 29,3 KB). Không nội dung còn hiệu lực nào rơi, và đó là phép đo em cần chứ không phải số KB.
+
+### Test
+
+Ca mới `59-context-open-question`, 6 phép, **2 đỏ trên 8.4.0** trước khi sửa. Giữ cả bốn chiều: câu đóng mất cả
+khối · câu mở còn nguyên cả dòng nối tiếp · mục `## Open Questions` không bị nuốt · câu đóng ở cuối mục không
+nuốt sang mục sau. Bộ test: **59 ca · 319 PASS · 0 FAIL**.
+
 ## 8.4.0 — 2026-09-24
 
 ### P-52 — hoá ra `pass.sh` chưa bao giờ kiểm gì cả
