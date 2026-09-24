@@ -108,9 +108,42 @@ at runxops were transcriptions of a ticket, and the part usually dropped was the
 needed and sends it; over 1,500 characters → write it to a file and `prompt "$(cat file)"`. An agent ends a round with
 `role.sh --ketqua <key> ket=xong neo=<hash>` **before** sending its message — the file lives in
 `git-common-dir/sdd-ketqua/`, so if the message is lost the file remains (P-26); A reads `role.sh --ketqua <key>`,
-not the screen. One worktree per role: `role.sh --worktree D UC-###` · `role.sh --worktree T UC-###`; **B keeps the
-main checkout on `main`** (what B writes is shared truth); R and C set their markers with `role.sh R` / `role.sh C`
-in their own worktrees.
+not the screen.
+
+**The `Stop` hook** (8.6.0, shipped with the plugin): when a role ends its turn still holding a job with no terminal
+KETQUA, it blocks **once** and prints the exact `role.sh --ketqua …` line; ending the turn again lets go with a
+warning. It is silent unless all of `.sdd/roles` exists, a role can be inferred, the queue says that role holds an
+active item, and there is no KETQUA with a terminal `ket=`. It blocks once rather than always because a door that
+never opens stops the work instead of the mistake — and it exists at all because the moment a result is most often
+left unwritten is the moment the turn ends (P-26: four reports lost in one afternoon; eight jobs marked done by
+nothing but the clock).
+A useful companion rule for the repo: **a role never waits on another role — only A chains work.** A role that waits
+is a pane burning its turn on something it cannot make happen; it should write its KETQUA (`ket=chan hoi=#n` if it
+is blocked) and end.
+
+**Two layouts, both official (8.6.0).** The lane decides which one, because the two lanes fail differently.
+- **Code lane (D, T): one worktree per role.** `role.sh --worktree D UC-###` · `role.sh --worktree T UC-###`. Two
+  agents editing the same source tree overwrite each other's builds and each other's working state; a worktree each
+  is the only thing that stops it.
+- **Prose lane (B, C, R, G): one shared worktree, one `SDD_ROLE` per pane.** The coordinator opens each pane with
+  `SDD_ROLE=<V>` in its environment and they all sit in the same checkout on the same branch. Measured at runxops on
+  2026-09-24, from 19:10: four roles, one worktree, two hours — 9 jobs finished, 2 gate signatures, 0 file conflicts.
+  It works because these roles write *different files* (B the spec, C the review trail, R the decisions, G the
+  glossary) and because they need to read each other's writing **at once**: a spec agent in its own worktree makes
+  every other role read a stale `main` until the merge, which is exactly how D once chose against a decision R had
+  already written down.
+  `SDD_ROLE` is as hard to fake as the worktree marker and for the same reason: the pane's environment is set by
+  whoever opened the pane, outside git, and the agent inside cannot change it. `role_current` prefers it over the
+  marker, so nothing else needs configuring. The name is the FIRST token, so `SDD_ROLE="C review opus"` is the role
+  `C` — put the job and the model after it if that helps you read the pane list.
+  What it costs: the roles share one branch, so A on the main checkout does not see their work until the merge, and
+  `git stash` is one list for the whole repository, shared by every worktree and every pane in it. Commit rather than
+  stash.
+
+A keeps the main checkout. `queue.sh add|take|done|stop` and `phieu.sh muc-luc --gom` run there and nowhere else —
+they refuse in a secondary worktree, on purpose: one writer for the board. Everything read-only (`queue.sh next` ·
+`board` · `list` · `giu`) runs in any worktree and reads the `main` copy, so an agent asking what it still holds does
+not need to change directory.
 The two skeletons below are there to read what those six parts say, and to use before there is a ticket (a role's
 first brief).
 

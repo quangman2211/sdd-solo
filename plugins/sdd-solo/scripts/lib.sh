@@ -662,10 +662,28 @@ role_of_path() { local v out=""; for v in $(role_list "$2"); do role_allows "$v"
 # checkout, .git/worktrees/<name>/sdd-role in a secondary one. Not in git, not tied to a branch (measured on runxops, 7.2).
 role_marker_file() { local m; m="$(cd "$1" && git rev-parse --git-path sdd-role 2>/dev/null)"; [ -n "$m" ] || return 1; case "$m" in /*) ;; *) m="$1/$m";; esac; printf '%s' "$m"; }
 # role_current <root> → the session's role: SDD_ROLE → the worktree marker → the branch pattern <V>.nhanh; empty if it cannot be inferred
+# kq_field <field> <KETQUA line> — the value of ONE field, reading the FIRST occurrence only.
+# role.sh writes the fields in a fixed order (key ket neo kiem hoi con vai luc) and only `kiem=` may carry spaces,
+# so the first `<field>=` on the line is always the field and anything later is text quoted inside kiem=.
+# 8.6.0 (P-58): there were two readers of this one line and they disagreed. `queue.sh done` used
+# `grep -oE 'ket=[a-z]+'`, which prints EVERY match — a kiem= quoting another role's `ket=xong` made KET two lines
+# and `[ "$KET" = xong ]` false; `queue.sh board` read the same line with a `*ket=xong*` glob and said xong. One
+# job, two answers, at the door that marks work finished (runxops, KETQUA b-032-ap-232, 20:31). There is one
+# reader now, and every caller goes through it.
+kq_field() {
+  printf '%s' "$2" | grep -oE "(^|[[:space:]])$1=[^[:space:]]*" | head -1 | sed -E "s/^[[:space:]]*$1=//"
+}
+
+# role_norm <string> — the role name is the FIRST token.
+# 8.6.0: a coordinator opening a pane with SDD_ROLE="C soi opus" (role · job · model) means the role C. Up to 8.5.0
+# the name was taken verbatim, so the commit hook said "the role 'C soi opus' is not in .sdd/roles" on every commit
+# in a shared prose-lane worktree while the commit itself went through — a message that is wrong in both directions.
+role_norm() { printf '%s' "$1" | awk '{print $1}'; }
+
 role_current() {
   local v m br p
-  [ -n "$SDD_ROLE" ] && { printf '%s' "$SDD_ROLE"; return; }
-  m="$(role_marker_file "$1")"; [ -n "$m" ] && [ -f "$m" ] && { head -1 "$m" | tr -d '[:space:]'; return; }
+  [ -n "$SDD_ROLE" ] && { role_norm "$SDD_ROLE"; return; }
+  m="$(role_marker_file "$1")"; [ -n "$m" ] && [ -f "$m" ] && { role_norm "$(head -1 "$m")"; return; }
   br="$(git -C "$1" symbolic-ref --quiet --short HEAD 2>/dev/null)"
   for v in $(role_list "$1"); do
     p="$(role_branch "$v" "$1")"; [ -n "$p" ] || continue

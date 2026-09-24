@@ -74,6 +74,7 @@ case "$1" in
   ok "worktree $D · branch $BR · role marker $V"
   info "the hooks in a worktree are the branch copy from when it was split — open a round with: git -C $D merge main"
   info "committing there: git commit --only -m '<type>(ID): …' -- <file> ; the hook adds the trailer 'Vai: $V'"
+  info "the stash is NOT private to this worktree — 'git stash' here goes into the one list the whole repository shares, and it stays there after --don removes the worktree. Commit instead of stashing, or write down which entry is yours"
   ;;
 --don)
   # 8.2.0 (P-48): the reverse of --worktree. Measured at runxops on 2026-09-24: 4 workspaces and 18 code/ · test/
@@ -85,7 +86,13 @@ case "$1" in
   # the only copy of somebody work. There is no --force here, on purpose: a lane you cannot delete is a lane with
   # something in it, and that is a fact to look at, not an obstacle to get past.
   need_roles; U="$2"; shift 2 2>/dev/null || shift $#
-  DRY=0; for a in "$@"; do case "$a" in --dry-run) DRY=1;; esac; done
+  DRY=0
+  for a in "$@"; do case "$a" in
+    --dry-run) DRY=1;;
+    # 8.6.0 (P-57): say it out loud rather than ignore it. A lane that will not delete is a lane with something in
+    # it — the only copy of somebody work. That is a fact to look at, not an obstacle to get past.
+    --force|-f) bad "role.sh --don has no --force, on purpose: git refuses to remove a worktree with uncommitted or untracked files, and that refusal is the point. Go and look at the lane, commit or throw the work away yourself, then run --don again"; exit 2;;
+  esac; done
   case "$U" in UC-[0-9]*|CHG-[0-9]*) ;; *) bad "role.sh --don takes a UC-### (or CHG-###): role.sh --don UC-012 [--dry-run]"; exit 2;; esac
   LU="$(printf '%s' "$U" | tr 'A-Z' 'a-z')"
   N=0; LEFT=0
@@ -103,6 +110,17 @@ case "$1" in
       if [ "$DRY" = 1 ]; then info "would remove the worktree $D (role $v, branch $BR)"
       elif git -C "$ROOT" worktree remove "$D" 2>/dev/null; then ok "worktree removed: $D (role $v)"
       else bad "cannot remove the worktree $D — it has uncommitted or untracked files; look at it, commit or throw them away, then run --don again"; LEFT=$((LEFT+1)); continue; fi
+    fi
+    # The stash is ONE list for the whole repository, shared by every worktree — removing the worktree and the
+    # branch leaves any stash made on that branch behind, invisible, and `git stash list` in the main checkout shows
+    # it with a branch name that no longer exists. Name them and print the command; dropping a stash is not
+    # recoverable, so --don never does it. (8.6.0, P-57)
+    ST="$(git -C "$ROOT" stash list --format='%gd|%gs' 2>/dev/null | grep -E "\|(WIP on|On) $(printf '%s' "$BR" | sed 's/[.[\*^$]/\\&/g'):" || true)"
+    if [ -n "$ST" ]; then
+      warn "the lane $BR leaves $(printf '%s' "$ST" | grep -c .) stash entr$(printf '%s' "$ST" | grep -c . | sed 's/^1$/y/; s/^[02-9].*/ies/') behind — the stash list is shared by the whole repository, it does not go away with the worktree:"
+      printf '%s\n' "$ST" | while IFS='|' read -r r m; do printf '      %s  %s\n' "$r" "$m"; done
+      info "look at one:  git -C $ROOT stash show -p $(printf '%s' "$ST" | head -1 | cut -d'|' -f1)"
+      info "drop it yourself when you are sure:  git -C $ROOT stash drop $(printf '%s' "$ST" | head -1 | cut -d'|' -f1)   (--don never drops a stash: it cannot be undone)"
     fi
     if [ "$HAS" = 1 ]; then
       if [ "$DRY" = 1 ]; then info "would delete the branch $BR (role $v)"
@@ -131,7 +149,7 @@ case "$1" in
   fi
   [ "$KET" = chan ] && { [ -n "$HOI" ] && [ "$HOI" != "-" ] || { bad "ket=chan requires hoi=<ticket number | ASK-X#> — a block with no question is one nobody can clear"; exit 1; }; }
   mkdir -p "$KD"
-  L="KETQUA key=$K ket=$KET neo=${NEO:--} kiem=$KIEM hoi=$HOI con=$CON vai=$(role_current "$ROOT" | tr -d ' ') luc=$(date +%Y-%m-%dT%H:%M)"
+  L="KETQUA key=$K ket=$KET neo=${NEO:--} kiem=$KIEM hoi=$HOI con=$CON vai=$(role_current "$ROOT") luc=$(date +%Y-%m-%dT%H:%M)"
   printf '%s\n' "$L" >> "$KF"
   printf '%s\n' "$L"
   info "written to ${KF} — send exactly the line above back to the coordinator (as the first line of the message)"
@@ -139,7 +157,7 @@ case "$1" in
 --staged|--commit)
   [ -n "$RF" ] || exit 0
   [ -f "$(cd "$ROOT" && git rev-parse --git-path MERGE_HEAD)" ] && exit 0
-  V="$SDD_ROLE"
+  V="$(role_norm "$SDD_ROLE")"
   if [ -z "$V" ] && [ "$1" = --commit ] && [ -f "$2" ]; then V="$(grep -E "^($(kw c_role)): *[A-Za-z0-9_-]+ *\$" "$2" | head -1 | sed -E "s/^($(kw c_role)): *//; s/ *\$//")"; fi
   [ -z "$V" ] && V="$(role_current "$ROOT")"
   REQ="$(role_required "$ROOT")"

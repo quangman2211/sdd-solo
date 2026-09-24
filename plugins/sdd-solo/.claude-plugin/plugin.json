@@ -1,7 +1,7 @@
 {
   "name": "sdd-solo",
   "description": "Spec-Driven Development for one developer + an AI: the four layers BR/UC/Entity/AC, a Definition of Ready gate before any code, an adversarial pass instead of a reviewer, Claude Design as an official step, BPMN/DMN/Mermaid at every layer, and a two-level design layer (architecture.md for the project, design.md per UC). It runs the whole way round on its own — the only mandatory dependencies are git, bash and node.",
-  "version": "8.5.0",
+  "version": "8.6.0",
   "author": { "name": "Quang Man" },
   "license": "MIT",
   "keywords": ["spec-driven", "sdd", "solo", "bpmn", "use-case", "definition-of-ready"]

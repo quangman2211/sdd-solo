@@ -15,6 +15,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/queue.sh" $ARGUMENTS
 ```
 (if the variable is not substituted: `find ~/.claude/plugins -type f -name queue.sh -path '*sdd-solo*' | head -1`; inside a project: `.sdd/scripts/queue.sh`).
 
+- `giu [role]` (8.6.0) — read-only, runs in any worktree: the active items that role still holds, one per line as `<key>|<last ket=>`. The `Stop` hook asks exactly this.
 - **Only the coordinator, in the main checkout, writes** — `add|take|done|stop` refuse to run in a secondary worktree. Agents do not write the board; an agent writes a KETQUA (`role.sh --ketqua`), and `done` reads it and checks the anchor before writing the row. Every write is one `--only` commit.
 - `next` = every `Needs` is `done` and the lane has room (the `## Lanes` table, Capacity column). Ask the machine, not your memory.
 - `done <key> --theo-phieu #n` — for a job that ended `ket=chan hoi=#n` and was settled BY THE TICKET, with no work
@@ -22,6 +23,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/queue.sh" $ARGUMENTS
   to close one. It is a second SHAPE of evidence, not an exemption — ticket #n must carry the `Applied:` stamp
   `phieu.sh close` writes onto the FILE, and close only writes it after counting F#/K# there and finding a KETQUA
   from every role in `For:`. The ticket file becomes the anchor.
+- `done` on the last open item of a UC prints what that UC's lane still holds (`role.sh --don --dry-run`, which removes nothing) and the command to clean it for real. It only looks — deleting a lane deletes the only copy of somebody's work (8.6.0).
 - `done` with no KETQUA `ket=xong` + anchor → red. `done` with an empty Anchor is red on `board`. Elapsed time is not evidence: an `active` item past its deadline (90 minutes by default, `--qua-han N`) only raises a `suspected-dead` flag for the coordinator to go and look at.
 - `stop <key> <name>` → `STOP-<name>`; the name must exist in `notes/uy-quyen.md ## Stop points`, and `status.sh` checks it.
 - A work key is `[a-z0-9][a-z0-9._-]{1,39}` — it is also the KETQUA file name. Suggested shape: `<role>-<id>-p<ticket>[-l<round>]`, which is what `role.sh` prints in part 6 of a brief.

@@ -1,5 +1,44 @@
 # Changelog
 
+## 8.6.0 — 2026-09-24
+
+**Một dòng KETQUA, một người đọc (P-58, lỗi của 8.4.0).** `queue.sh done` đọc `ket=` bằng
+`grep -oE 'ket=[a-z]+'`, mà `-o` in **mọi** khớp: một KETQUA có `kiem=` trích lại `ket=xong` của vai khác làm `KET`
+thành hai dòng và `done` từ chối với câu "xong, not xong". Cùng lúc `queue.sh board` đọc đúng dòng ấy bằng glob
+`*ket=xong*` và in "✓ KETQUA says xong". Hai phép đọc, một dòng, hai verdict ngược nhau — ở đúng cửa đánh dấu việc đã
+xong (runxops, KETQUA b-032-ap-232, 20:31). Giờ có một người đọc: `kq_field` ở `lib.sh`, lấy **lần xuất hiện đầu**
+của trường (`role.sh --ketqua` ghi trường theo thứ tự cố định và chỉ `kiem=` có dấu cách, nên trường đầu luôn là
+trường thật). `done`, `board` và `session-start.sh` đi chung nó, kể cả khi đọc `hoi=` — cái thứ ba cũng có đúng lỗi ấy và không ai báo, vì nó chỉ làm bản tóm tắt đầu phiên sai chứ không chặn gì.
+
+**Tên vai là từ đầu tiên của `SDD_ROLE`.** Điều phối mở pane với `SDD_ROLE="C review opus"` (vai · việc · model);
+tới 8.5.0 tên được lấy nguyên, nên hook commit báo "the role 'C review opus' is not in .sdd/roles" trên mọi commit
+của một worktree làn chữ **trong khi commit vẫn đi qua** — sai cả hai chiều. `role_norm` dùng ở `role_current` và ở
+nhánh `--staged|--commit`, nhánh đọc thẳng biến môi trường.
+
+**Hook `Stop` cho pane vai (P-59).** `scripts/stop-ketqua.sh`: vai kết lượt mà việc đang giữ chưa có KETQUA cuối thì
+chặn **một lần** và in đúng dòng `role.sh --ketqua …` phải gõ; kết lượt lần nữa (`stop_hook_active`) thì cảnh báo rồi
+buông. Lý do nó tồn tại: kênh hai đường của 7.2 chỉ giúp được nếu file thật sự được ghi, mà lúc hay quên nhất chính là lúc
+kết lượt (P-26: bốn báo cáo mất trắng một buổi; tám việc được đánh dấu xong bởi riêng đồng hồ). Lý do chỉ chặn một lần:
+cửa không bao giờ mở là cửa chặn việc chứ không chặn lỗi. Im lặng trừ khi đủ bốn điều kiện (`.sdd/roles` · suy được vai ·
+hàng đợi nói vai đó giữ việc · chưa có `ket=` cuối); không dùng node. Kèm `queue.sh giu [vai]`, chỉ đọc, chạy ở mọi
+worktree — hook hỏi câu này thay vì chép lại bộ đọc bảng.
+
+**Dọn làn: nói ra, không tự xóa (P-57).** `queue.sh done` trên việc mở cuối cùng của một UC chạy
+`role.sh --don --dry-run` (không xóa gì) và in lệnh dọn thật. `--don` **từ chối `--force` đích danh**: việc git không chịu
+xóa worktree còn việc dở chính là điểm của nó. `--don` còn **kê các stash đã tạo trên nhánh của làn đó và in lệnh drop mà
+không drop** — stash là một danh sách chung cả kho, không đi theo worktree, và đã drop thì không lấy lại được;
+`--worktree` nói điều đó ngay lúc tạo.
+
+**Hai bố trí worktree, cả hai chính thức.** Làn code (D, T) mỗi vai một worktree; làn chữ (B, C, R, G) **một worktree
+chung, mỗi pane một `SDD_ROLE`**. Đo ở runxops 24/09 từ 19:10: bốn vai, hai giờ, 9 việc xong, 2 cổng ký, 0 xung đột
+file. Chạy được vì các vai này ghi file khác nhau và cần đọc chữ của nhau ngay. `skills/orchestrate` nói rõ cả hai, và
+nói rõ `queue.sh add|take|done|stop` và `phieu.sh muc-luc --gom` chỉ chạy ở checkout chính còn `next|board|list|giu`
+chạy ở mọi nơi.
+
+Ca 62 — hai chiều của P-58 (`kiem=` trích `ket=xong` khi việc xong, và khi việc bị chặn), `SDD_ROLE` nhiều chữ qua cả
+`role_current` lẫn đường hook, bốn trạng thái của hook `Stop` (im · chặn · buông · im lại) kèm phép kiểm JSON hợp lệ,
+`--force` bị từ chối, và gợi ý dọn làn.
+
 ## 8.5.0 — 2026-09-24
 
 Hai thay đổi do chủ dự án chốt sau khi đo lại chính runxops, không phải do một phiếu lỗi.

@@ -119,6 +119,28 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   Mượn cách BÁO của GitHub Spec Kit (`analyze` của nó kết bằng lệnh cụ thể phải gõ — `templates/commands/analyze.md:198`,
   v1.0.11), **không mượn cách làm**: Spec Kit chỉ cưỡng chế "file tiền đề có tồn tại không" (`check-prerequisites.sh:139-162`,
   toàn `[[ ! -f ]]`), không githook, và `analyze` của nó không để lại dấu vết nào — đúng lỗi #29 đã chẩn.
+- **Một dòng KETQUA chỉ được CÓ MỘT người đọc** (8.6.0, P-58). `kq_field` của `lib.sh` đọc **lần xuất hiện đầu** của
+  mỗi trường; `role.sh --ketqua` ghi trường theo thứ tự cố định và chỉ `kiem=` có dấu cách, nên trường đầu luôn là trường
+  thật. Tới 8.5.0 có hai người đọc và họ nói ngược nhau: `queue.sh done` dùng `grep -oE 'ket=[a-z]+'` — `-o` in MỌI khớp,
+  nên một `kiem=` có trích `ket=xong` của vai khác làm `KET` thành hai dòng và `done` từ chối "xong, not xong"; `board`
+  đọc đúng dòng đó bằng glob `*ket=xong*` và nói xong (runxops, b-032-ap-232, 20:31). Hai câu trả lời cho một việc, ở
+  đúng cửa đánh dấu việc đã xong. Thêm chỗ đọc KETQUA thì gọi `kq_field`, đừng viết phép đọc thứ hai dù nó cẩn thận hơn.
+- **Tên vai là TỪ ĐẦU TIÊN của `SDD_ROLE`** (8.6.0). Điều phối mở pane với `SDD_ROLE="C review opus"` (vai · việc · model)
+  là đang nói vai C. `role_norm` dùng ở `role_current` **và** ở nhánh `--staged|--commit` của `role.sh` — nhánh sau đọc
+  thẳng `$SDD_ROLE`, nên sửa mỗi `role_current` thì hook vẫn báo "the role 'C review opus' is not in .sdd/roles" trong
+  khi commit vẫn đi qua: một thông điệp sai cả hai chiều.
+- **Hai bố trí worktree, cả hai chính thức** (8.6.0). Làn code (D, T) mỗi vai một worktree — hai agent sửa chung một cây
+  nguồn thì đè trạng thái làm việc của nhau. Làn chữ (B, C, R, G) **một worktree chung, mỗi pane một `SDD_ROLE`**: đo ở
+  runxops 24/09 từ 19:10 — bốn vai, hai giờ, 9 việc xong, 2 cổng ký, 0 xung đột file. Chạy được vì các vai này ghi **file
+  khác nhau** và cần đọc chữ của nhau **ngay**; vai spec ngồi worktree riêng là mọi vai khác đọc `main` cũ tới lúc merge.
+  `SDD_ROLE` khó giả đúng bằng dấu worktree và vì cùng lý do: môi trường của pane do người mở pane đặt, ngoài git, agent
+  bên trong không đổi được. Đừng bỏ bố trí nào để có "một quy tắc duy nhất" — hai làn hỏng theo hai kiểu khác nhau.
+- **Hook `Stop` chặn MỘT lần, không chặn mãi** (8.6.0, P-59). `stop-ketqua.sh` chặn khi một vai kết lượt mà việc đang giữ
+  chưa có KETQUA cuối, in đúng dòng lệnh phải gõ; lần hai (`stop_hook_active`) cảnh báo rồi buông. Một cửa không bao giờ
+  mở là cửa chặn VIỆC chứ không chặn lỗi — khác với cổng DoR, nơi không đạt là không qua. Nó **im lặng** trừ khi đủ cả bốn:
+  có `.sdd/roles` · suy được vai · hàng đợi nói vai đó đang giữ việc · việc đó chưa có `ket=` cuối. Hook chạy ở MỌI phiên cài
+  plugin, nên nghi ngờ gì là `exit 0` không một lời, và nó không dùng node: hook cần runtime là hook hỏng im lặng trên máy
+  không có runtime.
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 

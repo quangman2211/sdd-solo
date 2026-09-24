@@ -8,6 +8,9 @@
 #   queue.sh stop <key> <stop name> [reason]                → STOP-<name>; the name must be declared in notes/uy-quyen.md ## Stop points
 #   queue.sh board [--qua-han <minutes>]                    the assignment board: active (who, how long, is there a KETQUA) · ready · waiting · stopped
 #   queue.sh list                                           print the table
+#   queue.sh giu [role]                                     read-only: the active items that role still holds + the last ket= of each
+#
+# add · take · done · stop run ONLY in the main checkout (the coordinator). list · next · board · giu read anywhere.
 #
 # ONLY THE COORDINATOR WRITES: add|take|done|stop refuse to run in a secondary worktree (git-dir ≠ git-common-dir). An agent
 # only writes a KETQUA; `done` reads the KETQUA, checks the anchor, and only then writes the row — a write conflict disappears
@@ -52,6 +55,26 @@ ready_list() { # a waiting item whose Needs are all done and whose lane has room
   done
 }
 
+# After a job finishes: was it the last open item of its UC? Then the lane of that UC has nothing left in it.
+# 8.6.0 (P-57): --worktree got its opposite in 8.2.0 and nobody ran it — measured at runxops, 4 workspaces and 18
+# branches of closed UCs were still there and the owner found them, not a check. The state that knows a lane is
+# finished lives here, in the queue, so this is where it gets said. It only LOOKS: --dry-run removes nothing, and
+# the real command is printed rather than run, because deleting a lane deletes the only copy of somebody work.
+lane_done_hint() {
+  local u rest
+  [ -n "$(roles_file "$ROOT")" ] || return 0
+  # The UC can be in the key, in the anchor (`.sdd/gate/UC-012.ok` is the usual one) or in the KETQUA line. Not in
+  # the note: `take` overwrites that cell with the held-by stamp, so anything written there at `add` is already gone.
+  u="$(printf '%s\n%s\n' "$(row_of "$1")" "$(tail -1 "$(ketqua_dir "$ROOT")/$1.txt" 2>/dev/null)" \
+       | grep -oE '([Uu][Cc]|[Cc][Hh][Gg])-[0-9]{3}' | head -1 | tr 'a-z' 'A-Z')"
+  [ -n "$u" ] || return 0
+  rest="$(rows | awk -F'|' -v re="^($K_ACT|$K_WAIT)\$" '$5 ~ re' | grep -cE "(^|[^A-Za-z0-9])$u([^0-9]|\$)")"
+  [ "$rest" = 0 ] || { info "$u still has $rest open item(s) in the queue - its lane stays as it is"; return 0; }
+  info "$u has no open item left in the queue. What its lane still holds:"
+  bash "$HERE/role.sh" --don "$u" --dry-run 2>&1 | sed 's/^/    /'
+  info "clean it for real when you agree:  bash .sdd/scripts/role.sh --don $u"
+}
+
 case "$CMD" in
 add)
   need_q; need_main; K="$2"; L="$3"; V="$4"; shift 4 2>/dev/null || { echo "usage: queue.sh add <key> <lane> <role> [--can \"k1 k2\"] [note]" >&2; exit 2; }
@@ -94,15 +117,17 @@ done)
       || { bad "ticket #$PN is not closed — it carries no $(kw_w p_applied "$ROOT"): stamp. Run phieu.sh close $PN first; an unclosed ticket does not finish a job"; exit 1; }
     set_row "$K" "trangthai=$W_DONE" "neo=${PF#$ROOT/}" "ghichu=$(kw_w c_ticket_w "$ROOT")$PN"
     commit_q "$K done (ticket #$PN)"; ok "$K → done · anchor ${PF#$ROOT/} (settled by ticket #$PN, not by redoing the work)"
+    lane_done_hint "$K"
     exit 0
   fi
   KF="$(ketqua_dir "$ROOT")/$K.txt"
   [ -f "$KF" ] || { bad "$K has no KETQUA yet ($KF) — until the agent writes one it is not 'done'; time passing is not evidence"; exit 1; }
-  LAST="$(tail -1 "$KF")"; KET="$(printf '%s' "$LAST" | grep -oE 'ket=[a-z]+' | cut -d= -f2)"; NEO="$(printf '%s' "$LAST" | grep -oE 'neo=[^ ]+' | cut -d= -f2)"
+  LAST="$(tail -1 "$KF")"; KET="$(kq_field ket "$LAST")"; NEO="$(kq_field neo "$LAST")"
   [ "$KET" = xong ] || { bad "the latest KETQUA of $K is ket=$KET, not xong: $LAST"; exit 1; }
   [ -n "$NEO" ] && [ "$NEO" != "-" ] || { bad "a KETQUA of xong with no anchor — done without an anchor is red"; exit 1; }
   set_row "$K" "trangthai=$W_DONE" "neo=$NEO"
   commit_q "$K done ($NEO)"; ok "$K → done · anchor $NEO"
+  lane_done_hint "$K"
   ;;
 stop)
   need_q; need_main; K="$2"; NAME="$3"; shift 3 2>/dev/null; valid_key "$K"
@@ -113,6 +138,18 @@ stop)
   if [ ! -f "$UY" ]; then warn "there is no notes/uy-quyen.md — the stop name cannot be checked"; fi
   set_row "$K" "trangthai=$W_STOP-$NAME" "ghichu=$*"
   commit_q "$K $W_STOP-$NAME"; ok "$K → $W_STOP-$NAME"
+  ;;
+giu)
+  # Read-only and worktree-safe (qtext reads the main copy from a secondary worktree). One line per item the role
+  # still holds: `<key>|<last ket=>`, empty after the bar when there is no KETQUA at all. The Stop hook asks exactly
+  # this question, and so does an agent wondering what it is still carrying.
+  need_q; V="${2:-$(role_current "$ROOT")}"; [ -n "$V" ] || exit 0
+  KD="$(ketqua_dir "$ROOT")"
+  rows | awk -F'|' -v re="^($K_ACT)\$" '$5 ~ re' | while IFS='|' read -r k l v c s n g; do
+    [ "$v" = "$V" ] || printf '%s' "$g" | grep -qE "($K_HELD): *$V([^A-Za-z0-9_-]|\$)" || continue
+    if [ -f "$KD/$k.txt" ]; then kt="$(kq_field ket "$(tail -1 "$KD/$k.txt")")"; else kt=""; fi
+    printf '%s|%s\n' "$k" "$kt"
+  done
   ;;
 list) need_q; qtext | sed -nE "/$(kwh work)/,\$p";;
 board)
@@ -125,7 +162,8 @@ board)
     who="$(printf '%s' "$g" | grep -oE "($K_HELD):[^@ ]*" | cut -d: -f2)"; t="$(printf '%s' "$g" | grep -oE '@[0-9T:-]+' | tr -d '@')"
     age=""; if [ -n "$t" ]; then ts="$(date -j -f '%Y-%m-%dT%H:%M' "$t" +%s 2>/dev/null || date -d "$t" +%s 2>/dev/null)"; [ -n "$ts" ] && age=$(( (NOW - ts) / 60 )); fi
     flag=""; if [ -f "$KD/$k.txt" ]; then
-      case "$(tail -1 "$KD/$k.txt")" in *ket=xong*) flag="✓ KETQUA says xong — queue.sh done $k";; *ket=chan*) flag="✗ KETQUA blocked: $(tail -1 "$KD/$k.txt" | grep -oE 'hoi=[^ ]+')";; *) flag="KETQUA: $(tail -1 "$KD/$k.txt" | grep -oE 'ket=[^ ]+')";; esac
+      KL="$(tail -1 "$KD/$k.txt")"
+      case "$(kq_field ket "$KL")" in xong) flag="✓ KETQUA says xong — queue.sh done $k";; chan) flag="✗ KETQUA blocked: hoi=$(kq_field hoi "$KL")";; *) flag="KETQUA: ket=$(kq_field ket "$KL")";; esac
     elif [ -n "$age" ] && [ "$age" -gt "$QH" ]; then flag="suspected-dead (${age} minutes, no KETQUA) — go and look, do not change the state by itself"; fi
     printf '  %-24s role %-3s held %-10s %6s min  %s\n' "$k" "$v" "${who:-?}" "${age:--}" "$flag"
   done

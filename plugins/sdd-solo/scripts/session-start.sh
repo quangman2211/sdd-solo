@@ -41,7 +41,7 @@ RV="$(role_current "$ROOT")"
 if [ -n "$RV" ] && [ -n "$(roles_file "$ROOT")" ] && role_known "$RV" "$ROOT"; then
   RN="$(role_name "$RV" "$ROOT")"
   QB=""; [ -x "$HD/queue.sh" ] && [ -f "$ROOT/notes/hang-doi.md" ] && QB="$(bash "$HD/queue.sh" list 2>/dev/null | grep -E "^\| *[a-z0-9][a-z0-9._-]* *\|" | awk -F'|' -v v="$RV" -v re="^($(kw q_active)|$(kw q_wait))\$" '{a=$4; b=$6; gsub(/^ +| +$/,"",a); gsub(/^ +| +$/,"",b)} a==v && b ~ re' | cut -c1-160 | tr '\n' ';')"
-  KQ=""; for kf in "$(ketqua_dir "$ROOT")"/$(printf '%s' "$RV" | tr 'A-Z' 'a-z')-*.txt; do [ -f "$kf" ] && KQ="$KQ $(basename "$kf" .txt)=$(tail -1 "$kf" | grep -oE 'ket=[a-z]+' | cut -d= -f2)"; done
+  KQ=""; for kf in "$(ketqua_dir "$ROOT")"/$(printf '%s' "$RV" | tr 'A-Z' 'a-z')-*.txt; do [ -f "$kf" ] && KQ="$KQ $(basename "$kf" .txt)=$(kq_field ket "$(tail -1 "$kf")")"; done
   LAG=""; MB="$(git -C "$ROOT" show-ref --verify --quiet refs/heads/main && echo main || echo master)"
   if [ "$(cd "$ROOT" && git rev-parse --git-dir)" != "$(cd "$ROOT" && git rev-parse --git-common-dir)" ]; then
     NB="$(git -C "$ROOT" rev-list --count "HEAD..$MB" 2>/dev/null)"; LAG=" A secondary worktree, $MB is ${NB:-?} commits ahead — open the round with: git merge $MB (the hooks, the gate markers and .sdd/version here are this branch copies)."

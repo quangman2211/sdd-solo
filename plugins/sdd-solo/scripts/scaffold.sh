@@ -260,7 +260,7 @@ fi
 # plugin installed (CI, whoever clones the repo). The price: the copy can drift in version — .sdd/version is
 # compared with the plugin version, and session-start and status warn about a mismatch.
 mkdir -p "$ROOT/.sdd/scripts"
-KEEP="lib.sh mermaid.sh numbers.sh role.sh phieu.sh queue.sh hoi-check.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
+KEEP="lib.sh mermaid.sh numbers.sh role.sh stop-ketqua.sh phieu.sh queue.sh hoi-check.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
 for f in $KEEP; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done
