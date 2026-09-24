@@ -23,6 +23,11 @@ The DoR gate for `$1`.
 "${CLAUDE_PLUGIN_ROOT}/scripts/pass.sh" gate $1
 ```
 The script sets `Status: reviewed`, writes `.sdd/gate/$1.ok`, and commits `docs($1): spec reviewed — DoR gate passed`.
+
+**A UC brought back from `deprecated` does not come here.** Its status is already `implemented`, which this gate calls red, so
+there is no way through — and `deprecate` took its marker away. `bash .sdd/scripts/pass.sh restore UC-###` recovers the marker
+from git history (8.7.0, P-61). It recovers, it does not issue: no marker in the history means red, and it says how many commits
+have touched the UC since that gate so a stale baseline is visible rather than silently blessed.
 4. STATE.md: `Working on: $1 · step ⑨ done — ready for /sdd-solo:design`. `Next: /sdd-solo:design $1, read design.md before the first line of code`.
 5. Remind the user of three things to look for while reading `design.md`: is the RULE checked before the record is created; does the RULE's logic sit in the domain or in an adapter; do the state transitions follow the state diagram.
 

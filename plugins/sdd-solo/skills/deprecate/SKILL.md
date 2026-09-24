@@ -42,6 +42,10 @@ forgotten, and STATE carried the debt for days. Four separate jobs means one of 
    - `**Status:** deprecated` + today's `Last updated` in the UC file;
    - `## History` v+1 **in `UC-###.trace.md`** (beside the UC, 8.0.0): `deprecated — <reason> · replaced by <UC-###>`;
    - removes `.sdd/gate/$1.ok` (from then on the githook blocks `feat($1)`: a retired UC gets no more code commits in its name);
+     **if this UC ever comes back** (Status back to `implemented`, a `## History` entry saying why), the marker does not come
+     back with it, and both doors that need it are shut: `gate-check` calls an implemented status red, `change-check` calls a
+     missing marker red. Recover the one git still holds with `bash .sdd/scripts/pass.sh restore UC-###` (8.7.0, P-61) — it
+     reads the old blob out of the history and refuses if there is none, so line 1 stays the ORIGINAL gate commit;
    - the Status column in the `## Related Use Cases` table of that slice's `br.md` → `deprecated`;
    - one line in `specs/decisions.md` (root): `- <date> — Retire $1 (<reason>). Rejected: keep $1. Detail: <replacement UC>`.
    Print the output verbatim.

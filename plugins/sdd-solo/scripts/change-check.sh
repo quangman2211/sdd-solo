@@ -60,6 +60,7 @@ for u in $UCS; do
     bad "$u is '$UST', not implemented — edit it directly in Phase 3 (History v+1), do not open a change"
   elif [ ! -f "$ROOT/.sdd/gate/$u.ok" ]; then
     bad "$u is implemented but there is no .sdd/gate/$u.ok — the baseline cannot be trusted"
+    info "if $u was brought back from deprecated, the marker is still in git: bash .sdd/scripts/pass.sh restore $u (8.7.0)"
   else ok "$u is implemented and passed the gate"; fi
 done
 for r in $(printf '%s' "$SC" | grep -oE 'RULE-[0-9]+' | sort -u); do

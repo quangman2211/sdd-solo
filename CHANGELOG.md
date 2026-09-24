@@ -1,5 +1,35 @@
 # Changelog
 
+## 8.7.0 — 2026-09-25
+
+**UC sống lại sau deprecate thì lấy lại được marker (P-61).** `pass.sh deprecate` gỡ `.sdd/gate/UC-###.ok` — đúng, UC bị bỏ
+không giữ cổng — nhưng không gì đặt nó lại, và hai cửa cần nó cùng đóng: `gate-check` gọi status `implemented` là đỏ nên
+`pass.sh gate` không chạy được, `change-check` đỏ "implemented mà không có .ok — baseline không tin được". Ở runxops 25/09
+(UC-012 v14, CHG-007) lối ra duy nhất là moi blob cũ khỏi git bằng tay (37978d72).
+
+`pass.sh restore <UC>` **phục hồi**, không cấp mới — đó là toàn bộ thiết kế. Nó đọc blob cũ từ lịch sử nhánh; không có thì đỏ và
+không tạo file nào. **Dòng 1 giữ nguyên hash cổng GỐC**, nên mọi người đọc lần theo marker vẫn tới đúng commit cổng đã xảy ra,
+không phải hôm nay; dòng `restored:` nói rõ nó là bản phục hồi, lấy từ commit nào, ai chạy. UC còn `draft`/`reviewed` thì nó chỉ
+đường về cổng thật; UC còn `deprecated` thì bảo mang nó sống lại trước. Sau khi phục hồi nó **đếm số commit đã động vào thân UC
+kể từ cổng đó** và cảnh báo — một baseline cũ là việc để nhìn, không phải luật mới, nên nó không chặn. Cả hai cửa đang đóng giờ
+nói ra lối này (8.5.0: một phát hiện phải nói đi đâu tiếp).
+
+**`gate-check --pre` không còn đọc chú thích HTML là ô trống (P-62).** Guard tới 8.6.0 chỉ bỏ qua dòng **bắt đầu** bằng `<!--`,
+nên `- **Owner:** anh <!-- hỏi lại ở vòng sau -->` đọc thành ô trống `<!-- hỏi ... -->` — mà một chú thích thì không có gì để điền,
+nên đỏ ở đó không có lối ra nào cả (runxops UC-012, 25/09). Giờ chú thích bị **gỡ** trước khi so, kể cả khối trải nhiều dòng —
+giữa một khối như thế chính là chỗ một `<Tên>` của khuôn cũ nằm lại. Không nới tay: một `<...>` thật ngoài chú thích vẫn đỏ.
+Cuột Actor/Trigger/Flow sửa cùng bẫy.
+
+**`role_current` không tìm thấy vai là một CÂU TRẢ LỜI, không phải một lỗi — và đó là lỗi của 8.4.0.** Hàm kết thúc bằng
+`grep -q` của vòng lặp, nên không suy được vai thì nó trả exit 1. `pass.sh` chạy `set -e`, và khối chữ ký 8.4.0 gọi
+`SV="$(role_current "$ROOT")"` như một lệnh đứng một mình — nên một repo có khai `<vai>.ky` mà không suy được vai làm
+`pass.sh gate` **chết im lặng, exit 1, không một dòng** — đúng ca mà chính comment 8.4.0 gọi là được phép ("chủ dự án ở
+checkout không đánh dấu"). Chữa ở gốc: `role_current` `return 0`. Phát hiện khi kiểm tay `restore` trên một repo có `.ky`,
+không phải từ báo cáo — một lỗi im lặng thì không ai báo được.
+
+Ca 63 — chú thích cuối dòng, khối nhiều dòng, và ô trống thật vẫn đỏ; vòng đủ của P-61 (qua cổng → deprecate → sống lại →
+restore), chạy lần hai bị từ chối, lịch sử không có thì đỏ và không tạo file, UC draft thì chỉ về cổng thật, và cửa đóng phải nói ra lối; cộng hai phép đo cho mìn `set -e` ở trên.
+
 ## 8.6.0 — 2026-09-24
 
 **Một dòng KETQUA, một người đọc (P-58, lỗi của 8.4.0).** `queue.sh done` đọc `ket=` bằng

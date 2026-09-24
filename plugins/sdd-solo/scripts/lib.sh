@@ -687,8 +687,14 @@ role_current() {
   br="$(git -C "$1" symbolic-ref --quiet --short HEAD 2>/dev/null)"
   for v in $(role_list "$1"); do
     p="$(role_branch "$v" "$1")"; [ -n "$p" ] || continue
-    printf '%s' "$br" | grep -qE "$(glob_re "$p")" && { printf '%s' "$v"; return; }
+    printf '%s' "$br" | grep -qE "$(glob_re "$p")" && { printf '%s' "$v"; return 0; }
   done
+  # 8.7.0: "no role here" is an ANSWER, not a failure. Without this the function returns the status of the last
+  # `grep -q` of the loop, i.e. 1, and every caller running under `set -e` dies where it meant to carry on: the
+  # 8.4.0 signing block does `SV="$(role_current "$ROOT")"` as a standalone command, so a repo that declares a
+  # `<role>.ky` but cannot infer a role killed `pass.sh gate` with exit 1 and NOT ONE LINE of output - which is
+  # exactly the case its own comment calls allowed ("the owner in an unmarked checkout").
+  return 0
 }
 # git_common <root> → the git directory SHARED by every worktree (the main checkout's .git). Locks and KETQUA go here:
 # .sdd/ is inside the working tree, so each worktree has its own copy — a lock there is invisible to exactly what it must block.

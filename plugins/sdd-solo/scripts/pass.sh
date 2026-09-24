@@ -13,8 +13,8 @@ set -e
 MODE="${1:-}"; ID="${2:-}"
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib.sh"
 case "$MODE" in
-  gate|close|change|deprecate) ;;
-  *) echo "Usage: pass.sh <gate|close|change|deprecate> <ID>" >&2; exit 2;;
+  gate|close|change|deprecate|restore) ;;
+  *) echo "Usage: pass.sh <gate|close|change|deprecate|restore> <ID>" >&2; exit 2;;
 esac
 [ -z "$ID" ] && { echo "Usage: pass.sh $MODE <ID>" >&2; exit 2; }
 ROOT="$(project_root)"
@@ -78,6 +78,59 @@ mark() {
 }
 
 case "$MODE" in
+
+restore)
+  # 8.7.0 (P-61): a UC that was dropped and then brought back. `pass.sh deprecate` removes .sdd/gate/<UC>.ok -
+  # correctly, a dropped UC holds no gate - but nothing ever put it back, and both doors that need it are shut:
+  # gate-check calls an `implemented` status red, so `pass.sh gate` can never run, and change-check goes red with
+  # "implemented but there is no .sdd/gate/<UC>.ok". Measured at runxops on 2026-09-25 (UC-012 back from
+  # deprecated at v14, CHG-007): the only way out was digging the old blob out of git by hand (37978d72).
+  #
+  # This does NOT write a new pass, and that is the whole design. It RECOVERS one git still has and refuses when
+  # git has none - the same rule as everywhere else here (8.4.0: no stamping a pass it has not seen happen), just
+  # pointed at the history instead of at a check. Line 1 stays the ORIGINAL gate commit hash, so every reader that
+  # follows the marker back still lands on the commit where the gate actually happened, not on today.
+  F="$(find_uc "$ID" "$ROOT")"; [ -z "$F" ] && exit 1
+  MK="$ROOT/.sdd/gate/$ID.ok"
+  [ -f "$MK" ] && { bad "$ID already has .sdd/gate/$ID.ok - there is nothing to restore"; exit 1; }
+  ST="$(sed -n 's/.*\*\*Status:\*\* *//p' "$F" | head -1 | awk '{print $1}')"
+  case "$ST" in
+    implemented|applying) ;;
+    draft|reviewed) bad "$ID is '$ST' - a UC that has not been through the gate gets its marker FROM the gate, not from here"
+                    info "bash .sdd/scripts/pass.sh gate $ID"; exit 1;;
+    deprecated) bad "$ID is deprecated - a dropped UC holds no gate marker. Bring it back first (Status + a ## History entry saying why), then run this"; exit 1;;
+    *) bad "$ID has an unreadable status: '$ST'"; exit 1;;
+  esac
+  C="$(git -C "$ROOT" rev-list -1 HEAD -- ".sdd/gate/$ID.ok" 2>/dev/null)"
+  OLD=""; SRC=""
+  if [ -n "$C" ]; then
+    if OLD="$(git -C "$ROOT" show "$C:.sdd/gate/$ID.ok" 2>/dev/null)" && [ -n "$OLD" ]; then SRC="$C"
+    elif OLD="$(git -C "$ROOT" show "$C^:.sdd/gate/$ID.ok" 2>/dev/null)" && [ -n "$OLD" ]; then SRC="$(git -C "$ROOT" rev-parse "$C^")"; fi
+  fi
+  if [ -z "$OLD" ]; then
+    bad "this branch history holds no .sdd/gate/$ID.ok - there is no pass to recover, and this does not invent one"
+    info "if $ID really did go through the gate, that commit is on another branch: fetch or merge it, then run this again"
+    info "if it never did, then it is not implemented either - fix the Status and take it through /sdd-solo:gate"
+    exit 1
+  fi
+  GH="$(printf '%s' "$OLD" | head -1)"
+  RV=""; if role_sign_declared "$ROOT"; then RV="$(role_current "$ROOT")"; fi
+  mkdir -p "$ROOT/.sdd/gate"
+  printf '%s\n' "$OLD" > "$MK"
+  printf 'restored: %s from %s%s\n' "$(today)" "$SRC" "${RV:+ by $RV}" >> "$MK"
+  git -C "$ROOT" add ".sdd/gate/$ID.ok" \
+    && git -C "$ROOT" commit -q --only -m "chore(sdd): gate marker $ID restored from $SRC" -- ".sdd/gate/$ID.ok" || true
+  ok "marker .sdd/gate/$ID.ok recovered from $SRC - gate commit $GH"
+  # A recovered marker says a gate happened, not that it still fits. How far the spec has moved since is a fact
+  # worth putting on the screen; it is NOT a new rule, so nothing here blocks on it.
+  N="$(git -C "$ROOT" rev-list --count "$GH..HEAD" -- "$F" 2>/dev/null || printf 0)"
+  case "$N" in ''|*[!0-9]*) N=0;; esac
+  if [ "$N" -gt 0 ]; then
+    warn "$N commit(s) have touched ${F#$ROOT/} since that gate - the marker is back, the baseline is as old as it says"
+    info "if the spec has really moved, the honest route is Phase 5 (/sdd-solo:change $ID), not this marker"
+  fi
+  printf 'RESTORED %s. Marker back, status untouched (%s).\n' "$ID" "$ST"
+  ;;
 
 gate)
   F="$(find_uc "$ID" "$ROOT")"; [ -z "$F" ] && exit 1

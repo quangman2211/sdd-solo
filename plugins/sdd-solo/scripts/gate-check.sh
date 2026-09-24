@@ -88,6 +88,20 @@ if [ "$PRE" = "1" ]; then
   # lets it through and br-check only warns; this branch is the only one that blocks.
   # '<...>' still goes red everywhere, Open Questions included. See #23.
   PHALL="$(awk -v TRACE="$(kwh trace)" -v SKIPPH="$(kw rundate)|$(kw output)" '
+    # 8.7.0 (P-62): an HTML comment is a note to the writer, not an unfilled spot - and there is nothing in it
+    # to fill in, so going red over one leaves no way out at all. Up to 8.6.0 only a line STARTING with `<!--`
+    # was skipped, so `- **Owner:** anh <!-- ask again next round -->` read as the placeholder `<!-- ask ... -->`
+    # (runxops UC-012, 2026-09-25). A block that spans lines is tracked with `inc`, because the middle of one is
+    # exactly where a stale `<Name>` from an old template sits.
+    function nocomment(s,   a, b) {
+      if (inc) { b = index(s, "-->"); if (b == 0) return ""; s = substr(s, b + 3); inc = 0 }
+      while ((a = index(s, "<!--")) > 0) {
+        b = index(substr(s, a + 4), "-->")
+        if (b == 0) { inc = 1; return substr(s, 1, a - 1) }
+        s = substr(s, 1, a - 1) substr(s, a + 4 + b + 2)
+      }
+      return s
+    }
     /^## Open Questions/ { oq=1; dl=0; next }
     # ## Re-read belongs to step ⑧, and this branch runs at step ⑦ — it being STILL a template is on
     # schedule, not unfilled. Without skipping it --pre goes red, adversarial refuses to run, and there
@@ -102,9 +116,9 @@ if [ "$PRE" = "1" ]; then
       if (dl) next
       # 7.4 (P-38): text inside code ticks is real text (`<tr>` is an HTML tag name), not a placeholder.
       t = $0; gsub(/`[^`]*`/, "", t)
+      t = nocomment(t)
       ang = (t ~ /<[^>]+>/); us = (t ~ /___/)
       if (!ang && !us) next
-      if ($0 ~ /^[[:space:]]*<!--/) next
       if ($0 ~ SKIPPH) next
       if (oq && !ang) next
       printf "%d:%s\n", NR, $0
@@ -162,7 +176,11 @@ fi
 step "⓪ Status: the UC file itself — **Status:** draft|reviewed"
 STL="$(grep -E '\*\*Status:\*\*' "$F" | head -1)"; echo "$STL" | grep -q '|' && bad "Status is still a list of choices — pick one value"
 ST="$(echo "$STL" | grep -oE '\*\*Status:\*\* *[a-z]+' | awk '{print $2}')"
-case "$ST" in draft|reviewed) ok "status: $ST";; implemented) bad "status is already implemented — use Phase 5 (specs/changes/) to change behaviour";; deprecated) bad "status deprecated — the UC was dropped (#45); open a replacement UC recorded in ## History, not through this gate";; *) bad "invalid status: '$ST'";; esac
+case "$ST" in draft|reviewed) ok "status: $ST";; implemented) bad "status is already implemented — use Phase 5 (specs/changes/) to change behaviour"
+    # 8.7.0 (P-61): an implemented UC with NO gate marker is the one shape this door cannot help with - it is
+    # red here and red in change-check, and neither said where to go. A UC brought back from deprecated is how
+    # you get there (pass.sh deprecate removes the marker).
+    [ -f "$ROOT/.sdd/gate/$ID.ok" ] || info "$ID has no .sdd/gate/$ID.ok either - if it was brought back from deprecated, recover the marker git still holds: bash .sdd/scripts/pass.sh restore $ID";; deprecated) bad "status deprecated — the UC was dropped (#45); open a replacement UC recorded in ## History, not through this gate";; *) bad "invalid status: '$ST'";; esac
 
 # 1. the required sections
 # 8.0.0: ## History left this list. It is the one required section that is EVIDENCE, and evidence now lives in
@@ -174,7 +192,7 @@ for sec in "## Actor" "## Trigger" "## Preconditions" "## Main Flow" "## Excepti
 done
 if [ -n "$(ev_body history "$F" | tr -d '[:space:]')" ]; then ok "has ## History"
 else bad "missing ## History — it belongs in $(basename "$(trace_of "$F")") (8.0.0), or still in the UC body on a repo that has not run migrate.sh --trace"; fi
-grep -qE '<[^>]*>' <(sed -n '/^## Actor/,/^## Alternative/p' "$F" | grep -vE '^\s*$|^##') && warn "a <...> placeholder is left in Actor/Trigger/Flow"
+grep -qE '<[^>]*>' <(sed -n '/^## Actor/,/^## Alternative/p' "$F" | sed -E 's/<!--.*-->//g' | grep -vE '^\s*$|^##') && warn "a <...> placeholder is left in Actor/Trigger/Flow"
 
 # 2. AC vs E#
 step "② the UC content — every AC needs its E#, and every E# an AC"

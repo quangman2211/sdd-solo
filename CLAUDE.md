@@ -141,6 +141,19 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   có `.sdd/roles` · suy được vai · hàng đợi nói vai đó đang giữ việc · việc đó chưa có `ket=` cuối. Hook chạy ở MỌI phiên cài
   plugin, nên nghi ngờ gì là `exit 0` không một lời, và nó không dùng node: hook cần runtime là hook hỏng im lặng trên máy
   không có runtime.
+- **Marker cổng được PHỤC HỒI, không được CẤP LẠI** (8.7.0, P-61). `pass.sh restore <UC>` đọc blob cũ từ lịch sử nhánh;
+  lịch sử không có thì đỏ và không tạo file nào — cùng luật 8.4.0 ("không đóng dấu một lần qua mà nó chưa thấy"), chỉ là
+  chĩa vào lịch sử thay vì vào một phép kiểm. **Dòng 1 giữ nguyên hash cổng gốc**: mọi người đọc lần theo marker phải tới commit
+  cổng đã xảy ra, không tới ngày phục hồi. Đừng biến nó thành một cửa cấp marker (`--force`, `--new`): lúc đó nó là đúng cái cửa
+  8.4.0 vừa đóng. Số commit động vào thân UC kể từ cổng đó chỉ được **cảnh báo**, không chặn — đó là việc để nhìn, không phải luật mới.
+- **Hàm tra cứu trả RỖNG phải `return 0`** (8.7.0). "Không có" là một câu trả lời, không phải một lỗi. `role_current`
+  kết thúc bằng `grep -q` của vòng lặp nên trả exit 1 khi không suy được vai, và `pass.sh` chạy `set -e`: repo khai
+  `<vai>.ky` mà không suy được vai làm `pass.sh gate` chết im lặng ở đúng ca comment 8.4.0 gọi là được phép. Biết `[ c ] && lệnh`
+  cuối danh sách là mìn thôi chưa đủ — một phép GÁN từ `$(hàm)` cũng là một lệnh, và status của nó là status của hàm.
+- **Chú thích HTML không bao giờ là ô trống** (8.7.0, P-62). Một `<!-- ... -->` không có gì để điền, nên đỏ ở đó là đỏ
+  không lối ra — đúng loại đỏ CLAUDE.md cấm từ #23 và P-43. GỠ chú thích trước khi so, đừng đoán theo hình dạng dòng: guard cũ
+  chỉ bỏ qua dòng BẮT ĐẦU bằng `<!--` nên một chú thích cuối dòng Metadata vẫn đỏ, và giữa một khối trải nhiều dòng chính là chỗ
+  một `<Tên>` của khuôn cũ nằm lại. Nhưng không nới tay: `<...>` thật ngoài chú thích vẫn đỏ, và ca 63 giữ cả hai chiều.
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 
