@@ -1,5 +1,36 @@
 # Changelog
 
+## 8.4.2 — 2026-09-24
+
+### P-55 — §8 đọc đúng DÒNG ĐẦU của một Open Question, nên cổng đỏ oan
+
+`gate-check.sh` §8 lấy mục bằng `grep -E '^- \[ \]'`. Mục viết dài rồi xuống dòng thụt lề — **đúng cái khuôn
+120 cột mà chính plugin sinh ra** — thì `(quyết định tạm: …)` nằm ở dòng 2–4 và không ai thấy. Cùng gốc với
+P-54 ở `context.mjs`: **một mục danh sách là một KHỐI, không phải một dòng.**
+
+**Cổng đỏ oan là hỏng hóc đắt nhất repo này có thể có.** Cách sửa duy nhất là viết lại một spec vốn đã đúng, và
+sau hai lần như thế thì không ai tin lần đỏ kế tiếp nữa.
+
+Đo trên runxops: **5 trên 195 mục `- [ ]`** có cụm nằm *chỉ* ở dòng nối tiếp — gồm đúng hai mục C báo
+(`Agent.maxConcurrentProfiles`, mục Windows/macOS ở UC-015), cộng UC-017 và hai mục ở UC-032.
+
+Giờ gộp cả khối trước khi tìm, **và nêu tên mục vi phạm** (120 ký tự đầu). Tới 8.4.1 thông báo chỉ nói "có một
+Open Question thiếu", người sửa phải tự dò cả mục — đó là nửa còn lại của phiếu.
+
+Gộp bằng `awk`, **không bằng node**: cổng DoR phải chạy được ở CI và trên máy người vừa clone repo, nên phép
+kiểm này không bao giờ được thành một phép kiểm không chạy được.
+
+**Một chỗ đo ra khác lời phiếu, ghi lại cho đúng:** sau khi sửa, `gate-check UC-015` **vẫn đỏ** — nhưng vì hai
+mục *khác* (`Agent.longPollHold…` và `Agent.closeDeadline`) thật sự không có cụm ở bất cứ dòng nào; chúng ghi
+lý do ("giữ `___`, chưa đo") chứ không ghi một quyết định tạm. Đỏ đó **đúng**. Khác biệt là giờ cổng nêu tên
+hai mục ấy, nên nhìn một giây là biết vấn đề nằm ở cách viết chứ không phải ở phép kiểm.
+
+### Test
+
+Ca mới `60-open-question-nhieu-dong`, 5 phép, **3 đỏ trên 8.4.1**. Giữ cả hai chiều: cụm ở dòng nối tiếp thì
+tính, mục thiếu thật thì vẫn đỏ **và** phải nêu đúng tên nó, không kê nhầm mục đang có.
+Bộ test: **60 ca · 324 PASS · 0 FAIL**.
+
 ## 8.4.1 — 2026-09-24
 
 ### P-54 — `context.sh --brief` bỏ dòng mở của một Open Question đã đóng nhưng giữ khối nối tiếp

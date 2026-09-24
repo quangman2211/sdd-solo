@@ -371,8 +371,28 @@ else
 fi
 
 # 8. an open question must carry an interim decision
-OQ="$(sed -n '/^## Open Questions/,/^## /p' "$F" | grep -E '^- \[ \]')"
-if [ -n "$OQ" ]; then echo "$OQ" | grep -vqiE "$(kw interim)" && bad "an Open Question has no (interim decision: ...)" || ok "the Open Questions carry interim decisions"; fi
+# 8.4.2 (P-55): FOLD each item onto one line before looking. Up to 8.4.1 this grepped `^- [ ]`, i.e. the opening
+# line only, so an item wrapped at 120 columns - the shape the plugin templates themselves produce - hid its
+# `(interim decision: ...)` on line 2 to 4 and the gate went red on a UC that had one. Measured at runxops on
+# UC-015 (the `maxConcurrentProfiles` and Windows/macOS items) and UC-032. A FALSELY RED GATE is the one failure
+# this repo cannot have: the fix is to re-word a spec that was already right, and after doing that twice nobody
+# believes the next red either. Same root as P-54 in context.mjs - a list item is a BLOCK, not a line.
+# Folded with awk, not node: the DoR gate must run where node does not (CI, a fresh clone) and this check may
+# never become one that cannot run.
+OQ="$(sed -n '/^## Open Questions/,/^## /p' "$F" | awk '
+  /^- \[/                { if (cur != "") print cur; cur = $0; next }
+  /^[ \t]+[^ \t]/        { if (cur != "") { l = $0; sub(/^[ \t]+/, "", l); cur = cur " " l } next }
+                         { if (cur != "") print cur; cur = "" }
+  END                    { if (cur != "") print cur }' | grep -E '^- \[ \]')"
+if [ -n "$OQ" ]; then
+  OQM="$(printf '%s\n' "$OQ" | grep -viE "$(kw interim)")"
+  if [ -n "$OQM" ]; then
+    bad "an Open Question has no ($(kw_w interim "$ROOT"): ...)"
+    # Name the offending items. Without this the reader re-reads the whole section to find which one - measured
+    # at runxops as part of the same report.
+    printf '%s\n' "$OQM" | cut -c1-120 | sed 's/^/      /'
+  else ok "the Open Questions carry interim decisions"; fi
+fi
 
 # 9. the docs commit + a re-read with an unanchored mind
 #
