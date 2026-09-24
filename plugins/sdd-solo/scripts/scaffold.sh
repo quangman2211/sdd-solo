@@ -233,7 +233,7 @@ if [ ! -f "$ROOT/.sdd/config" ]; then
     echo "# every leftover becomes an Open Question or a ticket; under it nothing changes. Measured: rounds and"
     echo "# leftovers rise together (13 rounds / 105 Undecided in the worst case), so another round is not an"
     echo "# answer to the previous one. 0 switches the ceiling off and then nothing counts the rounds."
-    echo "rr_max=3"
+    echo "rr_max=2"
   } > "$ROOT/.sdd/config"
   ok ".sdd/config — code_paths=$DC · test_paths=$DT (probed from the repo; fix it if wrong)"
   # tests/ · __tests__/ · spec/ are three entirely different conventions. A wrong guess makes

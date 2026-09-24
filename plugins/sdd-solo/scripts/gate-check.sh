@@ -159,6 +159,7 @@ $l"
 fi
 
 # 0. status
+step "⓪ Status: the UC file itself — **Status:** draft|reviewed"
 STL="$(grep -E '\*\*Status:\*\*' "$F" | head -1)"; echo "$STL" | grep -q '|' && bad "Status is still a list of choices — pick one value"
 ST="$(echo "$STL" | grep -oE '\*\*Status:\*\* *[a-z]+' | awk '{print $2}')"
 case "$ST" in draft|reviewed) ok "status: $ST";; implemented) bad "status is already implemented — use Phase 5 (specs/changes/) to change behaviour";; deprecated) bad "status deprecated — the UC was dropped (#45); open a replacement UC recorded in ## History, not through this gate";; *) bad "invalid status: '$ST'";; esac
@@ -167,6 +168,7 @@ case "$ST" in draft|reviewed) ok "status: $ST";; implemented) bad "status is alr
 # 8.0.0: ## History left this list. It is the one required section that is EVIDENCE, and evidence now lives in
 # UC-###.trace.md — demanding it in the body would make every migrated repo red for having done the migration.
 # It is not unchecked: ev_history below asks for it wherever it is, which is the same question asked correctly.
+step "② write the UC content — the missing sections, by hand in the UC file"
 for sec in "## Actor" "## Trigger" "## Preconditions" "## Main Flow" "## Exceptions" "## Postconditions" "## Acceptance Criteria" "## Screens"; do
   grep -q "^$sec" "$F" && ok "has $sec" || bad "missing $sec"
 done
@@ -175,15 +177,18 @@ else bad "missing ## History — it belongs in $(basename "$(trace_of "$F")") (8
 grep -qE '<[^>]*>' <(sed -n '/^## Actor/,/^## Alternative/p' "$F" | grep -vE '^\s*$|^##') && warn "a <...> placeholder is left in Actor/Trigger/Flow"
 
 # 2. AC vs E#
+step "② the UC content — every AC needs its E#, and every E# an AC"
 EN="$(grep -cE '^- +(\*\*)?E[0-9]+[.:]' "$F")"; AN="$(grep -cE '^### AC-[0-9]+' "$F")"
 if [ "$AN" -ge 1 ] && [ "$AN" -ge $((EN+1)) ]; then ok "AC: $AN · Exceptions: $EN (≥ E# + 1)"; else bad "AC: $AN · Exceptions: $EN — need ≥ 1 AC for Main + 1 per E#"; fi
 grep -qE '^Given:' "$F" && grep -qE '^When:' "$F" && grep -qE '^Then:' "$F" && ok "ACs in Given/When/Then form" || bad "the ACs have no Given/When/Then"
 
 # 3. every E# has a row in the Screens table (the screens_check function at the top — shared with --pre)
+step "⑤ screens — the Screens table of the UC (one row per E#)"
 screens_check
 echo "$SCR" | grep -qE 'SCR-[0-9]+-[0-9]+' || bad "no SCR-###-# in ## Screens yet"
 
 # 4. a quoted RULE must exist in rules.md
+step "③ RULE + entity + glossary — write the RULE in rules.md before quoting it"
 for r in $(uc_text "$F" | grep -oE 'RULE-[0-9]+' | sort -u); do
   # grep -c prints "0" AND THEN exits 1, so a "|| echo 0" builds a two-line string and breaks
   # both comparisons below. Do not add a fallback here.
@@ -200,6 +205,7 @@ done
 # checklist asked for from the start — "number of error boundary events = number of E#" — was
 # never machine-checkable. .flow.md is text, so it can be counted for real, in both directions.
 # 2.0.0: the diagram lives INSIDE the UC directory, no longer in a context-level diagrams/.
+step "④ draw the flow — UC-###.flow.md, a mermaid block that parses"
 FL="$DIR/$ID.flow.md"
 BP="$DIR/$ID.bpmn"
 OLD="$ROOT/specs/contexts/$CTX/diagrams/$ID.bpmn"
@@ -257,6 +263,7 @@ else bad "missing ${DIR#$ROOT/}/$ID.flow.md (mermaid) — or $ID.bpmn if you sti
 # and #13 (a placeholder RULE). See #24.
 # 7.0 (T2): one file per entity in specs/core/entities/ + specs/<craft>/entities/; whichever entity the UC
 # uses is "the UC entities" (entity_cited). 6.x: the context entities.md, one file for all of them.
+step "③ RULE + entity + glossary — the entity/glossary files, with real content"
 EF="$EFALL"
 if [ -z "$EF" ]; then bad "missing entity — $(entity_hint)"
 else
@@ -324,6 +331,7 @@ if [ "$CTX" = core ] && [ -f "$HERE/layer-check.sh" ]; then
 fi
 
 # 7. the adversarial pass has content
+step "⑦ /sdd-solo:adversarial $ID"
 AP="$(ev_body adversarial "$F")"
 if echo "$AP" | grep -qE "($(kw rundate)): *[0-9]{4}-[0-9]{2}-[0-9]{2}"; then ok "the adversarial pass has run"; else bad "the ## Adversarial pass section has no 'Run date: YYYY-MM-DD'"; fi
 echo "$AP" | grep -qE "$(kw ph_advq)" && bad "the adversarial pass still has a placeholder"
@@ -379,6 +387,7 @@ fi
 # believes the next red either. Same root as P-54 in context.mjs - a list item is a BLOCK, not a line.
 # Folded with awk, not node: the DoR gate must run where node does not (CI, a fresh clone) and this check may
 # never become one that cannot run.
+step "② the UC content — give each Open Question an interim decision"
 OQ="$(sed -n '/^## Open Questions/,/^## /p' "$F" | awk '
   /^- \[/                { if (cur != "") print cur; cur = $0; next }
   /^[ \t]+[^ \t]/        { if (cur != "") { l = $0; sub(/^[ \t]+/, "", l); cur = cur " " l } next }
@@ -410,6 +419,7 @@ fi
 # the re-read means reading again, whatever the date. A reading that found nothing does not open the gate —
 # deliberately: an unanchored reading of a UC-sized spec that produces not one finding (not even one
 # rejected with "not a bug because") had too narrow a scope.
+step "⑧ /sdd-solo:verify $ID"
 RR="$(rr_lines "$F")"; RRN=0; RRU=0
 [ -n "$RR" ] && { RRN="$(printf '%s\n' "$RR" | rr_count)"; RRU="$(printf '%s\n' "$RR" | rr_undecided)"; }
 [ -z "$RRU" ] && RRU=0
@@ -545,4 +555,4 @@ fi
 git -C "$ROOT" status --porcelain -- "$DIR" $RFS 2>/dev/null | grep -q . && bad "there are uncommitted spec changes — commit docs($ID) first"
 
 echo
-if [ "$FAIL" -eq 0 ]; then echo "THROUGH THE GATE ($WARN warnings)."; exit 0; else echo "NOT THROUGH — $FAIL errors, $WARN warnings. Fix them and run again."; exit 1; fi
+if [ "$FAIL" -eq 0 ]; then echo "THROUGH THE GATE ($WARN warnings)."; exit 0; else echo "NOT THROUGH — $FAIL errors, $WARN warnings."; echo; nexts; exit 1; fi

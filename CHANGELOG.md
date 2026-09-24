@@ -1,5 +1,64 @@
 # Changelog
 
+## 8.5.0 — 2026-09-24
+
+Hai thay đổi do chủ dự án chốt sau khi đo lại chính runxops, không phải do một phiếu lỗi.
+
+### `rr_max` mặc định 3 → 2
+
+Đo trên **18 UC · 1.048 phát hiện** của runxops, phân loại theo **đuôi sống** (sau khi P-46 sửa cách đếm):
+
+| | UC | phát hiện | đã xử lý | chưa quyết | KB mỗi phát hiện xử lý |
+|---|---|---|---|---|---|
+| **1 vòng** | 7 | 235 | **186 (79%)** | 28 | **1,0** |
+| **4+ vòng** | 9 | 732 | 252 (34%) | **269** | **3,5** |
+
+Gấp ba số phát hiện, chưa bằng một nửa tỉ lệ xử lý, gấp mười tồn đọng, và **3,5 lần chữ** cho mỗi phát hiện
+thực sự giải quyết được. UC-024: 13 vòng, 109 phát hiện, **0 xử lý**, 63 KB. Toàn repo: **1.015 KB dấu vết đọc
+lại trên 1.081 KB thân UC — 94% cỡ của chính spec.**
+
+Thêm một vòng không phải là câu trả lời cho vòng trước. Repo đang khai `rr_max` không đổi gì; repo chưa khai
+thì trần hạ xuống 2, và `scaffold` ghi `rr_max=2` cho dự án mới.
+
+**Một chỗ đo tự bơm cho kết luận, sửa lại cho đúng:** phép tính đầu ra "17 lần" vì nhóm 1 vòng có 4 UC đã bị
+`pass.sh close` **nén** dấu vết nên KB gần 0. Tính lại chỉ trên UC chưa nén thì chênh là **3,5 lần**. Con số
+trong bảng trên là con số đã sửa.
+
+### Học cách BÁO của Spec Kit: đỏ ở đâu thì nói quay lại bước nào
+
+Tới 8.4.2 mọi phép kiểm kết bằng `NOT THROUGH — 5 errors, 3 warnings. Fix them and run again.`, để người đọc tự
+suy từ 48 lời nhắn có thể có ra xem bước nào trong 14 bước đã hỏng. Đây là than phiền lặp lại của agent điều
+phối runxops: cổng nói **cái gì** sai, không bao giờ nói **đi đâu tiếp**.
+
+```
+NOT THROUGH — 4 errors, 2 warnings.
+
+Next, in this order:
+  ④ draw the flow — UC-###.flow.md, a mermaid block that parses
+  ⑦ /sdd-solo:adversarial UC-001
+  ⑧ /sdd-solo:verify UC-001
+```
+
+Cơ chế theo **MỤC**, không theo lời nhắn: mỗi phép kiểm gọi `step` một lần ở đầu mỗi mục, `bad` ghi nhận mục
+đang chạy, cuối lượt `nexts` in ra, mỗi bước **một lần**, theo thứ tự mục chạy. Sửa 142 lời nhắn là cách đắt để
+có cùng một dòng — và mỗi lần sửa là một dịp đổi nhầm câu mà githook hoặc §9 đang khớp vào. Thêm
+`bad_at <file:dòng> <lời>` cho chỗ biết toạ độ.
+
+Đã gắn mốc: `gate-check` (10 mục) · `design-check` (4 mục) · `close-check` (cổng DoR). `change-check` và
+`br-check` **chưa có mốc** — chúng sẽ nhận khi có việc động tới, và nói thẳng ở đây chứ không để người dùng tự
+phát hiện là thiếu.
+
+**Chỉ mượn cách BÁO, không mượn cách làm.** Nguồn là `analyze` của GitHub Spec Kit v1.0.11
+(`templates/commands/analyze.md:198` — *"Run `/speckit.specify` with refinement"*). Nhưng Spec Kit cưỡng chế
+đúng một thứ: **file tiền đề có tồn tại không** (`check-prerequisites.sh:139-162`, toàn `[[ ! -f ]]`, không
+script nào mở file ra đọc), không githook, và `analyze` của nó **read-only, không để lại dấu vết nào trên đĩa** —
+đúng lỗi #29 repo này đã chẩn: *kết quả tồn tại nên ai cũng tưởng bước đã chạy*.
+
+### Test
+
+Ca mới `61-canh-bao-buoc-ke`, 10 phép, **7 đỏ trên 8.4.2**. Ca 48 đổi theo: phép "dưới trần thì không đổi gì"
+tự nâng `rr_max=3` để vẫn đo đúng thứ nó đo. Bộ test: **61 ca · 334 PASS · 0 FAIL**.
+
 ## 8.4.2 — 2026-09-24
 
 ### P-55 — §8 đọc đúng DÒNG ĐẦU của một Open Question, nên cổng đỏ oan

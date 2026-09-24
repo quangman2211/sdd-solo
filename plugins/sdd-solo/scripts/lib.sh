@@ -1,10 +1,41 @@
 #!/usr/bin/env bash
 # Shared functions for the sdd-solo scripts. bash 3.2 compatible (macOS).
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; }
-bad()  { printf '  \033[31m✗\033[0m %s\n' "$1"; FAIL=$((FAIL+1)); }
+bad()  { printf '  \033[31m✗\033[0m %s\n' "$1"; FAIL=$((FAIL+1)); _reg_next; }
+# bad_at <file:line> <message> — the same, with WHERE. A finding that does not say where costs the reader a
+# second search through a file they already believed was right.
+bad_at() { printf '  \033[31m✗\033[0m %s\n' "$2"; printf '      → %s\n' "$1"; FAIL=$((FAIL+1)); _reg_next; }
 warn() { printf '  \033[33m!\033[0m %s\n' "$1"; WARN=$((WARN+1)); }
 info() { printf '  – %s\n' "$1"; }
 FAIL=0; WARN=0
+# 8.5.0 — a red check must say WHICH STEP TO GO BACK TO, not only how many errors there are.
+#
+# Up to 8.4.2 every check ended with `NOT THROUGH — 5 errors, 3 warnings. Fix them and run again.` and left the
+# reader to work out, from 48 possible messages, which of the 14 steps had actually failed. Measured at runxops as
+# a recurring complaint from the coordinator: the gate says WHAT is wrong, never WHERE to go next.
+#
+# Borrowed from GitHub Spec Kit, which does this well: its `analyze` ends with explicit command suggestions
+# ("Run /speckit.specify with refinement", "Manually edit tasks.md to add coverage for ...") — templates/commands/
+# analyze.md:198 of v1.0.11. Only the REPORTING is borrowed: Spec Kit enforces nothing but file existence, and its
+# analyze leaves no trace on disk, which is the failure this repo diagnosed at #29.
+#
+# The mechanism is per SECTION, not per message: a check calls `step` once at the top of each numbered section,
+# and every `bad` inside that section registers it. Rewriting 142 messages would have been the expensive way to
+# get the same line, and each rewrite is a chance to change a message a githook or §9 matches on.
+SDD_STEP=""; SDD_NEXT=""
+step() { SDD_STEP="$1"; }
+_reg_next() {
+  [ -n "$SDD_STEP" ] || return 0
+  printf '%s' "$SDD_NEXT" | grep -qxF "$SDD_STEP" && return 0
+  SDD_NEXT="$SDD_NEXT$SDD_STEP
+"
+}
+# nexts — print the steps that actually went red, in the order the sections run, each at most once.
+nexts() {
+  [ -n "$SDD_NEXT" ] || return 0
+  echo "Next, in this order:"
+  printf '%s' "$SDD_NEXT" | sed 's/^/  /'
+}
 
 project_root() {
   if [ -n "$CLAUDE_PROJECT_DIR" ]; then echo "$CLAUDE_PROJECT_DIR"; return; fi
@@ -326,7 +357,11 @@ rr_rounds() { ev_body reread "$1" | grep -cE "^- *($(kw rundate))[[:space:]]*:" 
 # wrote the line: measured on runxops, rounds and unresolved findings rise together — 13 rounds / 105 Undecided
 # (UC-024), 13 / 74 (UC-029), 12 / 71 (UC-026) — while every UC that stopped at one round has none. A ceiling
 # nobody is under is not a ceiling, so the default is the number, not "off".
-rr_max() { _rm="$(cfg_get rr_max "${1:-$(project_root)}" 3)"; case "$_rm" in ''|*[!0-9]*) _rm=3;; esac; printf '%s\n' "$_rm"; }
+# 8.5.0: the default drops from 3 to 2. Measured on runxops across 18 UCs and 1,048 findings: a UC that ran ONE
+# round resolved 79% of them at 1.0 KB of trail per resolved finding; a UC that ran FOUR OR MORE resolved 34% at
+# 3.5 KB — three times the findings, less than half the resolution rate, ten times the leftover. UC-024 ran 13
+# rounds for 109 findings, 0 resolved, 63 KB. Another round is not an answer to the previous round.
+rr_max() { _rm="$(cfg_get rr_max "${1:-$(project_root)}" 2)"; case "$_rm" in ''|*[!0-9]*) _rm=2;; esac; printf '%s\n' "$_rm"; }
 rr_count() {
   # 7.7.0: `[anchor: …]` is bilingual too — `nb` is a pattern, not a literal, because an English spec's F# line
   # writes `[anchor: …]`. This is one of only two doors that open the Phase 5 gate; hard-coding `neo` here means

@@ -6,6 +6,9 @@ UND='- F2 Main 3 nói gì khi hết hàng [neo: Main 3] → Chưa quyết (chờ
 ins_after "$UC1" '- F1 Main 2 nói gửi' "$RR"
 ins_after "$UC1" "$RR" "$UND"
 cm "docs(UC-001): đọc lại — vòng 2" 2026-01-06
+# 8.5.0: mặc định là 2, nên phép "dưới trần thì không đổi gì" phải tự nâng trần lên 3 — đó vẫn là thứ ca này đo
+sed -i.bak 's/^rr_max=.*/rr_max=3/' .sdd/config 2>/dev/null || printf 'rr_max=3\n' >> .sdd/config; rm -f .sdd/config.bak
+grep -q '^rr_max=' .sdd/config || printf 'rr_max=3\n' >> .sdd/config
 S gate-check.sh UC-001
 chk "rr_max=3, mới 2 vòng → chưa chạm trần, chỉ cảnh báo Chưa quyết (exit $R)" '! has "reached the ceiling"'
 # hạ trần xuống 2 → chạm
@@ -30,4 +33,4 @@ S gate-check.sh UC-001
 chk "rr_max=0 → không đếm vòng, không đỏ vì trần" '! has "the ceiling"'
 # repo KHÔNG có dòng rr_max: mặc định là 3, không phải tắt
 sed -i.bak '/^rr_max=/d' .sdd/config && rm -f .sdd/config.bak
-chk "không có dòng rr_max thì mặc định 3 (trần mặc định là một con số, không phải tắt)" '[ "$(cd . && bash -c ". \"$P/scripts/lib.sh\"; rr_max \"$PWD\"")" = 3 ]'
+chk "không có dòng rr_max thì mặc định 2 (8.5.0 — trần mặc định là một con số, không phải tắt)" '[ "$(cd . && bash -c ". \"$P/scripts/lib.sh\"; rr_max \"$PWD\"")" = 2 ]'

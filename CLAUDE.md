@@ -85,8 +85,10 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   trước 8.0.0 không nhận ra 8.0.0 tồn tại. Đọc file cạnh trước làm cổng trả lời từ bản lưu trữ thay vì bản sống,
   và verdict trôi trên UC không ai đụng (đo được: +28 ✓ trên một UC). `migrate.sh --trace` dời một repo sang,
   quyết theo NỘI DUNG từng file nên chạy bao nhiêu lần cũng ra một kết quả.
-- **Trần vòng đọc lại là một điểm DỪNG, không phải một cửa** (8.0.0). `rr_max` ở `.sdd/config`, mặc định **3** kể
-  cả cho repo chưa có dòng đó. Tới 7.8 `→ Chưa quyết` chỉ được ĐẾM (#53), và đo trên runxops thì đó là lỗ hổng:
+- **Trần vòng đọc lại là một điểm DỪNG, không phải một cửa** (8.0.0). `rr_max` ở `.sdd/config`, mặc định **2**
+  (8.5.0, hạ từ 3) kể cả cho repo chưa có dòng đó. Số đo trên 18 UC · 1.048 phát hiện của runxops: UC chạy MỘT
+  vòng giải quyết **79%** ở **1,0 KB** dấu vết mỗi phát hiện; UC chạy **4+** vòng giải quyết **34%** ở **3,5 KB**
+  — gấp ba số phát hiện, chưa bằng nửa tỉ lệ xử lý, gấp mười tồn đọng. UC-024: 13 vòng, 109 phát hiện, **0** xử lý. Tới 7.8 `→ Chưa quyết` chỉ được ĐẾM (#53), và đo trên runxops thì đó là lỗ hổng:
   số vòng và số tồn đọng lên cùng nhau — 13 vòng / 105 Chưa quyết (UC-024), 13 / 74 (UC-029), 12 / 71 (UC-026) —
   còn mọi UC dừng ở một vòng thì không tồn một cái nào. Chạm trần mà còn tồn thì đỏ, và **thêm một vòng không mở
   được cổng**: số chỉ xuống bằng cách quyết. Mặc định là một con số chứ không phải "tắt", vì một cái trần không ai
@@ -110,6 +112,13 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   kiến thức (`sdd-process`: model tự gọi nó *vì* muốn khối đó — tách ra là bắt đọc hai lần). Và **không rút ngắn
   `description`**: tài liệu nói mọi thông tin "khi nào dùng" phải nằm ở đó và nên viết "hơi thúc", vì Claude có xu hướng
   *bỏ sót* skill chứ không phải gọi thừa. Cả 18 mô tả cộng lại mới ~1.500 token, cắt ở đó là đổi đúng thứ đang có tác dụng.
+- **Một phát hiện phải nói ĐƯỢC ĐI ĐÂU TIẾP, không chỉ nói sai cái gì** (8.5.0). Mỗi phép kiểm gọi `step` một lần ở
+  đầu mỗi mục; `bad` ghi nhận mục đang chạy; cuối lượt `nexts` in các bước phải quay lại, mỗi bước một lần, theo
+  thứ tự mục. Cơ chế theo MỤC chứ không theo lời nhắn: sửa 142 lời nhắn là đắt, và mỗi lần sửa là một dịp đổi
+  nhầm câu mà githook hoặc §9 đang khớp vào. `bad_at <file:dòng> <lời>` cho chỗ biết được toạ độ.
+  Mượn cách BÁO của GitHub Spec Kit (`analyze` của nó kết bằng lệnh cụ thể phải gõ — `templates/commands/analyze.md:198`,
+  v1.0.11), **không mượn cách làm**: Spec Kit chỉ cưỡng chế "file tiền đề có tồn tại không" (`check-prerequisites.sh:139-162`,
+  toàn `[[ ! -f ]]`), không githook, và `analyze` của nó không để lại dấu vết nào — đúng lỗi #29 đã chẩn.
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 

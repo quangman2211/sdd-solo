@@ -6,6 +6,7 @@ ROOT="$(project_root)"; F="$(find_uc "$ID" "$ROOT")"
 echo "Definition of Done — $ID"
 [ -z "$F" ] && { bad "cannot find the UC file"; exit 1; }
 CTX="$(owner_of "$F")"; SLUG="$(slug_of "$F")"
+step "⑨ /sdd-solo:gate $ID — the DoR gate, before close"
 [ -f "$ROOT/.sdd/gate/$ID.ok" ] && ok "through the DoR gate" || bad "no .sdd/gate/$ID.ok marker — run /sdd-solo:gate"
 # 7.4 (P-10): the gate marker says "the spec WAS re-read at commit X". Editing an AC after X with a docs(UC-###) commit
 # leaves the marker in place while what it certifies is gone — up to 7.3 no script compared again. The §9 fingerprint of
@@ -109,4 +110,4 @@ fi
 ev_body history "$F" | grep -qE '^- v[0-9]+ ' && ok "History has rows" || bad "History is empty"
 git -C "$ROOT" status --porcelain 2>/dev/null | grep -q . && warn "there are uncommitted changes"
 echo
-if [ "$FAIL" -eq 0 ]; then echo "CAN BE CLOSED ($WARN warnings)."; exit 0; else echo "NOT CLOSABLE — $FAIL errors."; exit 1; fi
+if [ "$FAIL" -eq 0 ]; then echo "CAN BE CLOSED ($WARN warnings)."; exit 0; else echo "NOT CLOSABLE — $FAIL errors."; echo; nexts; exit 1; fi

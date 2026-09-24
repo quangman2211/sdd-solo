@@ -28,10 +28,12 @@ DS="$DIR/design.md"; TK="$DIR/tasks.md"; AR="$(arch_file "$ROOT")"
 
 # ── 0. the DoR gate must have been passed ─────────────────────────────────
 # Designing for a UC that has not passed the gate is designing for a spec that is still moving.
+step "⑨ /sdd-solo:gate $ID — the DoR gate first, design after"
 [ -f "$ROOT/.sdd/gate/$ID.ok" ] && ok "the DoR gate was passed" \
   || bad "there is no .sdd/gate/$ID.ok — run /sdd-solo:gate $ID first"
 
 # ── 1. architecture.md — project level ────────────────────────────────────
+step "specs/architecture.md — the project-level sections, by hand"
 if [ ! -f "$AR" ]; then
   bad "missing ${AR#$ROOT/} — design.md has nothing to check back against"
 else
@@ -111,6 +113,7 @@ else
 fi
 
 # ── 2. the UC design.md ───────────────────────────────────────────────────
+step "⑪ /sdd-solo:design $ID — the design.md sections"
 if [ ! -f "$DS" ]; then
   bad "missing $ID/design.md — run /sdd-solo:design $ID"
 else
@@ -147,6 +150,7 @@ else
 fi
 
 # ── 3. tasks.md — one task per AC ─────────────────────────────────────────
+step "⑪ /sdd-solo:design $ID — tasks.md: one task per AC"
 if [ ! -f "$TK" ]; then
   bad "missing $ID/tasks.md — every AC must have a task and a test file"
 else
@@ -185,4 +189,4 @@ fi
 
 echo
 if [ "$FAIL" -eq 0 ]; then echo "DESIGN COMPLETE — you can write code ($WARN warnings)."; exit 0; fi
-echo "NOT COMPLETE — $FAIL errors, $WARN warnings."; exit 1
+echo "NOT COMPLETE — $FAIL errors, $WARN warnings."; echo; nexts; exit 1
