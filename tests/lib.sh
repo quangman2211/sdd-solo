@@ -117,3 +117,20 @@ JS
   cm "chore(sdd): state" 2026-01-05
   cd "$T"
 }
+
+# mkbrown <tên> [--nocfg] — dựng $W/<tên> là một repo ĐÃ CÓ CODE rồi mới scaffold lên, tức ca
+# brownfield. Khác mkbase ở đúng một điểm và đó là điểm cần đo: code được commit TRƯỚC khi sdd-solo
+# tới, nên scaffold ghi adopt_from. Trả về qua $BASESHA mốc đã ghi.
+mkbrown() {
+  rm -rf "$W/$1"; mkdir -p "$W/$1/app" "$W/$1/tests"; cd "$W/$1" || exit 1
+  git init -q; git config user.email test@sdd; git config user.name sdd-test; git config commit.gpgsign false
+  export CLAUDE_PROJECT_DIR="$W/$1"
+  printf 'const a = 1;\n' > app/a.js; printf 'const b = 2;\n' > app/b.js; printf 'const t = 3;\n' > tests/t.js
+  git add -A
+  GIT_AUTHOR_DATE="2026-01-01T10:00:00" GIT_COMMITTER_DATE="2026-01-01T10:00:00" \
+    git commit -q -m "years of code, before sdd-solo"
+  BASESHA="$(git rev-parse HEAD)"
+  bash "$P/scripts/scaffold.sh" "$P" "$W/$1" >"$W/scaffold-$1.log" 2>&1 \
+    || { cat "$W/scaffold-$1.log"; echo "scaffold hỏng ($1)"; exit 1; }
+  cm "chore(sdd): init" 2026-01-02
+}

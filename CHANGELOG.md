@@ -1,5 +1,88 @@
 # Changelog
 
+## 8.11.0 — 2026-09-25 · nhận một kho đã có code vào quy trình
+
+Kho đã có code gõ `/sdd-solo:init` là **đóng băng ngay ngày đầu**: mọi commit chạm `code_paths` đòi ID, mà
+ID dạng UC lại đòi `.sdd/gate/UC-###.ok`, thứ chưa thể có vì chưa một dòng spec nào được viết. Đo trên bản
+sao sdd-solo đã scaffold: `feat(sdd-solo): 9.0.0` → `✗ … must carry an ID`; `feat(UC-001)` → `✗ UC-001 has
+not passed the DoR gate`. Hai lần grep toàn kho không ra một dòng nào từng bàn về ca này — `repo_has_code()`
+và `detect_paths()` đã có sẵn và đã nối dây, nhưng chỗ duy nhất dùng chúng chỉ in một dòng đỏ **về config**.
+Plugin biết kho có code và không làm gì với điều đó.
+
+**Mốc nhận vào (`adopt_from` ở `.sdd/config`).** `scaffold` ghi nó **chỉ ở lần cài đầu và chỉ khi
+`repo_has_code`** — `init --update` không bao giờ thêm. Trong `commit-msg`, một file code đang stage mà **có
+trong cây mốc** và **chưa từng bị commit mang ID chạm vào** được nêu đích danh trên stderr và đếm, không
+chặn. Mọi thứ khác chịu luật đầy đủ, nên code mới bị cưỡng chế từ commit đầu tiên.
+
+Vì sao là một khoá config chứ không suy từ `git log --diff-filter=A -- .sdd/config` (nghe sạch hơn vì không
+còn dòng nào để sửa): với kho **đã cài sdd-solo từ lâu**, commit đó là commit `init` cũ, nên chỉ nâng version
+là toàn bộ cây lúc đó thành miễn trừ, tự động, không ai chọn.
+
+**Ba phép trừ, và cái chốt là phép quan trọng nhất.** ① vắng trong cây mốc = việc mới (`cat-file
+--batch-check` một fork: đo 22 ms cho 30 file, so với 343 ms nếu `cat-file -e` từng file). ② `R100` của
+`git diff -M` — chính git làm chứng nội dung y hệt từng byte — nên đổi tên thuần vẫn là file cũ; `R99` trở
+xuống thì không. Không có ② thì `git mv` một file cũ vừa là xoá (tha) vừa là thêm (chặn) và việc dọn cấu
+trúc bị đóng băng. ③ **cái chốt**: file đã một lần bị commit mang ID chạm vào thì **rời miễn trừ vĩnh viễn**.
+
+Cái chốt là thứ giữ cho đây không phải một con số đứng yên. Đo trên chính kho này: **77 trong 103** commit
+chạm code chỉ sửa file đã có (**75%**) — không có chốt thì ba trên bốn commit sẽ không bao giờ cần ID, mãi
+mãi. Và nó nằm ở **hook**, không chỉ ở bảng đếm.
+
+**Không đọc được mốc thì KHÔNG tha.** Clone `--depth 1` là ca nguy hiểm nhất: `cat-file` không thấy gì, mọi
+file đọc ra là "mới", và một nhánh cẩu thả lật thành tha-tất-cả ở CI mà không dòng nào trông sai. Hook kiểm
+`--is-shallow-repository` và `cat-file -e` một lần trước vòng lặp; hỏng thì miễn trừ tắt hẳn và nó nói **vì
+sao** bằng một dòng riêng — không bao giờ nói "file này mới", vì đó là đỏ không lối ra (#23 / P-43). Tiền lệ
+nằm ngay trong chính file hook: *"a source file matching no path → block, do not wave it through in silence."*
+
+**Con số phải chạm được 0.** `adopt.sh --count`, `status.sh` gọi sau `metrics.sh` — **không** nhét vào
+`metrics.sh`, vì header file đó hứa đúng hai chỉ số. Hai dòng, mỗi dòng khai mẫu số của nó, số nguyên trần:
+file mốc chưa commit mang ID nào chạm tới (chính là tập hook tha, nên bảng đếm và cổng không thể nói ngược
+nhau), và file mốc được một UC đã qua cổng khai ở `## Existing code`. Cả hai về 0 bằng việc thật — một commit
+mang ID, hoặc xoá file. Ở 0 **không tắt gì cả**: gỡ `adopt_from` không phân biệt được với sửa trộm.
+
+**Dời mốc không mua được gì, và bị nhìn thấy.** `sed` một dòng rồi commit `chore(sdd)` là hợp lệ (config ngoài
+manifest, `^\.sdd/` ngoài SRCLIKE, `chore(sdd)` miễn ID). Nhưng cái chốt giữ mọi file đã vào quy trình, và
+`status.sh` đỏ khi giá trị hiện tại khác giá trị git **ghi lần đầu** (pickaxe `-S`). Đỏ **vệ sinh**, không
+phải cổng: chặn commit vì một phép kiểm toàn vẹn config là đóng băng kho, đúng cái bệnh đang chữa.
+
+**`## Existing code` — mục khai duy nhất được thêm, và nó chỉ SIẾT.** Với UC nhận vào, `close-check` mất cả
+hai nguồn dựng tập file code (① cần commit mang ID, ② cần code đặt tên theo slug), nên `NF_=0` và phép quét số
+literal **im lặng không chạy** đúng trên thứ code có nhiều thời gian tích số ma thuật nhất — trong khi dòng đỏ
+lại đi sửa `code_paths`, sai chỗ. Mục này là nguồn ③. Không bắt buộc, không vào `templates/skel/`, và cổng chỉ
+kiểm khi nó có mặt: đường dẫn phải **có trong cây mốc** (thứ chặn nó thành cửa sau — không khai được mã viết
+hôm qua là "có sẵn"), phải trong `code_paths`/`test_paths`, và chưa bị UC khác khai. Marker cổng **không** ghi
+gì về việc nhận vào: một dòng `adopted:` là chỗ đọc thứ hai cho một sự thật mục này đã giữ, đúng lỗi P-58.
+
+**`detect_paths` dò thêm một cấp khi cấp một không ra gì.** Kho này có code ở `plugins/sdd-solo/scripts`,
+không khớp tên nào ở cấp một, nên `code_paths` rơi về `src` (không tồn tại) trong khi `tests/` có — `HAVE=1`,
+chốt chặn "config không khớp" không nổ, và mọi file rơi vào nhánh **chỉ cảnh báo** `commit-msg:44-48`: 27
+script + 18 skill **không được kiểm một dòng nào**, im lặng. Mọi monorepo cài sdd-solo đều rơi vào đó. Chỉ
+chạy khi cấp một rỗng, nên không kho nào đang dò sạch bị đổi câu trả lời.
+
+**Sửa kèm — `--grep` phải độc lập với git config của máy.** `git log --grep` mặc định là BRE nên `^feat(UC-001)`
+khớp literal và đang chạy đúng; nhưng đặt `grep.extendedRegexp=true` toàn cục thì `(UC-001)` thành nhóm bắt và
+cùng câu lệnh trả **0**. Đo trên kho này: **67 → 0**. Luật thứ tự docs→feat của `close-check` thành no-op vĩnh
+viễn trên **mọi** repo. Sáu chỗ mắc lỗi này (`close-check` ×2, `gate-check` ×3, `change-check` ×2, `uc-steps`);
+`commit-msg:70` miễn nhiễm vì pipe sang `grep -qE` có escape. Lối đúng là `-E` **kèm** escape — đúng lối
+`gate_commit` đã dùng. Escape một mình còn tệ hơn: trong BRE `\(` là **nhóm**, nên nó hỏng luôn ca mặc định.
+
+**Cái còn lại, nói thẳng.** Cơ chế này **không** cưỡng chế spec-trước-code trên mỗi lần sửa một file cũ chưa
+ai đụng. Nó cưỡng chế trên file mới; nó chấm dứt miễn trừ vĩnh viễn cho mọi file đã từng vào quy trình một
+lần; và nó bắt việc nhận công cho một file cũ phải trả bằng spec. Số 77/103 là cái giá ngày đầu.
+
+**Cố ý KHÔNG làm:** siết `^chore\(sdd\)` để chỉ miễn commit không chạm gì ngoài `.sdd/`. Lỗ đó có thật, nhưng
+đó là đổi luật khiến kho đang chạy phải sửa tay → **major**, và nhét vào đây là biến một bản minor duyệt được
+thành một bản không ai soát nổi như một thứ.
+
+Mới: `scripts/adopt.sh` · `skills/adopt/SKILL.md` · `lib.sh` (`adopt_from` · `adopt_ok` · `adopt_files` ·
+`adopt_governed` · `adopt_pending` · `adopt_declared` · `adopt_first_recorded` · `uc_existing_code`) ·
+`kw.tsv` dòng `existingcode`. Sửa: `templates/githooks/commit-msg` · `scaffold.sh` · `status.sh` ·
+`close-check.sh` · `gate-check.sh` · `uc-steps.sh` · `change-check.sh` · `skills/init` ·
+`templates/CLAUDE.md.tmpl`.
+
+Kiểm: 75 ca · 454 PASS · 0 FAIL (ca 67-75 mới; ca 75 đã chứng minh **đỏ ở HEAD** trong worktree: `1 vs 0`).
+`verdict.sh` trên bản sao runxops chưa migrate — 93 lệnh, **IDENTICAL**.
+
 ## 8.10.0 — 2026-09-25
 
 **Thư mục `screens/` thôi tự mọc ở mọi UC.** `start` chép `screens/README.md` vô điều kiện, nên một UC không có giao diện

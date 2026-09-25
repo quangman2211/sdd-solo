@@ -480,6 +480,86 @@ code_paths()  { cfg_get code_paths  "$1" "$CFG_DEFAULT_CODE"; }
 test_paths()  { cfg_get test_paths  "$1" "$CFG_DEFAULT_TEST"; }
 uc_test_dir() { cfg_get uc_test_dir "$1" "$CFG_DEFAULT_UCTEST"; }
 tool_paths()  { cfg_get tool_paths  "$1" "$CFG_DEFAULT_TOOL"; }
+# adopt_from: the commit this repo stood at when sdd-solo arrived (8.11.0). A file that existed in
+# that tree and that no ID-carrying commit has ever touched is code predating the process: the githook
+# WARNS and COUNTS it, it does not block. A file absent from that tree is new work and gets the full
+# rule. Empty = nothing to adopt, and every line below behaves exactly as 8.10.0.
+# NOT tool_paths, and the two must never share a shape: that exemption is permanent, open (a file added
+# under the path tomorrow is exempt too) and OUT of the trace-ratio denominator. This one is finite,
+# closed, IN the denominator, and only shrinks. Nobody types this line to get past a block: it is
+# written once by scaffold, and it names a commit older than the block that stopped them.
+# Why a config key rather than deriving the init commit from `git log --diff-filter=A -- .sdd/config`:
+# on a repo that installed sdd-solo LONG ago that commit is its old init, so merely upgrading the plugin
+# would exempt its whole tree at that date, automatically, with nobody choosing it.
+adopt_from() { cfg_get adopt_from "$1" ""; }
+# adopt_ok <root> — 0 when the baseline can actually be read. A shallow clone is the dangerous case:
+# `cat-file` then finds nothing, every file reads as "new", and a careless caller flips that into
+# "everything is exempt", silently, in CI. Cannot-answer means DO NOT GRANT, per commit-msg's own rule
+# (a source file matching no path → block, do not wave it through in silence).
+adopt_ok() {
+  _af="$(adopt_from "$1")"; [ -n "$_af" ] || return 1
+  [ "$(git -C "$1" rev-parse --is-shallow-repository 2>/dev/null)" = true ] && return 1
+  git -C "$1" cat-file -e "$_af^{commit}" 2>/dev/null || return 1
+  return 0
+}
+# adopt_files <root> — files of the baseline tree that are still present AND inside code_paths/test_paths
+# minus tool_paths. This is the denominator both counter lines declare.
+adopt_files() {
+  adopt_ok "$1" || return 0
+  _af="$(adopt_from "$1")"
+  _re="$(paths_re "$(code_paths "$1") $(test_paths "$1")")"
+  _t="$(tool_paths "$1")"
+  git -C "$1" ls-tree -r --name-only "$_af" 2>/dev/null | grep -E "$_re" | {
+    if [ -n "$_t" ]; then grep -vE "$(paths_re "$_t")"; else cat; fi
+  } | while IFS= read -r _f; do
+    [ -f "$1/$_f" ] && printf '%s\n' "$_f"
+  done
+  return 0
+}
+# adopt_governed <root> [files] — of those files, the ones an ID-carrying commit has ALREADY touched.
+# They leave the exemption FOREVER: once a file has been through the process it does not step back out.
+# One `git log` pass, one fork — the same @@-subject idiom close-check already uses.
+adopt_governed() {
+  _fs="${2:-$(adopt_files "$1")}"; [ -n "$_fs" ] || return 0
+  git -C "$1" log --no-merges --format='@@%s' --name-only -- $_fs 2>/dev/null \
+    | awk '/^@@/ { k = ($0 ~ /\((UC|BR|RULE|ADR|CHG)-[0-9]+\)/); next } k && NF && !a[$0]++'
+  return 0
+}
+# adopt_pending <root> — baseline files no ID-carrying commit has ever touched. EXACTLY the set the
+# hook waves through, so the dashboard and the gate can never disagree about it.
+adopt_pending() {
+  _fs="$(adopt_files "$1")"; [ -n "$_fs" ] || return 0
+  _g="$(adopt_governed "$1" "$_fs")"
+  if [ -n "$_g" ]; then printf '%s\n' "$_fs" | grep -vxF "$_g"; else printf '%s\n' "$_fs"; fi
+  return 0
+}
+# uc_existing_code <uc file> — the paths one UC lists under `## Existing code`. Optional section, added
+# 8.11.0 for adopted code: source ① of close-check (files a (UC-###) commit touched) and source ② (the
+# slug) are BOTH empty for code written before its spec, so without this the literal-number scan silently
+# skips exactly the code that has had the longest time to accumulate magic numbers.
+uc_existing_code() {
+  _kwe="$(kwh existingcode)" || return 0
+  awk -v re="$_kwe" 'BEGIN{p=0} $0 ~ re {p=1; next} p && /^## / {p=0} p' "$1" 2>/dev/null \
+    | grep -E '^- +' | sed -E 's/^- +//; s/`//g; s/[[:space:]]*$//' | grep -v '^$'
+  return 0
+}
+# adopt_declared <root> — paths listed under `## Existing code` by a UC that is through the gate.
+adopt_declared() {
+  for _f in $(all_uc_files "$1"); do
+    _id="$(basename "$_f" .md)"
+    [ -f "$1/.sdd/gate/$_id.ok" ] || continue
+    uc_existing_code "$_f"
+  done
+  return 0
+}
+# adopt_first_recorded <root> — the value adopt_from held the FIRST time it was written. The pickaxe is
+# the point: it reads what git recorded, not what the file says today, so moving the line is visible.
+adopt_first_recorded() {
+  _c="$(git -C "$1" log -S'adopt_from=' --format=%H --reverse -- .sdd/config 2>/dev/null | head -1)"
+  [ -n "$_c" ] || return 0
+  git -C "$1" show "$_c:.sdd/config" 2>/dev/null | sed -n 's/^adopt_from=//p' | tail -1
+  return 0
+}
 # brief_path: the source file a BR was converted from (#34). It is recorded in the config so it
 # is part of the MANDATORY READING ORDER — without this line the brief becomes a write-only file
 # right after intake: `gate-check` measures inside specs/, `verify` reads inside specs/, and the
@@ -562,10 +642,22 @@ paths_re() { printf '^(%s)/' "$(printf '%s' "$1" | tr -s ' ' '|' | sed 's/|$//')
 detect_paths() {
   C=""; for d in src app lib cmd internal pkg apps packages source; do
     [ -d "$1/$d" ] && C="$C $d"; done
+  # 8.11.0: nothing at the top level does NOT mean no code — a monorepo keeps it at plugins/<name>/scripts.
+  # Up to 8.10.0 the probe stopped here, so code_paths fell back to "src", which does not exist, while
+  # tests/ did exist — so HAVE=1, the "config does not match" block never fired, and every source file
+  # landed in the warning-only "outside code_paths" branch: the whole repo unchecked, in silence.
+  # Only run when the top level found nothing, so no repo that already probes clean changes its answer.
+  if [ -z "$C" ]; then
+    for n in src app lib cmd internal pkg source scripts skills; do
+      for d in $(find "$1" -mindepth 2 -maxdepth 3 -type d -name "$n" \
+                   -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/specs/*' 2>/dev/null); do
+        C="$C ${d#$1/}"
+      done
+    done
+  fi
   T=""; for d in tests test __tests__ spec; do [ -d "$1/$d" ] && T="$T $d"; done
   printf '%s|%s' "$(printf '%s' "$C" | sed 's/^ *//')" "$(printf '%s' "$T" | sed 's/^ *//')"
 }
-# has_code_path <root> → 0 if at least one code_path exists
 has_code_path() { for d in $(code_paths "$1"); do [ -d "$1/$d" ] && return 0; done; return 1; }
 # repo_has_code <root> → 0 if the repo has source files outside the process directories.
 # Used to tell "the config is wrong" apart from "the repo has not a line of code yet".

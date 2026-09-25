@@ -61,6 +61,26 @@ if [ -n "$CD" ]; then
   done
 fi
 echo; "$HERE/metrics.sh"
+# Adoption (8.11.0) — a THIRD question, so it is not folded into metrics.sh, whose header promises exactly
+# two indicators. Both its lines can reach zero, which is the bar metrics.sh set for itself: a number nobody
+# can drive to its target is the shape this repo already measured as a hole once (rr_max, #53).
+if [ -n "$(adopt_from "$ROOT")" ]; then
+  echo; bash "$HERE/adopt.sh" --count
+  if ! adopt_ok "$ROOT"; then
+    bad "the adoption baseline cannot be read — while that is true the githook exempts nothing and every code commit needs an ID"
+  else
+    # The baseline is recorded in git the first time it is written. Reading it back with the pickaxe is the
+    # point: a line edited later cannot hide, and moving it forward is the one move that would turn this
+    # into the bypass flag the README refuses. A hygiene red, never a block — blocking on a config-integrity
+    # check would freeze the repo, which is the disease being treated.
+    WAS="$(adopt_first_recorded "$ROOT")"
+    NOW="$(adopt_from "$ROOT")"
+    if [ -n "$WAS" ] && [ "$WAS" != "$NOW" ]; then
+      bad "$(printf 'the adoption baseline first recorded in git was %s; .sdd/config now says %s — it was moved' "$WAS" "$NOW")"
+      info "Files already touched by a commit carrying an ID stay governed whatever this line says, so moving it buys nothing."
+    fi
+  fi
+fi
 # dependencies: only speak when something is missing, stay silent when it is fine
 D="$("$HERE/deps-check.sh" 2>&1)" || { echo; echo "$D"; }
 # the code/test paths: getting them wrong makes the githook miss silently

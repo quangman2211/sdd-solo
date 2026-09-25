@@ -59,6 +59,13 @@ Install or update sdd-solo in the current repo.
 7. `specs/core/br-000/br.md` is still the template (it contains the string `<Business requirement name>`), or
    `specs/vision.md` is still the skeleton → say the next step is **`/sdd-solo:intake`**; its step 0 is layer 0.
    Do not propose writing code, do not propose outside tools.
+7b. The output carries an `=== Adoption ===` block, or `.sdd/config` has a non-empty `adopt_from` → this repo
+   already had code when sdd-solo arrived. Then the FIRST thing to say is **check `code_paths` in `.sdd/config`
+   by hand**, before anything else: `detect_paths` probes directory names, and a path it guessed wrong does not
+   go red, it goes silent — those files land in the "outside code_paths" warning and nothing about them is
+   checked again. Only then `/sdd-solo:intake`, and then `/sdd-solo:adopt`. Say what the baseline does and does
+   not mean: new code is governed from its first commit, existing files are exempt from the ID rule until a
+   commit carrying a real ID touches one, and that exemption never grows. Do not present it as permission.
 8. Any `.new` file in the output → list them and tell the user to merge them by hand; never overwrite.
 
 ---

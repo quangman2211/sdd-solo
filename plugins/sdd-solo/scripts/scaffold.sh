@@ -204,6 +204,16 @@ if [ ! -f "$ROOT/.sdd/config" ]; then
   D="$(detect_paths "$ROOT")"; DC="${D%%|*}"; DT="${D##*|}"
   [ -z "$DC" ] && DC="$CFG_DEFAULT_CODE"; [ -z "$DT" ] && DT="$CFG_DEFAULT_TEST"
   UCT="$(printf '%s' "$DT" | awk '{print $1}')/use-cases"
+  # The baseline is a commit git already holds — the same rule pass.sh restore follows: record what
+  # happened, never invent it. A repo with code but no commit cannot have one, and guessing would be
+  # the one thing this whole mechanism exists to avoid.
+  # `|| true` is MANDATORY: on a repo with no commit `rev-parse HEAD` exits 128, and under `set -e` an
+  # ASSIGNMENT from $(...) carries that status — the same landmine as 8.7.0 and as the .sdd/version read
+  # above, which already carries this comment. Without it scaffold dies at exit 128 with no line of output.
+  AFSHA="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || true)"
+  if repo_has_code "$ROOT" && [ -z "$AFSHA" ]; then
+    bad "this repo has source files but not one commit — commit them first, then run init: the adoption baseline has to be a commit git already holds, and it is not invented here."
+  fi
   {
     echo "# sdd-solo — the code/test paths of this repo."
     echo "# The githooks and the checking scripts all read this file. A wrong path makes a hook"
@@ -234,8 +244,33 @@ if [ ! -f "$ROOT/.sdd/config" ]; then
     echo "# leftovers rise together (13 rounds / 105 Undecided in the worst case), so another round is not an"
     echo "# answer to the previous one. 0 switches the ceiling off and then nothing counts the rounds."
     echo "rr_max=2"
+    # adopt_from (8.11.0) — written ONLY here, only on a repo that already has code, and never by
+    # `init --update`. An existing sdd-solo repo that suddenly got a baseline would exempt its whole
+    # tree from one helpful line of code, so a repo adopting late writes the line itself.
+    if repo_has_code "$ROOT" && [ -n "$AFSHA" ]; then
+      echo "# adopt_from: the commit this repo stood at when sdd-solo arrived. A file that existed in that"
+      echo "# tree and that no commit carrying an ID has ever touched is code predating the process: the"
+      echo "# githook WARNS and COUNTS it, it does not block. A file absent from that tree is new work and"
+      echo "# gets the full rule, so nothing written from today on escapes. NOT tool_paths: that exemption"
+      echo "# is permanent, open and OUT of the trace-ratio denominator; this one is finite, closed, IN the"
+      echo "# denominator, and only shrinks. Nobody types this line to get past a block — it names a commit"
+      echo "# older than the block. How much is left: bash .sdd/scripts/adopt.sh --count"
+      echo "adopt_from=$AFSHA"
+    fi
   } > "$ROOT/.sdd/config"
   ok ".sdd/config — code_paths=$DC · test_paths=$DT (probed from the repo; fix it if wrong)"
+  if repo_has_code "$ROOT" && [ -n "$AFSHA" ]; then
+    NBF="$(adopt_files "$ROOT" | grep -c .)"
+    echo
+    echo "=== Adoption ==="
+    printf 'This repo already had code, so the baseline is %s.\n' "$(printf '%.7s' "$AFSHA")"
+    printf '  %s existing file(s) under code_paths/test_paths are exempt from the ID rule for now.\n' "$NBF"
+    echo "  Code written FROM NOW ON is governed in full from the first commit — the exemption covers"
+    echo "  only what was already there, it never grows, and a file leaves it for good the first time a"
+    echo "  commit carrying a real ID touches it."
+    echo "  It is NOT permission: those files stay in the trace-ratio denominator until they have a UC."
+    echo "  Count them any time: bash .sdd/scripts/adopt.sh --count"
+  fi
   # tests/ · __tests__/ · spec/ are three entirely different conventions. A wrong guess makes
   # ac-coverage blind with nobody knowing, so say it now instead of writing it silently.
   [ -d "$ROOT/$(printf '%s' "$DT" | awk '{print $1}')" ] || \
@@ -260,7 +295,7 @@ fi
 # plugin installed (CI, whoever clones the repo). The price: the copy can drift in version — .sdd/version is
 # compared with the plugin version, and session-start and status warn about a mismatch.
 mkdir -p "$ROOT/.sdd/scripts"
-KEEP="lib.sh mermaid.sh numbers.sh role.sh stop-ketqua.sh phieu.sh queue.sh hoi-check.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
+KEEP="lib.sh adopt.sh mermaid.sh numbers.sh role.sh stop-ketqua.sh phieu.sh queue.sh hoi-check.sh layer-check.sh br-scope-diff.sh br-check.sh gate-check.sh change-check.sh close-check.sh design-check.sh pass.sh status.sh metrics.sh decisions.sh context.sh version-check.sh deps-check.sh migrate.sh uc-steps.sh"
 for f in $KEEP; do
   [ -f "$PLUGIN/scripts/$f" ] && cp "$PLUGIN/scripts/$f" "$ROOT/.sdd/scripts/$f"
 done
@@ -301,8 +336,19 @@ echo; echo "Xong. Commit: git add -A && git commit -m \"chore(sdd): init sdd-sol
 # This line is the FIRST direction the user reads, before knowing anything else. Up to 3.2.0 it still said
 # "/requirements (AIUP) or write specs/br.md yourself" — while /requirements read a vision.md nobody had
 # created, and "write br.md yourself" was exactly where people got stuck. See #20.
+if [ -n "$(adopt_from "$ROOT")" ]; then
+  echo "NEXT STEP — this repo already has code, so there are three, in order:"
+  echo "  1. CHECK .sdd/config BY HAND: code_paths=$(code_paths "$ROOT")."
+  echo "     A path that is wrong here does not go red — it goes SILENT: the files land in the"
+  echo "     'outside code_paths' warning and nothing about them is ever checked again."
+  echo "  2. /sdd-solo:intake — the BR layer. Existing code still needs the WHY written down;"
+  echo "     nothing can be grouped into a UC before there is a BR to hang it on."
+  echo "  3. /sdd-solo:adopt — lists what predates the process and groups it into UC candidates."
+  echo "     Each one then walks the ordinary steps ①-⑨. There is no import that skips them."
+else
 echo "NEXT STEP — Phase 1: type /sdd-solo:intake"
 echo "  Step 0: the owner states the direction (specs/vision.md) in plain words; then 7 questions (what hurts · who hurts · what it costs · ...)"
 echo "  and intake writes the first BR into specs/<core|craft>/br-001/br.md."
 echo "  Already holding a brief from another agent: /sdd-solo:intake path/to/brief.md"
 echo "  Want to write it yourself: read the BR-000 sample in specs/core/br-000/br.md, or specs/_intake.md to question yourself."
+fi

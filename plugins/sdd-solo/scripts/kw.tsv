@@ -30,6 +30,7 @@
 # ── tiêu đề mục ──────────────────────────────────────────────────────────────────────────────────
 reread	head	Đọc lại	Re-read
 adversarial	head	Adversarial pass	Adversarial pass
+existingcode	head	Mã sẵn có	Existing code
 craftslice	head	Nghề và lát	Crafts and slices
 nonarrow	head	Không thu hẹp	Do not narrow
 droppedbrief	head	Đã loại khỏi brief	Dropped from brief

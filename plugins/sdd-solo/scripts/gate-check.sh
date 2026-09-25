@@ -206,6 +206,36 @@ screens_check
 echo "$SCR" | grep -qE 'SCR-[0-9]+-[0-9]+' || bad "no SCR-###-# in ## Screens yet"
 
 # 4. a quoted RULE must exist in rules.md
+# `## Existing code` (8.11.0) — the optional section by which a UC adopting pre-existing code names the
+# files that implement it. Checked ONLY when the section is there: no new required heading, so not one
+# running repo goes red for a section it has never written. All three checks TIGHTEN — none of them lets
+# anything through that the gate would otherwise stop, which is what keeps this from becoming a back door.
+ECL="$(uc_existing_code "$F")"
+if [ -n "$ECL" ]; then
+  step "② the UC content — $(kw_w existingcode "$ROOT") names files that really predate the process"
+  ECRE="$(paths_re "$(code_paths "$ROOT") $(test_paths "$ROOT")")"
+  ECAF="$(adopt_from "$ROOT")"
+  ECN=0; ECBAD=0
+  for _p in $ECL; do
+    ECN=$((ECN+1))
+    if ! printf '%s\n' "$_p" | grep -qE "$ECRE"; then
+      bad "$_p is outside code_paths/test_paths — it cannot be the code of a UC"; ECBAD=1; continue
+    fi
+    # (a) the one that stops this being a back door: code written AFTER the baseline cannot be declared
+    #     pre-existing. git decides, not the person writing the list.
+    if [ -n "$ECAF" ] && adopt_ok "$ROOT"; then
+      git -C "$ROOT" cat-file -e "$ECAF:$_p" 2>/dev/null \
+        || { bad "$_p did not exist at the adoption baseline $(printf '%.7s' "$ECAF") — it is new code and belongs to this UC through the normal steps, not as existing code"; ECBAD=1; }
+    fi
+    # (c) two UCs claiming one file means the traceability matrix has two owners for one behaviour
+    for _o in $(all_uc_files "$ROOT"); do
+      [ "$_o" = "$F" ] && continue
+      uc_existing_code "$_o" | grep -qxF "$_p" \
+        && { bad "$_p is already declared by $(basename "$_o" .md) — one file, one UC"; ECBAD=1; break; }
+    done
+  done
+  [ "$ECBAD" = 0 ] && ok "$ECN file(s) declared as existing code, all present at the baseline"
+fi
 step "③ RULE + entity + glossary — write the RULE in rules.md before quoting it"
 for r in $(uc_text "$F" | grep -oE 'RULE-[0-9]+' | sort -u); do
   # grep -c prints "0" AND THEN exits 1, so a "|| echo 0" builds a two-line string and breaks
@@ -507,8 +537,8 @@ fi
 # of an existing repo (no such commit exists yet in one), which is exactly why it needed its own test: case 50 writes
 # a re-read into the trail, commits only that file, and demands the gate see it.
 glog() { set -f; git -C "$ROOT" log "$@" -- $SPECP 2>/dev/null; set +f; }
-LAST="$(glog -1 --format=%cs --grep="^docs($ID)")"
-LASTS="$(glog -1 --format=%s --grep="^docs($ID)")"
+LAST="$(glog -1 -E --format=%cs --grep="^docs\($ID\)")"
+LASTS="$(glog -1 -E --format=%s --grep="^docs\($ID\)")"
 # #49: the latest re-read commit, and the "behavioural fingerprint" of the spec at a revision. Real case at
 # runxops UC-014: six re-reads (19 → 23 → 11 → 7 → 7 → 10) because each round of applying wording/label fixes
 # in a sibling file also dragged in a full verify round (~200 KB, ~10 minutes). The owner settled it: only a
@@ -562,7 +592,7 @@ elif [ "$RRC" = 1 ]; then
   ok "re-read with an unanchored mind: $RRN findings with an anchor + an outcome, and the separate commit is the latest spec commit (#27, #38)"
   rr_warn
 elif [ -n "$RH" ]; then
-  NCH="$(glog --format=%h "$RH..HEAD" --grep="^docs($ID)" | wc -l | tr -d ' ')"
+  NCH="$(glog -E --format=%h "$RH..HEAD" --grep="^docs\($ID\)" | wc -l | tr -d ' ')"
   ok "re-read: $RRN findings with an anchor + an outcome; the $NCH spec commits since only applied wording/labels — Main/Alt/Exceptions/Postconditions/AC · flow · the RULE statements · the entities mermaid are unchanged (#49)"
   [ -n "$FP_SKIP" ] && info "the re-read happened before the v7 migration — the entities mermaid area cannot be compared across that mark (one file per context → one per entity); check by hand if an entity changed"
   rr_warn

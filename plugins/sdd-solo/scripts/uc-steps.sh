@@ -99,7 +99,7 @@ TLS="$(tool_paths "$ROOT")"
 for d in $TLS; do CPS="$(printf '%s\n' $CPS | grep -vxF "$d" | tr '\n' ' ')"; done
 R11=1
 if [ -n "$(printf '%s' "$CPS" | tr -d ' ')" ]; then
-  git -C "$ROOT" log --format='%h %s' --grep="($ID)" -- $CPS 2>/dev/null \
+  git -C "$ROOT" log -E --format='%h %s' --grep="\($ID\)" -- $CPS 2>/dev/null \
     | grep -qE '^[0-9a-f]+ (feat|fix)' && R11=0
 fi
 st "⑪" $R11 "product code (a feat/fix commit carrying $ID touching $(printf '%s' "$CPS" | sed 's/ *$//'))"

@@ -165,8 +165,8 @@ RMAX="$(rr_max "$ROOT")"; RND="$(rr_rounds "$P")"
 if [ "$RMAX" -gt 0 ] && [ "$RND" -ge "$RMAX" ] && [ "$RRU" -gt 0 ]; then
   bad "round $RND of the re-read has reached the ceiling (rr_max=$RMAX) and $RRU finding(s) are still Undecided — turn each into an Open Question or a ticket; a further round is not an answer"
 fi
-LAST="$(git -C "$ROOT" log -1 --format=%cs --grep="^docs($ID)" -- "$D" 2>/dev/null)"
-LASTS="$(git -C "$ROOT" log -1 --format=%s --grep="^docs($ID)" -- "$D" 2>/dev/null)"
+LAST="$(git -C "$ROOT" log -1 -E --format=%cs --grep="^docs\($ID\)" -- "$D" 2>/dev/null)"
+LASTS="$(git -C "$ROOT" log -1 -E --format=%s --grep="^docs\($ID\)" -- "$D" 2>/dev/null)"
 RRC=0; printf '%s' "$LASTS" | grep -qE "^docs\($ID\): ($(kw c_reread))" && RRC=1
 if [ -z "$LAST" ]; then bad "there is no docs($ID) commit yet — commit the change first"
 elif printf '%s' "$LASTS" | grep -qE "^docs\($ID\): change reviewed — ($(kw c_p5))$"; then

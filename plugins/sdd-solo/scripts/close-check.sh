@@ -45,9 +45,13 @@ for n in $(grep -oE '^### AC-[0-9]+' "$F" | grep -oE '[0-9]+'); do
   ls "$TD"/AC-$n.test.* >/dev/null 2>&1 && ok "AC-$n has a test" || bad "AC-$n has no $UCT/$CTX/$ID/AC-$n.test.*"
 done
 # the order docs → feat
-D0="$(git -C "$ROOT" log --reverse --format=%ct --grep="^docs($ID)" 2>/dev/null | head -1)"
-F0="$(git -C "$ROOT" log --reverse --format=%ct --grep="^feat($ID)" 2>/dev/null | head -1)"
-if [ -z "$F0" ]; then warn "there is no feat($ID) commit yet — commit the code before closing"
+D0="$(git -C "$ROOT" log -E --reverse --format=%ct --grep="^docs\($ID\)" 2>/dev/null | head -1)"
+F0="$(git -C "$ROOT" log -E --reverse --format=%ct --grep="^feat\($ID\)" 2>/dev/null | head -1)"
+if [ -z "$F0" ] && [ -n "$(uc_existing_code "$F")" ]; then
+  # An adopted UC (8.11.0): the code was written before the spec, so there is no feat($ID) to order against.
+  # Saying "commit the code before closing" here would be false, and a false warning is read once and then never.
+  warn "adopted code: the docs($ID) → feat($ID) order cannot be checked — the code predates the spec by construction"
+elif [ -z "$F0" ]; then warn "there is no feat($ID) commit yet — commit the code before closing"
 elif [ -n "$D0" ] && [ "$D0" -lt "$F0" ]; then ok "docs($ID) comes before feat($ID)"; else bad "feat($ID) has no docs($ID) before it"; fi
 # implicit rules: a literal number in the UC code.
 # THE SET OF CODE FILES OF THE UC — two sources added together (7.0.1, P-15):
@@ -74,11 +78,27 @@ for d in $CP; do
   CFILES="$CFILES
 $(cd "$ROOT" && { find "$d" -type d -name "$SLUG" -exec find {} -type f \; ; find "$d" -type f -name "$SLUG.*"; } 2>/dev/null | grep -vE '\.(test|spec)\.')"
 done
+#  ③ declared: the paths this UC lists under `## Existing code` (8.11.0). For a UC adopting code written
+#     BEFORE its spec, sources ① and ② are BOTH empty by construction — ① needs a commit carrying the ID
+#     and there is none, ② needs the code named after the UC slug and legacy code is not. Without ③ the
+#     literal-number scan below silently does not run on exactly the code that has had the longest time to
+#     accumulate unquoted numbers, and the red points at code_paths, which is not the fix.
+NC3=0
+if [ -n "$(uc_existing_code "$F")" ]; then
+  NC3="$(uc_existing_code "$F" | grep -c .)"
+  CFILES="$CFILES
+$(uc_existing_code "$F" | while IFS= read -r f; do
+    [ -n "$f" ] && [ -f "$ROOT/$f" ] || continue
+    in_paths "$f" "$CP" || continue
+    in_paths "$f" "$TPS" && continue
+    printf '%s\n' "$f"
+  done | grep -vE '\.(test|spec)\.')"
+fi
 CFILES="$(printf '%s\n' "$CFILES" | awk 'NF&&!a[$0]++')"
 # Count the files that can REALLY be read. 0 files = "unknown", not "clean".
 NF_="$(printf '%s\n' "$CFILES" | grep -c .)"
 if [ "$NF_" -gt 0 ]; then
-  info "the code of $ID: $NF_ files — $NC1 touched by a ($ID) commit, $((NF_-NC1)) added by the slug $SLUG"
+  info "the code of $ID: $NF_ files — $NC1 touched by a ($ID) commit, $NC3 declared in $(kw_w existingcode "$ROOT"), the rest by the slug $SLUG"
   L="$(cd "$ROOT" && printf '%s\n' "$CFILES" | tr '\n' '\0' | xargs -0 grep -HnE '([=<>!]=?|:|,|\() *[0-9]+\b|[0-9]+ *\* *[0-9]+' 2>/dev/null \
        | grep -vE '\.(test|spec)\.[a-z]+:|RULE-|CON-|ADR-' \
        | grep -vE '\[[0-9]+\]' \
@@ -104,7 +124,7 @@ if [ "$NF_" -gt 0 ]; then
     ok "no stray literal number found in the $NF_ code files of $ID"
   fi
 elif [ -n "$F0" ]; then
-  bad "there is a feat($ID) but no code file can be read: no ($ID) commit touched a file under $CP, and there is no directory/file named $SLUG — fix code_paths in .sdd/config"
+  bad "there is a feat($ID) but no code file can be read: no ($ID) commit touched a file under $CP, and there is no directory/file named $SLUG — fix code_paths in .sdd/config, or list the files under $(kw_w existingcode "$ROOT") in the UC"
 else
   warn "the code of $ID was not found in: $CP — the implicit rules could not be looked at"
 fi

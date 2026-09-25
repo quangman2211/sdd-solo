@@ -188,6 +188,26 @@ Mở issue tại [github.com/quangman2211/sdd-solo/issues/new/choose](https://gi
 - **Báo lỗi** — plugin cài không được, lệnh chạy sai, script hoặc git hook chặn nhầm. Cần: lệnh đã chạy, output nguyên văn, cách tái hiện, môi trường.
 - **Yêu cầu sửa / thêm** — đổi một quy tắc, thêm kiểm tra, thêm lệnh. Mô tả *vấn đề đang gặp* trước, giải pháp sau.
 
+
+### Kho đã có code thì sao (8.11.0)
+
+`/sdd-solo:init` trên một kho đang chạy **không** đóng băng nó. `scaffold` ghi `adopt_from` — commit kho đang
+đứng lúc sdd-solo tới — và từ đó:
+
+- code **mới** chịu luật đầy đủ ngay từ commit đầu tiên;
+- file đã có ở mốc đó được hook **nêu tên và đếm** thay vì chặn, cho tới lần đầu một commit mang ID thật chạm
+  vào nó, và lúc đó nó rời miễn trừ **vĩnh viễn**;
+- `bash .sdd/scripts/adopt.sh --count` in còn bao nhiêu; `/sdd-solo:adopt` gom chúng thành ứng viên BR/UC.
+
+Mỗi hành vi có sẵn thành UC bằng cách đi **đủ các bước và qua đúng cổng DoR** — không có `--import`, không có
+`--as-built`, không có cờ nào đặt `Status: implemented`. Những bước một đường tắt sẽ bỏ chính là những bước
+tìm ra lỗi, và trên code nhiều năm chưa ai đọc lại thì chúng đáng giá hơn, không phải ít hơn.
+
+Nói thẳng ranh giới: cơ chế này **không** cưỡng chế spec-trước-code trên mỗi lần sửa một file cũ chưa ai đụng.
+Đo trên chính kho sdd-solo, **77 trên 103** commit chạm code chỉ sửa file đã có — nên ngày đầu miễn trừ gánh
+ba phần tư số commit. Nó thu hẹp theo từng file được nhận vào, và con số ở `adopt.sh --count` là để chỗ rò có
+tên và có người nhìn, chứ không phải để yên tâm.
+
 Ba loại yêu cầu bị từ chối theo thiết kế, đọc phần Ranh giới trong [CLAUDE.md](CLAUDE.md) trước khi mở issue: thêm cờ bỏ qua cho gate/hook, cho plugin ghi đè file dự án đã sửa tay, hook vào lệnh của công cụ ngoài.
 
 ## Tài liệu

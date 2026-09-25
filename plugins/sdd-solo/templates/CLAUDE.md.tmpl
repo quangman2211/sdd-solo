@@ -27,3 +27,10 @@ Starting a project (Phase 1): `/sdd-solo:intake` → the owner writes `specs/vis
 Changing behaviour already shipped: `/sdd-solo:change CHG-###` → test the new AC → code → archive.
 
 The process commands: `/sdd-solo:start` → write the UC's content with the user (do NOT use `aiup-core:use-case-spec` — it writes into `docs/`, and its `BR-###` is a business *rule* renumbered per file, colliding with our business *requirement* `BR-###`) → by hand: RULE, AC, flow (mermaid), Claude Design → `/sdd-solo:adversarial` → `/sdd-solo:verify` → `/sdd-solo:gate` → `/sdd-solo:design` → write the code → test against the ACs → `/sdd-solo:close` → `/sdd-solo:state`.
+
+**If `.sdd/config` carries an `adopt_from=` line**: this repo already had code when sdd-solo arrived.
+A file that existed at that baseline is WARNED ABOUT AND COUNTED by the githook instead of blocked when
+a commit carries no ID. That is **not permission**: code written from now on takes the full rule from its
+first commit, the exempt set never grows, and a file leaves it for good the first time a commit carrying
+a real ID touches it. Do not read that warning line as an invitation to keep writing without a spec —
+`bash .sdd/scripts/adopt.sh --count` says how much is left, and `/sdd-solo:adopt` says what to do next.

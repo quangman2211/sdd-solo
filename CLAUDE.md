@@ -7,12 +7,12 @@ Repo này là **plugin Claude Code** (đồng thời là marketplace một plugi
 .claude-plugin/marketplace.json      version phải khớp plugin.json
 plugins/sdd-solo/
   .claude-plugin/plugin.json         version
-  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · role · phieu · queue · numbers · state · status
+  skills/<name>/SKILL.md             lệnh /sdd-solo:<name> — init · adopt · intake · start · adversarial · verify · gate · design · change · close · deprecate · orchestrate · role · phieu · queue · numbers · state · status
   skills/<name>/references/*.md      nhánh loại trừ nhau, chỉ đọc khi cần (8.1): adversarial uc-layer|br-layer ·
                                      intake interview-mode|brief-conversion · verify tree-sweep · orchestrate herdr-traps
   skills/sdd-process/SKILL.md        kiến thức nền, AI tự gọi khi user viết spec (không phải lệnh) — KHÔNG tách
   hooks/hooks.json                   SessionStart → scripts/session-start.sh (đọc STATE.md của dự án)
-  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3) · mermaid.sh (vỏ của parser mermaid, 7.5) · numbers.sh (gom ô `___` còn nợ số, 8.0)
+  scripts/                           bash 3.2-compatible (macOS): lib.sh · scaffold · br-check · gate-check (có --pre) · design-check · change-check · close-check · pass (gate|close|change) · status · metrics · decisions · context (có --why) · uc-steps · version-check · update · migrate · deps-check · session-start · role (vai · worktree · lời giao · KETQUA, 7.2) · phieu (cấp số có khoá · hoi, 7.2–7.3) · queue (hàng đợi trong git, 7.3) · hoi-check (sổ hỏi có địa chỉ, 7.3) · mermaid.sh (vỏ của parser mermaid, 7.5) · numbers.sh (gom ô `___` còn nợ số, 8.0) · adopt.sh (kiểm kê code có trước quy trình, 8.11)
   scripts/kw.tsv                     **bảng từ khoá tài liệu song ngữ** (7.7) — bash và node đọc chung
   scripts/js/                        **mã node của plugin** (7.6, ESM, 0 gói npm): mermaid · mermaid-real (mượn mermaid của dự án khi có) · context · migrate · pass · brief · hoi · phieu (mục lục sinh từ file phiếu, 8.3) · table · util · kw
   templates/project/                 19 file copy vào dự án bởi scaffold.sh, có manifest sha ở .sdd/manifest (5.0.0: 43 → 16; 7.2–7.3: + .sdd/roles · notes/hang-doi.md · notes/uy-quyen.md)
@@ -174,6 +174,30 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   không có giao diện: đo ở runxops, 10 trên 21 UC có `screens/` chỉ chứa mỗi README. Luật 5.0.0 hỏi "ai đọc nó" — câu
   hỏi đó phải hỏi ở chỗ **CHÉP**, không phải chỉ ở chỗ thêm khuôn. Kiểm trước khi bỏ một thư mục: `mmd_lint` bỏ qua file
   không có, `uc-steps` bước ⑤ tìm file khác README, và cổng đọc **bảng** `## Screens` trong thân UC chứ không đọc thư mục.
+- **Miễn trừ code có trước quy trình là HỮU HẠN, do git liệt kê, và chỉ co lại** (8.11.0). `adopt_from` ở
+  `.sdd/config` là commit kho đang đứng lúc sdd-solo tới; `scaffold` ghi **chỉ ở lần cài đầu và chỉ khi
+  `repo_has_code`**, `init --update` không bao giờ thêm. File có trong cây mốc **và** chưa từng bị commit mang ID
+  chạm vào thì `commit-msg` nêu tên và đếm, không chặn; mọi thứ khác chịu luật đầy đủ. Ba điều giữ nó khỏi thành
+  cờ bỏ qua README từ chối: ① **cái chốt** — file đã một lần vào quy trình rời miễn trừ **vĩnh viễn**, nên dời
+  `adopt_from` không kéo được gì về (`status.sh` còn đỏ khi giá trị khác cái git ghi lần đầu, đọc bằng pickaxe
+  `-S`); ② không đọc được mốc thì **không tha** — `--is-shallow-repository` và `cat-file -e` kiểm một lần, hỏng
+  thì tắt hẳn và nói vì sao, vì clone `--depth 1` là ca lật thành tha-tất-cả ở CI mà không dòng nào trông sai;
+  ③ nó **trong** mẫu số trace-ratio, khác hẳn `tool_paths` (vĩnh viễn, mở, NGOÀI mẫu số) — đừng bao giờ cho hai
+  thứ đó chung một hình dạng, một cái nói "sẽ không bao giờ có UC", cái kia nói "chưa có UC". Số đo phải nằm cạnh
+  lời tuyên bố: **77 trên 103** commit chạm code của chính kho này chỉ sửa file đã có (75%), nên ngày đầu miễn
+  trừ gánh ba phần tư — cái chốt là thứ kéo nó xuống, không phải thời gian.
+- **`## Existing code` chỉ SIẾT, và mốc là thứ nó không nói dối được** (8.11.0). Mục không bắt buộc, không vào
+  `templates/skel/`, cổng chỉ kiểm khi nó có mặt. Nó tồn tại vì với UC nhận vào, `close-check` mất **cả hai**
+  nguồn dựng tập file code (① cần commit mang ID — code cũ không có; ② cần code đặt tên theo slug — code cũ
+  không thế), nên `NF_=0` và phép quét số literal **im lặng không chạy** đúng trên thứ code có nhiều thời gian
+  tích số ma thuật nhất. Ba phép kiểm đều siết, và phép "đường dẫn phải có trong cây mốc" là thứ chặn nó thành
+  cửa sau: không khai được mã viết hôm qua là "có sẵn". Marker cổng **không** ghi gì về việc nhận vào — một dòng
+  `adopted:` là chỗ đọc thứ hai cho sự thật mục này đã giữ, đúng lỗi P-58.
+- **`git log --grep` phải luôn `-E` KÈM escape ngoặc** (8.11.0). Mặc định git dùng BRE nên `^feat(UC-001)` khớp
+  literal và chạy đúng — cho tới khi một máy đặt `grep.extendedRegexp=true` toàn cục, lúc đó `(UC-001)` thành
+  nhóm bắt và cùng câu lệnh trả **0** (đo trên kho này: 67 → 0), làm luật thứ tự docs→feat của `close-check`
+  thành no-op vĩnh viễn trên mọi repo. Sáu chỗ từng mắc. Và **escape một mình còn tệ hơn**: trong BRE `\(` là
+  *nhóm*, nên nó hỏng luôn ca mặc định — phải đi đôi với `-E`, đúng lối `gate_commit` đã dùng từ 8.8.0.
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 
