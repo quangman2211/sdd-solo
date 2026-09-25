@@ -28,7 +28,7 @@
 # why in notes/uy-quyen.md plus one line in specs/decisions.md.
 # A.ky=gate close
 vai_bat_buoc=khong
-vai=A B R D T
+vai=A B R D T E
 
 # A · coordinator — hands out work, commits logs for roles that do not commit, asks the owner on L3.
 # Writes no spec and no code.
@@ -75,3 +75,15 @@ T.cam=@code_paths specs/** STATE.md
 T.nhanh=test/*
 T.commit=co
 T.kiem=the repo's test command — the test must be RED before any code exists
+
+# E · measurement - runs the end-to-end measurement and writes down what it found. It does NOT write the spec and
+# it does NOT write the code, and the coordinator does not run this itself: whoever hands out the work must not
+# also produce the evidence that says the work is done. Same separation as R writing the answer and A committing
+# it, or T not reading D's code. Ends a round with `role.sh --ketqua <key> ket=xong neo=notes/do/<report>.md
+# dat=<passed>/<total>` - the report file IS the anchor, and dat= is the number A reads off the board.
+E.ten=measurement
+E.ghi=notes/do/** notes/hoi-dap/phieu/**
+E.cam=specs/** @code_paths @test_paths STATE.md specs/decisions.md
+E.nhanh=
+E.commit=co
+E.kiem=the repo's e2e command - prints how many steps passed out of how many

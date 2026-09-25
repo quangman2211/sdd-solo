@@ -6,7 +6,7 @@
 #   role.sh --worktree <role> [UC-###]  create a worktree for the role on a branch from <V>.nhanh, set the marker, remind about merging main
 #   role.sh <role> <ticket file> [--luot N]  print the SIX-PART BRIEF from a ticket — no free-form string accepted
 #   role.sh --don UC-### [--dry-run]     clean the lanes of one UC: remove its role worktrees, prune, delete its <V>.nhanh branches
-#   role.sh --ketqua <key> ket=xong|chan|do neo=<hash|marker|file> [kiem=…] [hoi=…] [con=…]
+#   role.sh --ketqua <key> ket=xong|chan|do neo=<hash|marker|file> [dat=<n>/<m>] [kiem=…] [hoi=…] [con=…]
 #                                       write one KETQUA line into $(git-common-dir)/sdd-ketqua/<key>.txt — shared by every worktree
 #   role.sh --ketqua <key>              read it
 #   role.sh --staged                    check the staged files against the current role (the githook calls it via --commit)
@@ -138,8 +138,15 @@ case "$1" in
   printf '%s' "$K" | grep -qE '^[a-z0-9][a-z0-9._-]{1,39}$' || { bad "the key '$K' — only [a-z0-9][a-z0-9._-]{1,39}, no spaces, no |"; exit 2; }
   KD="$(ketqua_dir "$ROOT")"; KF="$KD/$K.txt"
   if [ $# -eq 0 ]; then [ -f "$KF" ] && cat "$KF" || { info "there is no KETQUA for $K yet ($KF)"; exit 1; }; exit 0; fi
-  KET=""; NEO=""; KIEM="-"; HOI="-"; CON="-"
-  for a in "$@"; do case "$a" in ket=*) KET="${a#ket=}";; neo=*) NEO="${a#neo=}";; kiem=*) KIEM="${a#kiem=}";; hoi=*) HOI="${a#hoi=}";; con=*) CON="${a#con=}";; *) bad "cannot read '$a' (ket= neo= kiem= hoi= con=)"; exit 2;; esac; done
+  KET=""; NEO=""; DAT="-"; KIEM="-"; HOI="-"; CON="-"
+  for a in "$@"; do case "$a" in ket=*) KET="${a#ket=}";; neo=*) NEO="${a#neo=}";; dat=*) DAT="${a#dat=}";; kiem=*) KIEM="${a#kiem=}";; hoi=*) HOI="${a#hoi=}";; con=*) CON="${a#con=}";; *) bad "cannot read '$a' (ket= neo= dat= kiem= hoi= con=)"; exit 2;; esac; done
+  # 8.9.0 (P-65): `dat=<passed>/<total>` - the one number a coordinator needs at a glance from a job that COUNTS
+  # something (a measurement run, a test sweep). It is a REPORTED field, not a gate: a shortfall is a finding to
+  # file, and `done` says the number out loud rather than refusing. It has to be written BEFORE `kiem=`, because
+  # `kiem=` is the one field that may carry spaces and `kq_field` reads the FIRST occurrence of a name (P-58) -
+  # a `kiem=` quoting "dat=5/9" after it would be read as the field itself.
+  case "$DAT" in -|[0-9]*/[0-9]*) ;; *) bad "dat= must be <passed>/<total>, e.g. dat=11/13 (got '$DAT')"; exit 2;; esac
+  printf '%s' "$DAT" | grep -qE '^(-|[0-9]+/[0-9]+)$' || { bad "dat= must be <passed>/<total>, e.g. dat=11/13 (got '$DAT')"; exit 2; }
   case "$KET" in xong|chan|do) ;; *) bad "ket= must be xong · chan · do (got '$KET')"; exit 1;; esac
   if [ "$KET" = xong ]; then
     [ -n "$NEO" ] && [ "$NEO" != "-" ] || { bad "ket=xong requires neo= (a commit hash · the marker .sdd/gate/… · a file path) — time passing is not evidence"; exit 1; }
@@ -149,7 +156,7 @@ case "$1" in
   fi
   [ "$KET" = chan ] && { [ -n "$HOI" ] && [ "$HOI" != "-" ] || { bad "ket=chan requires hoi=<ticket number | ASK-X#> — a block with no question is one nobody can clear"; exit 1; }; }
   mkdir -p "$KD"
-  L="KETQUA key=$K ket=$KET neo=${NEO:--} kiem=$KIEM hoi=$HOI con=$CON vai=$(role_current "$ROOT") luc=$(date +%Y-%m-%dT%H:%M)"
+  L="KETQUA key=$K ket=$KET neo=${NEO:--} dat=$DAT kiem=$KIEM hoi=$HOI con=$CON vai=$(role_current "$ROOT") luc=$(date +%Y-%m-%dT%H:%M)"
   printf '%s\n' "$L" >> "$KF"
   printf '%s\n' "$L"
   info "written to ${KF} — send exactly the line above back to the coordinator (as the first line of the message)"

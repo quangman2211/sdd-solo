@@ -1,5 +1,36 @@
 # Changelog
 
+## 8.9.0 — 2026-09-25
+
+**`queue.sh add` chặn cái CHỨNG MINH ĐƯỢC là sai, cảnh báo cái chỉ là chưa khai (P-66).** `add <key> <lane> <role>` có
+hai từ vựng khác nhau — làn là thứ có SỨC CHỨA (`## Lanes`), vai là một tên trong `.sdd/roles` — và gọi đảo không bị bắt.
+Đo trên hàng đợi runxops 25/09: **20 hàng hỏng** — 5 hàng gọi đảo thật (`lane=C role=UC-034`), 1 hàng UC nằm ô làn,
+14 hàng trên làn `test` chưa ai khai. Cảnh báo về làn chưa khai đã in ra và bị bỏ qua 14 lần, nên:
+một VAI đứng chỗ làn · một LÀN đứng chỗ vai · một ID (`UC-###` · `CHG-###` · `BR-###`) đứng ở một trong hai chỗ đó
+→ **chặn**, kèm lệnh đúng phải gõ. Còn **chưa khai** — làn chưa có trong `## Lanes`, vai chưa có trong `vai=` — thì
+**chỉ cảnh báo**, và nói rõ cái giá (không sức chứa thì `next` không bao giờ giữ việc lại; không khai vai thì không ai
+nhận được hàng đó). Một đường ranh cho cả hai, cùng một lý lẽ: chặn "chưa khai" là bắt một repo viết xong chính sách
+của nó rồi mới được xếp việc, và đó không phải cái đã hỏng ở runxops — mọi hàng hỏng ở đó đều mang một `UC-###` ở ô vai.
+(Bản nháp đầu chặn cả vai chưa khai; ba ca của bộ test đỏ ngay — khuôn không khai vai `C` — và đó là một luật không nhất
+quán với chính lý lẽ của nó.)
+
+**KHÔNG đổi tên tham số thành `<uc> <vai>`** (đề xuất của A): tiền đề không đúng. Cột `Lane` của chính hàng đợi runxops
+chứa `spec · soi · trongtai · giaodien · code`, khớp bảng Lanes có sức chứa ở trên nó; đổi tên thành `<uc>` là phá cơ chế
+sức chứa làn (`lane_cap` · `lane_busy` · `ready_list`). Cái hỏng là **không kiểm dạng**, không phải cái tên.
+
+**Vai đo (E) vào bộ vai mẫu, và KETQUA có `dat=<đạt>/<tổng>` (P-65).** Lý do của vai E là một lý do chung, không riêng
+runxops: **người phát việc không được đồng thời là người sản xuất bằng chứng nói việc đã xong** — cùng hình dạng với
+"R viết câu trả lời, A commit" và "T không đọc code của D". `E.ghi=notes/do/**`, cấm spec và code; khuôn `notes/hang-doi.md`
+có thêm làn `do`. `dat=` là một trường ĐƯỢC BÁO, **không phải một cổng**: `board` in nó ra, `done` nói ra khi đo còn thiếu
+rồi vẫn đóng hàng, vì thứ phép đo tìm ra là một phát hiện để ghi phiếu, không phải một cổng để trượt. Nó đứng **trước** `kiem=`
+trong dòng KETQUA, vì `kiem=` là trường duy nhất có dấu cách và `kq_field` đọc lần xuất hiện ĐẦU (P-58) — một `kiem=`
+trích "dat=9/9" đặt sau sẽ bị đọc thành chính trường đó. Ca 65 đo đúng ca đó. Dòng KETQUA vì thế có thêm một trường cố định `dat=-` ở mọi việc không đếm gì, giống `kiem=-` · `hoi=-` · `con=-` — thứ tự trường cố định là thứ làm dòng này đọc được.
+
+**Hai phần của P-65 KHÔNG làm, và vì sao.** `baocao=<file>` trùng với `neo=`, vốn đã nhận đường dẫn file và vốn **bắt buộc**
+với `ket=xong` — file báo cáo CĦÍNH LÀ cái neo của một lượt đo, thêm trường thứ hai là hai chỗ nói cùng một việc.
+Khung `notes/vai/E.md` thì plugin không ship `notes/vai/` nào cả: hợp đồng vai được **sinh ra** từ `.sdd/roles` bằng
+`role.sh --xem`, nên một file khuôn là bản chép thứ hai sẽ trôi khỏi bản sinh ra — đúng loại "ngăn kéo trống" bỏ ở 5.0.0.
+
 ## 8.8.0 — 2026-09-25
 
 **Cái neo của cổng là cái ĐÃ GHI, không phải cái grep được từ tiêu đề commit (P-64).** Ký lại cổng cho một UC đã

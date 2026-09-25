@@ -2,6 +2,8 @@
 # queue.sh — the coordinator work queue, the file notes/hang-doi.md IN GIT, machine readable (7.3).
 #
 #   queue.sh add <key> <lane> <role> [--can "k1 k2"] [note]   add a work item, state waiting
+#       <lane> is a lane from the ## Lanes table (spec · code · …), the thing that has a CAPACITY.
+#       <role> is a role from .sdd/roles (A · B · …). They are not interchangeable and the order matters.
 #   queue.sh next                                           what CAN GO OUT NOW: every Need is done, the lane has room
 #   queue.sh take <key> [who]                               waiting → active, records who holds it + the time (default: the current role/worktree)
 #   queue.sh done <key> [--theo-phieu #n]                                     reads the KETQUA of the key (role.sh --ketqua); ket=xong + an anchor → done
@@ -27,6 +29,7 @@ K_WAIT="$(kw q_wait)"; K_ACT="$(kw q_active)"; K_DONE="$(kw q_done)"; K_STOP="$(
 W_WAIT="$(kw_w q_wait "$ROOT")"; W_ACT="$(kw_w q_active "$ROOT")"; W_DONE="$(kw_w q_done "$ROOT")"
 W_STOP="$(kw_w stop "$ROOT")"; W_HELD="$(kw_w held "$ROOT")"
 is_kw() { printf '%s' "$2" | grep -qxE "$1"; }   # is the table cell $2 one side of the keyword $1?
+is_lane() { lanes | cut -d'|' -f1 | grep -qxF "$1"; }   # is $1 a lane named in the ## Lanes table?
 is_main_wt() { [ "$(cd "$ROOT" && git rev-parse --git-dir)" = "$(cd "$ROOT" && git rev-parse --git-common-dir)" ]; }
 main_branch() { git -C "$ROOT" show-ref --verify --quiet refs/heads/main && printf main || printf master; }
 # the table content: the main checkout reads the file; a secondary worktree reads the main copy
@@ -78,11 +81,46 @@ lane_done_hint() {
 case "$CMD" in
 add)
   need_q; need_main; K="$2"; L="$3"; V="$4"; shift 4 2>/dev/null || { echo "usage: queue.sh add <key> <lane> <role> [--can \"k1 k2\"] [note]" >&2; exit 2; }
-  valid_key "$K"; CAN="-"; NOTE=""
+  valid_key "$K"
+  # 8.9.0 (P-66): <lane> and <role> are two different vocabularies and swapping them was never caught. Measured on
+  # the runxops queue on 2026-09-25: 20 malformed rows - 5 where the arguments were plainly swapped
+  # (`lane=C role=UC-034`), 1 with a UC in the lane cell, 14 on a lane nobody ever declared. The existing warning
+  # about an undeclared lane had been printed and ignored 14 times, so what can be PROVEN wrong now blocks; what is
+  # merely undeclared still warns, because blocking that would make a running repo edit its table before it could
+  # queue anything, and a lane may simply not be written down yet.
+  if role_known "$L" "$ROOT" && ! is_lane "$L"; then
+    bad "'$L' is a ROLE, not a lane - the arguments are the other way round"
+    info "you meant:  queue.sh add $K <lane> $L${V:+   (and '$V' goes where a role goes, not where a lane goes)}"
+    info "lanes declared in ## Lanes: $(lanes | cut -d'|' -f1 | tr '\n' ' ')"
+    exit 2
+  fi
+  case "$L" in [Uu][Cc]-[0-9]*|[Cc][Hh][Gg]-[0-9]*|[Bb][Rr]-[0-9]*)
+    bad "'$L' is an ID, not a lane - the lane is the thing with a capacity (## Lanes), the ID belongs in the key or the note"
+    info "lanes declared in ## Lanes: $(lanes | cut -d'|' -f1 | tr '\n' ' ')"
+    exit 2;; esac
+  if [ -n "$V" ]; then
+    # Same line as for the lane, drawn in the same place: an ID in the role slot, or a LANE in the role slot, is
+    # provably wrong and blocks; a role that is merely not declared yet only warns. Blocking that one would stop a
+    # repo from queueing work until it had finished writing its own policy file - and it is not what went wrong at
+    # runxops, where every bad row carried a UC-### in the role cell.
+    case "$V" in [Uu][Cc]-[0-9]*|[Cc][Hh][Gg]-[0-9]*|[Bb][Rr]-[0-9]*)
+      bad "'$V' is an ID, not a role - a role is a name from .sdd/roles; the ID belongs in the key or the note"
+      info "you meant:  queue.sh add $K $L <role>   (and put $V in the note)"
+      exit 2;; esac
+    if is_lane "$V" && ! role_known "$V" "$ROOT"; then
+      bad "'$V' is a LANE, not a role - the arguments are the other way round"
+      info "you meant:  queue.sh add $K $V <role>"
+      exit 2
+    fi
+    if [ -n "$(roles_file "$ROOT")" ] && ! role_known "$V" "$ROOT"; then
+      warn "'$V' is not a role in .sdd/roles (vai=$(role_list "$ROOT")) — nobody can be handed this row until it is declared there"
+    fi
+  fi
+  CAN="-"; NOTE=""
   while [ $# -gt 0 ]; do case "$1" in --can) CAN="$2"; shift 2;; *) NOTE="$NOTE $1"; shift;; esac; done
   NOTE="$(printf '%s' "$NOTE" | sed 's/^ *//')"
   [ -n "$(row_of "$K")" ] && { bad "the key $K already exists"; exit 1; }
-  [ -n "$(lane_cap "$L")" ] || warn "the lane '$L' is not declared in ## Lanes — next cannot limit its capacity"
+  [ -n "$(lane_cap "$L")" ] || warn "the lane '$L' is not declared in ## Lanes — it has no capacity, so 'next' will never hold a job back on it. Add a row to ## Lanes"
   for d in $CAN; do [ "$d" = "-" ] && continue; [ -n "$(row_of "$d")" ] || warn "the need '$d' is not in the table"; done
   printf '| %s | %s | %s | %s | %s | - | %s |\n' "$K" "$L" "$V" "$CAN" "$W_WAIT" "${NOTE:--}" >> "$Q"
   commit_q "$K waiting"; ok "added $K (lane $L · role $V · needs ${CAN})"
@@ -126,7 +164,13 @@ done)
   [ "$KET" = xong ] || { bad "the latest KETQUA of $K is ket=$KET, not xong: $LAST"; exit 1; }
   [ -n "$NEO" ] && [ "$NEO" != "-" ] || { bad "a KETQUA of xong with no anchor — done without an anchor is red"; exit 1; }
   set_row "$K" "trangthai=$W_DONE" "neo=$NEO"
-  commit_q "$K done ($NEO)"; ok "$K → done · anchor $NEO"
+  DT="$(kq_field dat "$LAST")"; [ "$DT" = "-" ] && DT=""
+  commit_q "$K done ($NEO)"; ok "$K → done · anchor $NEO${DT:+ · measured $DT}"
+  # A job that reported a shortfall is still done: the measurement ran, and what it found is a finding to file,
+  # not a gate to fail. Saying the number out loud is the whole job here (8.9.0, P-65).
+  if [ -n "$DT" ] && [ "${DT%%/*}" != "${DT##*/}" ]; then
+    warn "$K reported $DT - the measurement did not pass in full; file what it found before the result is forgotten"
+  fi
   lane_done_hint "$K"
   ;;
 stop)
@@ -163,7 +207,8 @@ board)
     age=""; if [ -n "$t" ]; then ts="$(date -j -f '%Y-%m-%dT%H:%M' "$t" +%s 2>/dev/null || date -d "$t" +%s 2>/dev/null)"; [ -n "$ts" ] && age=$(( (NOW - ts) / 60 )); fi
     flag=""; if [ -f "$KD/$k.txt" ]; then
       KL="$(tail -1 "$KD/$k.txt")"
-      case "$(kq_field ket "$KL")" in xong) flag="✓ KETQUA says xong — queue.sh done $k";; chan) flag="✗ KETQUA blocked: hoi=$(kq_field hoi "$KL")";; *) flag="KETQUA: ket=$(kq_field ket "$KL")";; esac
+      DT="$(kq_field dat "$KL")"; [ "$DT" = "-" ] && DT=""
+      case "$(kq_field ket "$KL")" in xong) flag="✓ KETQUA says xong${DT:+ ($DT)} — queue.sh done $k";; chan) flag="✗ KETQUA blocked: hoi=$(kq_field hoi "$KL")";; *) flag="KETQUA: ket=$(kq_field ket "$KL")";; esac
     elif [ -n "$age" ] && [ "$age" -gt "$QH" ]; then flag="suspected-dead (${age} minutes, no KETQUA) — go and look, do not change the state by itself"; fi
     printf '  %-24s role %-3s held %-10s %6s min  %s\n' "$k" "$v" "${who:-?}" "${age:--}" "$flag"
   done

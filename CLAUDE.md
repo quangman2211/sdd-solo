@@ -146,6 +146,14 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   chĩa vào lịch sử thay vì vào một phép kiểm. **Dòng 1 giữ nguyên hash cổng gốc**: mọi người đọc lần theo marker phải tới commit
   cổng đã xảy ra, không tới ngày phục hồi. Đừng biến nó thành một cửa cấp marker (`--force`, `--new`): lúc đó nó là đúng cái cửa
   8.4.0 vừa đóng. Số commit động vào thân UC kể từ cổng đó chỉ được **cảnh báo**, không chặn — đó là việc để nhìn, không phải luật mới.
+- **Làn và vai là hai từ vựng, và `queue.sh add` chỉ chặn cái chứng minh được** (8.9.0, P-66). Làn là thứ có sức chứa
+  (`## Lanes`), vai là tên trong `.sdd/roles`. Chặn: vai đứng chỗ làn · ID đứng chỗ làn · vai không khai. Chỉ cảnh báo:
+  làn chưa khai — vì chặn chỗ đó bắt mọi repo đang chạy sửa bảng trước khi được xếp việc. Đừng đổi tên tham số thành
+  `<uc>`: cột Lane chứa làn thật và đổi tên là phá `lane_cap`/`lane_busy`/`ready_list`. Cái hỏng là không kiểm dạng, không phải cái tên.
+- **Thêm trường vào KETQUA thì đặt TRƯỚC `kiem=`** (8.9.0). `kiem=` là trường duy nhất có dấu cách, mà `kq_field` đọc
+  lần xuất hiện ĐẦU (P-58) — một trường đặt sau `kiem=` sẽ bị chính nội dung của `kiem=` cướp mất. Và trước khi thêm,
+  hỏi nó có trùng trường cũ không: `baocao=<file>` của P-65 chính là `neo=`, vốn đã nhận đường dẫn file và vốn bắt buộc
+  với `ket=xong`. Một trường được thêm là trường được BÁO, không phải một cổng: `dat=` thiếu thì `done` nói ra rồi vẫn đóng.
 - **Neo của cổng đọc từ MARKER, không grep tiêu đề commit** (8.8.0, P-64). `gate_commit` của `lib.sh` lấy dòng 1 của
   `.sdd/gate/UC-###.ok` (là `rev-parse HEAD` lúc qua cổng, từ 1.0.0), rơi về grep tiêu đề khi không có marker hoặc hash
   không còn trong lịch sử. Lý do đo được: ký lại cổng cho UC đã `reviewed` **cùng ngày** thì `sed` không đổi gì nên không

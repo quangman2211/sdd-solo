@@ -14,6 +14,7 @@
 |---|---|---|
 | spec | 1 | specs/** |
 | code | 2 | src/** tests/** |
+| do | 1 | notes/do/** |
 
 ## Work
 | Key | Lane | Role | Needs | State | Anchor | Note |

@@ -16,6 +16,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/queue.sh" $ARGUMENTS
 (if the variable is not substituted: `find ~/.claude/plugins -type f -name queue.sh -path '*sdd-solo*' | head -1`; inside a project: `.sdd/scripts/queue.sh`).
 
 - `giu [role]` (8.6.0) — read-only, runs in any worktree: the active items that role still holds, one per line as `<key>|<last ket=>`. The `Stop` hook asks exactly this.
+- `<lane>` and `<role>` are **two different vocabularies** and the order matters: the lane is the thing with a CAPACITY (`## Lanes`), the role is a name in `.sdd/roles`. Since 8.9.0 `add` blocks what can be proven wrong — a role where the lane goes, an ID (`UC-###`) where the lane goes, a role that is not declared — and prints the corrected command. A lane that is merely not declared yet still only warns. Measured on the runxops queue: 20 malformed rows, 5 of them plainly swapped.
 - **Only the coordinator, in the main checkout, writes** — `add|take|done|stop` refuse to run in a secondary worktree. Agents do not write the board; an agent writes a KETQUA (`role.sh --ketqua`), and `done` reads it and checks the anchor before writing the row. Every write is one `--only` commit.
 - `next` = every `Needs` is `done` and the lane has room (the `## Lanes` table, Capacity column). Ask the machine, not your memory.
 - `done <key> --theo-phieu #n` — for a job that ended `ket=chan hoi=#n` and was settled BY THE TICKET, with no work

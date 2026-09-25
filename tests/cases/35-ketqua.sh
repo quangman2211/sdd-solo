@@ -9,7 +9,7 @@ chk "ket=chan thiếu hoi → đỏ (exit $R)" '[ $R = 1 ] && has "requires hoi=
 S role.sh --ketqua "Khoá Xấu" ket=xong neo=x
 chk "khoá có dấu cách/hoa → từ chối (exit $R)" '[ $R = 2 ]'
 S role.sh --ketqua d-uc-001-p3 ket=chan hoi=#4
-chk "chan có hoi → ghi (exit $R)" '[ $R = 0 ] && has "KETQUA key=d-uc-001-p3 ket=chan neo=- kiem=- hoi=#4"'
+chk "chan có hoi → ghi (exit $R)" '[ $R = 0 ] && has "KETQUA key=d-uc-001-p3 ket=chan neo=- dat=- kiem=- hoi=#4"'
 S pass.sh gate UC-001
 S role.sh --ketqua d-uc-001-p3 ket=xong neo=.sdd/gate/UC-001.ok
 chk "neo là marker cổng → nhận (exit $R)" '[ $R = 0 ]'
