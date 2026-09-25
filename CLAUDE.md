@@ -146,6 +146,13 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   chĩa vào lịch sử thay vì vào một phép kiểm. **Dòng 1 giữ nguyên hash cổng gốc**: mọi người đọc lần theo marker phải tới commit
   cổng đã xảy ra, không tới ngày phục hồi. Đừng biến nó thành một cửa cấp marker (`--force`, `--new`): lúc đó nó là đúng cái cửa
   8.4.0 vừa đóng. Số commit động vào thân UC kể từ cổng đó chỉ được **cảnh báo**, không chặn — đó là việc để nhìn, không phải luật mới.
+- **Neo của cổng đọc từ MARKER, không grep tiêu đề commit** (8.8.0, P-64). `gate_commit` của `lib.sh` lấy dòng 1 của
+  `.sdd/gate/UC-###.ok` (là `rev-parse HEAD` lúc qua cổng, từ 1.0.0), rơi về grep tiêu đề khi không có marker hoặc hash
+  không còn trong lịch sử. Lý do đo được: ký lại cổng cho UC đã `reviewed` **cùng ngày** thì `sed` không đổi gì nên không
+  có commit cổng mới, mà marker thì **có** dời — grep tiêu đề neo mãi vào cổng đầu và close-check đỏ "changed BEHAVIOUR"
+  không cách nào dập. Đây là cùng bài học P-58: **cái đã ghi thắng cái suy ra được**. Kèm theo: dòng 1 của marker giờ được
+  ĐỌC — ghi thêm gì vào đó phải để từ dòng 2, và **không dùng `--allow-empty`** để chữa loại lỗi này: một commit rỗng chỉ
+  tồn tại để một grep tìm ra, mà grep đó chính là thứ vừa bị thay.
 - **Hàm tra cứu trả RỖNG phải `return 0`** (8.7.0). "Không có" là một câu trả lời, không phải một lỗi. `role_current`
   kết thúc bằng `grep -q` của vòng lặp nên trả exit 1 khi không suy được vai, và `pass.sh` chạy `set -e`: repo khai
   `<vai>.ky` mà không suy được vai làm `pass.sh gate` chết im lặng ở đúng ca comment 8.4.0 gọi là được phép. Biết `[ c ] && lệnh`

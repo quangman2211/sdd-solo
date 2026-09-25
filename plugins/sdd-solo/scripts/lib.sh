@@ -772,6 +772,27 @@ $(git -C "$root" show "$rev:$p" 2>/dev/null)"
 }
 # fp_changed <root> <id> <rev1> <rev2> [efs] → prints the areas that differ (space separated, with a leading space);
 # set FP_SKIP=entities when the two marks use different layouts (6.x one file per context · 7.0 one per entity — concatenating is not comparable).
+# gate_commit <ID> [root] - the commit the gate marker points at: the anchor every "has the spec moved since the
+# gate" check compares against.
+# 8.8.0 (P-64): line 1 of .sdd/gate/<ID>.ok has been `git rev-parse HEAD` at gate time since 1.0.0, and nothing ever
+# read it - every reader found the gate commit by grepping the SUBJECT `docs(<ID>): spec reviewed - ...` instead. A
+# subject grep can only find a commit that EXISTS. Re-gating a UC that is already `reviewed` and dated today changes
+# nothing in the file, so `git commit --only` has nothing to commit and no new gate commit is made - while the marker
+# IS rewritten with the new HEAD. From then on close-check compared against the FIRST gate forever and said "the spec
+# changed BEHAVIOUR after passing the gate" with no way to clear it (runxops, 2026-09-25). The marker held the right
+# answer the whole time; nobody asked it.
+# It falls back to the subject grep when there is no marker or its hash is not reachable (a rewritten history),
+# because a check that cannot find its anchor must say so, not go quiet.
+gate_commit() {
+  local id="$1" r="${2:-$(project_root)}" h
+  h="$(head -1 "$r/.sdd/gate/$id.ok" 2>/dev/null | tr -d '[:space:]')"
+  if printf '%s' "$h" | grep -qE '^[0-9a-f]{7,40}$' && git -C "$r" cat-file -e "$h^{commit}" 2>/dev/null; then
+    printf '%s\n' "$h"; return 0
+  fi
+  git -C "$r" log -1 -E --format=%H --grep="^docs\($id\): spec reviewed — ($(kw c_dor))" 2>/dev/null
+  return 0
+}
+
 fp_changed() {
   local z out=""; FP_SKIP=""
   for z in main alt exc post ac flow rules entities; do

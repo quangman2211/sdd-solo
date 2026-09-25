@@ -11,7 +11,9 @@ step "⑨ /sdd-solo:gate $ID — the DoR gate, before close"
 # 7.4 (P-10): the gate marker says "the spec WAS re-read at commit X". Editing an AC after X with a docs(UC-###) commit
 # leaves the marker in place while what it certifies is gone — up to 7.3 no script compared again. The §9 fingerprint of
 # gate-check (lib: fp_changed) compares from the gate-pass commit to HEAD: Main/Alt/Exceptions/Postconditions/AC · flow · the RULE statements · the entities mermaid.
-GH="$(git -C "$ROOT" log -1 -E --format=%H --grep="^docs\($ID\): spec reviewed — ($(kw c_dor))" 2>/dev/null)"
+# 8.8.0 (P-64): the anchor is the hash the marker RECORDED, not a grep over commit subjects - a silent re-gate
+# moves the marker and writes no commit, and this rule then pointed at the first gate for ever.
+GH="$(gate_commit "$ID" "$ROOT")"
 if [ -n "$GH" ]; then
   CHG="$(fp_changed "$ROOT" "$ID" "$GH" HEAD "$(entity_cited "$F" "$ROOT" | tr '\n' ' ')")"
   ST="$(grep -oE '\*\*Status:\*\* *[a-z]+' "$F" | head -1 | awk '{print $2}')"

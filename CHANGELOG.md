@@ -1,5 +1,40 @@
 # Changelog
 
+## 8.8.0 — 2026-09-25
+
+**Cái neo của cổng là cái ĐÃ GHI, không phải cái grep được từ tiêu đề commit (P-64).** Ký lại cổng cho một UC đã
+`reviewed` và đã ghi ngày hôm nay thì hai lệnh `sed` không đổi gì, nên `git commit --only` không có gì để commit và
+không có commit `docs(UC-###): spec reviewed` mới nào. `close-check` (P-10) grep tiêu đề để tìm commit cổng, nên nó neo
+mãi vào cổng ĐẦU và báo "the spec changed BEHAVIOUR after passing the gate" không có cách nào dập (runxops 25/09).
+
+Dòng 1 của `.sdd/gate/UC-###.ok` là `git rev-parse HEAD` lúc qua cổng, từ 1.0.0 — nó giữ câu trả lời đúng suốt thời gian
+đó và không ai hỏi. `gate_commit` ở `lib.sh` là một người đọc duy nhất: đọc hash đã ghi, rơi về grep tiêu đề khi không
+có marker hoặc hash không còn trong lịch sử — một phép kiểm không tìm được neo thì phải nói, không được im. Và **luật không
+bị làm mù**: marker còn ở cổng cũ thì sửa một AC vẫn đỏ như cũ (ca 64 giữ cả hai chiều).
+
+**Không dùng `--allow-empty`** (đề xuất thứ nhất của A): một commit rỗng không ghi gì cả, nó chỉ tồn tại để một grep
+tìm ra — mà chính cái grep đó là thứ đang được thay. Nó cũng rắc một commit trống vào lịch sử mỗi lần ký lại.
+
+**Và `pass.sh gate` thôi nói dối.** Tới 8.7.0, lần ký lại đó để lọt nguyên câu `nothing to commit, working tree clean`
+của git ra ngoài, **rồi vẫn in `· committed.`** — một câu sai. Giờ nó nói thẳng là không có gì để commit và marker đã dời
+tới commit nào — đó mới là cái ghi được việc vừa xảy ra.
+
+Đo trên runxops (cây sống, chỉ đọc): **8 marker có hai neo khác nhau**, không phải một. Bảy cái marker mới hơn commit
+grep ra được — đúng dấu của một lần ký lại im lặng; một cái (UC-034) ngược chiều và dấu tay không đổi, nên không hệ quả.
+Mọi UC có marker ở đó giờ đều `implemented`, nơi luật này là warn chứ không phải đỏ, nên bản này **không lật verdict nào
+trên cây hiện tại** — nó rút ngắn danh sách vùng ở hai dòng warn (UC-018: bỏ `exc ac`; UC-024: bỏ `post`), tức bớt báo vùng
+không hề đổi sau cổng cuối. Ca đỏ A gặp đã đóng từ lúc báo nên không tái hiện được từ cây sống; cơ chế thì tái hiện
+bằng hai lượt `pass.sh gate` liền nhau (ca 64).
+
+Trên bản sao 6.x chưa migrate (phép so verdict) có **ba** dòng đổi, cả ba là `close-UC-018 · 022 · 026`, mỗi cái một warn
+thành một ok, `bad` không đổi ở đâu. UC-018 là dấu vân tay của P-64 trên một kho thật: neo cũ (grep) là `9c30a262`
+"spec reviewed — qua cổng DoR" tức cổng **đầu tiên**, neo mới (marker) là `8c3c8fce` "đọc lại --since a36c9078", và giữa
+hai cái là **bốn commit spec thật** (hai vòng đọc lại, hai lần sửa theo phiếu #199 và #203). Ba vùng `exc ac rules` đổi
+TRƯỚC lần ký lại cuối, đã được đọc lại và đã qua cổng — báo chúng là "đổi sau cổng" là sai.
+
+Ca 64 — hai lượt cổng liền nhau (marker dời, tiêu đề thì không), `gate_commit` đọc marker, neo đi qua chỗ sửa thì hết đỏ,
+marker còn ở cổng cũ thì vẫn đỏ, và hai đường lùi (không marker · hash không còn trong lịch sử).
+
 ## 8.7.0 — 2026-09-25
 
 **UC sống lại sau deprecate thì lấy lại được marker (P-61).** `pass.sh deprecate` gỡ `.sdd/gate/UC-###.ok` — đúng, UC bị bỏ

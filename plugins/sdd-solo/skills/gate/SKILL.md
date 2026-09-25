@@ -23,6 +23,9 @@ The DoR gate for `$1`.
 "${CLAUDE_PLUGIN_ROOT}/scripts/pass.sh" gate $1
 ```
 The script sets `Status: reviewed`, writes `.sdd/gate/$1.ok`, and commits `docs($1): spec reviewed — DoR gate passed`.
+**Line 1 of the marker is the gate commit hash, and it is the anchor every later check reads** (8.8.0, P-64) — `close-check`
+asks the marker, not a grep over commit subjects. Re-gating a UC that is already `reviewed` and dated today has nothing to
+commit, so no new commit appears and the marker is what moves; the script says so instead of claiming a commit it did not make.
 
 **A UC brought back from `deprecated` does not come here.** Its status is already `implemented`, which this gate calls red, so
 there is no way through — and `deprecate` took its marker away. `bash .sdd/scripts/pass.sh restore UC-###` recovers the marker

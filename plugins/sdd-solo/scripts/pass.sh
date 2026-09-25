@@ -68,8 +68,9 @@ esac
 # the marker + the marker commit — shared by gate and change
 mark() {
   mkdir -p "$ROOT/.sdd/gate"
-  # LINE 1 STAYS EXACTLY THE COMMIT HASH. Nothing parses this file today (every reader only tests -f, and the
-  # fingerprint finds the gate commit by its SUBJECT), but a second line is a record, not a field: six months on,
+  # LINE 1 STAYS EXACTLY THE COMMIT HASH - and since 8.8.0 it is READ: `gate_commit` in lib.sh takes the anchor
+  # from here, so a line 1 that is not a bare hash silently sends every "has the spec moved since the gate" check
+  # back to grepping commit subjects. A second line is a record, not a field: six months on,
   # "who signed this" is the question nobody can answer from a bare hash.
   git -C "$ROOT" rev-parse HEAD > "$ROOT/.sdd/gate/$1.ok"
   [ -n "$SIGNED_BY" ] && printf 'signed-by: %s (.sdd/roles %s.ky) %s\n' "$SIGNED_BY" "$SIGNED_BY" "$(today)" >> "$ROOT/.sdd/gate/$1.ok"
@@ -141,10 +142,21 @@ gate)
   if uc_table_set "$ID" reviewed "$ROOT"; then TF="$T"; else
     printf '  ! the table %s has no row for %s — add one so /sdd-solo:state suggests the right next UC\n' "${T#$ROOT/}" "$ID"; fi
   # The SUBJECT is untouched on purpose: gate-check §9 and close-check find this commit by matching it.
+  GC=1
   git -C "$ROOT" commit -q --only -m "docs($ID): spec reviewed — $(kw_w c_dor "$ROOT")" \
-    ${SIGNED_BY:+-m "$(kw_w c_role "$ROOT"): $SIGNED_BY"} -- "$F" $TF || true
+    ${SIGNED_BY:+-m "$(kw_w c_role "$ROOT"): $SIGNED_BY"} -- "$F" $TF >/dev/null 2>&1 || GC=0
   mark "$ID"
-  printf 'THROUGH THE GATE. Status -> reviewed · marker .sdd/gate/%s.ok · committed.\n' "$ID"
+  if [ "$GC" = 1 ]; then
+    printf 'THROUGH THE GATE. Status -> reviewed · marker .sdd/gate/%s.ok · committed.\n' "$ID"
+  else
+    # 8.8.0 (P-64): re-gating a UC that is already `reviewed` and dated today changes nothing in the file, so there
+    # is nothing to commit. Up to 8.7.0 git's own "nothing to commit, working tree clean" leaked out here and the
+    # script then printed "committed." anyway - a line that was simply false. What moves is the MARKER, and since
+    # 8.8.0 that is the anchor gate_commit reads, so saying which commit it now points at is the whole record.
+    printf 'THROUGH THE GATE AGAIN. The UC file was already reviewed and dated today: nothing to commit.\n'
+    printf 'The marker moved - .sdd/gate/%s.ok now points at %s, and that is the anchor close-check compares against.\n' \
+      "$ID" "$(head -1 "$ROOT/.sdd/gate/$ID.ok")"
+  fi
   printf 'Next: /sdd-solo:design %s — design before the first line of code.\n' "$ID"
   ;;
 
