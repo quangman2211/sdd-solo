@@ -372,7 +372,7 @@ rr_count() {
   awk -v lb="^[[:space:]]*($(kw output))[[:space:]]*:" \
       -v nb="[[]($(kw anchor)):[^]]*[^] [:space:]][]]" '
     $0 ~ nb && /→/ {
-      i = index($0, "→"); o = substr($0, i + 3)
+      i = index($0, "→"); o = substr($0, i + length("→"))
       # Strip the label first and only then ask whether anything is left: keeping it means the
       # arrow + outcome + ___ string is still non-empty thanks to the two label words themselves, so a line
       # that decided nothing opens the door too. That is the cheapest faking case there is.
@@ -394,12 +394,17 @@ rr_count() {
 # only move left is to rewrite the old words, which the ledger forbids. Measured at runxops: UC-031 had 13 F#
 # lines, 11 already answered, live-tail count 2, and the gate printed "13 Undecided, ceiling reached". 7.4 (P-37)
 # already settled this for the ID scan; rr_undecided was the one place left reading the dead text.
+# NOTE on "→": never advance past it with a byte count. `substr(t, i + 3)` is right in a byte-oriented
+# awk (BSD awk on macOS, mawk) and WRONG in a character-oriented one (gawk under a UTF-8 locale, which is
+# what a Linux CI runner gives you), where the arrow is one character, not three. `length("→")` is correct
+# in both. Measured: the suite was green on macOS and red on ubuntu-latest for exactly this, on the rule
+# that counts unresolved re-read findings — the gate that decides whether Phase 5 opens.
 rr_undecided() {
   awk -v re="($(kw undecided))" '{
     t = $0
     gsub(/`[^`]*`/, "", t)
     while (match(t, /\([^()]*\)/)) t = substr(t, 1, RSTART - 1) substr(t, RSTART + RLENGTH)
-    n = 0; while ((i = index(t, "→")) > 0) { t = substr(t, i + 3); n++ }
+    n = 0; while ((i = index(t, "→")) > 0) { t = substr(t, i + length("→")); n++ }
     if (n && t ~ re) u++
   } END { print u + 0 }'
 }
@@ -411,7 +416,7 @@ rr_tail() {
     t = $0
     gsub(/`[^`]*`/, "", t)
     while (match(t, /\([^()]*\)/)) t = substr(t, 1, RSTART - 1) substr(t, RSTART + RLENGTH)
-    n = 0; while ((i = index(t, "→")) > 0) { t = substr(t, i + 3); n++ }
+    n = 0; while ((i = index(t, "→")) > 0) { t = substr(t, i + length("→")); n++ }
     if (n) print t
   }'
 }

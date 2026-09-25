@@ -192,9 +192,13 @@ chk "migrate --evidence · BR không có thì đỏ (exit $R)" '[ $R = 1 ] && ha
 # ⑦ không có node: migrate KHÔNG im lặng làm nửa vời — dừng có lời (khác mermaid, vì đây là script SỬA file)
 mk6x mig3
 mkmap
-NODEDIR="$(dirname "$(command -v node)")"
-O="$(PATH="$(printf '%s' "$PATH" | tr ':' '\n' | grep -vxF "$NODEDIR" | paste -sd: -)" \
-     bash "$P/scripts/migrate.sh" --layout v7 2>&1)"; R=$?; O="$(printf '%s\n' "$O" | clean)"
+# Drop EVERY directory that holds a node, not just the one `command -v` happened to pick: a CI runner
+# reaches node through several PATH entries at once (a hosted toolcache plus a symlink in /usr/local/bin),
+# so removing one left node findable and this case passed for the wrong reason on a developer machine
+# while going red on both runners.
+NOPATH="$(printf '%s' "$PATH" | tr ':' '\n' | while IFS= read -r d; do
+  [ -n "$d" ] && [ -x "$d/node" ] || printf '%s\n' "$d"; done | paste -sd: -)"
+O="$(PATH="$NOPATH" bash "$P/scripts/migrate.sh" --layout v7 2>&1)"; R=$?; O="$(printf '%s\n' "$O" | clean)"
 chk "migrate · không có node thì dừng có lời, không dời nửa chừng (exit $R)" \
   '[ $R = 127 ] && has "Node.js (>= 18) is required" && [ -d specs/contexts ]'
 cd "$T"

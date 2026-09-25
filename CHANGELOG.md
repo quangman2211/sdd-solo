@@ -1,5 +1,25 @@
 # Changelog
 
+## 8.11.1 — 2026-09-25 · awk đếm ký tự làm cổng Phase 5 trôi trên Linux
+
+CI dựng xong (`.github/workflows/ci.yml`) và **lượt chạy đầu tiên bắt được một lỗi chưa ai thấy**: bộ test
+xanh trên macOS, đỏ trên ubuntu-latest. Nguyên nhân là `substr(t, i + 3)` sau `index(t, "→")` ở `lib.sh`.
+
+Mũi tên `→` dài **3 byte nhưng 1 ký tự**. awk đếm BYTE (BSD awk của macOS, mawk) thì `+ 3` đúng; awk đếm
+KÝ TỰ (gawk dưới locale UTF-8 — đúng thứ runner Linux đưa cho) thì `+ 3` nhảy qua ba ký tự và nuốt mất nội
+dung. Ba chỗ mắc, và chỗ đau nhất là `rr_undecided` — luật đếm phát hiện còn tồn đọng, tức cái quyết định
+cổng Phase 5 có mở hay không. Trên Linux nó đếm sai, im lặng. `length("→")` đúng ở cả hai lối.
+
+Cùng họ với bẫy CLAUDE.md đã ghi cho bash ("không đặt biến sát ký tự nhiều byte"), lần này ở awk. Ca 76
+kiểm TĨNH, vì kiểm động cần hai awk khác nhau trên một máy — và đó chính là lý do lỗi sống sót: mọi phép
+đo trước giờ chạy trên một máy duy nhất.
+
+Kèm theo, sửa ca 44: nó gỡ MỘT thư mục chứa `node` khỏi PATH để thử nhánh "không có node", nhưng runner
+với tới node qua nhiều lối cùng lúc, nên ca này xanh vì lý do sai trên máy tác giả và đỏ ở cả hai runner.
+Giờ gỡ MỌI thư mục có `node`.
+
+Kiểm: 76 ca · 458 PASS · 0 FAIL (ca 76 đã chứng minh đỏ ở HEAD).
+
 ## 8.11.0 — 2026-09-25 · nhận một kho đã có code vào quy trình
 
 Kho đã có code gõ `/sdd-solo:init` là **đóng băng ngay ngày đầu**: mọi commit chạm `code_paths` đòi ID, mà
