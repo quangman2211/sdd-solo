@@ -201,6 +201,22 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 
+## CI (GitHub Actions) — `.github/workflows/ci.yml`
+Ba job, và lý do của job thứ ba là thứ đáng nhớ nhất:
+- **test** — `tests/run.sh` trên ubuntu **và** macOS. macOS gọi thẳng `/bin/bash` (3.2), vì chạy bash 5 cả
+  hai nơi thì ràng buộc bash 3.2 của repo này không còn ca nào kiểm.
+- **release chain** — `.github/check-manifest.sh`: version khớp ở hai manifest, CHANGELOG có mục cho đúng
+  version đó, `source` của marketplace trỏ vào chỗ có thật, mọi skill có `SKILL.md`. Đây là phép kiểm duy
+  nhất bắt được lỗi quên bump TRƯỚC khi người dùng gặp.
+- **this repo own githooks** — `.github/replay-hooks.sh` phát lại `commit-msg` + `pre-commit` **của chính
+  PR** trên từng commit, bằng `git cherry-pick -n` trong một worktree riêng nên hook thấy đúng vùng stage
+  thật. Lý do: `core.hooksPath` là git config **cục bộ**, không commit được, nên một bản clone mới KHÔNG có
+  hook — mọi luật của dự án vô hình với người đóng góp, trong khi README nói "Chặn cứng… Không có cờ bỏ
+  qua". Không có job này thì câu đó sai với tất cả trừ tác giả.
+  Nó **phát lại hook thật, không chép lại luật**: một bản sao thứ ba của danh sách đường dẫn (sau `lib.sh`
+  và githook) là bản không ai nhớ sửa — đúng bẫy `id_exists` đã ghi. Khi repo chưa có `.sdd/config` thì nó
+  **báo mà không chặn**, và tự thành cổng đúng ngày sdd-solo tự áp lên chính nó, không cần sửa gì thêm.
+
 ## Quy trình sửa
 1. Sửa file trong repo này.
 2. Test:

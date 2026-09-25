@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # The suite is the release gate CLAUDE.md already names: FAIL blocks a release. Until now it only ran
+  # on the author's machine, so "bắt buộc trước mỗi bản" was a promise, not a mechanism.
+  test:
+    name: tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      # Node reads and edits structured files for the plugin (7.6) and the suite uses it for fixtures.
+      # No npm package is installed anywhere — the plugin must run on a blank repo, so CI must too.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: shell and tool versions
+        run: |
+          /bin/bash -c 'echo "bash: $BASH_VERSION"'
+          node --version; git --version
+      # macOS ships bash 3.2 at /bin/bash and that is the version every script here is written against.
+      # Running bash 5 on both runners would leave the one constraint CLAUDE.md states untested.
+      - name: run the suite
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then /bin/bash tests/run.sh; else bash tests/run.sh; fi
+
+  # Version drift is the failure CLAUDE.md calls the most expensive this repo has: push without a bump and
+  # `/plugin update` loads nothing, silently. This is the only job that can catch it before users do.
+  manifest:
+    name: release chain
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: bash .github/check-manifest.sh
+
+  # `core.hooksPath` is local git config, so a contributor's clone has no hooks and every rule this
+  # project is built on is invisible to a pull request. This job is where those rules exist for
+  # everybody rather than for the author.
+  hooks:
+    name: this repo own githooks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The PR head itself, not the synthetic merge commit checkout builds by default: what is being
+          # judged is the contributor's own commits, and a merge commit is not one of them.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: replay the hooks over every commit in the PR
+        run: |
+          bash .github/replay-hooks.sh \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
