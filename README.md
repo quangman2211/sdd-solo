@@ -13,6 +13,16 @@ Nền: ebook *Spec Driven Development* (Nguyễn Thế Huy) · AI Unified Proces
 
 Rồi trong repo dự án: `/sdd-solo:init`. Phụ thuộc bắt buộc chỉ có `git` — không cần cài thêm plugin nào.
 
+**Chỉ muốn tải phần plugin.** `marketplace add` clone cả repo này (nông, một commit), gồm cả `specs/` và
+`tests/` mà người dùng không cần. Thêm `--sparse` thì chỉ lấy hai thư mục plugin thật sự nằm trong:
+
+```
+claude plugin marketplace add quangman2211/sdd-solo --sparse .claude-plugin plugins
+```
+
+Nó lọc theo **thư mục**, nên file ở gốc (README, CHANGELOG) vẫn về. Cài thường vẫn chạy y hệt — đây chỉ là
+cho ai để ý dung lượng.
+
 Rồi **`/sdd-solo:intake`** — nó hỏi bảy câu (khổ gì · ai khổ · tốn gì · không làm thì sao · có cách nào không xây phần mềm · cố ý không làm gì · đo bằng gì) và viết `specs/br.md` giúp bạn. Đang cầm brief do một AI khác viết thì `/sdd-solo:intake brief.md`.
 
 Tuỳ chọn, **không cái nào nằm trong 14 bước** (từ 4.0.0):
