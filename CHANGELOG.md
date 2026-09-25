@@ -1,5 +1,19 @@
 # Changelog
 
+## 8.10.0 — 2026-09-25
+
+**Thư mục `screens/` thôi tự mọc ở mọi UC.** `start` chép `screens/README.md` vô điều kiện, nên một UC không có giao diện
+nào vẫn có một thư mục giao diện. Đo trên runxops 25/09: **21 UC có `screens/`, 10 trong đó chỉ chứa mỗi README** — gần một
+nửa là ngăn kéo trống, đúng thứ ranh giới 5.0.0 cấm ("khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền").
+
+Không script nào ĐÒI thư mục đó, và điều này được **chứng minh trước khi sửa chứ không đoán**: `mmd_lint` bỏ qua file không
+có (`[ -f "$f" ]` trước khi nối vào danh sách), còn `uc-steps` bước ⑤ tìm file **khác** README nên không thư mục = bước chưa
+làm, đúng nghĩa. Cổng đọc **bảng** `## Screens` trong thân UC, không đọc thư mục — bốn phép kiểm cơ học của ca 66 đã xanh
+sẵn trên 8.9.0 với một UC đã xóa thư mục, nên bỏ nó là an toàn.
+
+Khuôn vẫn **giữ** `templates/skel/use-case/screens/README.md` — người vế chép nó ở bước ⑤, lúc đã có cái để bỏ vào.
+UC đã có thư mục thì không đổi gì; chỉ UC mới không còn được phát sẵn một ngăn kéo trống.
+
 ## 8.9.0 — 2026-09-25
 
 **`queue.sh add` chặn cái CHỨNG MINH ĐƯỢC là sai, cảnh báo cái chỉ là chưa khai (P-66).** `add <key> <lane> <role>` có

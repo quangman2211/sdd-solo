@@ -169,6 +169,11 @@ tests/                               bộ test (7.1): run.sh · lib.sh · fixtur
   không lối ra — đúng loại đỏ CLAUDE.md cấm từ #23 và P-43. GỠ chú thích trước khi so, đừng đoán theo hình dạng dòng: guard cũ
   chỉ bỏ qua dòng BẮT ĐẦU bằng `<!--` nên một chú thích cuối dòng Metadata vẫn đỏ, và giữa một khối trải nhiều dòng chính là chỗ
   một `<Tên>` của khuôn cũ nằm lại. Nhưng không nới tay: `<...>` thật ngoài chú thích vẫn đỏ, và ca 63 giữ cả hai chiều.
+- **Khuôn CÓ trong `templates/skel/` không có nghĩa là `start` phải chép nó** (8.10.0). `screens/README.md` nằm trong
+  khuôn là đúng — người vế cần một cái để chép ở bước ⑤ — nhưng chép nó cho **mọi** UC là phát một ngăn kéo trống cho UC
+  không có giao diện: đo ở runxops, 10 trên 21 UC có `screens/` chỉ chứa mỗi README. Luật 5.0.0 hỏi "ai đọc nó" — câu
+  hỏi đó phải hỏi ở chỗ **CHÉP**, không phải chỉ ở chỗ thêm khuôn. Kiểm trước khi bỏ một thư mục: `mmd_lint` bỏ qua file
+  không có, `uc-steps` bước ⑤ tìm file khác README, và cổng đọc **bảng** `## Screens` trong thân UC chứ không đọc thư mục.
 - Khuôn không rơi vào dự án trừ khi có script/skill đọc hoặc user điền — 13 "ngăn kéo trống" bỏ ở 5.0.0 sau khi đo
   chúng nguyên byte ở runxops nhiều tuần. Muốn thêm file khuôn thì nêu được ai đọc nó.
 
